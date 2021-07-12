@@ -46,3 +46,7 @@
 	path = Middleware/AWS/OTA
 	url = https://github.com/aws/ota-for-aws-iot-embedded-sdk.git
 	fetchRecurseSubmodules = false
+[submodule "Middleware/ARM/mbedtls"]
+	path = Middleware/ARM/mbedtls
+	url = https://github.com/ARMmbed/mbedtls.git
+	fetchRecurseSubmodules = false
