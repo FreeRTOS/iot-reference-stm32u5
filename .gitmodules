@@ -1,0 +1,48 @@
+[submodule "Middleware/FreeRTOS/FreeRTOS-Kernel"]
+	path = Middleware/FreeRTOS/FreeRTOS-Kernel
+	url = https://github.com/FreeRTOS/FreeRTOS-Kernel.git
+	fetchRecurseSubmodules = false
+[submodule "Middleware/FreeRTOS/coreMQTT"]
+	path = Middleware/FreeRTOS/coreMQTT
+	url = https://github.com/FreeRTOS/coreMQTT.git
+	fetchRecurseSubmodules = false
+[submodule "Middleware/FreeRTOS/coreMQTT-Agent"]
+	path = Middleware/FreeRTOS/coreMQTT-Agent
+	url = https://github.com/FreeRTOS/coreMQTT-Agent.git
+	fetchRecurseSubmodules = false
+[submodule "Middleware/FreeRTOS/coreJSON"]
+	path = Middleware/FreeRTOS/coreJSON
+	url = https://github.com/FreeRTOS/coreJSON.git
+	fetchRecurseSubmodules = false
+[submodule "Middleware/FreeRTOS/coreHTTP"]
+	path = Middleware/FreeRTOS/coreHTTP
+	url = https://github.com/FreeRTOS/coreHTTP.git
+	fetchRecurseSubmodules = false
+[submodule "Middleware/FreeRTOS/http-parser"]
+	path = Middleware/FreeRTOS/http-parser
+	url = https://github.com/nodejs/http-parser.git
+	fetchRecurseSubmodules = false
+[submodule "Middleware/FreeRTOS/backoffAlgorithm"]
+	path = Middleware/FreeRTOS/backoffAlgorithm
+	url = https://github.com/FreeRTOS/backoffAlgorithm.git
+	fetchRecurseSubmodules = false
+[submodule "Middleware/FreeRTOS/corePKCS11"]
+	path = Middleware/FreeRTOS/corePKCS11
+	url = https://github.com/FreeRTOS/corePKCS11.git
+	fetchRecurseSubmodules = false
+[submodule "Middleware/AWS/DeviceDefender"]
+	path = Middleware/AWS/IoTDeviceDefender
+	url = https://github.com/aws/Device-Defender-for-AWS-IoT-embedded-sdk.git
+	fetchRecurseSubmodules = false
+[submodule "Middleware/AWS/DeviceShadow"]
+	path = Middleware/AWS/IoTDeviceShadow
+	url = https://github.com/aws/Device-Shadow-for-AWS-IoT-embedded-sdk.git
+	fetchRecurseSubmodules = false
+[submodule "Middleware/AWS/IoTJobs"]
+	path = Middleware/AWS/IoTJobs
+	url = https://github.com/aws/Jobs-for-AWS-IoT-embedded-sdk.git
+	fetchRecurseSubmodules = false
+[submodule "Middleware/AWS/OTA"]
+	path = Middleware/AWS/OTA
+	url = https://github.com/aws/ota-for-aws-iot-embedded-sdk.git
+	fetchRecurseSubmodules = false
