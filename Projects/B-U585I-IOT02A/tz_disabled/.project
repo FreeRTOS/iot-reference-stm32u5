@@ -32,139 +32,234 @@
 	</natures>
 	<linkedResources>
 		<link>
-			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal.c</name>
-			<type>1</type>
-			<location>PARENT-3-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal.c</location>
+			<name>Drivers</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
-			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_cortex.c</name>
-			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_cortex.c</locationURI>
+			<name>Libraries</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
-			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_dma.c</name>
-			<type>1</type>
-			<location>PARENT-3-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_dma.c</location>
+			<name>Drivers/STM32U5_HAL</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL</locationURI>
 		</link>
 		<link>
-			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_dma_ex.c</name>
-			<type>1</type>
-			<location>PARENT-3-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_dma_ex.c</location>
+			<name>Drivers/cmsis_core</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Drivers/CMSIS/Core/Include</locationURI>
 		</link>
 		<link>
-			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_exti.c</name>
-			<type>1</type>
-			<location>PARENT-3-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_exti.c</location>
+			<name>Drivers/cmsis_device_stm32u5</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Drivers/CMSIS/Device/ST/STM32U5xx/Include</locationURI>
 		</link>
 		<link>
-			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_flash.c</name>
-			<type>1</type>
-			<location>PARENT-3-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_flash.c</location>
+			<name>Drivers/cmsis_rtos</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
-			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_flash_ex.c</name>
-			<type>1</type>
-			<location>PARENT-3-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_flash_ex.c</location>
+			<name>Drivers/mx_wifi</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Drivers/BSP/Components/mx_wifi</locationURI>
 		</link>
 		<link>
-			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_gpio.c</name>
-			<type>1</type>
-			<location>PARENT-3-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_gpio.c</location>
+			<name>Drivers/stm32u5_mbedtls_accel</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Drivers/stm32u5_mbedtls_accel</locationURI>
 		</link>
 		<link>
-			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_gtzc.c</name>
-			<type>1</type>
-			<location>PARENT-3-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_gtzc.c</location>
+			<name>Libraries/FreeRTOS</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
-			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_i2c.c</name>
-			<type>1</type>
-			<location>PARENT-3-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_i2c.c</location>
+			<name>Libraries/STM32_Network_Library</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Middleware/ST/STM32_Network_Library</locationURI>
 		</link>
 		<link>
-			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_i2c_ex.c</name>
+			<name>Drivers/cmsis_rtos/cmsis_os2.h</name>
 			<type>1</type>
-			<location>PARENT-3-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_i2c_ex.c</location>
+			<locationURI>WORKSPACE_LOC/Drivers/CMSIS/RTOS2/Include/cmsis_os2.h</locationURI>
 		</link>
 		<link>
-			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_icache.c</name>
+			<name>Drivers/cmsis_rtos/os_systick.c</name>
 			<type>1</type>
-			<location>PARENT-3-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_icache.c</location>
+			<locationURI>WORKSPACE_LOC/Drivers/CMSIS/RTOS2/Source/os_systick.c</locationURI>
 		</link>
 		<link>
-			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_pka.c</name>
+			<name>Drivers/cmsis_rtos/os_tick.h</name>
 			<type>1</type>
-			<location>PARENT-3-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_pka.c</location>
+			<locationURI>WORKSPACE_LOC/Drivers/CMSIS/RTOS2/Include/os_tick.h</locationURI>
 		</link>
 		<link>
-			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_pwr.c</name>
+			<name>Drivers/cmsis_rtos/os_tick_ptim.c</name>
 			<type>1</type>
-			<location>PARENT-3-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_pwr.c</location>
+			<locationURI>WORKSPACE_LOC/Drivers/CMSIS/RTOS2/Source/os_tick_ptim.c</locationURI>
 		</link>
 		<link>
-			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_pwr_ex.c</name>
+			<name>Libraries/FreeRTOS/backoff_algorithm.c</name>
 			<type>1</type>
-			<location>PARENT-3-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_pwr_ex.c</location>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/backoffAlgorithm/source/backoff_algorithm.c</locationURI>
 		</link>
 		<link>
-			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_rcc.c</name>
+			<name>Libraries/FreeRTOS/core_http_client.c</name>
 			<type>1</type>
-			<location>PARENT-3-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_rcc.c</location>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/coreHTTP/source/core_http_client.c</locationURI>
 		</link>
 		<link>
-			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_rcc_ex.c</name>
-			<type>1</type>
-			<location>PARENT-3-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_rcc_ex.c</location>
+			<name>Libraries/FreeRTOS/crypto</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
-			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_rng.c</name>
+			<name>Libraries/FreeRTOS/http_parser.c</name>
 			<type>1</type>
-			<location>PARENT-3-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_rng.c</location>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/http-parser/http_parser.c</locationURI>
 		</link>
 		<link>
-			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_rng_ex.c</name>
-			<type>1</type>
-			<location>PARENT-3-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_rng_ex.c</location>
+			<name>Libraries/FreeRTOS/kernel</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
-			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_rtc.c</name>
-			<type>1</type>
-			<location>PARENT-3-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_rtc.c</location>
+			<name>Libraries/FreeRTOS/mqtt</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
-			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_rtc_ex.c</name>
+			<name>Libraries/FreeRTOS/crypto/core_pkcs11.c</name>
 			<type>1</type>
-			<location>PARENT-3-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_rtc_ex.c</location>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/corePKCS11/source/core_pkcs11.c</locationURI>
 		</link>
 		<link>
-			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_spi.c</name>
+			<name>Libraries/FreeRTOS/crypto/core_pkcs11_mbedtls.c</name>
 			<type>1</type>
-			<location>PARENT-3-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_spi.c</location>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/corePKCS11/source/portable/mbedtls/core_pkcs11_mbedtls.c</locationURI>
 		</link>
 		<link>
-			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_spi_ex.c</name>
+			<name>Libraries/FreeRTOS/crypto/core_pki_utils.c</name>
 			<type>1</type>
-			<location>PARENT-3-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_spi_ex.c</location>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/corePKCS11/source/core_pki_utils.c</locationURI>
 		</link>
 		<link>
-			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_tim.c</name>
+			<name>Libraries/FreeRTOS/crypto/mbedtls_utils.c</name>
 			<type>1</type>
-			<location>PARENT-3-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_tim.c</location>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/corePKCS11/source/dependency/3rdparty/mbedtls_utils/mbedtls_utils.c</locationURI>
 		</link>
 		<link>
-			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_tim_ex.c</name>
-			<type>1</type>
-			<location>PARENT-3-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_tim_ex.c</location>
+			<name>Libraries/FreeRTOS/kernel/cmsis_freertos</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
-			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_uart.c</name>
+			<name>Libraries/FreeRTOS/kernel/event_groups.c</name>
 			<type>1</type>
-			<location>PARENT-3-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_uart.c</location>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/kernel/event_groups.c</locationURI>
 		</link>
 		<link>
-			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_uart_ex.c</name>
+			<name>Libraries/FreeRTOS/kernel/heap_4.c</name>
 			<type>1</type>
-			<location>PARENT-3-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_uart_ex.c</location>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/kernel/portable/MemMang/heap_4.c</locationURI>
+		</link>
+		<link>
+			<name>Libraries/FreeRTOS/kernel/include</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/kernel/include</locationURI>
+		</link>
+		<link>
+			<name>Libraries/FreeRTOS/kernel/list.c</name>
+			<type>1</type>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/kernel/list.c</locationURI>
+		</link>
+		<link>
+			<name>Libraries/FreeRTOS/kernel/port</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/kernel/portable/GCC/ARM_CM33_NTZ/non_secure</locationURI>
+		</link>
+		<link>
+			<name>Libraries/FreeRTOS/kernel/queue.c</name>
+			<type>1</type>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/kernel/queue.c</locationURI>
+		</link>
+		<link>
+			<name>Libraries/FreeRTOS/kernel/stream_buffer.c</name>
+			<type>1</type>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/kernel/stream_buffer.c</locationURI>
+		</link>
+		<link>
+			<name>Libraries/FreeRTOS/kernel/tasks.c</name>
+			<type>1</type>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/kernel/tasks.c</locationURI>
+		</link>
+		<link>
+			<name>Libraries/FreeRTOS/kernel/timers.c</name>
+			<type>1</type>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/kernel/timers.c</locationURI>
+		</link>
+		<link>
+			<name>Libraries/FreeRTOS/mqtt/core_mqtt.c</name>
+			<type>1</type>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/coreMQTT/source/core_mqtt.c</locationURI>
+		</link>
+		<link>
+			<name>Libraries/FreeRTOS/mqtt/core_mqtt_agent.c</name>
+			<type>1</type>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/coreMQTT-Agent/source/core_mqtt_agent.c</locationURI>
+		</link>
+		<link>
+			<name>Libraries/FreeRTOS/mqtt/core_mqtt_agent_command_functions.c</name>
+			<type>1</type>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/coreMQTT-Agent/source/core_mqtt_agent_command_functions.c</locationURI>
+		</link>
+		<link>
+			<name>Libraries/FreeRTOS/mqtt/core_mqtt_serializer.c</name>
+			<type>1</type>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/coreMQTT/source/core_mqtt_serializer.c</locationURI>
+		</link>
+		<link>
+			<name>Libraries/FreeRTOS/mqtt/core_mqtt_state.c</name>
+			<type>1</type>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/coreMQTT/source/core_mqtt_state.c</locationURI>
+		</link>
+		<link>
+			<name>Libraries/FreeRTOS/kernel/cmsis_freertos/cmsis_os.h</name>
+			<type>1</type>
+			<locationURI>WORKSPACE_LOC/Drivers/CMSIS/RTOS2/FreeRTOS/Include1/cmsis_os.h</locationURI>
+		</link>
+		<link>
+			<name>Libraries/FreeRTOS/kernel/cmsis_freertos/cmsis_os1.c</name>
+			<type>1</type>
+			<locationURI>WORKSPACE_LOC/Drivers/CMSIS/RTOS2/FreeRTOS/Source/cmsis_os1.c</locationURI>
+		</link>
+		<link>
+			<name>Libraries/FreeRTOS/kernel/cmsis_freertos/cmsis_os2.c</name>
+			<type>1</type>
+			<locationURI>WORKSPACE_LOC/Drivers/CMSIS/RTOS2/FreeRTOS/Source/cmsis_os2.c</locationURI>
+		</link>
+		<link>
+			<name>Libraries/FreeRTOS/kernel/cmsis_freertos/freertos_evr.c</name>
+			<type>1</type>
+			<locationURI>WORKSPACE_LOC/Drivers/CMSIS/RTOS2/FreeRTOS/Source/freertos_evr.c</locationURI>
+		</link>
+		<link>
+			<name>Libraries/FreeRTOS/kernel/cmsis_freertos/freertos_evr.h</name>
+			<type>1</type>
+			<locationURI>WORKSPACE_LOC/Drivers/CMSIS/RTOS2/FreeRTOS/Include/freertos_evr.h</locationURI>
+		</link>
+		<link>
+			<name>Libraries/FreeRTOS/kernel/cmsis_freertos/freertos_mpool.h</name>
+			<type>1</type>
+			<locationURI>WORKSPACE_LOC/Drivers/CMSIS/RTOS2/FreeRTOS/Include/freertos_mpool.h</locationURI>
+		</link>
+		<link>
+			<name>Libraries/FreeRTOS/kernel/cmsis_freertos/freertos_os2.h</name>
+			<type>1</type>
+			<locationURI>WORKSPACE_LOC/Drivers/CMSIS/RTOS2/FreeRTOS/Include/freertos_os2.h</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>

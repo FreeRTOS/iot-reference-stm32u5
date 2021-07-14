@@ -1,5 +1,5 @@
 [submodule "Middleware/FreeRTOS/FreeRTOS-Kernel"]
-	path = Middleware/FreeRTOS/FreeRTOS-Kernel
+	path = Middleware/FreeRTOS/kernel
 	url = https://github.com/FreeRTOS/FreeRTOS-Kernel.git
 	fetchRecurseSubmodules = false
 [submodule "Middleware/FreeRTOS/coreMQTT"]
@@ -50,3 +50,6 @@
 	path = Middleware/ARM/mbedtls
 	url = https://github.com/ARMmbed/mbedtls.git
 	fetchRecurseSubmodules = false
+[submodule "Middleware/ARM/trusted-firmware-m"]
+	path = Middleware/ARM/trusted-firmware-m
+	url = https://git.trustedfirmware.org/TF-M/trusted-firmware-m.git

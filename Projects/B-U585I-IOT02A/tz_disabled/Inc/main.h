@@ -32,7 +32,7 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "stm32u5xx_hal_conf.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -54,7 +54,7 @@ extern "C" {
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
-
+void SystemClock_Config(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
@@ -81,6 +81,7 @@ void   MX_GPDMA1_Init(void);
 void   MX_SPI2_Init(void);
 void   MX_I2C2_Init(void);
 void   MX_PKA_Init(void);
+void   MX_HASH_Init(void);
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
