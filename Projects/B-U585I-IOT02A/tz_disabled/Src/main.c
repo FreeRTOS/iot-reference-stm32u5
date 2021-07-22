@@ -550,6 +550,69 @@ void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+/**
+  * @brief Rx Transfer completed callback.
+  * @param  hspi: pointer to a SPI_HandleTypeDef structure that contains
+  *               the configuration information for SPI module.
+  * @retval None
+  */
+void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+  if (hspi == &hspi2)
+  {
+    HAL_SPI_TransferCallback(hspi);
+  }
+}
+
+/**
+  * @brief Tx Transfer completed callback.
+  * @param  hspi: pointer to a SPI_HandleTypeDef structure that contains
+  *               the configuration information for SPI module.
+  * @retval None
+  */
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+  if (hspi == &hspi2)
+  {
+    HAL_SPI_TransferCallback(hspi);
+  }
+}
+
+/**
+  * @brief Tx and Rx Transfer completed callback.
+  * @param  hspi: pointer to a SPI_HandleTypeDef structure that contains
+  *               the configuration information for SPI module.
+  * @retval None
+  */
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+  if (hspi == &hspi2)
+  {
+    HAL_SPI_TransferCallback(hspi);
+  }
+}
+
+/**
+  * @brief  EXTI line rising detection callback.
+  * @param  GPIO_Pin: Specifies the port pin connected to corresponding EXTI line.
+  * @retval None
+  */
+void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
+{
+  switch (GPIO_Pin)
+  {
+    case (MXCHIP_FLOW_Pin):
+      mxchip_WIFI_ISR(MXCHIP_FLOW_Pin);
+      break;
+
+    case (MXCHIP_NOTIFY_Pin):
+      mxchip_WIFI_ISR(MXCHIP_NOTIFY_Pin);
+      break;
+    default:
+      break;
+  }
+}
+
 /* USER CODE END 4 */
 
 /**

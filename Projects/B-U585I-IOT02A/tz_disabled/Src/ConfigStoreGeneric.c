@@ -4,7 +4,7 @@
 #define THING_NAME "TestSTM32U5Name"
 #define ENDOPOINT_ADDRESS "aws.xzy"
 
-#define SSID "heliosiot"
+#define SSID "Guest"
 #define AUTH ""
 #define WIFI_PASSWORD ""
 
