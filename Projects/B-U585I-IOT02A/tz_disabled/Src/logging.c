@@ -36,6 +36,7 @@
 #include "semphr.h"
 
 /* Project Includes */
+#include "logging.h"
 #include "main.h"
 
 /*-----------------------------------------------------------*/
@@ -43,32 +44,41 @@
 /* Dimensions the arrays into which print messages are created. */
 #define dlMAX_PRINT_STRING_LENGTH    2048
 
-/* Maximum amount of time to wait for the semaphore that protects the local
- * buffers and the serial output. */
+/*
+ * Maximum amount of time to wait for the semaphore that protects the local
+ * buffers and the serial output.
+ */
 #define dlMAX_SEMAPHORE_WAIT_TIME    ( pdMS_TO_TICKS( 2000UL ) )
 
 int _write( int fd, const void * buffer, unsigned int count );
 
 static char cPrintString[ dlMAX_PRINT_STRING_LENGTH ];
 static SemaphoreHandle_t xLoggingMutex = NULL;
+static SemaphoreHandle_t xWriteMutex = NULL;
 
+#ifdef LOGGING_OUTPUT_UART
 extern UART_HandleTypeDef huart1;
+#endif
 
 int _write( int fd, const void * buffer, unsigned int count )
 {
-
 	(void) fd;
+	BaseType_t ret = 0;
 
-	//	for(unsigned int i = 0; i < len; i++)
-	//	{
-	//		ITM_SendChar(lineOutBuf[i]);
-	//	}
+#ifdef LOGGING_OUTPUT_ITM
+    for(unsigned int i = 0; i < len; i++)
+    {
+        (void) ITM_SendChar(lineOutBuf[i]);
+    }
+#endif
 
+
+#ifdef LOGGING_OUTPUT_UART
 	/* blocking write to UART */
-	HAL_StatusTypeDef ret = HAL_UART_Transmit( &huart1, (uint8_t *)buffer, count, 100000 );
+	ret = (BaseType_t) HAL_UART_Transmit( &huart1, (uint8_t *)buffer, count, 100000 );
+#endif
 
-
-	if( HAL_OK != ret )
+	if( ret == 0 )
 	{
 		return 0;
 	}
@@ -76,40 +86,83 @@ int _write( int fd, const void * buffer, unsigned int count )
 	{
 		return count;
 	}
-
 }
 
 void vLoggingInit( void )
 {
 	xLoggingMutex = xSemaphoreCreateMutex();
+	xWriteMutex = xSemaphoreCreateMutex();
 	memset( &cPrintString, 0, dlMAX_PRINT_STRING_LENGTH );
-	MX_USART1_UART_Init();
-	xSemaphoreGive(xLoggingMutex);
-}
 
+#ifdef LOGGING_OUTPUT_UART
+	MX_USART1_UART_Init();
+#endif
+
+
+	xSemaphoreGive( xLoggingMutex );
+	xSemaphoreGive( xWriteMutex );
+}
 
 /*-----------------------------------------------------------*/
 
-void vLoggingPrintf( const char * const pcFormat,
+void vLoggingPrintf( const char * const     pcLogLevel,
+                     const char * const     pcFileName,
+                     const char * const     pcFunctionName,
+                     const unsigned long    ulLineNumber,
+                     const char * const     pcFormat,
                      ... )
 {
-    int32_t iLength;
+    int32_t iLengthHeader = -1;
+    int32_t iLengthMessage = -1;
     va_list args;
-    const char * const pcNewline = "\r\n";
+    const char * const pcNewline = "\n";
+    const char * pcTaskName;
+    const char * pcNoTask = "None";
+
+
+    /* Additional info to place at the start of the log. */
+    if( xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED )
+    {
+        pcTaskName = pcTaskGetName( NULL );
+    }
+    else
+    {
+        pcTaskName = pcNoTask;
+    }
 
     configASSERT( xLoggingMutex );
 
-    /* Only proceed if the preceding call to xLoggingPrintMetadata() obtained
-     * the mutex.
-     */
-    if( xSemaphoreGetMutexHolder( xLoggingMutex ) == xTaskGetCurrentTaskHandle() )
+
+    if( xSemaphoreTake( xLoggingMutex, dlMAX_SEMAPHORE_WAIT_TIME ) != pdFAIL )
     {
+        /* Print Header
+         * [LOGLEVEL] [taskName] functionName:line
+         */
+        iLengthHeader = snprintf( cPrintString,
+                                  dlMAX_PRINT_STRING_LENGTH,
+                                  "[%s] [%s] %10lu %s:%s:%lu --- ",
+                                  pcLogLevel,
+                                  pcTaskName,
+                                  ( unsigned long ) xTaskGetTickCount(),
+                                  pcFileName,
+                                  pcFunctionName,
+                                  ulLineNumber );
+
+        configASSERT( iLengthHeader > 0 );
+
+
         /* There are a variable number of parameters. */
         va_start( args, pcFormat );
-        iLength = vsnprintf( cPrintString, dlMAX_PRINT_STRING_LENGTH, pcFormat, args );
+        iLengthMessage = vsnprintf( &cPrintString[ iLengthHeader ],
+                                    ( dlMAX_PRINT_STRING_LENGTH - iLengthHeader ),
+                                    pcFormat,
+                                    args );
         va_end( args );
 
-        _write( 0, cPrintString, iLength );
+        configASSERT( iLengthMessage > 0 );
+        configASSERT( ( iLengthHeader + iLengthMessage ) <  dlMAX_PRINT_STRING_LENGTH );
+
+        _write( 0, cPrintString, iLengthHeader + iLengthMessage );
         _write( 0, pcNewline, strlen( pcNewline ) );
 
         xSemaphoreGive( xLoggingMutex );
@@ -118,57 +171,19 @@ void vLoggingPrintf( const char * const pcFormat,
 
 /*-----------------------------------------------------------*/
 
-/*
- * The prototype for this function, and the macros that call this function, are
- * both in demo_config.h.  Update the macros and prototype to pass in additional
- * meta data if required - for example the name of the function that called the
- * log message can be passed in by adding an additional parameter to the function
- * then updating the macro to pass __FUNCTION__ as the parameter value.  See the
- * comments in demo_config.h for more information.
- */
-int32_t xLoggingPrintMetadata( const char * const pcLevel )
+void vLoggingDeInit( void )
 {
-    const char * pcTaskName;
-    const char * pcNoTask = "None";
-    static BaseType_t xMessageNumber = 0;
-    int32_t iLength = 0;
+	/* Scheduler must be suspended */
+	if( xLoggingMutex != NULL &&
+	    xTaskGetSchedulerState() != taskSCHEDULER_RUNNING )
+	{
+		vSemaphoreDelete( xLoggingMutex );
 
-    configASSERT( xLoggingMutex );
+	}
 
-    /* Get exclusive access to _write().  Note this mutex is not given back
-     * until the vLoggingPrintf() function is called to ensure the meta data and
-     * the log message are printed consecutively. */
-    if( xSemaphoreTake( xLoggingMutex, dlMAX_SEMAPHORE_WAIT_TIME ) != pdFAIL )
+    if( xWriteMutex != NULL &&
+        xTaskGetSchedulerState() != taskSCHEDULER_RUNNING )
     {
-        /* Additional info to place at the start of the log. */
-        if( xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED )
-        {
-            pcTaskName = pcTaskGetName( NULL );
-        }
-        else
-        {
-            pcTaskName = pcNoTask;
-        }
-
-        iLength = snprintf( cPrintString, dlMAX_PRINT_STRING_LENGTH, "%s: %s %lu %lu --- ",
-                            pcLevel,
-                            pcTaskName,
-                            xMessageNumber++,
-                            ( unsigned long ) xTaskGetTickCount() );
-
-        _write( 0, cPrintString, iLength );
+        vSemaphoreDelete( xWriteMutex );
     }
-
-    return iLength;
 }
-
-//void vLoggingDeInit( void )
-//{
-//	/* Scheduler must be suspended */
-//	if( xLoggingMutex != NULL &&
-//	    xTaskGetSchedulerState() != taskSCHEDULER_RUNNING )
-//	{
-//		vSemaphoreDelete(xLoggingMutex);
-//	}
-//
-//}
