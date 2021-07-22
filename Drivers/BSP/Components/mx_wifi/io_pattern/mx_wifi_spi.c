@@ -26,15 +26,15 @@
 #include "mx_wifi.h"
 #include "core/mx_wifi_hci.h"
 
-#if 0
-#define DEBUG_ERROR(M, ...)     printf((M), ##__VA_ARGS__)
-#define DEBUG_LOG(M, ...)       printf((M), ##__VA_ARGS__)
-#define DEBUG_WARNING(M, ...)   printf((M), ##__VA_ARGS__)
-#else
-#define DEBUG_ERROR     printf
-#define DEBUG_LOG(...)
-#define DEBUG_WARNING(...)
-#endif /* Debug 0 */
+#include "logging_levels.h"
+
+#define LOG_LEVEL LOG_DEBUG
+
+#include "logging.h"
+
+#define DEBUG_ERROR(M, ...)     LogError((M), ##__VA_ARGS__)
+#define DEBUG_LOG(M, ...)       LogDebug((M), ##__VA_ARGS__)
+#define DEBUG_WARNING(M, ...)   LogWarn((M), ##__VA_ARGS__)
 
 
 #pragma pack(1)
@@ -236,7 +236,7 @@ static int8_t wait_flow_high(uint32_t timeout)
   }
   if (MX_WIFI_SPI_FLOW_IS_LOW())
   {
-    printf("flow is low\r\n");
+    DEBUG_WARNING("flow is low");
     return -1;
   }
   return ret;
@@ -256,7 +256,7 @@ static uint16_t MX_WIFI_SPI_Write(uint8_t *data, uint16_t len)
   if (SEM_SIGNAL(spi_txrx_sem) != SEM_OK)
   {
     /* Happen if received thread did not have a chance to run on time, need to increase priority */
-    DEBUG_WARNING("Warning, spi semaphore has been already notified\n");
+    DEBUG_WARNING("Warning, spi semaphore has been already notified");
   }
 
   return len;
@@ -275,7 +275,7 @@ static int32_t TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *txdata, uint8_t
                                uint32_t timeout)
 {
   int32_t ret;
-  DEBUG_LOG("Spi Tx Rx %d\n", datalen);
+  DEBUG_LOG("Spi Tx Rx %d", datalen);
 
   ret = HAL_SPI_TransmitReceive_DMA(hspi, txdata, rxdata, datalen);
   SEM_WAIT(spi_transfer_done_sem, timeout, NULL);
@@ -286,7 +286,7 @@ static int32_t TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *txdata, uint8_t
 static int32_t Transmit(SPI_HandleTypeDef *hspi, uint8_t *txdata, uint32_t datalen, uint32_t timeout)
 {
   int32_t ret;
-  DEBUG_LOG("Spi Tx %d\n", datalen);
+  DEBUG_LOG("Spi Tx %d", datalen);
 
   ret = HAL_SPI_Transmit_DMA(hspi, txdata, datalen);
   SEM_WAIT(spi_transfer_done_sem, timeout, NULL);
@@ -296,7 +296,7 @@ static int32_t Transmit(SPI_HandleTypeDef *hspi, uint8_t *txdata, uint32_t datal
 static int32_t Receive(SPI_HandleTypeDef *hspi, uint8_t *rxdata, uint32_t datalen, uint32_t timeout)
 {
   int32_t ret;
-  DEBUG_LOG("Spi Rx %d\n", datalen);
+  DEBUG_LOG("Spi Rx %d", datalen);
 
   ret = HAL_SPI_Receive_DMA(hspi, rxdata, datalen);
   SEM_WAIT(spi_transfer_done_sem, timeout, NULL);
@@ -309,7 +309,7 @@ static int32_t TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *txdata, uint8_t
                                uint32_t timeout)
 {
   int32_t ret;
-  DEBUG_LOG("Spi Tx Rx %d\n", datalen);
+  DEBUG_LOG("Spi Tx Rx %d", datalen);
   ret = HAL_SPI_TransmitReceive(hspi, txdata, rxdata, datalen, timeout);
   return ret;
 }
@@ -317,7 +317,7 @@ static int32_t TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *txdata, uint8_t
 static int32_t Transmit(SPI_HandleTypeDef *hspi, uint8_t *txdata, uint32_t datalen, uint32_t timeout)
 {
   int32_t ret;
-  DEBUG_LOG("Spi Tx %d\n", datalen);
+  DEBUG_LOG("Spi Tx %d", datalen);
   ret = HAL_SPI_Transmit(hspi, txdata, datalen, timeout);
   return ret;
 }
@@ -325,7 +325,7 @@ static int32_t Transmit(SPI_HandleTypeDef *hspi, uint8_t *txdata, uint32_t datal
 static int32_t Receive(SPI_HandleTypeDef *hspi, uint8_t *rxdata, uint32_t datalen, uint32_t timeout)
 {
   int32_t ret;
-  DEBUG_LOG("Spi Rx %d\n", datalen);
+  DEBUG_LOG("Spi Rx %d", datalen);
   ret = HAL_SPI_Receive(hspi, rxdata, datalen, timeout);
   return ret;
 }
@@ -352,7 +352,7 @@ void process_txrx_poll(uint32_t timeout)
       if (true == first_miss)
       {
         first_miss = false;
-        DEBUG_WARNING("Running Out of buffer for RX\n");
+        DEBUG_WARNING("Running Out of buffer for RX");
       }
     }
   }
@@ -387,7 +387,7 @@ void process_txrx_poll(uint32_t timeout)
     if (wait_flow_high(20) != 0)
     {
       MX_WIFI_SPI_CS_HIGH();
-      DEBUG_ERROR("wait flow timeout 0\r\n");
+      DEBUG_ERROR("wait flow timeout 0");
       return;
     }
 
@@ -398,20 +398,20 @@ void process_txrx_poll(uint32_t timeout)
     if (HAL_OK != TransmitReceive(hspi_mx, (uint8_t *)&mheader, (uint8_t *)&sheader, sizeof(mheader), timeout))
     {
       MX_WIFI_SPI_CS_HIGH();
-      DEBUG_ERROR("Send mheader error\r\n");
+      DEBUG_ERROR("Send mheader error");
       return;
     }
 
     if (sheader.type != SPI_READ)
     {
-      DEBUG_ERROR("Invalid SPI type %02x\r\n", sheader.type);
+      DEBUG_ERROR("Invalid SPI type %02x", sheader.type);
       MX_WIFI_SPI_CS_HIGH();
       return;
     }
     if ((sheader.len ^ sheader.lenx) != 0xFFFF)
     {
       MX_WIFI_SPI_CS_HIGH();
-      DEBUG_ERROR("Invalid len %04x-%04x\r\n", sheader.len, sheader.lenx);
+      DEBUG_ERROR("Invalid len %04x-%04x", sheader.len, sheader.lenx);
       return;
     }
 
@@ -425,7 +425,7 @@ void process_txrx_poll(uint32_t timeout)
     if ((sheader.len > SPI_DATA_SIZE) || (mheader.len > SPI_DATA_SIZE))
     {
       MX_WIFI_SPI_CS_HIGH();
-      DEBUG_ERROR("SPI length invalid: %d-%d\r\n", sheader.len, mheader.len);
+      DEBUG_ERROR("SPI length invalid: %d-%d", sheader.len, mheader.len);
       return;
     }
 
@@ -455,7 +455,7 @@ void process_txrx_poll(uint32_t timeout)
     if (wait_flow_high(20) != 0)
     {
       MX_WIFI_SPI_CS_HIGH();
-      DEBUG_ERROR("wait flow timeout 1\r\n");
+      DEBUG_ERROR("wait flow timeout 1");
       return;
     }
 
@@ -481,7 +481,7 @@ void process_txrx_poll(uint32_t timeout)
     if (HAL_OK != ret)
     {
       MX_WIFI_SPI_CS_HIGH();
-      DEBUG_ERROR("Transmit/Receive data timeout\r\n");
+      DEBUG_ERROR("Transmit/Receive data timeout");
       return;
     }
 

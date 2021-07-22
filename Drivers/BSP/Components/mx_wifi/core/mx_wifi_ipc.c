@@ -29,11 +29,18 @@
 #include "mx_wifi_ipc.h"
 #include "mx_wifi_hci.h"
 
-#define DEBUG_ERROR(M, ...)  printf((M), ##__VA_ARGS__)
+#include "logging_levels.h"
 
-/* #define MX_WIFI_IPC_DEBUG */
+#define LOG_LEVEL LOG_DEBUG
+
+#include "logging.h"
+
+
+#define DEBUG_ERROR(M, ...)  LogError((M), ##__VA_ARGS__)
+
+#define MX_WIFI_IPC_DEBUG
 #ifdef MX_WIFI_IPC_DEBUG
-#define DEBUG_LOG(M, ...)  printf((M), ##__VA_ARGS__)
+#define DEBUG_LOG(M, ...)  LogDebug((M), ##__VA_ARGS__)
 #else
 #define DEBUG_LOG(M, ...)
 #endif /* MX_WIFI_IPC_DEBUG */
@@ -111,7 +118,7 @@ static uint32_t mipc_event(mx_buf_t *netbuf)
     {
       req_id = mpic_get_req_id(buffer_in);
       api_id = mpic_get_api_id(buffer_in);
-      DEBUG_LOG("req_id: 0x%08"PRIx32", api_id: 0x%04x\n", req_id, api_id);
+      DEBUG_LOG("req_id: 0x%08"PRIx32", api_id: 0x%04x", req_id, api_id);
       if ((0 == (api_id & MIPC_API_EVENT_BASE)) && (MIPC_REQ_ID_NONE != req_id))
       {
         /* cmd response must match pending req id */
@@ -125,11 +132,11 @@ static uint32_t mipc_event(mx_buf_t *netbuf)
                                               *(pending_request.rbuffer_size) : (buffer_size - MIPC_PKT_MIN_SIZE);
             memcpy(pending_request.rbuffer, buffer_in + MIPC_PKT_PARAMS_OFFSET, *(pending_request.rbuffer_size));
           }
-          /* printf("Signal for %d\n",pending_request.req_id); */
+          /* printf("Signal for %d",pending_request.req_id); */
           pending_request.req_id = 0xFFFFFFFF;
           if (SEM_OK != SEM_SIGNAL(pending_request.resp_flag))
           {
-            DEBUG_ERROR("Failed to signal command response\n");
+            DEBUG_ERROR("Failed to signal command response");
             while (1);
           }
           MX_STAT(cmd_get_answer);
@@ -145,7 +152,7 @@ static uint32_t mipc_event(mx_buf_t *netbuf)
             callback = event_table[i].callback;
             if (NULL != callback)
             {
-              DEBUG_LOG("callback with %p\n", buffer_in);
+              DEBUG_LOG("callback with %p", buffer_in);
               callback(netbuf);
               break;
             }
@@ -153,14 +160,14 @@ static uint32_t mipc_event(mx_buf_t *netbuf)
         }
         if (i == sizeof(event_table) / sizeof(event_item_t))
         {
-          DEBUG_ERROR("unknown event: 0x%04x !\n", api_id);
+          DEBUG_ERROR("unknown event: 0x%04x !", api_id);
           mx_wifi_hci_free(netbuf);
         }
       }
     }
     else
     {
-      DEBUG_LOG("unknown buffer content\n");
+      DEBUG_LOG("unknown buffer content");
       mx_wifi_hci_free(netbuf);
     }
   }
@@ -247,24 +254,24 @@ int32_t mipc_request(uint16_t api_id, uint8_t *cparams, uint16_t cparams_size,
       /* a single pending request due to LOCK usage on command */
       if (pending_request.req_id != 0xFFFFFFFF)
       {
-        DEBUG_LOG("Error req_id must be 0xffffffff here %"PRIu32"\n", pending_request.req_id);
+        DEBUG_LOG("Error req_id must be 0xffffffff here %"PRIu32"", pending_request.req_id);
         while (1);
       }
       pending_request.req_id = req_id;
       pending_request.rbuffer = rbuffer;
       pending_request.rbuffer_size = rbuffer_size;
       /* static int iter=0;                       */
-      /* printf("%d push %d\n",iter++,cbuf_size); */
+      /* printf("%d push %d",iter++,cbuf_size); */
 
       /* send the command */
-      DEBUG_LOG("cmd %"PRIu32"\n", req_id);
+      DEBUG_LOG("cmd %"PRIu32"", req_id);
       ret = mx_wifi_hci_send(cbuf, cbuf_size);
       if (ret == 0)
       {
         /* wait for command answer */
         if (SEM_WAIT(pending_request.resp_flag, timeout_ms, mipc_poll) != SEM_OK)
         {
-          DEBUG_ERROR("Error: command 0x%04x timeout(%"PRIu32" ms) waiting answer %"PRIu32"\n",
+          DEBUG_ERROR("Error: command 0x%04x timeout(%"PRIu32" ms) waiting answer %"PRIu32"",
                       api_id, timeout_ms, pending_request.req_id);
           pending_request.req_id = 0xFFFFFFFF;
           ret = MIPC_CODE_ERROR;
@@ -272,10 +279,10 @@ int32_t mipc_request(uint16_t api_id, uint8_t *cparams, uint16_t cparams_size,
       }
       else
       {
-        DEBUG_ERROR("Failed to send command to Hci\n");
+        DEBUG_ERROR("Failed to send command to Hci");
         while (1);
       }
-      DEBUG_LOG("done %"PRIu32"\n", req_id);
+      DEBUG_LOG("done %"PRIu32"", req_id);
       if (true == copy_buffer)
       {
         MX_WIFI_FREE(cbuf);
@@ -303,7 +310,7 @@ void mipc_poll(uint32_t timeout)
   if (NULL != nbuf)
   {
     uint32_t len = MX_NET_BUFFER_GET_PAYLOAD_SIZE(nbuf);
-    DEBUG_LOG("\nhci recv len %"PRIu32"\n", len);
+    DEBUG_LOG("hci recv len %"PRIu32"", len);
     if (len > 0)
     {
       mipc_event(nbuf);
@@ -348,7 +355,7 @@ void mapi_reboot_event_callback(mx_buf_t *buff)
   {
     mx_wifi_hci_free(buff);
   }
-  DEBUG_LOG("\nEVENT: reboot done.\n");
+  DEBUG_LOG("EVENT: reboot done.");
 }
 
 /* wifi */
@@ -364,7 +371,7 @@ void mapi_wifi_status_event_callback(mx_buf_t *nbuf)
   {
     uint8_t *payload = MX_NET_BUFFER_PAYLOAD(nbuf);
     status = *((mwifi_status_t *)(payload + MIPC_PKT_PARAMS_OFFSET));
-    DEBUG_LOG("\nEVENT: wifi status: %02x\r\n", status);
+    DEBUG_LOG("EVENT: wifi status: %02x", status);
     mx_wifi_hci_free(nbuf);
 
     switch (status)
@@ -400,7 +407,7 @@ void mapi_wifi_status_event_callback(mx_buf_t *nbuf)
 void mapi_wifi_netlink_input_callback(mx_buf_t *nbuf)
 {
   wifi_bypass_in_rparams_t *in_rprarams;
-  /* DEBUG_LOG("IP stack in %d\n",len); */
+  /* DEBUG_LOG("IP stack in %d",len); */
   if (NULL != nbuf)
   {
     uint8_t     *buffer_in = MX_NET_BUFFER_PAYLOAD(nbuf);

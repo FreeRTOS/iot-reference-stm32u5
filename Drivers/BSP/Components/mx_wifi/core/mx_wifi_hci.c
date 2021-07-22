@@ -86,7 +86,7 @@ int32_t mx_wifi_hci_send(uint8_t *payload, uint16_t len)
   sent = tcl_output(payload, len);
   if (len != sent)
   {
-    DEBUG_ERROR("tcl_output(spi) error sent=%d !\n", sent);
+    DEBUG_ERROR("tcl_output(spi) error sent=%d !", sent);
     ret = -1;
   }
   else
@@ -107,7 +107,7 @@ int32_t mx_wifi_hci_send(uint8_t *payload, uint16_t len)
     }
     else
     {
-      DEBUG_ERROR("tcl_output(uart) error sent=%d !\r\n", sent);
+      DEBUG_ERROR("tcl_output(uart) error sent=%d !", sent);
       ret = -1;
     }
 
@@ -116,7 +116,7 @@ int32_t mx_wifi_hci_send(uint8_t *payload, uint16_t len)
   }
   else
   {
-    DEBUG_ERROR("create slip frame error!\r\n");
+    DEBUG_ERROR("create slip frame error!");
     ret = -2;
   }
 #endif /* MX_WIFI_USE_SPI */
@@ -162,12 +162,12 @@ void mx_wifi_hci_input(mx_buf_t *netbuf)
       {
         if (FIFO_OK != FIFO_PUSH(hci_pkt_fifo, netbuf, WAIT_FOREVER, NULL))
         {
-          DEBUG_ERROR("push tcl input queue err!\n");
+          DEBUG_ERROR("push tcl input queue err!");
           MX_NET_BUFFER_FREE(netbuf);
         }
         else
         {
-          DEBUG_LOG("\nhci input len %"PRIu32"\n", len);
+          DEBUG_LOG("hci input len %"PRIu32, len);
           MX_STAT(in_fifo);
         }
       }

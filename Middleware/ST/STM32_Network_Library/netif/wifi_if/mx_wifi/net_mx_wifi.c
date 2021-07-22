@@ -167,7 +167,7 @@ static err_t low_level_init(struct netif *netif)
     /* Setup the physical address of this IP instance. */
     (void)memcpy(netif->hwaddr, pMxWifiObj->SysInfo.MAC, 6);
 #if MX_WIFI_BYPASS_DEBUG
-    NET_PRINT(" MAC address %x.%x.%x.%x.%x.%x\n", netif->hwaddr[0], netif->hwaddr[1], netif->hwaddr[2],
+    NET_PRINT(" MAC address %x.%x.%x.%x.%x.%x", netif->hwaddr[0], netif->hwaddr[1], netif->hwaddr[2],
               netif->hwaddr[3], netif->hwaddr[4], netif->hwaddr[5]);
 #endif /* MX_WIFI_BYPASS_DEBUG */
 
@@ -220,7 +220,7 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
   {
     /* Take a reference to this packet */
     pbuf_ref(p);
-    /* (void) printf("Transmit buffer %p next=%p  tot_len=%d len=%d\n", p, p->next, p->tot_len, p->len); */
+    /* (void) printf("Transmit buffer %p next=%p  tot_len=%d len=%d", p, p->next, p->tot_len, p->len); */
 
     /* No chained buffers*/
     if ((p->next != NULL) || ((p->tot_len != p->len)))
@@ -338,7 +338,7 @@ static void net_mx_wifi_netlink_input_callback(mx_buf_t *buffer, void *user_args
       case ETHTYPE_PPPOE:
 #endif /* PPPOE_SUPPORT */
 #if MX_WIFI_BYPASS_DEBUG
-        NET_PRINT("process input packet 0x%02x, len=%d\n", ethertype, buffer->tot_len);
+        NET_PRINT("process input packet 0x%02x, len=%d", ethertype, buffer->tot_len);
 #endif /* MX_WIFI_BYPASS_DEBUG */
 
         /* Send to packet to tcpip_thread to process */
@@ -442,7 +442,7 @@ static int32_t mx_wifi_if_init(net_if_handle_t *pnetif)
     ptmp = NET_MALLOC(sizeof(net_if_wifi_class_extension_t));
     if (NULL == ptmp)
     {
-      NET_DBG_ERROR("can't allocate memory for mx_wifi_driver class\n");
+      NET_DBG_ERROR("can't allocate memory for mx_wifi_driver class");
       NET_FREE(p);
       ret = NET_ERROR_NO_MEMORY;
     }
@@ -462,7 +462,7 @@ static int32_t mx_wifi_if_init(net_if_handle_t *pnetif)
   }
   else
   {
-    NET_DBG_ERROR("can't allocate memory for mx_wifi_driver class\n");
+    NET_DBG_ERROR("can't allocate memory for mx_wifi_driver class");
     ret = NET_ERROR_NO_MEMORY;
   }
 
@@ -522,13 +522,13 @@ static int32_t hw_start(net_if_handle_t *pnetif)
 
   if (mxwifi_probe(&pnetif->pdrv->context) == NET_OK)
   {
-    DEBUG_LOG("MX_WIFI IO [OK]\r\n");
+    DEBUG_LOG("MX_WIFI IO [OK]");
     pMxWifiObj = wifi_obj_get();
 
     if (pMxWifiObj->Runtime.interfaces == 0U)
     {
       /* wifi module hardware reboot */
-      DEBUG_LOG("MX_WIFI REBOOT(HW) ...\r\n");
+      DEBUG_LOG("MX_WIFI REBOOT(HW) ...");
       ret = MX_WIFI_HardResetModule(pMxWifiObj);
     }
     else
@@ -550,7 +550,7 @@ static int32_t hw_start(net_if_handle_t *pnetif)
       }
       else
       {
-        DEBUG_LOG("MX_WIFI_Init [OK]\r\n");
+        DEBUG_LOG("MX_WIFI_Init [OK]");
         /* Retrieve the WiFi module information */
         (void)strncpy(pnetif->DeviceName, (char_t *)pMxWifiObj->SysInfo.Product_Name,
                       MIN(strlen((char_t *)pMxWifiObj->SysInfo.Product_Name) + 1, (uint32_t) NET_DEVICE_NAME_LEN));
@@ -566,7 +566,7 @@ static int32_t hw_start(net_if_handle_t *pnetif)
         if (MX_WIFI_STATUS_OK != MX_WIFI_Network_bypass_mode_set(wifi_obj_get(), 1,
                                                                  net_mx_wifi_netlink_input_callback, pnetif))
         {
-          NET_DBG_ERROR("*** set mx_wifi module bypass mode failed !\n");
+          NET_DBG_ERROR("*** set mx_wifi module bypass mode failed !");
           ret = NET_ERROR_MODULE_INITIALIZATION;
         }
         else
@@ -652,7 +652,7 @@ static void mx_wifi_status_changed(uint8_t cate, uint8_t status, void *arg)
     switch (status)
     {
       case MWIFI_EVENT_STA_DOWN:
-        DEBUG_LOG("MWIFI_EVENT_STA_DOWN\n");
+        DEBUG_LOG("MWIFI_EVENT_STA_DOWN");
 
         if (NET_STATE_STOPPING == net_state)
         {
@@ -668,7 +668,7 @@ static void mx_wifi_status_changed(uint8_t cate, uint8_t status, void *arg)
         break;
 
       case MWIFI_EVENT_STA_UP:
-        DEBUG_LOG("MWIFI_EVENT_STA_UP\n");
+        DEBUG_LOG("MWIFI_EVENT_STA_UP");
 #if (MX_WIFI_NETWORK_BYPASS_MODE == 1)
         if (NET_STATE_STARTING == net_state)
         {
@@ -680,7 +680,7 @@ static void mx_wifi_status_changed(uint8_t cate, uint8_t status, void *arg)
         break;
 
       case MWIFI_EVENT_STA_GOT_IP:
-        DEBUG_LOG("MWIFI_EVENT_STA_GOT_IP\n");
+        DEBUG_LOG("MWIFI_EVENT_STA_GOT_IP");
 
 #ifdef NET_USE_LWIP_DEFINITIONS
         pnetif->ipaddr.type = (u8_t)IPADDR_TYPE_V4;
@@ -725,7 +725,7 @@ static void mx_wifi_status_changed(uint8_t cate, uint8_t status, void *arg)
     switch (status)
     {
       case MWIFI_EVENT_AP_DOWN:
-        DEBUG_LOG("MWIFI_EVENT_AP_DOWN\n");
+        DEBUG_LOG("MWIFI_EVENT_AP_DOWN");
         if (NET_STATE_CONNECTED == net_state)
         {
           (void)net_state_manage_event(pnetif, NET_EVENT_LINK_DOWN);
@@ -737,7 +737,7 @@ static void mx_wifi_status_changed(uint8_t cate, uint8_t status, void *arg)
         break;
 
       case MWIFI_EVENT_AP_UP:
-        DEBUG_LOG("MWIFI_EVENT_AP_UP\n");
+        DEBUG_LOG("MWIFI_EVENT_AP_UP");
 #ifdef NET_USE_LWIP_DEFINITIONS
         pnetif->ipaddr = pnetif->static_ipaddr;
         pnetif->gateway = pnetif->static_gateway;
@@ -915,13 +915,13 @@ static int32_t mx_wifi_if_connect(net_if_handle_t *pnetif)
     ret =  net_ip_connect(pnetif);
     if (ret != NET_OK)
     {
-      NET_DBG_ERROR("*** net_ip_connect failed!\n");
+      NET_DBG_ERROR("*** net_ip_connect failed!");
       ret = NET_ERROR_NO_CONNECTION;
     }
   }
   else
   {
-    NET_DBG_ERROR("can't add interface (netif)\n");
+    NET_DBG_ERROR("can't add interface (netif)");
   }
 #else
   mwifi_if_t wifi_if;
@@ -949,7 +949,7 @@ static int32_t mx_wifi_if_connect(net_if_handle_t *pnetif)
   }
   else
   {
-    NET_DBG_ERROR("can't get ipv6 address!\n");
+    NET_DBG_ERROR("can't get ipv6 address!");
     ret = NET_ERROR_NO_ADDRESS;
   }
 #else
