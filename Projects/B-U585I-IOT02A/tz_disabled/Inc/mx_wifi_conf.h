@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    mx_wifi_conf_template.h
+  * @file    mx_wifi_config.h, derived from mx_wifi_conf_template.h
   * @author  MCD Application Team
   * @brief   Header for mx_wifi_conf_template module
   ******************************************************************************
@@ -17,8 +17,8 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef MX_WIFI_CONF_TEMPLATE_H
-#define MX_WIFI_CONF_TEMPLATE_H
+#ifndef MX_WIFI_CONF_H
+#define MX_WIFI_CONF_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,28 +29,12 @@ extern "C" {
 
 int32_t mxwifi_probe(void **ll_drv_context);
 
-/* use SPI interface by default */
-
-#ifndef MX_WIFI_USE_SPI
 #define MX_WIFI_USE_SPI                                                     (1)
-#endif /* MX_WIFI_USE_SPI */
+#define MXCHIP_SPI      hspi2
 
-/* do not use RTOS but bare metal approach by default */
-#ifndef MX_WIFI_USE_CMSIS_OS
-#define MX_WIFI_USE_CMSIS_OS                                                (1)
-#endif /* MX_WIFI_USE_CMSIS_OS */
-
-/* Use At command mode by default, TCP/IP stack is running on module  */
-#ifndef MX_WIFI_NETWORK_BYPASS_MODE
 #define MX_WIFI_NETWORK_BYPASS_MODE                                         (0)
-#endif /* MX_WIFI_NETWORK_BYPASS_MODE */
 
-
-/* Do not copy TX buffer */
-#ifndef MX_WIFI_TX_BUFFER_NO_COPY
-#define MX_WIFI_TX_BUFFER_NO_COPY                                           (1)
-#endif /* MX_WIFI_TX_BUFFER_NO_COPY */
-
+#define MX_WIFI_TX_BUFFER_NO_COPY                                           (0)
 
 /* DEBUG LOG */
 /* #define MX_WIFI_API_DEBUG */
@@ -59,34 +43,22 @@ int32_t mxwifi_probe(void **ll_drv_context);
 /* #define MX_WIFI_SLIP_DEBUG */
 /* #define MX_WIFI_IO_DEBUG */
 
+/* Use CMSIS_RTOS abstraction layer for OS functions */
+#define MX_WIFI_USE_CMSIS_OS                                                (1)
+
 /* check if OS primitive are already declared */
 /* if not, include default declaration      */
 #ifndef LOCK_DECLARE
-
-#if (MX_WIFI_USE_CMSIS_OS == 1)
 #include "mx_wifi_cmsis_os.h"
-#else
-#include "mx_wifi_bare_os.h"
-#endif /* MX_WIFI_USE_CMSIS_OS */
-
 #endif /* LOCK_DECLARE */
+
+#define DMA_ON_USE                                                           (1)
 
 
 #define MX_WIFI_PRODUCT_NAME                        ("MXCHIP-WIFI")
 #define MX_WIFI_PRODUCT_ID                          ("EMW3080B")
 
-#ifndef MX_WIFI_USE_SPI
-#define MX_WIFI_USE_SPI                             (0)
-#endif /* MX_WIFI_USE_SPI */
-
-
-#ifndef MX_WIFI_UART_BAUDRATE
-#define MX_WIFI_UART_BAUDRATE                       (115200*2)
-#endif /* MX_WIFI_UART_BAUDRATE */
-
-#ifndef MX_WIFI_MTU_SIZE
 #define MX_WIFI_MTU_SIZE                            (1500)
-#endif /* MX_WIFI_MTU_SIZE */
 
 #define MX_WIFI_BYPASS_HEADER_SIZE                  (28)  /* MX_IPC_header(6) + sizeof(bypass_in_t)(22),
                                                            * set with PBUF_LINK_ENCAPSULATION_HLEN */
@@ -106,9 +78,7 @@ int32_t mxwifi_probe(void **ll_drv_context);
 /* MX_WIFI_IPC_PAYLOAD_SIZE - socket_api_params_header */
 #define MX_WIFI_SOCKET_DATA_SIZE                    ((MX_WIFI_IPC_PAYLOAD_SIZE)-12)
 
-#ifndef MX_WIFI_CMD_TIMEOUT
 #define MX_WIFI_CMD_TIMEOUT                         (10000)
-#endif
 #define MX_WIFI_MAX_SOCKET_NBR                      (8)
 #define MX_WIFI_MAX_DETECTED_AP                     (10)
 
@@ -119,48 +89,26 @@ int32_t mxwifi_probe(void **ll_drv_context);
 #define MX_WIFI_PRODUCT_ID_SIZE                     32
 
 #define MX_WIFI_FW_REV_SIZE                         24
-#ifndef MX_WIFI_SPI_THREAD_PRIORITY
+
 #define MX_WIFI_SPI_THREAD_PRIORITY                 (OSPRIORITYREALTIME)
-#endif /* MX_WIFI_SPI_THREAD_PRIORITY */
-#ifndef MX_WIFI_SPI_THREAD_STACK_SIZE
 #define MX_WIFI_SPI_THREAD_STACK_SIZE               (1024)
-#endif /* MX_WIFI_SPI_THREAD_STACK_SIZE */
 
+#define MX_WIFI_RECEIVED_THREAD_PRIORITY            (OSPRIORITYABOVENORMAL)
+#define MX_WIFI_RECEIVED_THREAD_STACK_SIZE          (1024)
 
-
-#ifndef MX_WIFI_RECEIVED_THREAD_PRIORITY
-#define MX_WIFI_RECEIVED_THREAD_PRIORITY             (OSPRIORITYABOVENORMAL)
-#endif /* MX_WIFI_RECEIVED_THREAD_PRIORITY */
-
-#ifndef MX_WIFI_RECEIVED_THREAD_STACK_SIZE
-#define MX_WIFI_RECEIVED_THREAD_STACK_SIZE           (1024)
-#endif /* MX_WIFI_RECEIVED_THREAD_STACK_SIZE*/
-
-#ifndef MX_WIFI_TRANSMIT_THREAD_PRIORITY
-#define MX_WIFI_TRANSMIT_THREAD_PRIORITY             (OSPRIORITYABOVENORMAL)
-#endif /* MX_WIFI_TRANSMIT_THREAD_PRIORITY */
-
-#ifndef MX_WIFI_TRANSMIT_THREAD_STACK_SIZE
-#define MX_WIFI_TRANSMIT_THREAD_STACK_SIZE            (1024)
-#endif /* MX_WIFI_TRANSMIT_THREAD_STACK_SIZE */
-
+#define MX_WIFI_TRANSMIT_THREAD_PRIORITY            (OSPRIORITYABOVENORMAL)
+#define MX_WIFI_TRANSMIT_THREAD_STACK_SIZE          (1024)
 
 /* Maximum number of RX buffer that can be queued by Hardware interface (SPI/UART)                         */
 /* This is used to size internal queue, and avoid to block the IP thread if it can still push some buffers */
 /* Impact on Memory foot print is weak , one single void* per place in the queue                           */
-#ifndef MX_WIFI_MAX_RX_BUFFER_COUNT
 #define MX_WIFI_MAX_RX_BUFFER_COUNT                     (2)
-#endif /* MX_WIFI_MAX_RX_BUFFER_COUNT */
-
 
 /* Maximum number of TX buffer that can be queued by IP stack (LwIP or Netx) without blocking the calling thread */
 /* This is used to size internal queue, and avoid to block the IP thread if it can still push some buffers       */
 /* Impact on Memory foot print is one single void* per place in the queue, but it may lead to over allocation    */
 /* TCP/IP stack (LwIP  for instance )                                                                            */
-#ifndef MX_WIFI_MAX_TX_BUFFER_COUNT
 #define MX_WIFI_MAX_TX_BUFFER_COUNT                     (4)
-#endif /* MX_WIFI_MAX_TX_BUFFER_COUNT */
-
 
 
 /**
@@ -175,18 +123,6 @@ int32_t mxwifi_probe(void **ll_drv_context);
   * see net_mx_wifi/c file for implementation.
   */
 #define MX_WIFI_MIN_TX_HEADER_SIZE                      (28)
-
-#ifndef MX_WIFI_TX_BUFFER_NO_COPY
-#define MX_WIFI_TX_BUFFER_NO_COPY                       (1)
-#endif /* MX_WIFI_TX_BUFFER_NO_COPY */
-
-
-/* Sizeof the circular buffer for Uart mode, when buffer is hlaf full data are transmitted to next stage */
-#ifndef MX_CIRCULAR_UART_RX_BUFFER_SIZE
-#define MX_CIRCULAR_UART_RX_BUFFER_SIZE  (400)
-#endif /* MX_CIRCULAR_UART_RX_BUFFER_SIZE */
-
-
 
 #ifndef MX_STAT_ON
 #define MX_STAT_ON      0
@@ -206,12 +142,12 @@ typedef struct
 extern mx_stat_t mx_stat;
 
 #define MX_STAT_LOG() \
-  (void) printf("Number of allocated buffer for Rx and command answer %ld\n", mx_stat.alloc);\
-  (void) printf("Number of free buffer %ld\n",mx_stat.free);\
-  (void) printf("Number of command answer %ld , callback %ld, sum of both %ld (should match alloc && free)\n",\
-                mx_stat.cmd_get_answer,mx_stat.callback,mx_stat.cmd_get_answer+mx_stat.callback);\
-  (void) printf("Number of posted answer (callback + cmd answer) %ld, processed answer %ld\n",\
-                mx_stat.in_fifo,mx_stat.out_fifo);\
+LogInfo("Number of allocated buffer for Rx and command answer %ld\n", mx_stat.alloc);\
+LogInfo("Number of free buffer %ld\n",mx_stat.free);\
+LogInfo("Number of command answer %ld , callback %ld, sum of both %ld (should match alloc && free)\n",\
+	    mx_stat.cmd_get_answer,mx_stat.callback,mx_stat.cmd_get_answer+mx_stat.callback);\
+LogInfo("Number of posted answer (callback + cmd answer) %ld, processed answer %ld\n",\
+	    mx_stat.in_fifo,mx_stat.out_fifo);\
 
 #define MX_STAT_INIT()        (void) memset((void*)&mx_stat, 0, sizeof(mx_stat))
 #define MX_STAT(A)            mx_stat.A++
@@ -230,5 +166,5 @@ extern mx_stat_t mx_stat;
 }
 #endif /* __cplusplus */
 
-#endif /* MX_WIFI_CONF_TEMPLATE_H */
+#endif /* MX_WIFI_CONF_H */
 

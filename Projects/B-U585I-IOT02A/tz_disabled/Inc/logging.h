@@ -45,7 +45,6 @@
 
 /* Function declarations */
 void vLoggingPrintf( const char * const     pcLogLevel,
-                     const char * const     pcFileName,
                      const char * const     pcFunctionName,
                      const unsigned long    ulLineNumber,
                      const char * const     pcFormat,
@@ -56,7 +55,7 @@ int _write( int fd, const void * buffer, unsigned int count );
 
 /* Generic logging macros */
 
-#define SdkLog( level, ... )        do { vLoggingPrintf( level, __FILE__, __func__, __LINE__, __VA_ARGS__); } while( 0 )
+#define SdkLog( level, ... )        do { vLoggingPrintf( level, __func__, __LINE__, __VA_ARGS__); } while( 0 )
 
 #define LogAssert( ... )            SdkLog( "ASSERT", __VA_ARGS__ )
 

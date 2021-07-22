@@ -106,7 +106,6 @@ void vLoggingInit( void )
 /*-----------------------------------------------------------*/
 
 void vLoggingPrintf( const char * const     pcLogLevel,
-                     const char * const     pcFileName,
                      const char * const     pcFunctionName,
                      const unsigned long    ulLineNumber,
                      const char * const     pcFormat,
@@ -115,7 +114,7 @@ void vLoggingPrintf( const char * const     pcLogLevel,
     int32_t iLengthHeader = -1;
     int32_t iLengthMessage = -1;
     va_list args;
-    const char * const pcNewline = "\n";
+    const char * const pcNewline = "\r\n";
     const char * pcTaskName;
     const char * pcNoTask = "None";
 
@@ -140,11 +139,10 @@ void vLoggingPrintf( const char * const     pcLogLevel,
          */
         iLengthHeader = snprintf( cPrintString,
                                   dlMAX_PRINT_STRING_LENGTH,
-                                  "[%s] [%s] %10lu %s:%s:%lu --- ",
+                                  "[%s] [%s] %10lu %s:%lu --- ",
                                   pcLogLevel,
                                   pcTaskName,
-                                  ( unsigned long ) xTaskGetTickCount(),
-                                  pcFileName,
+                                  ( unsigned long ) xTaskGetTickCount() / portTICK_PERIOD_MS,
                                   pcFunctionName,
                                   ulLineNumber );
 

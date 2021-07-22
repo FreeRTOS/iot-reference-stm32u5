@@ -25,11 +25,11 @@
  */
 
 #include "main.h"
-#include "cmsis_os2.h"
+//#include "cmsis_os2.h"
 #include "logging.h"
 #include "FreeRTOS.h"
 #include "task.h"
-
+#include "network_thread.h"
 
 /* Initialize hardware / STM32 HAL library */
 static void hw_init( void )
@@ -53,6 +53,15 @@ static void hw_init( void )
 
 	/* initialize ICACHE peripheral (makes flash access faster) */
 	MX_ICACHE_Init();
+
+	/* Initialize GPIO */
+	MX_GPIO_Init();
+
+    MX_RNG_Init();
+//    MX_RTC_Init();
+    MX_GPDMA1_Init();
+
+	MX_SPI2_Init();
 }
 
 static void testTask( void * pvParameters )
@@ -60,8 +69,8 @@ static void testTask( void * pvParameters )
 	( void ) pvParameters;
 	while(1)
 	{
-		LogInfo(("1 Second has elapsed"));
-		vTaskDelay( pdMS_TO_TICKS( 1000 ) );
+		LogInfo(("30 seconds has elapsed"));
+		vTaskDelay( pdMS_TO_TICKS( 30 * 1000 ) );
 	}
 }
 
@@ -73,18 +82,25 @@ int main( void )
 
 	LogInfo(("HW Init Complete."));
 
-	/* Init scheduler */
-    osKernelInitialize();
+	BaseType_t xResult;
 
-    LogInfo(("Kernel Init Complete."));
+	/* Init scheduler */
+	//    osKernelInitialize();
+	// Initialioze Heap here if using Heap 5
 
     /* Initialize threads */
-    xTaskCreate( testTask, "testTask", 1024, NULL, tskIDLE_PRIORITY + 1, NULL );
+	xResult = xTaskCreate( testTask, "testTask", 1024, NULL, tskIDLE_PRIORITY + 1, NULL );
+
+	configASSERT( xResult == pdTRUE );
     //TODO
+
+	xResult = xTaskCreate( &net_main, "net_main", 2 * 4096, NULL, tskIDLE_PRIORITY + 1, NULL );
+
+    configASSERT( xResult == pdTRUE );
 
 
     /* Start scheduler */
-    osKernelStart();
+    vTaskStartScheduler(); //osKernelStart();
 
     LogError(("Kernel start returned."));
 
@@ -155,7 +171,7 @@ void vApplicationGetTimerTaskMemory( StaticTask_t ** ppxTimerTaskTCBBuffer,
 
 void vApplicationMallocFailedHook( void )
 {
-    LogDebug( ( "Malloc failed\n" ) );
+    LogError( ( "Malloc failed\n" ) );
 }
 /*-----------------------------------------------------------*/
 

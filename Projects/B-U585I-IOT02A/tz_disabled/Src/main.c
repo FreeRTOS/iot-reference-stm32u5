@@ -426,7 +426,7 @@ void MX_SPI2_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN SPI2_Init 2 */
-
+  SPI2->CFG1 |= 0x00000007 << SPI_CFG1_CRCSIZE_Pos;
   /* USER CODE END SPI2_Init 2 */
 
 }

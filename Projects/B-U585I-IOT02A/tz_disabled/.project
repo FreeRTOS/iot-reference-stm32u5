@@ -107,6 +107,16 @@
 			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/backoffAlgorithm/source/backoff_algorithm.c</locationURI>
 		</link>
 		<link>
+			<name>Libraries/FreeRTOS/coreMQTT</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/coreMQTT/source</locationURI>
+		</link>
+		<link>
+			<name>Libraries/FreeRTOS/coreMQTTAgent</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/coreMQTT-Agent/source</locationURI>
+		</link>
+		<link>
 			<name>Libraries/FreeRTOS/core_http_client.c</name>
 			<type>1</type>
 			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/coreHTTP/source/core_http_client.c</locationURI>
@@ -123,11 +133,6 @@
 		</link>
 		<link>
 			<name>Libraries/FreeRTOS/kernel</name>
-			<type>2</type>
-			<locationURI>virtual:/virtual</locationURI>
-		</link>
-		<link>
-			<name>Libraries/FreeRTOS/mqtt</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
@@ -200,31 +205,6 @@
 			<name>Libraries/FreeRTOS/kernel/timers.c</name>
 			<type>1</type>
 			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/kernel/timers.c</locationURI>
-		</link>
-		<link>
-			<name>Libraries/FreeRTOS/mqtt/core_mqtt.c</name>
-			<type>1</type>
-			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/coreMQTT/source/core_mqtt.c</locationURI>
-		</link>
-		<link>
-			<name>Libraries/FreeRTOS/mqtt/core_mqtt_agent.c</name>
-			<type>1</type>
-			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/coreMQTT-Agent/source/core_mqtt_agent.c</locationURI>
-		</link>
-		<link>
-			<name>Libraries/FreeRTOS/mqtt/core_mqtt_agent_command_functions.c</name>
-			<type>1</type>
-			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/coreMQTT-Agent/source/core_mqtt_agent_command_functions.c</locationURI>
-		</link>
-		<link>
-			<name>Libraries/FreeRTOS/mqtt/core_mqtt_serializer.c</name>
-			<type>1</type>
-			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/coreMQTT/source/core_mqtt_serializer.c</locationURI>
-		</link>
-		<link>
-			<name>Libraries/FreeRTOS/mqtt/core_mqtt_state.c</name>
-			<type>1</type>
-			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/coreMQTT/source/core_mqtt_state.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/FreeRTOS/kernel/cmsis_freertos/cmsis_os.h</name>

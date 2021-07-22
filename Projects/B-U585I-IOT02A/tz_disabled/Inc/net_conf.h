@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    net_conf_template.h
+  * @file    net_conf.h
   * @author  MCD Application Team
   * @brief   Configures the network socket APIs.
   ******************************************************************************
@@ -17,8 +17,8 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef NET_CONF_TEMPLATE_H
-#define NET_CONF_TEMPLATE_H
+#ifndef NET_CONF_H
+#define NET_CONF_H
 
 /* Includes ------------------------------------------------------------------*/
 #ifdef __cplusplus
@@ -28,6 +28,14 @@ extern "C" {
 /* disable Misra rule to enable doxygen comment , A section of code appear to have been commented out */
 
 #include <stdio.h>
+
+#include "logging_levels.h"
+
+#ifndef LOG_LEVEL
+#define LOG_LEVEL LOG_ERROR
+#endif /* LOG_LEVEL */
+
+#include "logging.h"
 
 /* Please uncomment if you want socket address definition from LWIP include file rather than local one  */
 /* This is recommended if network interface uses LWIP to save some code size. This is required if      */
@@ -48,9 +56,7 @@ extern "C" {
 /* #define NET_MBEDTLS_DEVICE_SUPPORT */
 #define NET_USE_RTOS
 
-#ifdef NET_USE_RTOS
 #include "cmsis_os.h"
-#endif /* NET_USE_RTOS */
 
 /* Please uncomment if dhcp server is required and not natively supported by network interface */
 /* #define NET_DHCP_SERVER_HOST_SUPPORT*/
@@ -58,131 +64,46 @@ extern "C" {
 /* when using LWIP , size of hostname */
 #define NET_IP_HOSTNAME_MAX_LEN        32
 
-#ifndef NET_USE_IPV6
-#define NET_USE_IPV6    0
-#endif /* NET_USE_IPV6 */
+#define NET_USE_IPV6                    0
 
 #if NET_USE_IPV6 && !defined(NET_USE_LWIP_DEFINITIONS)
 #error "NET IPV6 required to define NET_USE_LWIP_DEFINTIONS"
 #endif /* NET_USE_IPV6 */
 
 
-/* MbedTLS configuration */
-#ifdef NET_MBEDTLS_HOST_SUPPORT
+#define NET_MAX_SOCKETS_NBR             5
+
+#define NET_IF_NAME_LEN                 128
+#define NET_DEVICE_NAME_LEN             64
+#define NET_DEVICE_ID_LEN               64
+#define NET_DEVICE_VER_LEN              64
 
 
-#if !defined NET_MBEDTLS_DEBUG_LEVEL
-#define NET_MBEDTLS_DEBUG_LEVEL 1
-#endif /*   NET_MBEDTLS_DEBUG_LEVEL */
+#define NET_SOCK_DEFAULT_RECEIVE_TO     60000
+#define NET_SOCK_DEFAULT_SEND_TO        60000
+#define NET_UDP_MAX_SEND_BLOCK_TO       1024
 
-#if !defined NET_MBEDTLS_CONNECT_TIMEOUT
-#define NET_MBEDTLS_CONNECT_TIMEOUT     10000U
-#endif /* NET_MBEDTLS_CONNECT_TIMEOUT */
+#define NET_USE_DEFAULT_INTERFACE       0
 
-#if !defined(MBEDTLS_CONFIG_FILE)
-#define MBEDTLS_CONFIG_FILE "mbedtls/config.h"
-#endif /* MBEDTLS_CONFIG_FILE */
-#endif /* NET_MBEDTLS_HOST_SUPPORT */
+#define NET_RTOS_SUSPEND                if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) { (void) vTaskSuspendAll(); }
+#define NET_RTOS_RESUME                 if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) { (void) xTaskResumeAll(); }
 
-#if !defined(NET_MAX_SOCKETS_NBR)
-#define NET_MAX_SOCKETS_NBR            5
-#endif /* NET_MAX_SOCKETS_NBR */
-
-#define NET_IF_NAME_LEN                128
-#define NET_DEVICE_NAME_LEN            64
-#define NET_DEVICE_ID_LEN              64
-#define NET_DEVICE_VER_LEN             64
+#define NET_DBG_INFO(...)               LogDebug( __VA_ARGS__ )
+#define NET_DBG_ERROR(...)              LogError( __VA_ARGS__ )
+#define NET_DBG_PRINT(...)              LogDebug( __VA_ARGS__ )
+#define NET_ASSERT(test,...)            do { if( !( test ) ) { LogAssert( __VA_ARGS__ ); configASSERT( test ); } } while ( 0 )
+#define NET_PRINT(...)                  LogInfo( __VA_ARGS__ )
+#define NET_PRINT_WO_CR(...)            LogInfo( __VA_ARGS__ )
+#define NET_WARNING(...)                LogWarn( __VA_ARGS__ )
 
 
-#define NET_SOCK_DEFAULT_RECEIVE_TO    60000
-#define NET_SOCK_DEFAULT_SEND_TO       60000
-#define NET_UDP_MAX_SEND_BLOCK_TO      1024
+#define NET_PERF_MAXTHREAD              7U
 
-#if !defined(NET_USE_DEFAULT_INTERFACE)
-#define NET_USE_DEFAULT_INTERFACE      1
-#endif /* NET_USE_DEFAULT_INTERFACE */
-
-#ifdef NET_USE_RTOS
-
-#if ( osCMSIS < 0x20000U)
-#define NET_RTOS_SUSPEND  if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) { (void) vTaskSuspendAll(); }
-#define NET_RTOS_RESUME   if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) { (void) xTaskResumeAll(); }
-#else
-#define NET_RTOS_SUSPEND    (void) osKernelLock()
-#define NET_RTOS_RESUME     (void) osKernelUnlock()
-#endif /* osCMSIS */
-
-#else
-#define NET_RTOS_SUSPEND
-#define NET_RTOS_RESUME
-#endif /* NET_USE_RTOS */
-
-#if !defined(NET_DBG_INFO)
-#define NET_DBG_INFO(...)
-/*
-#define NET_DBG_INFO(...)  do { \
-                                (void) printf(__VA_ARGS__); \
-                              } while (0)
-*/
-#endif /* NET_DBG_INFO */
-
-#if !defined(NET_DBG_ERROR)
-#define NET_DBG_ERROR(...)  do { \
-                                 (void)printf("\nERROR: %s:%d ",__FILE__,__LINE__) ;\
-                                 (void)printf(__VA_ARGS__);\
-                                 (void)printf("\n"); \
-                               } while (false)
-#endif /* NET_DBG_ERROR */
-#if !defined(NET_DBG_PRINT)
-#define NET_DBG_PRINT(...)  do { \
-                                 (void)printf("%s:%d ",__FILE__,__LINE__) ;\
-                                 (void)printf(__VA_ARGS__);\
-                                 (void)printf("\n"); \
-                               } while (false)
-#endif /* NET_DBG_PRINT */
-
-#if !defined(NET_ASSERT)
-#define NET_ASSERT(test,...)  do { if (!(test)) {\
-                                   (void) printf("Assert Failed %s %d :",__FILE__,__LINE__);\
-                                   (void) printf(__VA_ARGS__);\
-                                   while(true) {}; }\
-                                 } while (false)
-#endif /* NET_ASSERT */
-
-#if !defined(NET_PRINT)
-#define NET_PRINT(...)      do { \
-                                 (void) printf(__VA_ARGS__);\
-                                 (void) printf("\n"); \
-                               } while (false)
-#endif /* NET_PRINT */
-
-#if !defined(NET_PRINT_WO_CR)
-#define NET_PRINT_WO_CR(...)   do { \
-                                    (void) printf(__VA_ARGS__);\
-                                  } while (false)
-#endif /* NET_PRINT_WO_CR */
-
-#if !defined(NET_WARNING)
-#define NET_WARNING(...)    do { \
-                                 (void) printf("Warning %s:%d ",__FILE__,__LINE__) ;\
-                                 (void) printf(__VA_ARGS__);\
-                                 (void) printf("\n"); \
-                               } while (false)
-#endif /* NET_WARNING */
-
-
-
-#ifndef NET_PERF_MAXTHREAD
-#define NET_PERF_MAXTHREAD      7U
-#endif /* NET_PERF_MAXTHREAD  */
-
-#ifndef NET_TASK_HISTORY_SIZE
-#define NET_TASK_HISTORY_SIZE   0U
-#endif /* NET_PERF_MAXTHREAD  */
+#define NET_TASK_HISTORY_SIZE           0U
 
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
-#endif /* NET_CONF_TEMPLATE_H */
+#endif /* NET_CONF_H */

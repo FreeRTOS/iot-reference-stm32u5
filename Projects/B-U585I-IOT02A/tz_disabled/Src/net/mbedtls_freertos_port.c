@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * Copyright (C) 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,7 @@
 
 /* FreeRTOS includes. */
 #include "FreeRTOS.h"
-// #include "FreeRTOS_Sockets.h"
+#include "net_connect.h"
 
 /* mbed TLS includes. */
 #if defined(MBEDTLS_CONFIG_FILE)
@@ -87,8 +87,11 @@ void mbedtls_platform_free( void * ptr )
 
 /*-----------------------------------------------------------*/
 
+// Sock init call should be like:
+// sock = net_socket(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP);
+
 /**
- * @brief Sends data over FreeRTOS+TCP sockets.
+ * @brief Sends data to a stm32_netlib socket
  *
  * @param[in] ctx The network context containing the socket handle.
  * @param[in] buf Buffer containing the bytes to send.
@@ -100,21 +103,19 @@ int mbedtls_platform_send( void * ctx,
                            const unsigned char * buf,
                            size_t len )
 {
-    // Socket_t socket;
+	int32_t sock;
+	configASSERT( ctx != 0 );
+	configASSERT( buf != NULL );
 
-    // configASSERT( ctx != NULL );
-    // configASSERT( buf != NULL );
+	sock = (int32_t) ctx;
 
-    // socket = ( Socket_t ) ctx;
-
-    // return ( int ) FreeRTOS_send( socket, buf, len, 0 );
-    return 0;
+	return (int)net_send(sock, (uint8_t *)buf, len, 0);
 }
 
 /*-----------------------------------------------------------*/
 
 /**
- * @brief Receives data from FreeRTOS+TCP socket.
+ * @brief Receives data from stm32_netlib socket
  *
  * @param[in] ctx The network context containing the socket handle.
  * @param[out] buf Buffer to receive bytes into.
@@ -126,15 +127,14 @@ int mbedtls_platform_recv( void * ctx,
                            unsigned char * buf,
                            size_t len )
 {
-    // Socket_t socket;
+	int32_t sock;
 
-    // configASSERT( ctx != NULL );
-    // configASSERT( buf != NULL );
+	configASSERT( ctx != 0 );
+	configASSERT( buf != NULL );
 
-    // socket = ( Socket_t ) ctx;
+	sock = (int32_t) ctx;
 
-    // return ( int ) FreeRTOS_recv( socket, buf, len, 0 );
-    return 0;
+	return net_recv(sock, (uint8_t *)buf, len, 0);
 }
 
 /*-----------------------------------------------------------*/
@@ -218,76 +218,5 @@ int mbedtls_platform_mutex_unlock( mbedtls_threading_mutex_t * pMutex )
 
     return 0;
 }
-
-/*-----------------------------------------------------------*/
-
-// /**
-//  * @brief Function to generate a random number.
-//  *
-//  * @param[in] data Callback context.
-//  * @param[out] output The address of the buffer that receives the random number.
-//  * @param[in] len Maximum size of the random number to be generated.
-//  * @param[out] olen The size, in bytes, of the #output buffer.
-//  *
-//  * @return 0 if no critical failures occurred,
-//  * MBEDTLS_ERR_ENTROPY_SOURCE_FAILED otherwise.
-//  */
-// int mbedtls_platform_entropy_poll( void * data,
-//                                    unsigned char * output,
-//                                    size_t len,
-//                                    size_t * olen )
-// {
-//     int status = 0;
-//     uint32_t rngStatus = 0;
-
-//     configASSERT( output != NULL );
-//     configASSERT( olen != NULL );
-
-//     /* Context is not used by this function. */
-//     ( void ) data;
-
-//     /* TLS requires a secure random number generator; use the RNG provided
-//      * by Windows. This function MUST be re-implemented for other platforms. */
-//     rngStatus = rand();//_RB_ Replace.
-// //_RB_ Windows function        BCryptGenRandom( NULL, output, len, BCRYPT_USE_SYSTEM_PREFERRED_RNG );
-
-//     if( rngStatus == 0 )
-//     {
-//         /* All random bytes generated. */
-//         *olen = len;
-//     }
-//     else
-//     {
-//         /* RNG failure. */
-//         *olen = 0;
-//         status = MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
-//     }
-
-//     return status;
-// }
-
-/*-----------------------------------------------------------*/
-
-// /**
-//  * @brief Function to generate a random number based on a hardware poll.
-//  *
-//  * For this FreeRTOS Windows port, this function is redirected by calling
-//  * #mbedtls_platform_entropy_poll.
-//  *
-//  * @param[in] data Callback context.
-//  * @param[out] output The address of the buffer that receives the random number.
-//  * @param[in] len Maximum size of the random number to be generated.
-//  * @param[out] olen The size, in bytes, of the #output buffer.
-//  *
-//  * @return 0 if no critical failures occurred,
-//  * MBEDTLS_ERR_ENTROPY_SOURCE_FAILED otherwise.
-//  */
-// int mbedtls_hardware_poll( void * data,
-//                            unsigned char * output,
-//                            size_t len,
-//                            size_t * olen )
-// {
-//     return mbedtls_platform_entropy_poll( data, output, len, olen );
-// }
 
 /*-----------------------------------------------------------*/
