@@ -185,14 +185,6 @@ void mbedtls_platform_free( void * ptr );
 #define MBEDTLS_PLATFORM_CALLOC_MACRO    mbedtls_platform_calloc
 #define MBEDTLS_PLATFORM_FREE_MACRO      mbedtls_platform_free
 
-/* The network send and receive functions on FreeRTOS. */
-int mbedtls_platform_send( void * ctx,
-                           const unsigned char * buf,
-                           size_t len );
-int mbedtls_platform_recv( void * ctx,
-                           unsigned char * buf,
-                           size_t len );
-
 /* The entropy poll function. */
 int mbedtls_platform_entropy_poll( void * data,
                                    unsigned char * output,
@@ -544,20 +536,20 @@ int mbedtls_platform_entropy_poll( void * data,
  * Comment macros to disable the curve and functions for it
  */
 /* Short Weierstrass curves (supporting ECP, ECDH, ECDSA) */
-// #define MBEDTLS_ECP_DP_SECP192R1_ENABLED
-// #define MBEDTLS_ECP_DP_SECP224R1_ENABLED
+ #define MBEDTLS_ECP_DP_SECP192R1_ENABLED
+ #define MBEDTLS_ECP_DP_SECP224R1_ENABLED
 #define MBEDTLS_ECP_DP_SECP256R1_ENABLED
-// #define MBEDTLS_ECP_DP_SECP384R1_ENABLED
-// #define MBEDTLS_ECP_DP_SECP521R1_ENABLED
-// #define MBEDTLS_ECP_DP_SECP192K1_ENABLED
-// #define MBEDTLS_ECP_DP_SECP224K1_ENABLED
-// #define MBEDTLS_ECP_DP_SECP256K1_ENABLED
-// #define MBEDTLS_ECP_DP_BP256R1_ENABLED
-// #define MBEDTLS_ECP_DP_BP384R1_ENABLED
-// #define MBEDTLS_ECP_DP_BP512R1_ENABLED
+ #define MBEDTLS_ECP_DP_SECP384R1_ENABLED
+ #define MBEDTLS_ECP_DP_SECP521R1_ENABLED
+ #define MBEDTLS_ECP_DP_SECP192K1_ENABLED
+ #define MBEDTLS_ECP_DP_SECP224K1_ENABLED
+ #define MBEDTLS_ECP_DP_SECP256K1_ENABLED
+ #define MBEDTLS_ECP_DP_BP256R1_ENABLED
+ #define MBEDTLS_ECP_DP_BP384R1_ENABLED
+ #define MBEDTLS_ECP_DP_BP512R1_ENABLED
 /* Montgomery curves (supporting ECP) */
-// #define MBEDTLS_ECP_DP_CURVE25519_ENABLED
-// #define MBEDTLS_ECP_DP_CURVE448_ENABLED
+ #define MBEDTLS_ECP_DP_CURVE25519_ENABLED
+ #define MBEDTLS_ECP_DP_CURVE448_ENABLED
 
 /**
  * \def MBEDTLS_ECP_NIST_OPTIM
@@ -783,7 +775,7 @@ int mbedtls_platform_entropy_poll( void * data,
  *      MBEDTLS_TLS_RSA_WITH_RC4_128_SHA
  *      MBEDTLS_TLS_RSA_WITH_RC4_128_MD5
  */
-// #define MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
+ #define MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
 
 /**
  * \def MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
@@ -816,7 +808,7 @@ int mbedtls_platform_entropy_poll( void * data,
  *             See dhm.h for more details.
  *
  */
-// #define MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
+ #define MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
 
 /**
  * \def MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
@@ -841,7 +833,7 @@ int mbedtls_platform_entropy_poll( void * data,
  *      MBEDTLS_TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA
  *      MBEDTLS_TLS_ECDHE_RSA_WITH_RC4_128_SHA
  */
-// #define MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
+ #define MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
 
 /**
  * \def MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
@@ -889,7 +881,7 @@ int mbedtls_platform_entropy_poll( void * data,
  *      MBEDTLS_TLS_ECDH_ECDSA_WITH_CAMELLIA_128_GCM_SHA256
  *      MBEDTLS_TLS_ECDH_ECDSA_WITH_CAMELLIA_256_GCM_SHA384
  */
-// #define MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
+ #define MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
 
 /**
  * \def MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
@@ -913,7 +905,7 @@ int mbedtls_platform_entropy_poll( void * data,
  *      MBEDTLS_TLS_ECDH_RSA_WITH_CAMELLIA_128_GCM_SHA256
  *      MBEDTLS_TLS_ECDH_RSA_WITH_CAMELLIA_256_GCM_SHA384
  */
-// #define MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
+ #define MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
 
 /**
  * \def MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
@@ -1213,7 +1205,7 @@ int mbedtls_platform_entropy_poll( void * data,
  *
  * Enable sending of all alert messages
  */
-#define MBEDTLS_SSL_ALL_ALERT_MESSAGES
+//#define MBEDTLS_SSL_ALL_ALERT_MESSAGES
 
 /**
  * \def MBEDTLS_SSL_RECORD_CHECKING
@@ -2369,7 +2361,7 @@ int mbedtls_platform_entropy_poll( void * data,
  *
  * This module provides debugging functions.
  */
-// #define MBEDTLS_DEBUG_C
+ #define MBEDTLS_DEBUG_C
 
 /**
  * \def MBEDTLS_DES_C
@@ -2419,7 +2411,7 @@ int mbedtls_platform_entropy_poll( void * data,
  *             See dhm.h for more details.
  *
  */
-// #define MBEDTLS_DHM_C
+ #define MBEDTLS_DHM_C
 
 /**
  * \def MBEDTLS_ECDH_C
@@ -2511,7 +2503,7 @@ int mbedtls_platform_entropy_poll( void * data,
  *
  * This module enables mbedtls_strerror().
  */
-// #define MBEDTLS_ERROR_C
+ #define MBEDTLS_ERROR_C
 
 /**
  * \def MBEDTLS_GCM_C
@@ -3051,7 +3043,7 @@ int mbedtls_platform_entropy_poll( void * data,
  * Module:  library/ssl_cookie.c
  * Caller:
  */
-// #define MBEDTLS_SSL_COOKIE_C
+ #define MBEDTLS_SSL_COOKIE_C
 
 /**
  * \def MBEDTLS_SSL_TICKET_C
@@ -3077,7 +3069,7 @@ int mbedtls_platform_entropy_poll( void * data,
  *
  * This module is required for SSL/TLS client support.
  */
-// #define MBEDTLS_SSL_CLI_C
+ #define MBEDTLS_SSL_CLI_C
 
 /**
  * \def MBEDTLS_SSL_SRV_C

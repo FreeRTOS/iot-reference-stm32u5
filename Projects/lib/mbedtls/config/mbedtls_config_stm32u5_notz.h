@@ -33,7 +33,7 @@
  *
  * MBEDTLS__MODULE_NAME__ALT: Uncomment a macro to let mbed TLS use your
  * alternate core implementation of a symmetric crypto, an arithmetic or hash
- * module (e.g. platform specific assembly optimized implementations). Keep
+ * module (e.g. platform specific assembly optimized implementations)e . Keep
  * in mind that the function prototypes should remain the same.
  *
  * This replaces the whole module. If you only want to replace one of the
@@ -53,7 +53,7 @@
  *            digests and ciphers instead.
  *
  */
-#define MBEDTLS_AES_ALT
+//#define MBEDTLS_AES_ALT
 //#define MBEDTLS_ARC4_ALT
 //#define MBEDTLS_ARIA_ALT
 //#define MBEDTLS_BLOWFISH_ALT
@@ -73,8 +73,8 @@
 //#define MBEDTLS_POLY1305_ALT
 //#define MBEDTLS_RIPEMD160_ALT
 //#define MBEDTLS_RSA_ALT
-#define MBEDTLS_SHA1_ALT
-#define MBEDTLS_SHA256_ALT
+//#define MBEDTLS_SHA1_ALT
+//#define MBEDTLS_SHA256_ALT
 //#define MBEDTLS_SHA512_ALT
 //#define MBEDTLS_XTEA_ALT
 
@@ -87,7 +87,7 @@
  * macros as described above. The only difference is that you have to make sure
  * that you provide functionality for both .c files.
  */
-#define MBEDTLS_ECP_ALT
+//#define MBEDTLS_ECP_ALT
 
 /**
  * \def MBEDTLS_MD2_PROCESS_ALT
@@ -150,8 +150,8 @@
 //#define MBEDTLS_AES_DECRYPT_ALT
 //#define MBEDTLS_ECDH_GEN_PUBLIC_ALT
 //#define MBEDTLS_ECDH_COMPUTE_SHARED_ALT
-#define MBEDTLS_ECDSA_VERIFY_ALT
-#define MBEDTLS_ECDSA_SIGN_ALT
+//#define MBEDTLS_ECDSA_VERIFY_ALT
+//#define MBEDTLS_ECDSA_SIGN_ALT
 //#define MBEDTLS_ECDSA_GENKEY_ALT
 
 /**
@@ -309,7 +309,7 @@
  *
  * Comment this macro to disable support for external private RSA keys.
  */
-#define MBEDTLS_PK_RSA_ALT_SUPPORT
+//#define MBEDTLS_PK_RSA_ALT_SUPPORT
 
 /**
  * \def MBEDTLS_SHA256_SMALLER
@@ -336,5 +336,7 @@
  * Uncomment to enable the smaller implementation of SHA512.
  */
 //#define MBEDTLS_SHA512_SMALLER
+
+//#define ST_HW_CONTEXT_SAVING
 
 #endif /* MBEDTLS_CONFIG_PLATFORM_H */
