@@ -113,9 +113,9 @@ static inline mx_buf_t *mx_buf_alloc(uint32_t len)
 #define SEM_DEINIT(A)                             osSemaphoreDelete(A)
 #define SEM_SIGNAL(A)                             osSemaphoreRelease(A)
 #if (osCMSIS < 0x20000U)
-#define SEM_WAIT(A,TIMEOUT,IDLE_FUNC)             osSemaphoreWait(A,pdMS_TO_TICKS(TIMEOUT))
+#define SEM_WAIT(A,TIMEOUT,IDLE_FUNC)             osSemaphoreWait(A,TIMEOUT)
 #else
-#define SEM_WAIT(A,TIMEOUT,IDLE_FUNC)             osSemaphoreAcquire(A,pdMS_TO_TICKS(TIMEOUT))
+#define SEM_WAIT(A,TIMEOUT,IDLE_FUNC)             osSemaphoreAcquire(A,TIMEOUT)
 #endif /* (osCMSIS < 0x20000U) */
 
 
@@ -141,13 +141,13 @@ static inline mx_buf_t *mx_buf_alloc(uint32_t len)
 #endif /* (osCMSIS < 0x20000U) */
 
 #if (osCMSIS < 0x20000U)
-#define FIFO_PUSH(QUEUE,VALUE,TIMEOUT,IDLE_FUNC)  osMessagePut(QUEUE, (uint32_t) VALUE, pdMS_TO_TICKS(TIMEOUT))
+#define FIFO_PUSH(QUEUE,VALUE,TIMEOUT,IDLE_FUNC)  osMessagePut(QUEUE, (uint32_t) VALUE, TIMEOUT)
 #else
-#define FIFO_PUSH(QUEUE,VALUE,TIMEOUT,IDLE_FUNC)  osMessageQueuePut(QUEUE, (void const*) &VALUE, 0,pdMS_TO_TICKS(TIMEOUT))
+#define FIFO_PUSH(QUEUE,VALUE,TIMEOUT,IDLE_FUNC)  osMessageQueuePut(QUEUE, (void const*) &VALUE, 0,TIMEOUT)
 #endif /* (osCMSIS < 0x20000U) */
 
 
-#define FIFO_POP(QUEUE,TIMEOUT,IDLE_FUNC)         (void*) fifo_get(QUEUE,pdMS_TO_TICKS(TIMEOUT))
+#define FIFO_POP(QUEUE,TIMEOUT,IDLE_FUNC)         (void*) fifo_get(QUEUE,TIMEOUT)
 #if (osCMSIS < 0x20000U)
 #define FIFO_DEINIT(QUEUE)                        osMessageDelete(QUEUE)
 #else
