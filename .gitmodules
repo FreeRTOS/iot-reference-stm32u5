@@ -56,3 +56,8 @@
 [submodule "Drivers/CMSIS/Device/ST/STM32U5xx"]
 	path = Drivers/CMSIS/Device/ST/STM32U5xx
 	url = https://github.com/STMicroelectronics/cmsis_device_u5.git
+[submodule "Middleware/ST/STM32CubeU5"]
+	path = Middleware/ST/STM32CubeU5
+	url = https://github.com/STMicroelectronics/STM32CubeU5.git
+	update = none
+
