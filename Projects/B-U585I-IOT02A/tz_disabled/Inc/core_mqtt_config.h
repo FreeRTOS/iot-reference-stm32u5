@@ -1,6 +1,5 @@
 /*
- * Lab-Project-coreMQTT-Agent 201215
- * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -22,10 +21,18 @@
  * http://www.FreeRTOS.org
  * http://aws.amazon.com/freertos
  *
- * 1 tab == 4 spaces!
  */
 #ifndef CORE_MQTT_CONFIG_H
 #define CORE_MQTT_CONFIG_H
+
+
+#include "logging_levels.h"
+/* define LOG_LEVEL here if you want to modify the logging level from the default */
+
+/* Remove extra C89 style parentheses */
+#define LOGGING_REMOVE_PARENS
+
+#include "logging.h"
 
 /**
  * @brief The maximum number of MQTT PUBLISH messages that may be pending
