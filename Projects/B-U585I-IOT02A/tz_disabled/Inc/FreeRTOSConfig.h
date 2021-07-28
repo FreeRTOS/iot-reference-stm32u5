@@ -31,6 +31,8 @@
 #ifndef FREERTOS_CONFIG_H
 #define FREERTOS_CONFIG_H
 
+#include "logging.h"
+
 /*-----------------------------------------------------------
  * Application specific definitions.
  *
@@ -72,7 +74,7 @@
 #define configCPU_CLOCK_HZ                       ( SystemCoreClock )
 #define configTICK_RATE_HZ                       ((TickType_t)1000)
 #define configMAX_PRIORITIES                     ( 56 )
-#define configMINIMAL_STACK_SIZE                 ((uint16_t)512)
+#define configMINIMAL_STACK_SIZE                 ((uint16_t)4096)
 #define configTOTAL_HEAP_SIZE                    ((size_t)200 * 1024)
 #define configMAX_TASK_NAME_LEN                  ( 16 )
 #define configUSE_TRACE_FACILITY                 1
@@ -160,7 +162,7 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 /* Normal assert() semantics without relying on the provision of an assert.h
 header file. */
 /* USER CODE BEGIN 1 */
-#define configASSERT( x ) if( ( x ) == 0 ) { taskDISABLE_INTERRUPTS(); for( ;; ); }
+#define configASSERT( x )                       if( ( x ) == 0 ) { LogAssert("Assertion failed."); taskDISABLE_INTERRUPTS(); for( ;; ); }
 /* USER CODE END 1 */
 
 #define SysTick_Handler xPortSysTickHandler
