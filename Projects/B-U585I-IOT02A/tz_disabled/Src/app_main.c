@@ -25,11 +25,11 @@
  */
 
 #include "main.h"
-//#include "cmsis_os2.h"
 #include "logging.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "network_thread.h"
+#include "stm32u5xx_ll_rng.h"
 
 /* Initialize hardware / STM32 HAL library */
 static void hw_init( void )
@@ -58,10 +58,12 @@ static void hw_init( void )
 	MX_GPIO_Init();
 
     MX_RNG_Init();
-//    MX_RTC_Init();
+    MX_RTC_Init();
     MX_GPDMA1_Init();
-
 	MX_SPI2_Init();
+
+	/* Initialize crypto accelerator */
+//	MX_HASH_Init();
 }
 
 static void testTask( void * pvParameters )
@@ -84,9 +86,7 @@ int main( void )
 
 	BaseType_t xResult;
 
-	/* Init scheduler */
-	//    osKernelInitialize();
-	// Initialioze Heap here if using Heap 5
+	// TODO: Add an "init" task to manage provisioning state and network state and start/stop daemons when necessary.
 
     /* Initialize threads */
 	xResult = xTaskCreate( testTask, "testTask", 1024, NULL, tskIDLE_PRIORITY + 1, NULL );
@@ -98,12 +98,12 @@ int main( void )
 
     configASSERT( xResult == pdTRUE );
 
+    vStartMQTTAgentDemo();
 
     /* Start scheduler */
     vTaskStartScheduler(); //osKernelStart();
 
     LogError(("Kernel start returned."));
-
 
 	/* This loop should be inaccessible.*/
 	while(1)
@@ -111,6 +111,12 @@ int main( void )
 
 	}
 }
+
+UBaseType_t uxRand( void )
+{
+    return LL_RNG_ReadRandData32( RNG_NS );
+}
+
 
 /*-----------------------------------------------------------*/
 

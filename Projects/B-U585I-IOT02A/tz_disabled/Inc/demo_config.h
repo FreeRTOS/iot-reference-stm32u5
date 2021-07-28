@@ -27,42 +27,13 @@
 #ifndef DEMO_CONFIG_H
 #define DEMO_CONFIG_H
 
-/**************************************************/
-/******* DO NOT CHANGE the following order ********/
-/**************************************************/
-
-/* Include logging header files and define logging macros in the following order:
- * 1. Include the header file "logging_levels.h".
- * 2. Define the LIBRARY_LOG_NAME and LIBRARY_LOG_LEVEL macros depending on
- * the logging configuration for DEMO.
- * 3. Include the header file "logging_stack.h", if logging is enabled for DEMO.
- */
-
 #include "logging_levels.h"
 
-/* Logging configuration for the Demo. */
-#ifndef LIBRARY_LOG_NAME
-    #define LIBRARY_LOG_NAME    "MQTTDemo"
+#ifndef LOG_LEVEL
+    #define LOG_LEVEL                               LOG_DEBUG
 #endif
 
-#ifndef LIBRARY_LOG_LEVEL
-    #define LIBRARY_LOG_LEVEL    LOG_DEBUG
-#endif
-
-/* Prototype for the function used to print to console on Windows simulator
- * of FreeRTOS.
- * The function prints to the console before the network is connected;
- * then a UDP port after the network has connected. */
-extern void vLoggingPrintf( const char * pcFormatString,
-                            ... );
-
-/* Map the SdkLog macro to the logging function to enable logging
- * on Windows simulator. */
-#ifndef SdkLog
-    #define SdkLog( message )    vLoggingPrintf message
-#endif
-
-#include "logging_stack.h"
+#include "logging.h"
 
 /************ End of logging configuration ****************/
 
@@ -88,50 +59,6 @@ extern void vLoggingPrintf( const char * pcFormatString,
 #define democonfigSHADOW_TASK_STACK_SIZE                   ( configMINIMAL_STACK_SIZE )
 
 /**
- * @brief The MQTT client identifier used in this example.  Each client identifier
- * must be unique so edit as required to ensure no two clients connecting to the
- * same broker use the same client identifier.
- *
- *!!! Please note a #defined constant is used for convenience of demonstration
- *!!! only.  Production devices can use something unique to the device that can
- *!!! be read by software, such as a production serial number, instead of a
- *!!! hard coded constant.
- *
- */
-#define democonfigCLIENT_IDENTIFIER                        "...insert here..."
-
-/**
- * @brief Endpoint of the MQTT broker to connect to.
- *
- * This demo application can be run with any MQTT broker, although it is
- * recommended to use one that supports mutual authentication. If mutual
- * authentication is not used, then #democonfigUSE_TLS should be set to 0.
- *
- * For AWS IoT MQTT broker, this is the Thing's REST API Endpoint.
- *
- * @note Your AWS IoT Core endpoint can be found in the AWS IoT console under
- * Settings/Custom Endpoint, or using the describe-endpoint REST API (with
- * AWS CLI command line tool).
- *
- */
-#define democonfigMQTT_BROKER_ENDPOINT                     "...insert here..."
-
-/**
- * @brief The port to use for the demo.
- *
- * In general, port 8883 is for secured MQTT connections, and port 1883 if not
- * using TLS.
- *
- * @note Port 443 requires use of the ALPN TLS extension with the ALPN protocol
- * name. Using ALPN with this demo would require additional changes, including
- * setting the `pAlpnProtos` member of the `NetworkCredentials_t` struct before
- * forming the TLS connection. When using port 8883, ALPN is not required.
- *
- * #define democonfigMQTT_BROKER_PORT    ( insert here. )
- */
-#define democonfigMQTT_BROKER_PORT                         ( 8883 )
-
-/**
  * @brief Server's root CA certificate.
  *
  * For AWS IoT MQTT broker, this certificate is used to identify the AWS IoT
@@ -151,8 +78,7 @@ extern void vLoggingPrintf( const char * pcFormatString,
  *
  * #define democonfigROOT_CA_PEM    "...insert here..."
  */
-#define democonfigROOT_CA_PEM                              "...insert here..."
-
+#define democonfigROOT_CA_PEM                              "-----BEGIN CERTIFICATE-----\n"
 /**
  * @brief Client certificate.
  *
@@ -169,7 +95,7 @@ extern void vLoggingPrintf( const char * pcFormatString,
  *
  * #define democonfigCLIENT_CERTIFICATE_PEM    "...insert here..."
  */
-#define democonfigCLIENT_CERTIFICATE_PEM                   "...insert here..."
+#define democonfigCLIENT_CERTIFICATE_PEM                   "-----BEGIN CERTIFICATE-----\n"
 
 /**
  * @brief Client's private key.
@@ -195,7 +121,7 @@ extern void vLoggingPrintf( const char * pcFormatString,
  *
  * #define democonfigCLIENT_PRIVATE_KEY_PEM    "...insert here..."
  */
-#define democonfigCLIENT_PRIVATE_KEY_PEM                   "...insert here..."
+#define democonfigCLIENT_PRIVATE_KEY_PEM                   "-----BEGIN RSA PRIVATE KEY-----\n"
 
 
 
@@ -221,19 +147,6 @@ extern void vLoggingPrintf( const char * pcFormatString,
 #define democonfigUSE_AWS_IOT_CORE_BROKER    ( 1 )
 
 /**
- * @brief The username value for authenticating client to the MQTT broker when
- * username/password based client authentication is used.
- *
- * For AWS IoT MQTT broker, refer to the AWS IoT documentation below for
- * details regarding client authentication with a username and password.
- * https://docs.aws.amazon.com/iot/latest/developerguide/custom-authentication.html
- * An authorizer setup needs to be done, as mentioned in the above link, to use
- * username/password based client authentication.
- *
- * #define democonfigCLIENT_USERNAME    "...insert here..."
- */
-
-/**
  * @brief The password value for authenticating client to the MQTT broker when
  * username/password based client authentication is used.
  *
@@ -251,27 +164,27 @@ extern void vLoggingPrintf( const char * pcFormatString,
  * The current value is given as an example. Please update for your specific
  * operating system.
  */
-#define democonfigOS_NAME                   "FreeRTOS"
+//#define democonfigOS_NAME                   "FreeRTOS"
 
 /**
  * @brief The version of the operating system that the application is running
  * on. The current value is given as an example. Please update for your specific
  * operating system version.
  */
-#define democonfigOS_VERSION                tskKERNEL_VERSION_NUMBER
+//#define democonfigOS_VERSION                tskKERNEL_VERSION_NUMBER
 
 /**
  * @brief The name of the hardware platform the application is running on. The
  * current value is given as an example. Please update for your specific
  * hardware platform.
  */
-#define democonfigHARDWARE_PLATFORM_NAME    "WinSim"
+//#define democonfigHARDWARE_PLATFORM_NAME    "STM32"
 
 /**
  * @brief The name of the MQTT library used and its version, following an "@"
  * symbol.
  */
-#define democonfigMQTT_LIB                  "core-mqtt@1.0.0"
+//#define democonfigMQTT_LIB                  "core-mqtt@1.0.0"
 
 /**
  * @brief Whether to use mutual authentication. If this macro is not set to 1
@@ -292,32 +205,9 @@ extern void vLoggingPrintf( const char * pcFormatString,
 **********************************************************************************/
 
 
-/* Compile time error for some undefined configs, and provide default values
- * for others. */
-#ifndef democonfigMQTT_BROKER_ENDPOINT
-    #error "Please define democonfigMQTT_BROKER_ENDPOINT in demo_config.h."
+#ifndef democonfigROOT_CA_PEM
+    #error "Please define Root CA certificate of the MQTT broker(democonfigROOT_CA_PEM) in demo_config.h."
 #endif
-
-#ifndef democonfigCLIENT_IDENTIFIER
-
-/**
- * @brief The MQTT client identifier used in this example.  Each client identifier
- * must be unique so edit as required to ensure no two clients connecting to the
- * same broker use the same client identifier.  Using a #define is for convenience
- * of demonstration only - production devices should use something unique to the
- * device that can be read from software - such as a production serial number.
- */
-    #error  "Please define democonfigCLIENT_IDENTIFIER in demo_config.h to something unique for this device."
-#endif
-
-
-#if defined( democonfigUSE_TLS ) && ( democonfigUSE_TLS == 1 )
-    #ifndef democonfigROOT_CA_PEM
-        #error "Please define Root CA certificate of the MQTT broker(democonfigROOT_CA_PEM) in demo_config.h."
-    #endif
-
-/* If no username is defined, then a client certificate/key is required. */
-    #ifndef democonfigCLIENT_USERNAME
 
 /*
  *!!! Please note democonfigCLIENT_PRIVATE_KEY_PEM in used for
@@ -325,35 +215,16 @@ extern void vLoggingPrintf( const char * pcFormatString,
  *!!! store keys securely, such as within a secure element.
  */
 
-        #ifndef democonfigCLIENT_CERTIFICATE_PEM
-            #error "Please define client certificate(democonfigCLIENT_CERTIFICATE_PEM) in demo_config.h."
-        #endif
-        #ifndef democonfigCLIENT_PRIVATE_KEY_PEM
-            #error "Please define client private key(democonfigCLIENT_PRIVATE_KEY_PEM) in demo_config.h."
-        #endif
-    #else
+#ifndef democonfigCLIENT_CERTIFICATE_PEM
+    #error "Please define client certificate(democonfigCLIENT_CERTIFICATE_PEM) in demo_config.h."
+#endif
+#ifndef democonfigCLIENT_PRIVATE_KEY_PEM
+    #error "Please define client private key(democonfigCLIENT_PRIVATE_KEY_PEM) in demo_config.h."
+#endif
 
-/* If a username is defined, a client password also would need to be defined for
- * client authentication. */
-        #ifndef democonfigCLIENT_PASSWORD
-            #error "Please define client password(democonfigCLIENT_PASSWORD) in demo_config.h for client authentication based on username/password."
-        #endif
-
-/* AWS IoT MQTT broker port needs to be 443 for client authentication based on
- * username/password. */
-        #if defined( democonfigUSE_AWS_IOT_CORE_BROKER ) && democonfigMQTT_BROKER_PORT != 443
-            #error "Broker port(democonfigMQTT_BROKER_PORT) should be defined as 443 in demo_config.h for client authentication based on username/password in AWS IoT Core."
-        #endif
-    #endif /* ifndef democonfigCLIENT_USERNAME */
-
-    #ifndef democonfigMQTT_BROKER_PORT
-        #define democonfigMQTT_BROKER_PORT    ( 8883 )
-    #endif
-#else /* if defined( democonfigUSE_TLS ) && ( democonfigUSE_TLS == 1 ) */
-    #ifndef democonfigMQTT_BROKER_PORT
-        #define democonfigMQTT_BROKER_PORT    ( 1883 )
-    #endif
-#endif /* if defined( democonfigUSE_TLS ) && ( democonfigUSE_TLS == 1 ) */
+#ifndef democonfigMQTT_BROKER_PORT
+    #define democonfigMQTT_BROKER_PORT    ( 8883 )
+#endif
 
 /**
  * @brief ALPN (Application-Layer Protocol Negotiation) protocol name for AWS IoT MQTT.
@@ -383,7 +254,7 @@ extern void vLoggingPrintf( const char * pcFormatString,
 #endif
 
 #ifndef democonfigHARDWARE_PLATFORM_NAME
-    #define democonfigHARDWARE_PLATFORM_NAME    "WinSim"
+    #define democonfigHARDWARE_PLATFORM_NAME    "STM32U5 IoT Discovery"
 #endif
 
 #ifndef democonfigMQTT_LIB
@@ -401,17 +272,6 @@ extern void vLoggingPrintf( const char * pcFormatString,
  * @brief The length of the MQTT metrics string expected by AWS IoT.
  */
 #define AWS_IOT_METRICS_STRING_LENGTH    ( ( uint16_t ) ( sizeof( AWS_IOT_METRICS_STRING ) - 1 ) )
-
-#ifdef democonfigCLIENT_USERNAME
-
-/**
- * @brief Append the username with the metrics string if #democonfigCLIENT_USERNAME is defined.
- *
- * This is to support both metrics reporting and username/password based client
- * authentication by AWS IoT.
- */
-    #define CLIENT_USERNAME_WITH_METRICS    democonfigCLIENT_USERNAME AWS_IOT_METRICS_STRING
-#endif
 
 /**
  * @brief Length of client identifier.

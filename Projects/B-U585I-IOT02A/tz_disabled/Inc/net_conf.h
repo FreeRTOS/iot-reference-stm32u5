@@ -83,7 +83,7 @@ extern "C" {
 #define NET_SOCK_DEFAULT_SEND_TO        60000
 #define NET_UDP_MAX_SEND_BLOCK_TO       1024
 
-#define NET_USE_DEFAULT_INTERFACE       0
+#define NET_USE_DEFAULT_INTERFACE       1
 
 #define NET_RTOS_SUSPEND                if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) { (void) vTaskSuspendAll(); }
 #define NET_RTOS_RESUME                 if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) { (void) xTaskResumeAll(); }

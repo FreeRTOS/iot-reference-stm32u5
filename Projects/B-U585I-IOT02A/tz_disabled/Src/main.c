@@ -60,6 +60,12 @@ DMA_HandleTypeDef handle_GPDMA1_Channel4;
 UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
+
+/* mx_wifi driver callbacks */
+extern void HAL_SPI_TransferCallback(SPI_HandleTypeDef *hspi);
+extern void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi);
+extern void mxchip_WIFI_ISR(uint16_t isr_source);
+
 #if 0 /* Function prototype moved to main.h */
 /* USER CODE END PV */
 
