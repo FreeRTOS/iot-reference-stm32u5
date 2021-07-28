@@ -4,9 +4,10 @@
 typedef enum{
 	CS_CORE_THING_NAME,
 	CS_CORE_MQTT_ENDPOINT,
+	CS_CORE_MQTT_ENDPOINT_PORT,
 	CS_WIFI_PREFERRED_AP_SSID,
+    CS_WIFI_PREFERRED_AP_AUTH,
 	CS_WIFI_PREFERRED_AP_CREDENTIALS,
-//	CS_WIFI_PREFERRED_AP_AUTH,
 //	CS_TLS_VERIFY_CA,
 //	CS_TLS_VERIFY_SNI,
 //	CS_TIME_HWM,
@@ -25,6 +26,6 @@ typedef enum{
 void configStore_init( void );
 
 BaseType_t ConfigStore_getEntryStatic( ConfigStoreKey_t key, void * dataPtr, size_t maxLen );
-void * ConfigStore_getEntryData( ConfigStoreKey_t key );
+const void * ConfigStore_getEntryData( ConfigStoreKey_t key );
 ConfigStoreEntryType_t ConfigStore_getEntryType( ConfigStoreKey_t key );
 size_t ConfigStore_getEntrySize( ConfigStoreKey_t key );
