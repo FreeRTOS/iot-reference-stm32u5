@@ -352,7 +352,7 @@ static BaseType_t doConnectSequence( net_if_handle_t * pxNetIf, net_event_handle
     {
         LogInfo( "Device Name:        %s", pxNetIf->DeviceName );
         LogInfo( "Device ID:          %s", pxNetIf->DeviceID );
-        LogInfo( "Firmware Version:   %s", pxNetIf->DeviceID );
+        LogInfo( "Firmware Version:   %s", pxNetIf->DeviceVer );
         LogInfo( "HW Address:         %02X.%02X.%02X.%02X.%02X.%02X",
                 pxNetIf->macaddr.mac[0], pxNetIf->macaddr.mac[1],
                 pxNetIf->macaddr.mac[2], pxNetIf->macaddr.mac[3],
@@ -437,13 +437,9 @@ void net_main( void * pvParameters )
 	netTaskHandle = xTaskGetCurrentTaskHandle();
 
 
-
-	LogInfo("Thread Starting");
-
 	/* Outer loop. Reinitializing */
 	for( ; ; )
 	{
-	    LogInfo("Thread loop");
 	    /* Make a connection attempt */
 	    if( xNetIf.state != NET_STATE_CONNECTED )
 	    {
@@ -455,7 +451,7 @@ void net_main( void * pvParameters )
 	     * TODO: Backoff timer when not connected
 	     * TODO: Constant delay when connected
 	     */
-	    xNotification = waitForNotification( 0xFFFFFFFF, pdMS_TO_TICKS( 300 * 1000 ) );
+	    xNotification = waitForNotification( 0xFFFFFFFF, pdMS_TO_TICKS( 30 * 1000 ) );
 
 
 	    if( xNotification != 0 )
@@ -487,6 +483,31 @@ void net_main( void * pvParameters )
 	    }
 	    else // Timeout case
 	    {
+//	        if( xNetIf.state == NET_STATE_CONNECTED )
+//	        {
+//                net_sockaddr_t addr;
+//                addr.sa_len = sizeof(net_sockaddr_in_t);
+//
+//                net_if_gethostbyname(NULL, &addr, "www.amazon.com");
+//
+//                net_ip_addr_t ip_addr;
+//
+//                sockaddr_in_t *addr_ip4 = (sockaddr_in_t *) &addr;
+//
+//                inet_addr_to_ip4addr(&ip_addr, &addr_ip4->sin_addr);
+//
+//                int32_t ping_rslt[3];
+//                LogInfo("Pinging %s\n", NET_NTOA(&ip_addr));
+//                int32_t lResult = net_if_ping( &xNetIf, (sockaddr_t *)&addr, 3, 100, ping_rslt );
+//                if( lResult >= 0 )
+//                {
+//                    LogInfo("Ping result: %d, %d, %d",ping_rslt[0], ping_rslt[1], ping_rslt[2] );
+//                }
+//                else
+//                {
+//                    LogInfo("Ping Failed");
+//                }
+//	        }
 	        // TODO: periodic health check if connected.
 	        // TODO: Periodic hard reset if disconnected.
 	    }
@@ -501,7 +522,7 @@ void net_main( void * pvParameters )
 
 
 
-//	    /* Received a notification from the driver of a state transition */
+	    /* Received a notification from the driver of a state transition */
 //		if( xNotification & ( NET_STATE_UPDATE_BIT ) )
 //		{
 //		    switch( xNetIf.state )

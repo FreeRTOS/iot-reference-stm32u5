@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -24,14 +24,13 @@
  * @brief TLS transport interface header.
  */
 
-#ifndef USING_MBEDTLS
-#define USING_MBEDTLS
+#ifndef MBEDTLS_TRANSPORT
+#define MBEDTLS_TRANSPORT
 
 
-/* socket include. */
-#include "net_connect.h"
+/* socket definitions  */
+#include "stm32_net_transport.h"
 
-/* Transport interface include. */
 #include "transport_interface.h"
 
 /* mbed TLS includes. */
@@ -41,30 +40,6 @@
 #include "mbedtls/threading.h"
 #include "mbedtls/x509.h"
 
-/**
- * @brief Secured connection context.
- */
-typedef struct SSLContext
-{
-    mbedtls_ssl_config config;               /**< @brief SSL connection configuration. */
-    mbedtls_ssl_context context;             /**< @brief SSL connection context */
-    mbedtls_x509_crt_profile certProfile;    /**< @brief Certificate security profile for this connection. */
-    mbedtls_x509_crt rootCa;                 /**< @brief Root CA certificate context. */
-    mbedtls_x509_crt clientCert;             /**< @brief Client certificate context. */
-    mbedtls_pk_context privKey;              /**< @brief Client private key context. */
-    mbedtls_entropy_context entropyContext;  /**< @brief Entropy context for random number generation. */
-    mbedtls_ctr_drbg_context ctrDrgbContext; /**< @brief CTR DRBG context for random number generation. */
-} SSLContext_t;
-
-/**
- * @brief Definition of the network context for the transport interface
- * implementation that uses mbedTLS and FreeRTOS+TLS sockets.
- */
-struct NetworkContext
-{
-    int32_t tcpSocket;
-    SSLContext_t sslContext;
-};
 
 /**
  * @brief Contains the credentials necessary for tls connection setup.
@@ -108,8 +83,29 @@ typedef enum TlsTransportStatus
     TLS_TRANSPORT_CONNECT_FAILURE      /**< Initial connection to the server failed. */
 } TlsTransportStatus_t;
 
+
 /**
- * @brief Create a TLS connection with FreeRTOS sockets.
+ * @brief Allocate a TLS Network Context
+ *
+ * @param[in] pxSocketInterface Pointer to a TransportInterfaceExtended_t for the desired lower
+ *                              layer networking interface / TCP stack.
+ *
+ * @return pointer to a NetworkContext_t used by the TLS stack.
+ */
+NetworkContext_t * mbedtls_transport_allocate( const TransportInterfaceExtended_t * pxSocketInterface );
+
+
+/**
+ * @brief Deallocate a TLS Network Context
+ *
+ * @param[in] pxNetworkContext The network context to be deallocated.
+ *
+ */
+void mbedtls_transport_free( NetworkContext_t * pxNetworkContext );
+
+
+/**
+ * @brief Create a TLS connection
  *
  * @param[out] pNetworkContext Pointer to a network context to contain the
  * initialized socket handle.
@@ -122,7 +118,7 @@ typedef enum TlsTransportStatus
  * @return #TLS_TRANSPORT_SUCCESS, #TLS_TRANSPORT_INSUFFICIENT_MEMORY, #TLS_TRANSPORT_INVALID_CREDENTIALS,
  * #TLS_TRANSPORT_HANDSHAKE_FAILED, #TLS_TRANSPORT_INTERNAL_ERROR, or #TLS_TRANSPORT_CONNECT_FAILURE.
  */
-TlsTransportStatus_t TLS_FreeRTOS_Connect( NetworkContext_t * pNetworkContext,
+TlsTransportStatus_t mbedtls_transport_connect( NetworkContext_t * pxNetworkContext,
                                            const char * pHostName,
                                            uint16_t port,
                                            const NetworkCredentials_t * pNetworkCredentials,
@@ -130,11 +126,11 @@ TlsTransportStatus_t TLS_FreeRTOS_Connect( NetworkContext_t * pNetworkContext,
                                            uint32_t sendTimeoutMs );
 
 /**
- * @brief Gracefully disconnect an established TLS connection.
+ * @brief Gracefully disconnect an established TLS connection and free any heap allocated resources.
  *
  * @param[in] pNetworkContext Network context.
  */
-void TLS_FreeRTOS_Disconnect( NetworkContext_t * pNetworkContext );
+void mbedtls_transport_disconnect( NetworkContext_t * pxNetworkContext );
 
 /**
  * @brief Receives data from an established TLS connection.
@@ -150,7 +146,7 @@ void TLS_FreeRTOS_Disconnect( NetworkContext_t * pNetworkContext );
  * 0 if the socket times out without reading any bytes;
  * negative value on error.
  */
-int32_t TLS_FreeRTOS_recv( NetworkContext_t * pNetworkContext,
+int32_t mbedtls_transport_recv( NetworkContext_t * pxNetworkContext,
                            void * pBuffer,
                            size_t bytesToRecv );
 
@@ -168,8 +164,8 @@ int32_t TLS_FreeRTOS_recv( NetworkContext_t * pNetworkContext,
  * 0 if the socket times out without sending any bytes;
  * else a negative value to represent error.
  */
-int32_t TLS_FreeRTOS_send( NetworkContext_t * pNetworkContext,
-                           const void * pBuffer,
-                           size_t bytesToSend );
+int32_t mbedtls_transport_send( NetworkContext_t * pxNetworkContext,
+                                const void * pBuffer,
+                                size_t bytesToSend );
 
-#endif /* ifndef USING_MBEDTLS */
+#endif /* ifndef MBEDTLS_TRANSPORT */

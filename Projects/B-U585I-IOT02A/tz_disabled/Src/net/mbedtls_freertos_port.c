@@ -87,58 +87,6 @@ void mbedtls_platform_free( void * ptr )
 
 /*-----------------------------------------------------------*/
 
-// Sock init call should be like:
-// sock = net_socket(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP);
-
-/**
- * @brief Sends data to a stm32_netlib socket
- *
- * @param[in] ctx The network context containing the socket handle.
- * @param[in] buf Buffer containing the bytes to send.
- * @param[in] len Number of bytes to send from the buffer.
- *
- * @return Number of bytes sent on success; else a negative value.
- */
-int mbedtls_platform_send( void * ctx,
-                           const unsigned char * buf,
-                           size_t len )
-{
-	int32_t sock;
-	configASSERT( ctx != 0 );
-	configASSERT( buf != NULL );
-
-	sock = (int32_t) ctx;
-
-	return (int)net_send(sock, (uint8_t *)buf, len, 0);
-}
-
-/*-----------------------------------------------------------*/
-
-/**
- * @brief Receives data from stm32_netlib socket
- *
- * @param[in] ctx The network context containing the socket handle.
- * @param[out] buf Buffer to receive bytes into.
- * @param[in] len Number of bytes to receive from the network.
- *
- * @return Number of bytes received if successful; Negative value on error.
- */
-int mbedtls_platform_recv( void * ctx,
-                           unsigned char * buf,
-                           size_t len )
-{
-	int32_t sock;
-
-	configASSERT( ctx != 0 );
-	configASSERT( buf != NULL );
-
-	sock = (int32_t) ctx;
-
-	return net_recv(sock, (uint8_t *)buf, len, 0);
-}
-
-/*-----------------------------------------------------------*/
-
 /**
  * @brief Creates a mutex.
  *
