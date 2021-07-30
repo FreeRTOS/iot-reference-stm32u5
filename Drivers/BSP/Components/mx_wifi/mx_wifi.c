@@ -1821,6 +1821,8 @@ int32_t MX_WIFI_Socket_sendto(MX_WIFIObject_t *Obj, int32_t sockfd, uint8_t *buf
   return ret;
 }
 
+#define MSG_DONTWAIT   0x08
+
 /**
   * @brief  Socket recv.
   * @param  Obj: pointer to module handle
@@ -1862,7 +1864,7 @@ int32_t MX_WIFI_Socket_recv(MX_WIFIObject_t *Obj, int32_t sockfd, uint8_t *buf,
       rp->received = 0;
       cp.socket = sockfd;
       cp.size = datalen;
-      cp.flags = flags | 0x40;
+      cp.flags = flags | MSG_DONTWAIT;
 
       TickType_t xTicksToWait = 5000;
       TimeOut_t xTimeOut;
