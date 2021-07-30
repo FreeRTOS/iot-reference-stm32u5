@@ -4,6 +4,9 @@
 #define THING_NAME "test_stm32u5_01"
 #define ENDOPOINT_ADDRESS "a3dwi8g3v1qwwi-ats.iot.us-west-2.amazonaws.com"
 
+//#define SSID "heliosiot"
+//#define AUTH "psk2"
+//#define WIFI_PASSWORD "pga6KGA48gDp"
 #define SSID "Guest"
 #define AUTH ""
 #define WIFI_PASSWORD ""

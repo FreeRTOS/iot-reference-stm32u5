@@ -56,8 +56,6 @@ extern "C" {
 /* #define NET_MBEDTLS_DEVICE_SUPPORT */
 #define NET_USE_RTOS
 
-#include "cmsis_os.h"
-
 /* Please uncomment if dhcp server is required and not natively supported by network interface */
 /* #define NET_DHCP_SERVER_HOST_SUPPORT*/
 
@@ -71,7 +69,7 @@ extern "C" {
 #endif /* NET_USE_IPV6 */
 
 
-#define NET_MAX_SOCKETS_NBR             5
+#define NET_MAX_SOCKETS_NBR             8
 
 #define NET_IF_NAME_LEN                 128
 #define NET_DEVICE_NAME_LEN             64
@@ -85,8 +83,8 @@ extern "C" {
 
 #define NET_USE_DEFAULT_INTERFACE       1
 
-#define NET_RTOS_SUSPEND                if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) { (void) vTaskSuspendAll(); }
-#define NET_RTOS_RESUME                 if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) { (void) xTaskResumeAll(); }
+#define NET_RTOS_SUSPEND                if( xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED ) { vTaskSuspendAll(); }
+#define NET_RTOS_RESUME                 if( xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED ) { ( void ) xTaskResumeAll(); }
 
 #define NET_DBG_INFO(...)               LogDebug( __VA_ARGS__ )
 #define NET_DBG_ERROR(...)              LogError( __VA_ARGS__ )
@@ -100,6 +98,8 @@ extern "C" {
 #define NET_PERF_MAXTHREAD              7U
 
 #define NET_TASK_HISTORY_SIZE           0U
+
+#define osDelay(n)                      vTaskDelay( pdMS_TO_TICKS( n ) )
 
 
 #ifdef __cplusplus

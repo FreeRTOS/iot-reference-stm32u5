@@ -90,9 +90,9 @@ typedef struct _spi_header
 #define MX_WIFI_HW_RESET() \
   do { \
     HAL_GPIO_WritePin(MX_WIFI_RESET_PORT, MX_WIFI_RESET_PIN, GPIO_PIN_RESET); \
-    HAL_Delay(100); \
+    DELAYms(100); \
     HAL_GPIO_WritePin(MX_WIFI_RESET_PORT, MX_WIFI_RESET_PIN, GPIO_PIN_SET); \
-    HAL_Delay(1200); \
+    DELAYms(1200); \
   } while(0)
 
 /* SPI CS */

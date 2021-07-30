@@ -22,6 +22,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <inttypes.h>
+#include "mx_wifi_conf.h"
 
 /* USER CODE END Includes */
 

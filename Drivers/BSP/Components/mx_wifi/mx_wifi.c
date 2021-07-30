@@ -1858,20 +1858,37 @@ int32_t MX_WIFI_Socket_recv(MX_WIFIObject_t *Obj, int32_t sockfd, uint8_t *buf,
     rp = (socket_recv_rparams_t *)MX_WIFI_MALLOC(rp_size);
     if (NULL != rp)
     {
+      int32_t rq_result = MIPC_CODE_TIMEOUT;
       rp->received = 0;
       cp.socket = sockfd;
       cp.size = datalen;
-      cp.flags = flags;
-      if (MIPC_CODE_SUCCESS == mipc_request(MIPC_API_SOCKET_RECV_CMD,
-                                            (uint8_t *)&cp, sizeof(cp),
-                                            (uint8_t *)rp, &rp_size,
-                                            MX_WIFI_CMD_TIMEOUT))
+      cp.flags = flags | 0x40;
+
+      TickType_t xTicksToWait = 5000;
+      TimeOut_t xTimeOut;
+      vTaskSetTimeOutState( &xTimeOut );
+
+
+      while( xTaskCheckForTimeOut( &xTimeOut, &xTicksToWait ) != pdFALSE )
       {
-        if ((rp->received <= datalen) && (rp->received > 0))
-        {
-          memcpy(buf, &(rp->buffer[0]), rp->received);
-        }
-        ret = rp->received;
+          rq_result = mipc_request(MIPC_API_SOCKET_RECV_CMD,
+                                  (uint8_t *)&cp, sizeof(cp),
+                                  (uint8_t *)rp, &rp_size,
+                                  50);
+          if( rq_result == MIPC_CODE_SUCCESS )
+          {
+            if ((rp->received <= datalen) && (rp->received > 0))
+            {
+              memcpy(buf, &(rp->buffer[0]), rp->received);
+            }
+            ret = rp->received;
+            break;
+          }
+          else
+          {
+              vTaskDelay(200);
+              ret = MX_WIFI_STATUS_TIMEOUT;
+          }
       }
       MX_WIFI_FREE(rp);
     }

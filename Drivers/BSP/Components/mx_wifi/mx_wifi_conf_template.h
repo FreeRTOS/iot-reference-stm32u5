@@ -64,7 +64,7 @@ int32_t mxwifi_probe(void **ll_drv_context);
 #ifndef LOCK_DECLARE
 
 #if (MX_WIFI_USE_CMSIS_OS == 1)
-#include "mx_wifi_cmsis_os.h"
+#include "mx_wifi_freertos.h"
 #else
 #include "mx_wifi_bare_os.h"
 #endif /* MX_WIFI_USE_CMSIS_OS */

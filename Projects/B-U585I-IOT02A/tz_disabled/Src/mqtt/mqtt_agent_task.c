@@ -372,7 +372,7 @@ void vStartMQTTAgentDemo( void )
      * itself into the MQTT agent task. */
     xTaskCreate( prvMQTTAgentTask, /* Function that implements the task. */
                  "MqttAgentTask",              /* Text name for the task - only used for debugging. */
-                 democonfigDEMO_STACKSIZE,     /* Size of stack (in words, not bytes) to allocate for the task. */
+                 2 * democonfigDEMO_STACKSIZE,     /* Size of stack (in words, not bytes) to allocate for the task. */
                  NULL,                         /* Optional - task parameter - not used in this case. */
                  tskIDLE_PRIORITY + 1,         /* Task priority, must be between 0 and configMAX_PRIORITIES - 1. */
                  NULL );                       /* Optional - used to pass out a handle to the created task. */
@@ -642,8 +642,8 @@ static BaseType_t prvSocketConnect( void )
                                                     ConfigStore_getEntryData( CS_CORE_MQTT_ENDPOINT ),
                                                     (uint16_t) *( ( uint32_t * ) ConfigStore_getEntryData( CS_CORE_MQTT_ENDPOINT_PORT ) ),
                                                     &xNetworkCredentials,
-                                                    mqttexampleTRANSPORT_SEND_RECV_TIMEOUT_MS,
-                                                    mqttexampleTRANSPORT_SEND_RECV_TIMEOUT_MS );
+                                                    0,
+                                                    0 );
 
         xConnected = ( xNetworkStatus == TLS_TRANSPORT_SUCCESS ) ? pdPASS : pdFAIL;
 

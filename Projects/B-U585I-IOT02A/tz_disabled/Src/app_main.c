@@ -57,13 +57,16 @@ static void hw_init( void )
 	/* Initialize GPIO */
 	MX_GPIO_Init();
 
-    MX_RNG_Init();
     MX_RTC_Init();
     MX_GPDMA1_Init();
 	MX_SPI2_Init();
 
-	/* Initialize crypto accelerator */
-//	MX_HASH_Init();
+	/* Initialize crypto accelerators */
+	MX_HASH_Init();
+    MX_RNG_Init();
+    MX_PKA_Init();
+
+
 }
 
 static void testTask( void * pvParameters )
@@ -173,6 +176,15 @@ void vApplicationGetTimerTaskMemory( StaticTask_t ** ppxTimerTaskTCBBuffer,
     *pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
 }
 
+void vAssertHandler( void )
+{
+    portDISABLE_INTERRUPTS();
+    while(1)
+    {
+        __NOP();
+    }
+}
+
 /*-----------------------------------------------------------*/
 
 void vApplicationMallocFailedHook( void )
@@ -196,6 +208,8 @@ void vApplicationStackOverflowHook( TaskHandle_t xTask,
     while( ulSetToZeroToStepOut != 0 )
     {
     }
+
+    taskEXIT_CRITICAL();
 }
 /*-----------------------------------------------------------*/
 

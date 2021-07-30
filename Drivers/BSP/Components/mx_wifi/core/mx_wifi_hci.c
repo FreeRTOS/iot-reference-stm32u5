@@ -29,12 +29,12 @@
 #include "checksumutils.h"
 
 #ifdef MX_WIFI_HCI_DEBUG
-#define DEBUG_LOG(M, ...)       printf((M), ##__VA_ARGS__)
+#define DEBUG_LOG(M, ...)       LogDebug( M, __VA_ARGS__ )
 #else
 #define DEBUG_LOG(M, ...)
 #endif /* MX_WIFI_HCI_DEBUG */
 
-#define DEBUG_ERROR(M, ...)     printf((M), ##__VA_ARGS__)
+#define DEBUG_ERROR(M, ...)     LogDebug( M, __VA_ARGS__ )
 
 /* Private defines -----------------------------------------------------------*/
 

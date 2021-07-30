@@ -473,7 +473,7 @@ static void prvSimpleSubscribePublishTask( void * pvParameters )
     snprintf( taskName, TASK_NAME_LEN, mqttexampleTASK_NAME_PREFIX"%d", ( int ) ulTaskNumber );
 
     /* Create a topic name for this task to publish to. */
-    snprintf( pcTopicBuffer, mqttexampleSTRING_BUFFER_LENGTH, "/filter/%s", taskName );
+    snprintf( pcTopicBuffer, mqttexampleSTRING_BUFFER_LENGTH, "/test_stm32u5_01/%s", taskName );
 
     /* Subscribe to the same topic to which this task will publish.  That will
      * result in each published message being published from the server back to

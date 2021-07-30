@@ -29,6 +29,8 @@
 
 #include "net_connect.h"
 
+#include "FreeRTOS.h"
+
 #ifdef AF_UNSPEC
 static_assert( AF_UNSPEC == NET_AF_UNSPEC );
 #else

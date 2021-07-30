@@ -40,7 +40,7 @@
 
 
 #ifdef MX_WIFI_API_DEBUG
-#define DEBUG_LOG(M, ...)  printf((M), ##__VA_ARGS__)
+#define DEBUG_LOG(M, ...)  LogDebug( M, __VA_ARGS__ )
 #else
 #define DEBUG_LOG(M, ...)
 #endif /* MX_WIFI_API_DEBUG */

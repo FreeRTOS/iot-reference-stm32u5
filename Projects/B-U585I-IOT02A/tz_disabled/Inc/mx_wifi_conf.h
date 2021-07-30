@@ -37,19 +37,16 @@ int32_t mxwifi_probe(void **ll_drv_context);
 #define MX_WIFI_TX_BUFFER_NO_COPY                                           (0)
 
 /* DEBUG LOG */
-/* #define MX_WIFI_API_DEBUG */
-/* #define MX_WIFI_IPC_DEBUG */
-/* #define MX_WIFI_HCI_DEBUG */
-/* #define MX_WIFI_SLIP_DEBUG */
-/* #define MX_WIFI_IO_DEBUG */
+#define MX_WIFI_API_DEBUG
+#define MX_WIFI_IPC_DEBUG
+#define MX_WIFI_HCI_DEBUG
+//#define MX_WIFI_SLIP_DEBUG
+//#define MX_WIFI_IO_DEBUG
 
-/* Use CMSIS_RTOS abstraction layer for OS functions */
-#define MX_WIFI_USE_CMSIS_OS                                                (1)
+#define MX_WIFI_USE_CMSIS_OS 1
 
-/* check if OS primitive are already declared */
-/* if not, include default declaration      */
 #ifndef LOCK_DECLARE
-#include "mx_wifi_cmsis_os.h"
+#include "mx_wifi_freertos.h"
 #endif /* LOCK_DECLARE */
 
 #define DMA_ON_USE                                                           (1)
@@ -78,7 +75,7 @@ int32_t mxwifi_probe(void **ll_drv_context);
 /* MX_WIFI_IPC_PAYLOAD_SIZE - socket_api_params_header */
 #define MX_WIFI_SOCKET_DATA_SIZE                    ((MX_WIFI_IPC_PAYLOAD_SIZE)-12)
 
-#define MX_WIFI_CMD_TIMEOUT                         (10000)
+#define MX_WIFI_CMD_TIMEOUT                         (5000)
 #define MX_WIFI_MAX_SOCKET_NBR                      (8)
 #define MX_WIFI_MAX_DETECTED_AP                     (10)
 
@@ -90,19 +87,19 @@ int32_t mxwifi_probe(void **ll_drv_context);
 
 #define MX_WIFI_FW_REV_SIZE                         24
 
-#define MX_WIFI_SPI_THREAD_PRIORITY                 (OSPRIORITYREALTIME)
-#define MX_WIFI_SPI_THREAD_STACK_SIZE               (1024)
+#define MX_WIFI_SPI_THREAD_PRIORITY                 (30)
+#define MX_WIFI_SPI_THREAD_STACK_SIZE               (2048)
 
-#define MX_WIFI_RECEIVED_THREAD_PRIORITY            (OSPRIORITYABOVENORMAL)
-#define MX_WIFI_RECEIVED_THREAD_STACK_SIZE          (1024)
+#define MX_WIFI_RECEIVED_THREAD_PRIORITY            (16)
+#define MX_WIFI_RECEIVED_THREAD_STACK_SIZE          (2048)
 
-#define MX_WIFI_TRANSMIT_THREAD_PRIORITY            (OSPRIORITYABOVENORMAL)
-#define MX_WIFI_TRANSMIT_THREAD_STACK_SIZE          (1024)
+#define MX_WIFI_TRANSMIT_THREAD_PRIORITY            (16)
+#define MX_WIFI_TRANSMIT_THREAD_STACK_SIZE          (2048)
 
 /* Maximum number of RX buffer that can be queued by Hardware interface (SPI/UART)                         */
 /* This is used to size internal queue, and avoid to block the IP thread if it can still push some buffers */
 /* Impact on Memory foot print is weak , one single void* per place in the queue                           */
-#define MX_WIFI_MAX_RX_BUFFER_COUNT                     (2)
+#define MX_WIFI_MAX_RX_BUFFER_COUNT                     (4)
 
 /* Maximum number of TX buffer that can be queued by IP stack (LwIP or Netx) without blocking the calling thread */
 /* This is used to size internal queue, and avoid to block the IP thread if it can still push some buffers       */

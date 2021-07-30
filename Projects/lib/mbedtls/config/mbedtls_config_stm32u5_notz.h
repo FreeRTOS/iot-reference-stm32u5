@@ -53,7 +53,7 @@
  *            digests and ciphers instead.
  *
  */
-//#define MBEDTLS_AES_ALT
+#define MBEDTLS_AES_ALT
 //#define MBEDTLS_ARC4_ALT
 //#define MBEDTLS_ARIA_ALT
 //#define MBEDTLS_BLOWFISH_ALT
@@ -73,8 +73,8 @@
 //#define MBEDTLS_POLY1305_ALT
 //#define MBEDTLS_RIPEMD160_ALT
 //#define MBEDTLS_RSA_ALT
-//#define MBEDTLS_SHA1_ALT
-//#define MBEDTLS_SHA256_ALT
+#define MBEDTLS_SHA1_ALT
+#define MBEDTLS_SHA256_ALT
 //#define MBEDTLS_SHA512_ALT
 //#define MBEDTLS_XTEA_ALT
 
@@ -337,6 +337,6 @@
  */
 //#define MBEDTLS_SHA512_SMALLER
 
-//#define ST_HW_CONTEXT_SAVING
+#define ST_HW_CONTEXT_SAVING
 
 #endif /* MBEDTLS_CONFIG_PLATFORM_H */

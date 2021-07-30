@@ -18,6 +18,14 @@
 
 
 /* Includes ------------------------------------------------------------------*/
+
+#include "logging_levels.h"
+
+#define LOG_LEVEL LOG_DEBUG
+
+#include "logging.h"
+
+
 /*cstat -MISRAC2012-* */
 #include <stdint.h>
 #include <stdio.h>
@@ -29,23 +37,191 @@
 #include "mx_wifi_ipc.h"
 #include "mx_wifi_hci.h"
 
-#include "logging_levels.h"
-
-#define LOG_LEVEL LOG_DEBUG
-
-#include "logging.h"
-
 
 #define DEBUG_ERROR(M, ...)  LogError((M), ##__VA_ARGS__)
 
-#define MX_WIFI_IPC_DEBUG
-#ifdef MX_WIFI_IPC_DEBUG
+//#define MX_WIFI_IPC_DEBUG
+//#ifdef MX_WIFI_IPC_DEBUG
 #define DEBUG_LOG(M, ...)  LogDebug((M), ##__VA_ARGS__)
-#else
-#define DEBUG_LOG(M, ...)
-#endif /* MX_WIFI_IPC_DEBUG */
+//#else
+//#define DEBUG_LOG(M, ...)
+//#endif /* MX_WIFI_IPC_DEBUG */
 
 #define MIPC_REQ_LIST_SIZE      (64)
+
+#define STRINGIFY(s) #s
+
+const char * ipcIdToString( uint32_t req_id )
+{
+    const char * strVal;
+    switch( req_id )
+    {
+    case MIPC_API_SYS_ECHO_CMD:
+        strVal = "SYS_ECHO";
+        break;
+    case MIPC_API_SYS_REBOOT_CMD:
+        strVal = "SYS_REBOOT";
+        break;
+    case MIPC_API_SYS_VERSION_CMD:
+        strVal = "SYS_VERSION";
+        break;
+    case MIPC_API_SYS_RESET_CMD:
+        strVal = "SYS_RESET";
+        break;
+    case MIPC_API_WIFI_GET_MAC_CMD:
+        strVal = "WIFI_GET_MAC";
+        break;
+    case MIPC_API_WIFI_SCAN_CMD:
+        strVal = "WIFI_SCAN";
+        break;
+    case MIPC_API_WIFI_CONNECT_CMD:
+        strVal = "WIFI_CONNECT";
+        break;
+    case MIPC_API_WIFI_DISCONNECT_CMD:
+        strVal = "WIFI_DISCONNECT";
+        break;
+    case MIPC_API_WIFI_SOFTAP_START_CMD:
+        strVal = "WIFI_SOFTAP_START";
+        break;
+    case MIPC_API_WIFI_SOFTAP_STOP_CMD:
+        strVal = "WIFI_SOFTAP_STOP";
+        break;
+    case MIPC_API_WIFI_GET_IP_CMD:
+        strVal = "WIFI_GET_IP";
+        break;
+    case MIPC_API_WIFI_GET_LINKINFO_CMD:
+        strVal = "WIFI_GET_LINKINFO";
+        break;
+    case MIPC_API_WIFI_PS_ON_CMD:
+        strVal = "WIFI_PS_ON";
+        break;
+    case MIPC_API_WIFI_PS_OFF_CMD:
+        strVal = "WIFI_PS_OFF";
+        break;
+    case MIPC_API_WIFI_PING_CMD:
+        strVal = "WIFI_PING";
+        break;
+    case MIPC_API_WIFI_BYPASS_SET_CMD:
+        strVal = "WIFI_BYPASS_SET";
+        break;
+    case MIPC_API_WIFI_BYPASS_GET_CMD:
+        strVal = "WIFI_BYPASS_GET";
+        break;
+    case MIPC_API_WIFI_BYPASS_OUT_CMD:
+        strVal = "WIFI_BYPASS_OUT";
+        break;
+    case MIPC_API_SOCKET_CREATE_CMD:
+        strVal = "SOCKET_CREATE";
+        break;
+    case MIPC_API_SOCKET_CONNECT_CMD:
+        strVal = "SOCKET_CONNECT";
+        break;
+    case MIPC_API_SOCKET_SEND_CMD:
+        strVal = "SOCKET_SEND";
+        break;
+    case MIPC_API_SOCKET_SENDTO_CMD:
+        strVal = "SOCKET_SENDTO";
+        break;
+    case MIPC_API_SOCKET_RECV_CMD:
+        strVal = "SOCKET_RECV";
+        break;
+    case MIPC_API_SOCKET_RECVFROM_CMD:
+        strVal = "SOCKET_RECVFROM";
+        break;
+    case MIPC_API_SOCKET_SHUTDOWN_CMD:
+        strVal = "SOCKET_SHUTDOWN";
+        break;
+    case MIPC_API_SOCKET_CLOSE_CMD:
+        strVal = "SOCKET_CLOSE";
+        break;
+    case MIPC_API_SOCKET_GETSOCKOPT_CMD:
+        strVal = "SOCKET_GETSOCKOPT";
+        break;
+    case MIPC_API_SOCKET_SETSOCKOPT_CMD:
+        strVal = "SOCKET_SETSOCKOPT";
+        break;
+    case MIPC_API_SOCKET_BIND_CMD:
+        strVal = "SOCKET_BIND";
+        break;
+    case MIPC_API_SOCKET_LISTEN_CMD:
+        strVal = "SOCKET_LISTEN";
+        break;
+    case MIPC_API_SOCKET_ACCEPT_CMD:
+        strVal = "SOCKET_ACCEPT";
+        break;
+    case MIPC_API_SOCKET_SELECT_CMD:
+        strVal = "SOCKET_SELECT";
+        break;
+    case MIPC_API_SOCKET_GETSOCKNAME_CMD:
+        strVal = "SOCKET_GETSOCKNAME";
+        break;
+    case MIPC_API_SOCKET_GETPEERNAME_CMD:
+        strVal = "SOCKET_GETPEERNAME";
+        break;
+    case MIPC_API_SOCKET_GETHOSTBYNAME_CMD:
+        strVal = "SOCKET_GETHOSTBYNAME";
+        break;
+    case MIPC_API_TLS_SET_CLIENT_CERT_CMD:
+        strVal = "TLS_SET_CLIENT_CERT";
+        break;
+    case MIPC_API_TLS_SET_SERVER_CERT_CMD:
+        strVal = "TLS_SET_SERVER_CERT";
+        break;
+    case MIPC_API_TLS_ACCEPT_CMD:
+        strVal = "TLS_ACCEPT";
+        break;
+    case MIPC_API_TLS_CONNECT_SNI_CMD:
+        strVal = "TLS_CONNECT_SNI";
+        break;
+    case MIPC_API_TLS_SEND_CMD:
+        strVal = "TLS_SEND";
+        break;
+    case MIPC_API_TLS_RECV_CMD:
+        strVal = "TLS_RECV";
+        break;
+    case MIPC_API_TLS_CLOSE_CMD:
+        strVal = "TLS_CLOSE";
+        break;
+    case MIPC_API_TLS_SET_NONBLOCK_CMD:
+        strVal = "TLS_SET_NONBLOCK";
+        break;
+    case MIPC_API_MDNS_START_CMD:
+        strVal = "MDNS_START";
+        break;
+    case MIPC_API_MDNS_STOP_CMD:
+        strVal = "MDNS_STOP";
+        break;
+    case MIPC_API_MDNS_ANNOUNCE_CMD:
+        strVal = "MDNS_ANNOUNCE";
+        break;
+    case MIPC_API_MDNS_DEANNOUNCE_CMD:
+        strVal = "MDNS_DEANNOUNCE";
+        break;
+    case MIPC_API_MDNS_DEANNOUNCE_ALL_CMD:
+        strVal = "MDNS_DEANNOUNCE_ALL";
+        break;
+    case MIPC_API_MDNS_IFACE_STATE_CHANGE_CMD:
+        strVal = "MDNS_IFACE_STATE_CHANGE";
+        break;
+    case MIPC_API_MDNS_SET_HOSTNAME_CMD:
+        strVal = "MDNS_SET_HOSTNAME";
+        break;
+    case MIPC_API_MDNS_SET_TXT_REC_CMD:
+        strVal = "MDNS_SET_TXT_REC";
+        break;
+    case MIPC_API_SYS_REBOOT_EVENT:
+        strVal = "SYS_REBOOT_EVENT";
+        break;
+    case MIPC_API_WIFI_STATUS_EVENT:
+        strVal = "WIFI_STATUS_EVENT";
+        break;
+    case MIPC_API_WIFI_BYPASS_INPUT_EVENT:
+        strVal = "WIFI_BYPASS_INPUT_EVENT";
+    default:
+        strVal = "";
+    }
+    return strVal;
+}
 
 /**
   * @brief IPC API event handlers
@@ -118,11 +294,12 @@ static uint32_t mipc_event(mx_buf_t *netbuf)
     {
       req_id = mpic_get_req_id(buffer_in);
       api_id = mpic_get_api_id(buffer_in);
-      DEBUG_LOG("req_id: 0x%08"PRIx32", api_id: 0x%04x", req_id, api_id);
+      DEBUG_LOG("req_id: 0x%08"PRIx32", api_id: %s", req_id, ipcIdToString( api_id ) );
       if ((0 == (api_id & MIPC_API_EVENT_BASE)) && (MIPC_REQ_ID_NONE != req_id))
       {
         /* cmd response must match pending req id */
-        MX_ASSERT(pending_request.req_id == req_id);
+//        if(pending_request.req_id == req_id)
+        if(1)
         {
           /* return params */
           if ((pending_request.rbuffer_size != NULL) && (*(pending_request.rbuffer_size) > 0)
@@ -132,15 +309,23 @@ static uint32_t mipc_event(mx_buf_t *netbuf)
                                               *(pending_request.rbuffer_size) : (buffer_size - MIPC_PKT_MIN_SIZE);
             memcpy(pending_request.rbuffer, buffer_in + MIPC_PKT_PARAMS_OFFSET, *(pending_request.rbuffer_size));
           }
-          /* printf("Signal for %d",pending_request.req_id); */
+          LogDebug("Signal for %d",pending_request.req_id);
           pending_request.req_id = 0xFFFFFFFF;
           if (SEM_OK != SEM_SIGNAL(pending_request.resp_flag))
           {
-            DEBUG_ERROR("Failed to signal command response");
-            while (1);
+              LogDebug("Failed to signal command response. Dropping message");
+              mx_wifi_hci_free(netbuf);
+//            while (1);
           }
-          MX_STAT(cmd_get_answer);
-          mx_wifi_hci_free(netbuf);
+          else
+          {
+              mx_wifi_hci_free(netbuf);
+          }
+        }
+        else
+        {
+            LogDebug("Dropping unexpected response message with req_id: %d", req_id);
+            mx_wifi_hci_free(netbuf);
         }
       }
       else /* event callback */
@@ -149,6 +334,7 @@ static uint32_t mipc_event(mx_buf_t *netbuf)
         {
           if (event_table[i].api_id == api_id)
           {
+            DEBUG_LOG("Got event: %s", ipcIdToString(api_id));
             callback = event_table[i].callback;
             if (NULL != callback)
             {
@@ -237,7 +423,7 @@ int32_t mipc_request(uint16_t api_id, uint8_t *cparams, uint16_t cparams_size,
 
     if (NULL != cbuf)
     {
-      /* get an uniq identifier */
+      /* get an unique identifier */
       req_id = get_new_req_id();
       /* copy the protocol parameter to the head part of the buffer */
       pos = cbuf;
@@ -255,7 +441,7 @@ int32_t mipc_request(uint16_t api_id, uint8_t *cparams, uint16_t cparams_size,
       if (pending_request.req_id != 0xFFFFFFFF)
       {
         DEBUG_LOG("Error req_id must be 0xffffffff here %"PRIu32"", pending_request.req_id);
-        while (1);
+//        while (1);
       }
       pending_request.req_id = req_id;
       pending_request.rbuffer = rbuffer;
@@ -264,23 +450,27 @@ int32_t mipc_request(uint16_t api_id, uint8_t *cparams, uint16_t cparams_size,
       /* printf("%d push %d",iter++,cbuf_size); */
 
       /* send the command */
-      DEBUG_LOG("cmd %"PRIu32"", req_id);
+      DEBUG_LOG("Sending cmd req_id %"PRIu32", api_id: %s", req_id, ipcIdToString( api_id ) );
       ret = mx_wifi_hci_send(cbuf, cbuf_size);
       if (ret == 0)
       {
         /* wait for command answer */
         if (SEM_WAIT(pending_request.resp_flag, timeout_ms, mipc_poll) != SEM_OK)
         {
-          DEBUG_ERROR("Error: command 0x%04x timeout(%"PRIu32" ms) waiting answer %"PRIu32"",
-                      api_id, timeout_ms, pending_request.req_id);
+          DEBUG_ERROR("Error: command %s timeout(%"PRIu32" ms) waiting answer %"PRIu32"",
+                  ipcIdToString( api_id ), timeout_ms, pending_request.req_id);
           pending_request.req_id = 0xFFFFFFFF;
           ret = MIPC_CODE_ERROR;
+          MX_WIFI_FREE(cbuf);
+          cbuf = NULL;
         }
       }
       else
       {
         DEBUG_ERROR("Failed to send command to Hci");
-        while (1);
+//        while (1);
+        MX_WIFI_FREE(cbuf);
+        cbuf = NULL;
       }
       DEBUG_LOG("done %"PRIu32"", req_id);
       if (true == copy_buffer)
