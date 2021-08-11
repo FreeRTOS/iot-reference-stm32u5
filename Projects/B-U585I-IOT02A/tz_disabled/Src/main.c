@@ -104,23 +104,24 @@ void SystemClock_Config(void)
   }
   /** Initializes the CPU, AHB and APB busses clocks
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_HSI
-                              |RCC_OSCILLATORTYPE_LSI;
-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
-  RCC_OscInitStruct.LSIDiv = RCC_LSI_DIV1;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLMBOOST = RCC_PLLMBOOST_DIV1;
-  RCC_OscInitStruct.PLL.PLLM = 1;
-  RCC_OscInitStruct.PLL.PLLN = 10;
-  RCC_OscInitStruct.PLL.PLLP = 2;
-  RCC_OscInitStruct.PLL.PLLQ = 2;
-  RCC_OscInitStruct.PLL.PLLR = 1;
-  RCC_OscInitStruct.PLL.PLLRGE = RCC_PLLVCIRANGE_1;
-  RCC_OscInitStruct.PLL.PLLFRACN = 0;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_LSI
+                                |RCC_OSCILLATORTYPE_MSI;
+    RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
+    RCC_OscInitStruct.LSIState = RCC_LSI_ON;
+    RCC_OscInitStruct.MSIState = RCC_MSI_ON;
+    RCC_OscInitStruct.MSICalibrationValue = RCC_MSICALIBRATION_DEFAULT;
+    RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_0;
+    RCC_OscInitStruct.LSIDiv = RCC_LSI_DIV1;
+    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+    RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_MSI;
+    RCC_OscInitStruct.PLL.PLLMBOOST = RCC_PLLMBOOST_DIV4;
+    RCC_OscInitStruct.PLL.PLLM = 3;
+    RCC_OscInitStruct.PLL.PLLN = 10;
+    RCC_OscInitStruct.PLL.PLLP = 2;
+    RCC_OscInitStruct.PLL.PLLQ = 2;
+    RCC_OscInitStruct.PLL.PLLR = 1;
+    RCC_OscInitStruct.PLL.PLLRGE = RCC_PLLVCIRANGE_1;
+    RCC_OscInitStruct.PLL.PLLFRACN = 0;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -161,12 +162,15 @@ void MX_GPDMA1_Init(void)
   /* GPDMA1 interrupt Init */
     HAL_NVIC_SetPriority(GPDMA1_Channel4_IRQn, 5, 0);
     HAL_NVIC_EnableIRQ(GPDMA1_Channel4_IRQn);
+
     HAL_NVIC_SetPriority(GPDMA1_Channel5_IRQn, 5, 0);
     HAL_NVIC_EnableIRQ(GPDMA1_Channel5_IRQn);
-    HAL_NVIC_SetPriority(GPDMA1_Channel6_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(GPDMA1_Channel6_IRQn);
-    HAL_NVIC_SetPriority(GPDMA1_Channel7_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(GPDMA1_Channel7_IRQn);
+
+//    HAL_NVIC_SetPriority(GPDMA1_Channel6_IRQn, 5, 0);
+//    HAL_NVIC_EnableIRQ(GPDMA1_Channel6_IRQn);
+
+//    HAL_NVIC_SetPriority(GPDMA1_Channel7_IRQn, 5, 0);
+//    HAL_NVIC_EnableIRQ(GPDMA1_Channel7_IRQn);
 
   /* USER CODE BEGIN GPDMA1_Init 1 */
 
@@ -406,6 +410,7 @@ void MX_SPI2_Init(void)
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
   hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
+//  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -434,7 +439,7 @@ void MX_SPI2_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN SPI2_Init 2 */
-  SPI2->CFG1 |= 0x00000007 << SPI_CFG1_CRCSIZE_Pos;
+//  SPI2->CFG1 |= 0x00000007 << SPI_CFG1_CRCSIZE_Pos;
   /* USER CODE END SPI2_Init 2 */
 
 }
@@ -497,6 +502,9 @@ void MX_GPIO_Init(void)
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
+
+  HAL_PWREx_EnableVddIO2();
+
   __HAL_RCC_GPIOG_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
@@ -557,47 +565,23 @@ void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+static GPIOInterruptCallback_t xGpioCallbacks[ 16 ] = { NULL };
+static void * xGpioCallbackContext[ 16 ] = { NULL };
 
-/**
-  * @brief Rx Transfer completed callback.
-  * @param  hspi: pointer to a SPI_HandleTypeDef structure that contains
-  *               the configuration information for SPI module.
-  * @retval None
-  */
-void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
+/*
+ * @brief Register a callback function for a given gpio.
+ * @param usGpioPinMask The target gpio pin's bitmask
+ * @param pvCallback Callback function pointer
+ * @param pvContext User provided context pointer
+ */
+void GPIO_EXTI_Register_Callback( uint16_t usGpioPinMask, GPIOInterruptCallback_t pvCallback, void * pvContext )
 {
-  if (hspi == &hspi2)
-  {
-    HAL_SPI_TransferCallback(hspi);
-  }
-}
+    uint32_t ulIndex = POSITION_VAL( usGpioPinMask );
 
-/**
-  * @brief Tx Transfer completed callback.
-  * @param  hspi: pointer to a SPI_HandleTypeDef structure that contains
-  *               the configuration information for SPI module.
-  * @retval None
-  */
-void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
-{
-  if (hspi == &hspi2)
-  {
-    HAL_SPI_TransferCallback(hspi);
-  }
-}
+    configASSERT( ulIndex < 16 );
 
-/**
-  * @brief Tx and Rx Transfer completed callback.
-  * @param  hspi: pointer to a SPI_HandleTypeDef structure that contains
-  *               the configuration information for SPI module.
-  * @retval None
-  */
-void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
-{
-  if (hspi == &hspi2)
-  {
-    HAL_SPI_TransferCallback(hspi);
-  }
+    xGpioCallbacks[ ulIndex ] = pvCallback;
+    xGpioCallbackContext[ ulIndex ] = pvContext;
 }
 
 /**
@@ -605,20 +589,22 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
   * @param  GPIO_Pin: Specifies the port pin connected to corresponding EXTI line.
   * @retval None
   */
-void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
+void HAL_GPIO_EXTI_Rising_Callback( uint16_t usGpioPinMask )
 {
-  switch (GPIO_Pin)
-  {
-    case (MXCHIP_FLOW_Pin):
-      mxchip_WIFI_ISR(MXCHIP_FLOW_Pin);
-      break;
+    uint32_t ulIndex = POSITION_VAL( usGpioPinMask );
+    if( xGpioCallbacks[ ulIndex ] != NULL )
+    {
+        xGpioCallbacks[ ulIndex ]( xGpioCallbackContext[ ulIndex ] );
+    }
+}
 
-    case (MXCHIP_NOTIFY_Pin):
-      mxchip_WIFI_ISR(MXCHIP_NOTIFY_Pin);
-      break;
-    default:
-      break;
-  }
+void HAL_GPIO_EXTI_Falling_Callback( uint16_t usGpioPinMask )
+{
+    uint32_t ulIndex = POSITION_VAL( usGpioPinMask );
+    if( xGpioCallbacks[ ulIndex ] != NULL )
+    {
+        xGpioCallbacks[ ulIndex ]( xGpioCallbackContext[ ulIndex ] );
+    }
 }
 
 /* USER CODE END 4 */

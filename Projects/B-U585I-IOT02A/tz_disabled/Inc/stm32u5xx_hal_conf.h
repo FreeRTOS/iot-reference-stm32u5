@@ -26,6 +26,9 @@
 #endif
 
 /* Exported types ------------------------------------------------------------*/
+
+#include "stm32u5xx_hal_def.h"
+
 /* Exported constants --------------------------------------------------------*/
 
 /* ########################## Module Selection ############################## */
@@ -227,7 +230,7 @@
 #define  USE_HAL_SDRAM_REGISTER_CALLBACKS      0U /* SDRAM register callback disabled     */
 #define  USE_HAL_SMARTCARD_REGISTER_CALLBACKS  0U /* SMARTCARD register callback disabled */
 #define  USE_HAL_SMBUS_REGISTER_CALLBACKS      0U /* SMBUS register callback disabled     */
-#define  USE_HAL_SPI_REGISTER_CALLBACKS        0U /* SPI register callback disabled       */
+#define  USE_HAL_SPI_REGISTER_CALLBACKS        1U /* SPI register callback enabled        */
 #define  USE_HAL_SRAM_REGISTER_CALLBACKS       0U /* SRAM register callback disabled      */
 #define  USE_HAL_TIM_REGISTER_CALLBACKS        0U /* TIM register callback disabled       */
 #define  USE_HAL_TSC_REGISTER_CALLBACKS        0U /* TSC register callback disabled       */

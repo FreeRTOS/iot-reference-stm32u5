@@ -840,13 +840,14 @@ static void prvMQTTAgentTask( void * pvParameters )
 }
 
 /*-----------------------------------------------------------*/
+extern TransportInterfaceExtended_t xLwipTransportInterface;
 
 static void prvConnectToMQTTBroker( void )
 {
     BaseType_t xNetworkStatus = pdFAIL;
     MQTTStatus_t xMQTTStatus;
 
-    pxNetworkContext = mbedtls_transport_allocate( &xSTM32TransportInterface );
+    pxNetworkContext = mbedtls_transport_allocate( &xLwipTransportInterface );
 
     configASSERT( pxNetworkContext != NULL );
 

@@ -77,9 +77,9 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
-			<name>Libraries/STM32_Network_Library</name>
+			<name>Libraries/lwip</name>
 			<type>2</type>
-			<locationURI>WORKSPACE_LOC/Middleware/ST/STM32_Network_Library</locationURI>
+			<locationURI>WORKSPACE_LOC/Middleware/lwip/src</locationURI>
 		</link>
 		<link>
 			<name>Drivers/cmsis_rtos/cmsis_os2.h</name>
@@ -135,6 +135,11 @@
 			<name>Libraries/FreeRTOS/kernel</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>Libraries/FreeRTOS/lwip_osal</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/lwip_osal</locationURI>
 		</link>
 		<link>
 			<name>Libraries/FreeRTOS/crypto/core_pkcs11.c</name>

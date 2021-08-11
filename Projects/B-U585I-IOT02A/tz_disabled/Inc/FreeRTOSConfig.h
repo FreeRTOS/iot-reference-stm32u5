@@ -78,6 +78,7 @@
 #define configUSE_RECURSIVE_MUTEXES              1
 #define configUSE_COUNTING_SEMAPHORES            1
 #define configENABLE_BACKWARD_COMPATIBILITY      0
+#define configNUM_THREAD_LOCAL_STORAGE_POINTERS  5
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION  0
 #define configCHECK_FOR_STACK_OVERFLOW           1
 #define configMESSAGE_BUFFER_LENGTH_TYPE         size_t
@@ -91,6 +92,9 @@
 #define configTIMER_TASK_PRIORITY                ( 24 )
 #define configTIMER_QUEUE_LENGTH                 10
 #define configTIMER_TASK_STACK_DEPTH             2048
+
+
+#define configTASK_NOTIFICATION_ARRAY_ENTRIES   8
 
 /* CMSIS-RTOS V2 flags */
 #define configUSE_OS2_THREAD_SUSPEND_RESUME  1
@@ -108,6 +112,7 @@ to exclude the API function. */
 #define INCLUDE_vTaskCleanUpResources        1
 #define INCLUDE_vTaskSuspend                 1
 #define INCLUDE_vTaskDelayUntil              1
+#define INCLUDE_xTaskAbortDelay              1
 #define INCLUDE_vTaskDelay                   1
 #define INCLUDE_xTaskGetSchedulerState       1
 #define INCLUDE_xTaskResumeFromISR           0
@@ -119,7 +124,7 @@ to exclude the API function. */
 #define INCLUDE_xTaskGetCurrentTaskHandle    1
 #define INCLUDE_eTaskGetState                1
 
-#define configPRINTF vLoggingPrintf X
+//#define configPRINTF( ... )                  SdkLog( LOG_INFO, __VA_ARGS__ )
 
 /*
  * The CMSIS-RTOS V2 FreeRTOS wrapper is dependent on the heap implementation used
@@ -153,18 +158,16 @@ to all Cortex-M ports, and do not rely on any particular library functions. */
 See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 #define configMAX_SYSCALL_INTERRUPT_PRIORITY 	( configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY << (8 - configPRIO_BITS) )
 
-extern void vAssertHandler( void );
 
-#define configASSERT( x )  do { if( ( x ) == 0 ) { LogAssert("Assertion failed."); vAssertHandler(); } } while(0)
-
-                     /* if( ( x ) == 0 ) \
-                          { \
-                              volatile uint32_t ulSetToZeroToStepOut = 1UL; \
-                              LogAssert("Assertion failed."); \
-                              vPortEnterCritical(); \
-                              while( ulSetToZeroToStepOut != 0 ) {}; \
-                              vPortExitCritical(); \
-                          } */
+#define configASSERT( x )  do { \
+                               if( ( x ) == 0 ) { \
+                                   LogAssert("Assertion failed."); \
+                                   portDISABLE_INTERRUPTS(); \
+                                   while( 1 ) { \
+                                       __NOP(); \
+                                   } \
+                               } \
+                           } while(0)
 
 
 #define SysTick_Handler xPortSysTickHandler

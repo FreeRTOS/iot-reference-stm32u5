@@ -57,7 +57,13 @@ static void hw_init( void )
 	/* Initialize GPIO */
 	MX_GPIO_Init();
 
+
     MX_RTC_Init();
+
+    extern SPI_HandleTypeDef hspi2;
+
+    HAL_SPI_RegisterCallback( &hspi2, HAL_SPI_MSPINIT_CB_ID, &HAL_SPI_MspInit );
+
     MX_GPDMA1_Init();
 	MX_SPI2_Init();
 
@@ -92,19 +98,20 @@ int main( void )
 	// TODO: Add an "init" task to manage provisioning state and network state and start/stop daemons when necessary.
 
     /* Initialize threads */
+
 	xResult = xTaskCreate( testTask, "testTask", 1024, NULL, tskIDLE_PRIORITY + 1, NULL );
 
 	configASSERT( xResult == pdTRUE );
     //TODO
 
-	xResult = xTaskCreate( &net_main, "net_main", 2 * 4096, NULL, tskIDLE_PRIORITY + 1, NULL );
+	xResult = xTaskCreate( &net_main, "net_main", 2 * 4096, NULL, 23, NULL );
 
     configASSERT( xResult == pdTRUE );
 
-    vStartMQTTAgentDemo();
+//    vStart\AgentDemo();
 
     /* Start scheduler */
-    vTaskStartScheduler(); //osKernelStart();
+    vTaskStartScheduler();
 
     LogError(("Kernel start returned."));
 
@@ -176,14 +183,6 @@ void vApplicationGetTimerTaskMemory( StaticTask_t ** ppxTimerTaskTCBBuffer,
     *pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
 }
 
-void vAssertHandler( void )
-{
-    portDISABLE_INTERRUPTS();
-    while(1)
-    {
-        __NOP();
-    }
-}
 
 /*-----------------------------------------------------------*/
 

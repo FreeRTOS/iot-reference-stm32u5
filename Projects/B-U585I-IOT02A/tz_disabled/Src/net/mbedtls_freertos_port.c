@@ -27,7 +27,6 @@
 
 /* FreeRTOS includes. */
 #include "FreeRTOS.h"
-#include "net_connect.h"
 
 /* mbed TLS includes. */
 #if defined(MBEDTLS_CONFIG_FILE)

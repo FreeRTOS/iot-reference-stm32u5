@@ -32,12 +32,11 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "stm32u5xx_hal_conf.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-
+typedef void ( * GPIOInterruptCallback_t ) ( void * pvContext );
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
@@ -55,6 +54,10 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 void SystemClock_Config(void);
+void GPIO_EXTI_Register_Callback( uint16_t usGpioPinMask,
+                                  GPIOInterruptCallback_t pvCallback,
+                                  void * pvContext );
+
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/

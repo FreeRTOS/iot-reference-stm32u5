@@ -29,9 +29,7 @@
 
 
 /* socket definitions  */
-#include "stm32_net_transport.h"
-
-#include "transport_interface.h"
+#include "transport_interface_ext.h"
 
 /* mbed TLS includes. */
 #include "mbedtls/ctr_drbg.h"
