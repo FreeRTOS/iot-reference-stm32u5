@@ -166,27 +166,27 @@ static void spi_flow_callback()
 }
 
 /* Handle GPIO operations */
-static inline void mxfree_gpio_clear( const IotMappedPin_t * gpio )
+static inline void mx_gpio_clear( const IotMappedPin_t * gpio )
 {
     HAL_GPIO_WritePin( gpio->xPort, gpio->xPinMask, GPIO_PIN_RESET );
 }
 
-static inline void mxfree_gpio_set( const IotMappedPin_t * gpio )
+static inline void mx_gpio_set( const IotMappedPin_t * gpio )
 {
     HAL_GPIO_WritePin( gpio->xPort, gpio->xPinMask, GPIO_PIN_SET );
 }
 
-static inline bool mxfree_gpio_get( const IotMappedPin_t * gpio )
+static inline bool mx_gpio_get( const IotMappedPin_t * gpio )
 {
     return ( bool ) HAL_GPIO_ReadPin( gpio->xPort,gpio->xPinMask );
 }
 
-static inline void mxfree_hard_reset( MxDataplaneCtx_t * pxCtx )
+static inline void mx_hard_reset( MxDataplaneCtx_t * pxCtx )
 {
     HAL_GPIO_WritePin( pxCtx->gpio_reset->xPort, pxCtx->gpio_reset->xPinMask, GPIO_PIN_RESET );
-    vTaskDelay(1000);
+    vTaskDelay(100);
     HAL_GPIO_WritePin( pxCtx->gpio_reset->xPort, pxCtx->gpio_reset->xPinMask, GPIO_PIN_SET );
-    vTaskDelay(12000);
+    vTaskDelay(1200);
 }
 
 /* SPI protocol definitions */
@@ -227,17 +227,28 @@ static inline BaseType_t xWaitForSPIEvent( TickType_t xTimeout )
  * @brief Exchange SPIHeader_t headers with the wifi module.
  * */
 static inline BaseType_t xDoSpiHeaderTransfer( MxDataplaneCtx_t * pxCtx,
-                                               uint16_t * pusTxLen,
-                                               uint16_t * pusRxLen )
+                                               uint16_t * psTxLen,
+                                               uint16_t * psRxLen )
 {
     HAL_StatusTypeDef xHalStatus = HAL_ERROR;
 
     SPIHeader_t xRxHeader = { 0 };
     SPIHeader_t xTxHeader = { 0 };
 
-    xTxHeader.type = MX_SPI_WRITE;
-    xTxHeader.len = *pusTxLen;
-    xTxHeader.lenx = ~( xTxHeader.len );
+    /* Write or simultaneous Read and Write operation */
+    if( *psTxLen > 0 )
+    {
+        xTxHeader.type = MX_SPI_WRITE;
+        xTxHeader.len = *psTxLen;
+        xTxHeader.lenx = ~( xTxHeader.len );
+    }
+    /* Read operation only */
+    else
+    {
+        xTxHeader.type = MX_SPI_READ;
+        xTxHeader.len = 0;
+        xTxHeader.lenx = 0xFFFF; //TODO: Does this need to be a particular value?
+    }
 
     LogDebug( "Starting DMA transfer: type: %d, len: %d, lenx: %d",
               xTxHeader.type, xTxHeader.len, xTxHeader.lenx );
@@ -286,15 +297,17 @@ static inline BaseType_t xDoSpiHeaderTransfer( MxDataplaneCtx_t * pxCtx,
        xRxHeader.type == MX_SPI_READ &&
        ( ( xRxHeader.len ) ^ ( xRxHeader.lenx ) ) == 0xFFFF )
     {
-       *pusRxLen = xRxHeader.len;
+       *psRxLen = xRxHeader.len;
     }
     else
     {
-        LogError( "Packet validation failed. len: %d, lenx: %d, xord: %d, type: %d, xHalStatus: %d",
-                   xRxHeader.len, xRxHeader.lenx,  ( xRxHeader.len ) ^ ( xRxHeader.lenx ), xRxHeader.type, xHalStatus );
-        *pusRxLen = 0;
-        *pusTxLen = 0;
-        xHalStatus = HAL_ERROR;
+        if( xRxHeader.type == MX_SPI_READ &&
+            xRxHeader.len != 0 )
+        {
+            LogError( "RX packet validation failed. len: %d, lenx: %d, xord: %d, type: %d, xHalStatus: %d",
+                       xRxHeader.len, xRxHeader.lenx,  ( xRxHeader.len ) ^ ( xRxHeader.lenx ), xRxHeader.type, xHalStatus );
+        }
+        *psRxLen = 0;
     }
 
    return( xHalStatus == HAL_OK );
@@ -304,8 +317,7 @@ static inline BaseType_t xTransmitPacket( MxDataplaneCtx_t * pxCtx,
                                           uint8_t * pxTxBuffer,
                                           uint8_t * pxRxBuffer,
                                           uint32_t usTxDataLen,
-                                          uint32_t usRxDataLen,
-                                          TickType_t xTimeout )
+                                          uint32_t usRxDataLen )
 {
     HAL_StatusTypeDef xHalStatus = HAL_OK;
 
@@ -347,7 +359,7 @@ static inline BaseType_t xTransmitPacket( MxDataplaneCtx_t * pxCtx,
         if( xHalStatus == HAL_OK )
         {
             /* Wait for DMA event */
-            xHalStatus = ( xWaitForSPIEvent( xTimeout ) == pdTRUE ) ? HAL_OK : HAL_ERROR;
+            xHalStatus = ( xWaitForSPIEvent( MX_SPI_EVENT_TIMEOUT ) == pdTRUE ) ? HAL_OK : HAL_ERROR;
         }
         else
         {
@@ -399,136 +411,13 @@ static inline BaseType_t xTransmitPacket( MxDataplaneCtx_t * pxCtx,
     /* Wait for DMA event */
     else
     {
-        xHalStatus = ( xWaitForSPIEvent( xTimeout ) == pdTRUE ) ? HAL_OK : HAL_ERROR;
+        xHalStatus = ( xWaitForSPIEvent( MX_SPI_EVENT_TIMEOUT ) == pdTRUE ) ? HAL_OK : HAL_ERROR;
     }
 
     return ( xHalStatus == HAL_OK );
 }
 
 
-/* Precondition Tx buffer must be properly sized */
-static inline BaseType_t xDoSpiTransaction( MxDataplaneCtx_t * pxCtx,
-                                            PacketBuffer_t * * ppxTxBuffer,
-                                            PacketBuffer_t * * ppxRxBuffer,
-                                            TickType_t xTimeout )
-{
-    BaseType_t xReturn = pdTRUE;
-
-    uint16_t usTxLen = 0;
-    uint16_t usRxLen = 0;
-
-    /* Assert that the Rx Buffer pointer is null */
-    configASSERT( *ppxRxBuffer == NULL );
-
-    if( *ppxTxBuffer != NULL )
-    {
-        /* Assert that pxTxBuffer is contiguous */
-       configASSERT( PBUF_VALID( *ppxTxBuffer ) );
-
-       /* Set length to be placed in header */
-       usTxLen = PBUF_LEN( *ppxTxBuffer );
-    }
-
-    (void) xTaskNotifyStateClearIndexed( NULL, SPI_EVT_FLOW_IDX );
-
-    /* Set CS low */
-    mxfree_gpio_clear( pxCtx->gpio_nss );
-
-    if( mxfree_gpio_get( pxCtx->gpio_flow ) == pdFALSE )
-    {
-        /* Wait for flow pin to go high to signal that the module is ready */
-        if( ulTaskNotifyTakeIndexed( SPI_EVT_FLOW_IDX, pdTRUE, xTimeout ) == 0 )
-        {
-            LogError( "Timed out while waiting for EVT_SPI_FLOW. xTimeout=%d", MX_SPI_EVENT_TIMEOUT );
-            xReturn = pdFALSE;
-        }
-        else
-        {
-            LogDebug( "Got EVT_SPI_FLOW" );
-            xReturn = pdTRUE;
-        }
-    }
-
-    (void) xTaskNotifyStateClearIndexed( NULL, SPI_EVT_FLOW_IDX );
-
-    /* Exchange SPI headers with module */
-    if( xReturn == pdTRUE )
-    {
-        xReturn = xDoSpiHeaderTransfer( pxCtx, &usTxLen, &usRxLen );
-    }
-
-    if( xReturn == pdTRUE )
-    {
-        /* Allocate RX buffer */
-        if( usRxLen > 0 )
-        {
-            *ppxRxBuffer = PBUF_ALLOC_RX( usRxLen );
-        }
-    }
-    else
-    {
-        LogError("An error occurred during spi header transfer.");
-    }
-
-
-    if( xReturn == pdTRUE )
-    {
-        if( mxfree_gpio_get( pxCtx->gpio_flow ) == pdFALSE )
-        {
-            /* Wait for flow pin to go high to signal that the module is ready to receive our data */
-            if( ulTaskNotifyTakeIndexed( SPI_EVT_FLOW_IDX, pdTRUE, MX_SPI_EVENT_TIMEOUT ) == 0 )
-            {
-                LogError( "Timed out while waiting for EVT_SPI_FLOW. xTimeout=%d", MX_SPI_EVENT_TIMEOUT );
-                xReturn = pdFALSE;
-            }
-            else
-            {
-                xReturn = pdTRUE;
-            }
-        }
-    }
-
-    /* Transmit / receive packet data */
-    if( xReturn == pdTRUE )
-    {
-        xReturn = xTransmitPacket( pxCtx,
-                                   *ppxTxBuffer ? ( *ppxTxBuffer )->payload : NULL,
-                                   *ppxRxBuffer ? ( *ppxRxBuffer )->payload : NULL,
-                                   usTxLen,
-                                   usRxLen,
-                                   xTimeout );
-    }
-
-    /* Set CS / NSS high to end transaction */
-    mxfree_gpio_set( pxCtx->gpio_nss );
-
-    return xReturn;
-}
-
-static void vAddMXHeaderToEthernetFrame( PacketBuffer_t * pxTxPacket )
-{
-    configASSERT( pxTxPacket != NULL );
-    /* Store length of ethernet frame for BypassInOut_t header */
-    uint16_t ulEthPacketLen = pxTxPacket->tot_len;
-
-    /* Adjust pbuf size to include BypassInOut_t header */
-    ( void ) pbuf_header( pxTxPacket, sizeof( BypassInOut_t ) );
-
-    /* Add on bypass header */
-    BypassInOut_t * pxBypassHeader = ( BypassInOut_t * ) pxTxPacket->payload;
-
-    pxBypassHeader->xHeader.usIPCApiId = IPC_WIFI_BYPASS_OUT;
-    pxBypassHeader->xHeader.ulIPCRequestId = prvGetNextRequestID();
-
-    /* Send to station interface */
-    pxBypassHeader->lIndex = WIFI_BYPASS_MODE_STATION;
-
-    /* Fill pad region with zeros */
-    ( void ) memset( pxBypassHeader->ucPad, 0, MX_BYPASS_PAD_LEN );
-
-    /* Set length field */
-    pxBypassHeader->usDataLen = ulEthPacketLen;
-}
 
 static void vProcessRxPacket( MessageBufferHandle_t * xControlPlaneResponseBuff,
                               NetInterface_t * pxNetif,
@@ -640,6 +529,39 @@ void vInitCallbacks( MxDataplaneCtx_t *pxCtx )
     configASSERT( xHalResult == HAL_OK );
 }
 
+/* Wait forever for a flow event */
+static inline BaseType_t xWaitForFlow( MxDataplaneCtx_t * pxCtx )
+{
+    BaseType_t xReturnValue = pdFALSE;
+
+    xReturnValue = mx_gpio_get( pxCtx->gpio_flow );
+
+    /* If flow line is low, block until it changes state or a timeout occurs. */
+    if( xReturnValue == pdFALSE )
+    {
+        uint32_t ulFlowValue = 0;
+
+        /* Wait for flow pin to go high to signal that the module is ready */
+        ulFlowValue = ulTaskNotifyTakeIndexed( SPI_EVT_FLOW_IDX, pdTRUE, MX_SPI_FLOW_TIMEOUT );
+
+        if( ulFlowValue & EVT_SPI_FLOW )
+        {
+            xReturnValue = pdTRUE;
+        }
+        else
+        {
+            LogError( "Timed out while waiting for EVT_SPI_FLOW. ulFlowValue: %d, xTimeout: %d", ulFlowValue, MX_SPI_FLOW_TIMEOUT );
+            xReturnValue = pdFALSE;
+        }
+    }
+    else
+    {
+        /* Clear notification */
+        (void) xTaskNotifyStateClearIndexed( NULL, SPI_EVT_FLOW_IDX );
+    }
+    return xReturnValue;
+}
+
 void vDataplaneThread( void * pvParameters )
 {
     /* Get context struct (contains instance parameters) */
@@ -653,93 +575,152 @@ void vDataplaneThread( void * pvParameters )
     vInitCallbacks( pxCtx );
 
     /* Do hardware reset */
-    mxfree_hard_reset( pxCtx );
-
+    mx_hard_reset( pxCtx );
 
     while( exitFlag == pdFALSE )
     {
-        BaseType_t xResult = pdFALSE;
-        PacketBuffer_t * pxTxPacket = NULL;
-        PacketBuffer_t * pxRxPacket = NULL;
+        PacketBuffer_t * pxTxBuff = NULL;
+        PacketBuffer_t * pxRxBuff = NULL;
+        uint32_t ulNotificationValue = 0;
 
-        /* Wait up to 100ms for an event if no packets are waiting */
-        if( mxfree_gpio_get( pxCtx->gpio_notify ) == pdFALSE )
+        /* Block on task notification if waiting packet counters are 0 */
+        if( pxCtx->ulTxPacketsWaiting == 0 &&
+            pxCtx->ulRxPacketsWaiting == 0)
         {
-            TickType_t xTimeout = 100;
-            if( pxCtx->ulTxPacketsWaiting == 0 &&
-                pxCtx->ulRxPacketsWaiting == 0 )
-            {
-                xTimeout = pdMS_TO_TICKS( 10 * 10000 );
-            }
-
-            ( void ) xTaskNotifyWaitIndexed( 0,
+            ( void ) xTaskNotifyWaitIndexed( DATA_WAITING_IDX,
                                              0,
-                                             0xFFFFFFFF,
-                                             NULL,
-                                             xTimeout );
-        }
+                                             0xFFFFFFFF, /* Clear all bits after reading event */
+                                             &ulNotificationValue,
+                                             portMAX_DELAY );
 
-        /* Check for control plane messages to send */
-        if( uxQueueMessagesWaiting( pxCtx->xControlPlaneSendQueue ) > 0 )
-        {
-            xResult = xQueueReceive( pxCtx->xControlPlaneSendQueue, &pxTxPacket, 0 );
-            if( xResult != pdTRUE )
+            /* Got notify event from IRQ pin, next transaction should include a read */
+            if( ulNotificationValue & DATA_WAITING_SNOTIFY )
             {
-                LogError( "Error reading from xControlPlaneSendQueue: %d", xResult );
+                LogDebug("Woke up due to NOTIFY event.")
             }
-            configASSERT( pxTxPacket != NULL );
-            configASSERT( pxTxPacket->ref > 0 );
-            /* Note: No pbuf_header adjustment is necessary for control plane packets */
         }
 
-
-        /* Otherwise, check for data plane messages to send */
-        if( pxTxPacket == NULL &&
-            xMessageBufferIsEmpty( pxCtx->xDataPlaneSendBuff ) == pdFALSE )
+        if( pxCtx->ulTxPacketsWaiting == 0 &&
+            pxCtx->ulRxPacketsWaiting == 0 &&
+            mx_gpio_get( pxCtx->gpio_notify ) == pdFALSE )
         {
-            xResult = xMessageBufferReceive( pxCtx->xDataPlaneSendBuff, &pxTxPacket, sizeof( PacketBuffer_t * ), 0 );
+            LogWarn( "Reached waitForFlow with nothing to do." );
+            continue;
+        }
 
-            configASSERT( pxTxPacket != NULL );
-            configASSERT( pxTxPacket->ref > 0 );
+        /* Set CS low to initiate transaction */
+        mx_gpio_clear( pxCtx->gpio_nss );
 
-            if( xResult == pdTRUE )
+        /* Wait for the module to be ready */
+        if( xWaitForFlow( pxCtx ) == pdTRUE )
+        {
+            uint16_t usTxLen = 0;
+            uint16_t usRxLen = 0;
+            BaseType_t xResult;
+
+            QueueHandle_t xSourceQueue = NULL;
+
+            /* Prepare a control plane messages for TX */
+            if( xQueuePeek( pxCtx->xControlPlaneSendQueue, &pxTxBuff, 0 ) == pdTRUE )
             {
-                vAddMXHeaderToEthernetFrame( pxTxPacket );
+                configASSERT( pxTxBuff != NULL );
+                configASSERT( pxTxBuff->ref > 0 );
+                usTxLen = pxTxBuff->tot_len;
+                xSourceQueue = pxCtx->xControlPlaneSendQueue;
             }
             else
             {
-                LogError( "Error reading from xDataPlaneSendBuff: %d", xResult );
+                pxTxBuff = NULL;
+            }
+
+            /* Otherwise, send a data plane packet */
+            if( pxTxBuff == NULL &&
+                xQueuePeek( pxCtx->xDataPlaneSendQueue, &pxTxBuff, 0 ) == pdTRUE )
+            {
+                configASSERT( pxTxBuff != NULL );
+                configASSERT( pxTxBuff->ref > 0 );
+                usTxLen = pxTxBuff->tot_len;
+                xSourceQueue = pxCtx->xDataPlaneSendQueue;
+            }
+            else
+            {
+                pxTxBuff = NULL;
+            }
+
+            if( pxTxBuff == NULL &&
+                pxCtx->ulTxPacketsWaiting != 0 )
+            {
+                LogWarn("Mismatch between ulTxPacketsWaiting and queue contents. Resetting ulTxPacketsWaiting");
+                pxSpiCtx->ulTxPacketsWaiting=0;
+            }
+
+            if( pxTxBuff == NULL &&
+                mx_gpio_get( pxCtx->gpio_notify ) == pdFALSE )
+            {
+                LogWarn( "Reached xDoSpiHeaderTransfer with nothing to do. Resetting ulRxPacketsWaiting." );
+                pxCtx->ulRxPacketsWaiting = 0;
+                xResult = pdFALSE;
+            }
+
+            if( xResult == pdTRUE )
+            {
+                /* Transfer the header */
+                xResult = xDoSpiHeaderTransfer( pxCtx, &usTxLen, &usRxLen );
+            }
+
+            if( xResult == pdTRUE )
+            {
+                /* Allocate RX buffer */
+                if( usRxLen > 0 )
+                {
+                    pxRxBuff = PBUF_ALLOC_RX( usRxLen );
+                }
+                /* Wait for flow pin to go high again */
+                xResult = xWaitForFlow( pxCtx );
+            }
+
+            /* Read from the queue now that the module has ACKd */
+            if( xResult == pdTRUE &&
+                xSourceQueue != NULL )
+            {
+                xResult = xQueueReceive( xSourceQueue, &pxTxBuff, 0 );
+                configASSERT( pxTxBuff != NULL );
+            }
+
+            /* Transmit / receive packet data */
+            if( xResult == pdTRUE )
+            {
+                xResult = xTransmitPacket( pxCtx,
+                                           pxTxBuff ? pxTxBuff->payload : NULL,
+                                           pxRxBuff ? pxRxBuff->payload : NULL,
+                                           usTxLen,
+                                           usRxLen );
             }
         }
-
-        /* If either pointer is not null or an rx packet is waiting transfer some data */
-        if( pxTxPacket != NULL ||
-            pxRxPacket != NULL ||
-            pxCtx->ulRxPacketsWaiting > 0 ||
-            mxfree_gpio_get( pxCtx->gpio_notify ) == pdTRUE )
+        else
         {
-            xResult = xDoSpiTransaction( pxCtx,
-                                         &pxTxPacket,   /* Allocated elsewhere */
-                                         &pxRxPacket,
-                                         MX_SPI_TRANSACTION_TIMEOUT );
-
-            /* Process further */
-            if( pxTxPacket != NULL )
-            {
-                /* Decrement TX packets waiting counter */
-                ( void ) Atomic_Decrement_u32( &( pxSpiCtx->ulTxPacketsWaiting ) );
-                PBUF_FREE( pxTxPacket );
-            }
-
-            if( pxRxPacket != NULL )
-            {
-                /* Decrement RX packets waiting counter */
-                ( void ) Atomic_Decrement_u32( &( pxSpiCtx->ulRxPacketsWaiting ) );
-
-                vProcessRxPacket( pxCtx->xControlPlaneResponseBuff, pxCtx->pxNetif, &pxRxPacket );
-            }
+            LogDebug( "Timed out while waiting for flow event." );
         }
+
+        /* Set CS / NSS high to end transaction */
+        mx_gpio_set( pxCtx->gpio_nss );
+
+        /* Free TX buffer */
+        if( pxTxBuff != NULL )
+        {
+            /* Decrement TX packets waiting counter */
+            ( void ) Atomic_Decrement_u32( &( pxSpiCtx->ulTxPacketsWaiting ) );
+            PBUF_FREE( pxTxBuff );
+        }
+
+        if( pxRxBuff != NULL )
+        {
+            /* Decrement RX packets waiting counter */
+            ( void ) Atomic_Decrement_u32( &( pxSpiCtx->ulRxPacketsWaiting ) );
+            vProcessRxPacket( pxCtx->xControlPlaneResponseBuff, pxCtx->pxNetif, &pxRxBuff );
+        }
+
+        configASSERT( pxTxBuff == NULL );
+        configASSERT( pxRxBuff == NULL );
     }
 }
-
-

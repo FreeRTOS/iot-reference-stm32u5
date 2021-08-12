@@ -24,10 +24,37 @@
 
 #include "mx_lwip.h"
 
-#include "semphr.h"
+#include "FreeRTOS.h"
+#include "atomic.h"
 #include "mx_prv.h"
 
-static SemaphoreHandle_t xDataMutex = NULL;
+static void vAddMXHeaderToEthernetFrame( PacketBuffer_t * pxTxPacket )
+{
+    configASSERT( pxTxPacket != NULL );
+
+    /* Store length of ethernet frame for BypassInOut_t header */
+    uint16_t ulEthPacketLen = pxTxPacket->tot_len;
+
+    /* Adjust pbuf size to include BypassInOut_t header */
+    ( void ) pbuf_header( pxTxPacket, sizeof( BypassInOut_t ) );
+
+    /* Add on bypass header */
+    BypassInOut_t * pxBypassHeader = ( BypassInOut_t * ) pxTxPacket->payload;
+
+    pxBypassHeader->xHeader.usIPCApiId = IPC_WIFI_BYPASS_OUT;
+    pxBypassHeader->xHeader.ulIPCRequestId = prvGetNextRequestID();
+
+    /* Send to station interface */
+    pxBypassHeader->lIndex = WIFI_BYPASS_MODE_STATION;
+
+    /* Fill pad region with zeros */
+    ( void ) memset( pxBypassHeader->ucPad, 0, MX_BYPASS_PAD_LEN );
+
+    /* Set length field */
+    pxBypassHeader->usDataLen = ulEthPacketLen;
+
+    configASSERT( pxTxPacket->ref > 1 );
+}
 
 /* Network output function for lwip */
 err_t prvxLinkOutput( NetInterface_t * pxNetif, PacketBuffer_t * pxPbuf )
@@ -61,38 +88,32 @@ err_t prvxLinkOutput( NetInterface_t * pxNetif, PacketBuffer_t * pxPbuf )
     /* Get context from netif struct */
     MxNetConnectCtx_t * pxCtx = ( MxNetConnectCtx_t * ) pxNetif->state;
 
-    configASSERT( pxCtx->xDataPlaneSendBuff != NULL );
-    configASSERT( xDataMutex != NULL );
+    if( xError == ERR_OK )
+    {
+        vAddMXHeaderToEthernetFrame( pxPbuf );
+    }
+
+    configASSERT( pxCtx->xDataPlaneSendQueue != NULL );
+    configASSERT( pxCtx->pulTxPacketsWaiting != NULL );
 
     if( xError == ERR_OK )
     {
-        xReturn = xSemaphoreTake( xDataMutex, MX_ETH_PACKET_ENQUEUE_TIMEOUT );
+        xReturn = xQueueSend( pxCtx->xDataPlaneSendQueue,
+                              pxPbufToSend,
+                              MX_ETH_PACKET_ENQUEUE_TIMEOUT );
+
         if( xReturn == pdTRUE )
         {
-            xReturn = xMessageBufferSend( pxCtx->xDataPlaneSendBuff,
-                                          pxPbufToSend,
-                                          sizeof( PacketBuffer_t * ),
-                                          MX_ETH_PACKET_ENQUEUE_TIMEOUT );
+            xError = ERR_OK;
+            LogDebug( "Packet enqueued into xDataPlaneSendBuff addr: %p, len: %d, remaining space: %d",
+                      pxPbufToSend, pxPbufToSend->len, xMessageBuffRemainingSpaces( xDataPlaneSendBuff ) );
 
-            ( void ) xSemaphoreGive( xDataMutex );
-
-            if( xReturn == pdTRUE )
-            {
-                xError = ERR_OK;
-                LogDebug( "Packet enqueued into xDataPlaneSendBuff addr: %p, len: %d, remaining space: %d",
-                          pxPbufToSend, pxPbufToSend->len, xMessageBuffRemainingSpaces( xDataPlaneSendBuff ) );
-            }
-            else
-            {
-                xError = ERR_TIMEOUT;
-                pbuf_free( pxPbufToSend );
-            }
+            ( void ) Atomic_Increment_u32( pxCtx->pulTxPacketsWaiting );
         }
         else
         {
-            LogError("Failed to take xDataMutex.");
             xError = ERR_TIMEOUT;
-            pbuf_free( pxPbufToSend );
+            PBUF_FREE( pxPbufToSend );
         }
     }
 
@@ -155,12 +176,7 @@ err_t prvInitNetInterface( NetInterface_t * pxNetif )
     /* Get context from netif struct */
     MxNetConnectCtx_t * pxCtx = ( MxNetConnectCtx_t * ) pxNetif->state;
 
-    if( xDataMutex == NULL )
-    {
-        xDataMutex = xSemaphoreCreateMutex();
-    }
-
-    pxNetif->output = etharp_output;
+    pxNetif->output = &etharp_output;
     pxNetif->linkoutput = &prvxLinkOutput;
 
     pxNetif->name[ 0 ] = 'm';

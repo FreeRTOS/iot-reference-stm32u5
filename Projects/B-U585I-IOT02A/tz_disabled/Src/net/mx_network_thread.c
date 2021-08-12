@@ -37,15 +37,25 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "ConfigStore.h"
-#include "lwip/dhcp.h"
 #include "lwip/tcpip.h"
+#include "lwip/netifapi.h"
 
+/* Async requests / commands */
+#define ASYNC_REQUEST_IDX           0x1
+#define ASYNC_REQUEST_RECONNECT_BIT 0x1
 
-#define NET_STATE_UPDATE_BIT 		0x1
-#define NET_RECONNECT_REQ_BIT 	    0x2
-#define NET_LWIP_READY_BIT          0x4
-#define NET_LWIP_IFUP_BIT           0x8
-#define NET_LWIP_IFDOWN_BIT         0x10
+/* MX Driver callbacks */
+#define MX_CALLBACK_IDX             0x2
+#define MX_STATUS_UPDATE_BIT        0x1
+
+/* Async updates from callback functions */
+#define LWIP_CALLBACK_IDX           0x3
+#define NET_LWIP_READY_BIT          0x1
+#define NET_LWIP_IP_CHANGE_BIT      0x2
+#define NET_LWIP_IFUP_BIT           0x4
+#define NET_LWIP_IFDOWN_BIT         0x8
+#define NET_LWIP_LINK_UP_BIT        0x10
+#define NET_LWIP_LINK_DOWN_BIT      0x20
 
 static TaskHandle_t xNetTaskHandle = NULL;
 static MxDataplaneCtx_t xDataPlaneCtx;
@@ -84,29 +94,30 @@ static const char* pcMxStatusToString( MxStatus_t xStatus )
 	return pcReturn;
 }
 
-static BaseType_t waitForNotification( BaseType_t notifyBits, TickType_t xTicksToWait )
-{
-	uint32_t ulNotifiedValue = 0;
-	TickType_t xRemainingTicks = xTicksToWait;
-	TimeOut_t xTimeOut;
+//TODO remove waitForNotification
+//static BaseType_t waitForNotification( BaseType_t notifyBits, TickType_t xTicksToWait )
+//{
+//	uint32_t ulNotifiedValue = 0;
+//	TickType_t xRemainingTicks = xTicksToWait;
+//	TimeOut_t xTimeOut;
+//
+//	vTaskSetTimeOutState( &xTimeOut );
+//
+//	while( ( ulNotifiedValue & notifyBits ) == 0 )
+//	{
+//		/* Note: xTaskCheckForTimeOut adjusts xRemainingTicks */
+//		if( xTaskCheckForTimeOut( &xTimeOut, &xRemainingTicks ) == pdTRUE )
+//		{
+//			/* Timed out. Exit loop */
+//			break;
+//		}
+//
+//		(void) xTaskNotifyWait( pdFALSE, notifyBits, &ulNotifiedValue, xRemainingTicks );
+//	}
+//	return ( ulNotifiedValue & notifyBits );
+//}
 
-	vTaskSetTimeOutState( &xTimeOut );
-
-	while( ( ulNotifiedValue & notifyBits ) == 0 )
-	{
-		/* Note: xTaskCheckForTimeOut adjusts xRemainingTicks */
-		if( xTaskCheckForTimeOut( &xTimeOut, &xRemainingTicks ) == pdTRUE )
-		{
-			/* Timed out. Exit loop */
-			break;
-		}
-
-		(void) xTaskNotifyWait( pdFALSE, notifyBits, &ulNotifiedValue, xRemainingTicks );
-	}
-	return ( ulNotifiedValue & notifyBits );
-}
-
-static BaseType_t waitForNetifState( MxStatus_t xTargetStatus, MxNetConnectCtx_t * pxCtx, TickType_t xTicksToWait )
+static BaseType_t waitForMxStatus( MxStatus_t xTargetStatus, MxNetConnectCtx_t * pxCtx, TickType_t xTicksToWait )
 {
 	TickType_t xRemainingTicks = xTicksToWait;
 	TimeOut_t xTimeOut;
@@ -122,7 +133,7 @@ static BaseType_t waitForNetifState( MxStatus_t xTargetStatus, MxNetConnectCtx_t
 
 	while( pxCtx->xStatus != xTargetStatus )
 	{
-		waitForNotification( NET_STATE_UPDATE_BIT, xRemainingTicks );
+		waitForNotification( MX_STATUS_UPDATE_BIT, xRemainingTicks );
 
 		/* Note: xTaskCheckForTimeOut adjusts xRemainingTicks */
 		if( xTaskCheckForTimeOut( &xTimeOut, &xRemainingTicks ) == pdTRUE )
@@ -154,10 +165,10 @@ static void vHandleStateTransition( MxNetConnectCtx_t * pxCtx,
     switch( xNewStatus )
     {
     case MX_STATUS_STA_UP:
-        netif_set_link_up( &( pxCtx->xNetif ) );
+        netifapi_netif_set_link_up( &( pxCtx->xNetif ) );
         break;
     case MX_STATUS_STA_DOWN:
-        netif_set_link_down( &( pxCtx->xNetif ) );
+        netifapi_netif_set_link_down( &( pxCtx->xNetif ) );
         break;
     default:
         break;
@@ -180,32 +191,73 @@ static void vMxStatusNotify( MxStatus_t xNewStatus, void * pvCtx )
 
 	pxCtx->xStatus = xNewStatus;
 
-    (void) xTaskNotify( xNetTaskHandle,
-                        NET_STATE_UPDATE_BIT,
-                        eSetBits );
+    (void) xTaskNotifyIndexed( xNetTaskHandle,
+                               MX_CALLBACK_IDX,
+                               MX_STATUS_UPDATE_BIT,
+                               eSetBits );
 }
 
 /* Callback for lwip netif events
- * netif_set_status_callback netif_set_link_callback */
-static void vLwipStatusCallback( struct netif *netif )
+ * netif_set_status_callback metif_set_link_callback */
+static void vLwipStatusCallback( struct netif * pxNetif )
 {
-    (void) xTaskNotify( xNetTaskHandle,
-                        NET_STATE_UPDATE_BIT,
-                        eSetBits );
+    static ip_addr_t xLastAddr = 0;
+    static uint8_t xLastFlags = 0;
+
+    uint32_t ulNotifyValue = 0;
+
+    /* Check for change in flags */
+    if( ( pxNetif->flags ^ xLastFlags ) & NETIF_FLAG_UP  )
+    {
+        if( pxNetif->flags & NETIF_FLAG_UP )
+        {
+            ulNotifyValue |= NET_LWIP_IFUP_BIT;
+        }
+        else
+        {
+            ulNotifyValue |= NET_LWIP_IFDOWN_BIT;
+        }
+    }
+    else if ( ( pxNetif->flags ^ xLastFlags ) & NETIF_FLAG_LINK_UP )
+    {
+        if( pxNetif->flags & NETIF_FLAG_LINK_UP )
+        {
+            ulNotifyValue |= NET_LWIP_LINK_UP_BIT;
+        }
+        else
+        {
+            ulNotifyValue |= NET_LWIP_LINK_DOWN_BIT;
+        }
+    }
+
+    if( pxNetif->ip_addr != xLastAddr )
+    {
+        ulNotifyValue |= NET_LWIP_IP_CHANGE;
+    }
+
+    if( ulNotifyValue > 0 )
+    {
+        (void) xTaskNotifyIndexed( xNetTaskHandle,
+                                   LWIP_CALLBACK_IDX,
+                                   ulNotifyValue,
+                                   eSetBits );
+    }
+
+    xLastAddr = pxNetif->ip_addr;
+    xLastFlags = pxNetif->flags;
 }
 
 static void vLwipReadyCallback( void * pvCtx )
 {
-    (void) pvCtx;   /* Unused */
+    TaskHandle_t xNetTaskHandle = ( TaskHandle_t ) pvCtx;
 
-    BaseType_t xReturn = pdFALSE;
     if( xNetTaskHandle != NULL )
     {
-        xReturn = xTaskNotify( xNetTaskHandle,
-                               NET_LWIP_READY_BIT,
-                               eSetBits );
+        (void) xTaskNotifyIndexed( xNetTaskHandle,
+                                   LWIP_CALLBACK_IDX,
+                                   ulNotifyValue,
+                                   eSetBits );
     }
-    return xReturn;
 }
 
 static BaseType_t xConnectToAP( MxNetConnectCtx_t * pxCtx )
@@ -230,7 +282,7 @@ static BaseType_t xConnectToAP( MxNetConnectCtx_t * pxCtx )
         }
         else
         {
-            ( void ) waitForNetifState( MX_STATUS_STA_UP, pxCtx, MX_DEFAULT_TIMEOUT_TICK );
+            ( void ) waitForMxStatus( MX_STATUS_STA_UP, pxCtx, MX_DEFAULT_TIMEOUT_TICK );
         }
     }
 
@@ -263,16 +315,18 @@ void net_main( void * pvParameters )
 {
 	BaseType_t xResult = 0;
 
-    MessageBufferHandle_t xControlPlaneResponseBuff, xDataPlaneSendBuff;
+    MessageBufferHandle_t xControlPlaneResponseBuff;
     QueueHandle_t xControlPlaneSendQueue;
+    QueueHandle_t xDataPlaneSendQueue;
     MxNetConnectCtx_t xCtx;
+    struct netif * pxNetif = &( xCtx.xNetif );
 
     /* Set static task handle var for callbacks */
     xNetTaskHandle = xTaskGetCurrentTaskHandle();
 
 	/* Construct message buffers */
-    xDataPlaneSendBuff = xMessageBufferCreate( CONTROL_PLANE_BUFFER_SZ );
-    configASSERT( xDataPlaneSendBuff != NULL );
+    xDataPlaneSendQueue = xQueueCreate( CONTROL_PLANE_QUEUE_LEN, sizeof( PacketBuffer_t * ) );
+    configASSERT( xDataPlaneSendQueue != NULL );
 
     xControlPlaneResponseBuff = xMessageBufferCreate( CONTROL_PLANE_BUFFER_SZ );
     configASSERT( xControlPlaneResponseBuff != NULL );
@@ -287,13 +341,14 @@ void net_main( void * pvParameters )
 
     ( void ) memset( &( xCtx.xMacAddress ), 0, sizeof( MacAddress_t ) );
 
-    xCtx.xDataPlaneSendBuff = xDataPlaneSendBuff;
+    xCtx.xDataPlaneSendQueue = xDataPlaneSendQueue;
+    xCtx.pulTxPacketsWaiting = &( xDataPlaneCtx.ulTxPacketsWaiting );
 
 	/* Construct dataplane context */
 	vInitDataPlaneCtx( &xDataPlaneCtx );
 	xDataPlaneCtx.xControlPlaneSendQueue = xControlPlaneSendQueue;
 	xDataPlaneCtx.xControlPlaneResponseBuff = xControlPlaneResponseBuff;
-	xDataPlaneCtx.xDataPlaneSendBuff = xDataPlaneSendBuff;
+	xDataPlaneCtx.xDataPlaneSendQueue = xDataPlaneSendQueue;
 	xDataPlaneCtx.pxNetif = &( xCtx.xNetif );
 
 	/* Construct controlplane context */
@@ -304,7 +359,7 @@ void net_main( void * pvParameters )
 	xControlPlaneCtx.xControlPlaneSendQueue = xControlPlaneSendQueue;
 
     /* Initialize lwip */
-    tcpip_init( vLwipReadyCallback, NULL );
+    tcpip_init( vLwipReadyCallback, xTaskGetCurrentTaskHandle() );
 
     /* Wait for callback */
     xResult = waitForNotification( NET_LWIP_READY_BIT, portMAX_DELAY );
@@ -357,26 +412,31 @@ void net_main( void * pvParameters )
         }
     }
 
-	/* Register lwip netif */
+
 	err_t xLwipError;
 
-	struct netif * pxNetif = netif_add( &( xCtx.xNetif ), NULL, NULL, NULL, &xCtx, &prvInitNetInterface, tcpip_input );
+    /* Set lwip status callback */
+	pxNetif->status_callback = vLwipStatusCallback;
+	pxNetif->link_callback = vLwipStatusCallback;
+
+    /* Register lwip netif */
+	xLwipError = netifapi_netif_add( pxNetif,
+                                     NULL, NULL, NULL,
+                                     &xCtx,
+                                     &prvInitNetInterface,
+                                     tcpip_input );
 
 	configASSERT( pxNetif != NULL );
 
-	netif_set_default( &( xCtx.xNetif ) );
+	netifapi_netif_set_default( pxNetif );
 
-	/* Enable lwip callbacks */
-	netif_set_status_callback( &( xCtx.xNetif ), vLwipStatusCallback );
-	netif_set_link_callback( &( xCtx.xNetif ), vLwipStatusCallback );
-
-	netif_set_up( &( xCtx.xNetif ) );
+	netifapi_netif_set_up( pxNetif );
 
 	/* If already connected to the AP, bring interface up */
 	if( xCtx.xStatus >= MX_STATUS_STA_UP )
 	{
-	    netif_set_link_up( &( xCtx.xNetif ) );
-	    xLwipError = dhcp_start( &( xCtx.xNetif ) );
+	    netifapi_netif_set_link_up( pxNetif );
+	    xLwipError = netifapi_dhcp_start( pxNetif );
 	}
 
 	/* Outer loop. Reinitializing */
@@ -398,7 +458,7 @@ void net_main( void * pvParameters )
 	    if( xResult != 0 )
 	    {
 	        /* State update from driver while connected */
-	        if( xResult & NET_STATE_UPDATE_BIT )
+	        if( xResult & MX_STATUS_UPDATE_BIT )
 	        {
 	            /* Make a connection attempt */
 	            if( xCtx.xStatus < MX_STATUS_STA_UP )
@@ -406,12 +466,10 @@ void net_main( void * pvParameters )
 	                xConnectToAP( &xCtx );
 	            }
 	            /* Link down, but ip still assigned -> end dhcp */
-	            else if( ( xCtx.xNetif.flags & NETIF_FLAG_LINK_UP ) == 0 &&
-	                     xCtx.xNetif.ip_addr.addr != 0 )
+	            else if( ( pxNetif->flags & NETIF_FLAG_LINK_UP ) == 0 &&
+	                     pxNetif->ip_addr.addr != 0 )
 	            {
-	                err_t xLwipError;
-
-	                xLwipError = dhcp_release( &( xCtx.xNetif ) );
+	                xLwipError = netifapi_dhcp_release_and_stop( pxNetif );
 
 	                if( xLwipError != ERR_OK )
 	                {
@@ -419,10 +477,10 @@ void net_main( void * pvParameters )
 	                }
 	            }
 	            /* Link up without an IP -> start DHCP */
-	            else if( ( xCtx.xNetif.flags & NETIF_FLAG_LINK_UP ) != 0 &&
-	                     xCtx.xNetif.ip_addr.addr == 0 )
+	            else if( ( pxNetif->flags & NETIF_FLAG_LINK_UP ) != 0 &&
+	                     pxNetif->ip_addr.addr == 0 )
 	            {
-                    xLwipError = dhcp_start( &( xCtx.xNetif ) );
+                    xLwipError = netifapi_dhcp_start( pxNetif );
 
                     if( xLwipError != ERR_OK )
                     {

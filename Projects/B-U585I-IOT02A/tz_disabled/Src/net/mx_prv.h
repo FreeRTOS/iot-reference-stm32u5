@@ -51,7 +51,8 @@
 #define MX_SPI_TRANSACTION_TIMEOUT      MX_DEFAULT_TIMEOUT_TICK
 #define MX_MAX_MESSAGE_LEN              4096
 #define MX_ETH_PACKET_ENQUEUE_TIMEOUT   pdMS_TO_TICKS( 10000 )
-#define MX_SPI_EVENT_TIMEOUT            pdMS_TO_TICKS( 10000 )
+#define MX_SPI_EVENT_TIMEOUT            pdMS_TO_TICKS( 1000 )
+#define MX_SPI_FLOW_TIMEOUT             pdMS_TO_TICKS( 1000 )
 
 #define CONTROL_PLANE_QUEUE_LEN         1
 #define CONTROL_PLANE_BUFFER_SZ         ( sizeof( void *) + sizeof( size_t ) )
@@ -69,7 +70,7 @@ typedef struct
     volatile uint32_t ulLastRequestId;
     NetInterface_t * pxNetif;
     MessageBufferHandle_t xControlPlaneResponseBuff;
-    MessageBufferHandle_t xDataPlaneSendBuff;
+    QueueHandle_t xDataPlaneSendQueue;
     QueueHandle_t xControlPlaneSendQueue;
 } MxDataplaneCtx_t;
 
@@ -88,7 +89,8 @@ typedef struct
     MacAddress_t xMacAddress;
     NetInterface_t xNetif;
     volatile MxStatus_t xStatus;
-    MessageBufferHandle_t xDataPlaneSendBuff;
+    QueueHandle_t xDataPlaneSendQueue;
+    volatile uint32_t * pulTxPacketsWaiting;
 } MxNetConnectCtx_t;
 
 typedef enum
@@ -256,7 +258,6 @@ static inline BaseType_t xMessageBuffRemainingSpaces( MessageBufferHandle_t xMes
 }
 
 BaseType_t prvxLinkInput( NetInterface_t * pxNetif, PacketBuffer_t * pxPbufIn );
-void mxlwip_init_netif( NetInterface_t * pxNetif, MessageBufferHandle_t xDataPlaneSendBuff );
 void prvControlPlaneRouter( void * pvParameters );
 uint32_t prvGetNextRequestID( void );
 void vDataplaneThread( void * pvParameters );
