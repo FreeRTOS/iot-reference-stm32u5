@@ -105,8 +105,8 @@ err_t prvxLinkOutput( NetInterface_t * pxNetif, PacketBuffer_t * pxPbuf )
         if( xReturn == pdTRUE )
         {
             xError = ERR_OK;
-            LogDebug( "Packet enqueued into xDataPlaneSendBuff addr: %p, len: %d, remaining space: %d",
-                      pxPbufToSend, pxPbufToSend->len, xMessageBuffRemainingSpaces( xDataPlaneSendBuff ) );
+            LogDebug( "Packet enqueued into xDataPlaneSendQueue addr: %p, len: %d, remaining space: %d",
+                      pxPbufToSend, pxPbufToSend->tot_len, uxQueueSpacesAvailable( xDataPlaneSendQueue ) );
 
             ( void ) Atomic_Increment_u32( pxCtx->pulTxPacketsWaiting );
         }

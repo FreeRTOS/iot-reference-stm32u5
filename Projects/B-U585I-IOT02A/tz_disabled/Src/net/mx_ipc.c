@@ -21,6 +21,7 @@
  * http://www.FreeRTOS.org
  * http://aws.amazon.com/freertos
  */
+
 #include "logging_levels.h"
 #define LOG_LEVEL LOG_DEBUG
 #include "logging.h"
@@ -163,8 +164,6 @@ static IPCError_t xSendIPCRequest( IPCPacket_t * pxTxPkt,
 {
     IPCError_t xReturnValue = IPC_SUCCESS;
 
-    xTimeout =  pdMS_TO_TICKS( 30 * 1000 );
-
     /* Validate inputs */
     configASSERT( pxTxPkt != NULL );
 
@@ -205,6 +204,8 @@ static IPCError_t xSendIPCRequest( IPCPacket_t * pxTxPkt,
                               &( pxRequestCtx->pxTxPbuf ),
                               xTimeout );
 
+        Atomic_Increment_u32( pxControlPlaneCtx->pulTxPacketsWaiting );
+
         if( xResult != pdTRUE )
         {
             LogError( "Error when sending message with request id=%d", pxRequestCtx->ulRequestID );
@@ -212,13 +213,14 @@ static IPCError_t xSendIPCRequest( IPCPacket_t * pxTxPkt,
         }
         else
         {
+            LogDebug("Enqueued controlplane message onto xControlPlaneSendQueue. Notifying DP thread");
             /* Clear the pointer, ref goes with the request. */
             pxRequestCtx->pxTxPbuf = NULL;
 
             configASSERT( pxControlPlaneCtx->xDataPlaneTaskHandle != NULL );
 
             /* Notify dataplane thread of a waiting message */
-            xResult = xTaskNotify( pxControlPlaneCtx->xDataPlaneTaskHandle, 0, eNoAction );
+            xResult = xTaskNotifyIndexed( pxControlPlaneCtx->xDataPlaneTaskHandle, 3, 0, eSetBits );
             configASSERT( xResult );
         }
     }
@@ -290,7 +292,6 @@ IPCError_t mx_FactoryReset( TickType_t xTimeout )
     xReturnValue = xSendIPCRequest( &xTxPkt, 0,
                                       NULL, 0,
                                       xTimeout );
-
     return xReturnValue;
 }
 
@@ -486,14 +487,19 @@ void prvControlPlaneRouter( void * pvParameters )
                                          sizeof( PacketBuffer_t * ),
                                          portMAX_DELAY );
 
+        LogDebug("Message buffer receive woke up.");
+
         if( xResult != pdFALSE &&
             pxRxPbuf != NULL )
         {
             IPCPacket_t * pxRxPacket = ( IPCPacket_t * ) pxRxPbuf->payload;
 
+
+
             /* Check if message is a notification */
             if( pxRxPacket->xHeader.ulIPCRequestId == 0 )
             {
+                LogDebug("Event notification message received");
                 /* Assert that the appID maps to an event */
                 configASSERT( pxRxPacket->xHeader.usIPCApiId > IPC_SYS_EVT_OFFSET );
 
@@ -510,6 +516,8 @@ void prvControlPlaneRouter( void * pvParameters )
             /* Otherwise, message is a response, find the relevant IPCRequestCtx to send the packet to */
             else
             {
+                LogDebug("Response packet received.");
+
                 /* Wait for xContextArrayMutex */
                 xResult = xSemaphoreTake( xContextArrayMutex, portMAX_DELAY );
 
@@ -530,12 +538,13 @@ void prvControlPlaneRouter( void * pvParameters )
                     pxTargetCtx->pxRxPbuf == NULL &&
                     pxTargetCtx->xWaitingTask != NULL )
                 {
+                    LogDebug("Notifying waiting task of RX packet.");
                     pxTargetCtx->pxRxPbuf = pxRxPbuf;
                     xResult = xTaskNotify( pxTargetCtx->xWaitingTask, 0, eNoAction );
 
                     if( xResult == pdTRUE )
                     {
-                        /* Increase pbuf reference count since it was successfully added to the queue */
+                        /* Increase pbuf reference count */
                         pbuf_ref( pxRxPbuf );
                     }
                     else

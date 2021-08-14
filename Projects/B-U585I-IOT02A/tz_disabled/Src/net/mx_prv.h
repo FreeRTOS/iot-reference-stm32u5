@@ -24,6 +24,10 @@
 #ifndef _MXFREE_PRV_
 #define _MXFREE_PRV_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Private definitions to be shared between mxfree driver files */
 #include "message_buffer.h"
 #include "stm32u5_iot_board.h"
@@ -65,7 +69,6 @@ typedef struct
     const IotMappedPin_t * gpio_notify;
     SPI_HandleTypeDef * pxSpiHandle;
     TaskHandle_t xDataPlaneTaskHandle;
-    volatile uint32_t ulRxPacketsWaiting;
     volatile uint32_t ulTxPacketsWaiting;
     volatile uint32_t ulLastRequestId;
     NetInterface_t * pxNetif;
@@ -81,6 +84,7 @@ typedef struct
     TaskHandle_t xDataPlaneTaskHandle;
     MxEventCallback_t xEventCallback;
     void * pxEventCallbackCtx;
+    volatile uint32_t * pulTxPacketsWaiting;
 } ControlPlaneCtx_t;
 
 typedef struct
@@ -89,6 +93,7 @@ typedef struct
     MacAddress_t xMacAddress;
     NetInterface_t xNetif;
     volatile MxStatus_t xStatus;
+    volatile MxStatus_t xStatusPrevious;
     QueueHandle_t xDataPlaneSendQueue;
     volatile uint32_t * pulTxPacketsWaiting;
 } MxNetConnectCtx_t;
@@ -262,6 +267,8 @@ void prvControlPlaneRouter( void * pvParameters );
 uint32_t prvGetNextRequestID( void );
 void vDataplaneThread( void * pvParameters );
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _MXFREE_PRV_ */
