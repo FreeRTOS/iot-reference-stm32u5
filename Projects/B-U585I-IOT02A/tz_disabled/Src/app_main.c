@@ -57,7 +57,6 @@ static void hw_init( void )
 	/* Initialize GPIO */
 	MX_GPIO_Init();
 
-
     MX_RTC_Init();
 
     extern SPI_HandleTypeDef hspi2;
@@ -108,7 +107,7 @@ int main( void )
 
     configASSERT( xResult == pdTRUE );
 
-//    vStart\AgentDemo();
+    vStartMQTTAgentDemo();
 
     /* Start scheduler */
     vTaskStartScheduler();

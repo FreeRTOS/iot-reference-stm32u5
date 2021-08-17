@@ -21,6 +21,11 @@
  * http://www.FreeRTOS.org
  * http://aws.amazon.com/freertos
  */
+#include "logging_levels.h"
+
+#define LOG_LEVEL LOG_ERROR
+
+#include "logging.h"
 
 #include "mx_lwip.h"
 
@@ -36,7 +41,9 @@ static void vAddMXHeaderToEthernetFrame( PacketBuffer_t * pxTxPacket )
     uint16_t ulEthPacketLen = pxTxPacket->tot_len;
 
     /* Adjust pbuf size to include BypassInOut_t header */
-    ( void ) pbuf_header( pxTxPacket, sizeof( BypassInOut_t ) );
+    uint8_t cErr = pbuf_header( pxTxPacket, sizeof( BypassInOut_t ) );
+
+    configASSERT( cErr == 0 );
 
     /* Add on bypass header */
     BypassInOut_t * pxBypassHeader = ( BypassInOut_t * ) pxTxPacket->payload;
@@ -53,7 +60,61 @@ static void vAddMXHeaderToEthernetFrame( PacketBuffer_t * pxTxPacket )
     /* Set length field */
     pxBypassHeader->usDataLen = ulEthPacketLen;
 
-    configASSERT( pxTxPacket->ref > 1 );
+    configASSERT( pxTxPacket->ref >= 1 );
+}
+
+/* Callback for lwip netif events
+ * netif_set_status_callback metif_set_link_callback */
+static void vLwipStatusCallback( struct netif * pxNetif )
+{
+    static ip_addr_t xLastAddr = { 0 };
+    static uint8_t xLastFlags = 0;
+
+    MxNetConnectCtx_t * pxCtx = ( MxNetConnectCtx_t * ) pxNetif->state;
+
+    LogDebug("vLwipStatusCallback called");
+
+    uint32_t ulNotifyValue = 0;
+
+    /* Check for change in flags */
+    if( ( pxNetif->flags ^ xLastFlags ) & NETIF_FLAG_UP  )
+    {
+        if( pxNetif->flags & NETIF_FLAG_UP )
+        {
+            ulNotifyValue |= NET_LWIP_IFUP_BIT;
+        }
+        else
+        {
+            ulNotifyValue |= NET_LWIP_IFDOWN_BIT;
+        }
+    }
+    else if( ( pxNetif->flags ^ xLastFlags ) & NETIF_FLAG_LINK_UP )
+    {
+        if( pxNetif->flags & NETIF_FLAG_LINK_UP )
+        {
+            ulNotifyValue |= NET_LWIP_LINK_UP_BIT;
+        }
+        else
+        {
+            ulNotifyValue |= NET_LWIP_LINK_DOWN_BIT;
+        }
+    }
+
+    if( pxNetif->ip_addr.addr != xLastAddr.addr )
+    {
+        ulNotifyValue |= NET_LWIP_IP_CHANGE_BIT;
+    }
+
+    if( ulNotifyValue > 0 )
+    {
+        (void) xTaskNotifyIndexed( pxCtx->xNetTaskHandle,
+                                   NET_EVT_IDX,
+                                   ulNotifyValue,
+                                   eSetBits );
+    }
+
+    xLastAddr = pxNetif->ip_addr;
+    xLastFlags = pxNetif->flags;
 }
 
 /* Network output function for lwip */
@@ -95,20 +156,24 @@ err_t prvxLinkOutput( NetInterface_t * pxNetif, PacketBuffer_t * pxPbuf )
 
     configASSERT( pxCtx->xDataPlaneSendQueue != NULL );
     configASSERT( pxCtx->pulTxPacketsWaiting != NULL );
+    configASSERT( pxCtx->xDataPlaneTaskHandle != NULL );
 
     if( xError == ERR_OK )
     {
+        configASSERT( pxPbufToSend != NULL );
         xReturn = xQueueSend( pxCtx->xDataPlaneSendQueue,
-                              pxPbufToSend,
+                              &pxPbufToSend,
                               MX_ETH_PACKET_ENQUEUE_TIMEOUT );
 
         if( xReturn == pdTRUE )
         {
             xError = ERR_OK;
-            LogDebug( "Packet enqueued into xDataPlaneSendQueue addr: %p, len: %d, remaining space: %d",
-                      pxPbufToSend, pxPbufToSend->tot_len, uxQueueSpacesAvailable( xDataPlaneSendQueue ) );
+            LogDebug( "Packet enqueued into xDataPlaneSendQueue addr: %p, len: %d, refs: %d, remaining space: %d",
+                      pxPbufToSend, pxPbufToSend->tot_len, pxPbufToSend->ref, uxQueueSpacesAvailable( pxCtx->xDataPlaneSendQueue ) );
 
             ( void ) Atomic_Increment_u32( pxCtx->pulTxPacketsWaiting );
+
+            ( void ) xTaskNotifyGiveIndexed( pxCtx->xDataPlaneTaskHandle, DATA_WAITING_IDX );
         }
         else
         {
@@ -149,20 +214,21 @@ BaseType_t prvxLinkInput( NetInterface_t * pxNetif, PacketBuffer_t * pxPbufIn )
         case ETHTYPE_ARP:
             if( pxNetif->input( pxPbufIn, pxNetif ) != ERR_OK )
             {
-                pbuf_free( pxPbufIn );
+                xReturn = pdFALSE;
+            }
+            else
+            {
                 xReturn = pdTRUE;
             }
             break;
         default:
             LogDebug( "Dropping input packet with ethertype %d", usEthertype );
-            pbuf_free( pxPbufIn );
             xReturn = pdFALSE;
             break;
         }
     }
     else
     {
-        pbuf_free( pxPbufIn );
         xReturn = pdFALSE;
     }
     return xReturn;
@@ -188,6 +254,9 @@ err_t prvInitNetInterface( NetInterface_t * pxNetif )
     pxNetif->hwaddr_len = ETHARP_HWADDR_LEN;
 
     pxNetif->flags = ( NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_ETHERNET );
+
+    netif_set_status_callback( pxNetif, vLwipStatusCallback );
+    netif_set_link_callback( pxNetif, vLwipStatusCallback );
 
     /* Set a dummy mac address */
     ( void ) memcpy( &( pxNetif->hwaddr ), &( pxCtx->xMacAddress ), ETHARP_HWADDR_LEN );

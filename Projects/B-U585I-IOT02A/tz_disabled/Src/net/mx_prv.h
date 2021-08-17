@@ -41,10 +41,25 @@ extern "C" {
 #include "mx_lwip.h"
 #endif
 
+#define DATA_WAITING_IDX        3
+#define DATA_WAITING_SNOTIFY    0x20
+#define DATA_WAITING_CONTROL    0x10
+#define DATA_WAITING_DATA       0x8
+
+#define NET_EVT_IDX                     0x1
+#define NET_LWIP_READY_BIT              0x1
+#define NET_LWIP_IP_CHANGE_BIT          0x2
+#define NET_LWIP_IFUP_BIT               0x4
+#define NET_LWIP_IFDOWN_BIT             0x8
+#define NET_LWIP_LINK_UP_BIT            0x10
+#define NET_LWIP_LINK_DOWN_BIT          0x20
+#define MX_STATUS_UPDATE_BIT            0x40
+#define ASYNC_REQUEST_RECONNECT_BIT     0x80
+
 /* Constants */
 #define NUM_IPC_REQUEST_CTX             1
 #define MX_DEFAULT_TIMEOUT_MS           100
-#define MX_DEFAULT_TIMEOUT_TICK         pdMS_TO_TICKS( 2000 )
+#define MX_DEFAULT_TIMEOUT_TICK         pdMS_TO_TICKS( MX_DEFAULT_TIMEOUT_MS )
 #define MX_TIMEOUT_CONNECT              pdMS_TO_TICKS( 120 * 1000 )
 #define MX_MACADDR_LEN                  6
 #define MX_FIRMWARE_REVISION_SIZE       24
@@ -55,8 +70,8 @@ extern "C" {
 #define MX_SPI_TRANSACTION_TIMEOUT      MX_DEFAULT_TIMEOUT_TICK
 #define MX_MAX_MESSAGE_LEN              4096
 #define MX_ETH_PACKET_ENQUEUE_TIMEOUT   pdMS_TO_TICKS( 10000 )
-#define MX_SPI_EVENT_TIMEOUT            pdMS_TO_TICKS( 1000 )
-#define MX_SPI_FLOW_TIMEOUT             pdMS_TO_TICKS( 1000 )
+#define MX_SPI_EVENT_TIMEOUT            pdMS_TO_TICKS( 10000 )
+#define MX_SPI_FLOW_TIMEOUT             pdMS_TO_TICKS( 20 )
 
 #define CONTROL_PLANE_QUEUE_LEN         1
 #define CONTROL_PLANE_BUFFER_SZ         ( sizeof( void *) + sizeof( size_t ) )
@@ -96,6 +111,8 @@ typedef struct
     volatile MxStatus_t xStatusPrevious;
     QueueHandle_t xDataPlaneSendQueue;
     volatile uint32_t * pulTxPacketsWaiting;
+    TaskHandle_t xNetTaskHandle;
+    TaskHandle_t xDataPlaneTaskHandle;
 } MxNetConnectCtx_t;
 
 typedef enum
@@ -196,7 +213,7 @@ typedef struct IPCResponseStatus IPCResponseWifiDisconnect_t;
 
 typedef struct IPCRequestWifiBypassSet
 {
-    int32_t mode;
+    int32_t enable;
 } IPCRequestWifiBypassSet_t;
 
 typedef IPCRequestWifiBypassSet_t IPCRequestWifiBypassGet_t;

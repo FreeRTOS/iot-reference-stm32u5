@@ -51,6 +51,9 @@
  */
 
 #define LOGGING_REMOVE_PARENS // This file uses C89 style logging calls
+
+#include "logging_levels.h"
+#define LOG_LEVEL LOG_DEBUG
 #include "logging.h"
 
 /* Standard includes. */

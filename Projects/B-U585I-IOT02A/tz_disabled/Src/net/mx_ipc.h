@@ -73,7 +73,7 @@ IPCError_t mx_Connect( const char * pcSSID,
 
 IPCError_t mx_Disconnect( TickType_t xTimeout );
 
-IPCError_t mx_SetBypassMode( MxBypassMode_t mode, TickType_t xTimeout );
+IPCError_t mx_SetBypassMode( BaseType_t xEnable, TickType_t xTimeout );
 
 IPCError_t mx_RegisterEventCallback( MxEventCallback_t pvCallback , void * pxCallbackContext );
 

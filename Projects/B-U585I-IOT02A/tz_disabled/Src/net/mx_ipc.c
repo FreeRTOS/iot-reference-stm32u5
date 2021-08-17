@@ -23,7 +23,7 @@
  */
 
 #include "logging_levels.h"
-#define LOG_LEVEL LOG_DEBUG
+#define LOG_LEVEL LOG_ERROR
 #include "logging.h"
 
 
@@ -68,18 +68,21 @@ static void vClearCtx( IPCRequestCtx_t * pxRequestCtx )
         /* Clear request ID to mark the context as available */
         pxRequestCtx->ulRequestID = 0;
 
+        /* Free the request buffer pbuf and clear the pointer */
         if( pxRequestCtx->pxTxPbuf != NULL )
         {
+            LogDebug( "Decreasing reference count of pbuf %p from %d to %d",  pxRequestCtx->pxTxPbuf,  pxRequestCtx->pxTxPbuf->ref, (  pxRequestCtx->pxTxPbuf->ref - 1 ) );
             PBUF_FREE( pxRequestCtx->pxTxPbuf );
             pxRequestCtx->pxTxPbuf = NULL;
         }
 
-        /* Clear the handle of the waiting task and free the response pbuf */
-        /* Note: This should not be required normally */
+        /* Clear the handle of the waiting task */
         pxRequestCtx->xWaitingTask = NULL;
 
+        /* Free the response buffer pbuf and clear the pointer */
         if( pxRequestCtx->pxRxPbuf != NULL )
         {
+            LogDebug( "Decreasing reference count of pbuf %p from %d to %d",  pxRequestCtx->pxRxPbuf,  pxRequestCtx->pxRxPbuf->ref, (  pxRequestCtx->pxRxPbuf->ref - 1 ) );
             PBUF_FREE( pxRequestCtx->pxRxPbuf );
             pxRequestCtx->pxRxPbuf = NULL;
         }
@@ -141,6 +144,7 @@ static IPCRequestCtx_t * pxFindAvailableCtx( TickType_t xTimeout, BaseType_t xPb
 
                 /* Allocate a tx pbuf */
                 pxRequestCtx->pxTxPbuf = PBUF_ALLOC_TX( xPbufLen );
+//                LogDebug( "Allocated pbuf: %p length: %d ref: %d",  pxRequestCtx->pxTxPbuf, pxRequestCtx->pxRxPbuf->tot_len, pxRequestCtx->pxRxPbuf->ref );
                 break;
             }
         }
@@ -213,15 +217,13 @@ static IPCError_t xSendIPCRequest( IPCPacket_t * pxTxPkt,
         }
         else
         {
-            LogDebug("Enqueued controlplane message onto xControlPlaneSendQueue. Notifying DP thread");
-            /* Clear the pointer, ref goes with the request. */
+            /* Clear the pointer. Reference is now owned by the queue. */
             pxRequestCtx->pxTxPbuf = NULL;
 
             configASSERT( pxControlPlaneCtx->xDataPlaneTaskHandle != NULL );
 
             /* Notify dataplane thread of a waiting message */
-            xResult = xTaskNotifyIndexed( pxControlPlaneCtx->xDataPlaneTaskHandle, 3, 0, eSetBits );
-            configASSERT( xResult );
+            xTaskNotifyGiveIndexed( pxControlPlaneCtx->xDataPlaneTaskHandle, DATA_WAITING_IDX );
         }
     }
 
@@ -234,11 +236,10 @@ static IPCError_t xSendIPCRequest( IPCPacket_t * pxTxPkt,
         xResult = xTaskNotifyWait( 0, 0, NULL, xTimeout );
         if( xResult == pdTRUE )
         {
-            pxResponsePacket = ( IPCPacket_t * ) pxRequestCtx->pxRxPbuf;
+            pxResponsePacket = ( IPCPacket_t * ) pxRequestCtx->pxRxPbuf->payload;
         }
         else
         {
-            LogError( "Timed out waiting for IPC response." );
             xReturnValue = IPC_TIMEOUT;
         }
 
@@ -271,9 +272,9 @@ IPCError_t mx_RequestVersion( char * pcVersionBuffer,
         ulVersionLength >= MX_FIRMWARE_REVISION_SIZE )
     {
         xReturnValue = xSendIPCRequest( &xTxPkt, 0,
-                                          ( IPCPacketData_t * ) pcVersionBuffer,
-                                          ulVersionLength,
-                                          xTimeout );
+                                        ( IPCPacketData_t * ) pcVersionBuffer,
+                                        ulVersionLength,
+                                        xTimeout );
     }
     else
     {
@@ -404,17 +405,17 @@ IPCError_t mx_Disconnect( TickType_t xTimeout )
     return xReturnValue;
 }
 
-IPCError_t mx_SetBypassMode( MxBypassMode_t mode, TickType_t xTimeout )
+IPCError_t mx_SetBypassMode( BaseType_t xEnable, TickType_t xTimeout )
 {
     IPCError_t xError = IPC_SUCCESS;
 
     IPCPacket_t xTxPkt;
 
-    if( mode == WIFI_BYPASS_MODE_STATION ||
-        mode == WIFI_BYPASS_MODE_SOFTAP )
+    if( xEnable == pdFALSE ||
+        xEnable == pdTRUE )
     {
         xTxPkt.xHeader.usIPCApiId = IPC_WIFI_BYPASS_SET;
-        xTxPkt.xData.xRequestWifiBypassSet.mode = mode;
+        xTxPkt.xData.xRequestWifiBypassSet.enable = ( uint32_t ) xEnable;
         xError = xSendIPCRequest( &xTxPkt, sizeof( IPCRequestWifiBypassSet_t ),
                                   NULL, 0,
                                   xTimeout );
@@ -487,22 +488,22 @@ void prvControlPlaneRouter( void * pvParameters )
                                          sizeof( PacketBuffer_t * ),
                                          portMAX_DELAY );
 
-        LogDebug("Message buffer receive woke up.");
-
         if( xResult != pdFALSE &&
             pxRxPbuf != NULL )
         {
             IPCPacket_t * pxRxPacket = ( IPCPacket_t * ) pxRxPbuf->payload;
 
-
+            char ucPrintBuf[ pxRxPbuf->tot_len * 2 + 1 ];
+            for( uint32_t i = 0; i < pxRxPbuf->tot_len; i++ )
+            {
+                snprintf( &ucPrintBuf[ 2 * i ], 3, "%02X", ((uint8_t*)pxRxPbuf->payload)[i] );
+            }
+            ucPrintBuf[ pxRxPbuf->tot_len * 2 ] = 0;
+            LogDebug("%s", ucPrintBuf);
 
             /* Check if message is a notification */
             if( pxRxPacket->xHeader.ulIPCRequestId == 0 )
             {
-                LogDebug("Event notification message received");
-                /* Assert that the appID maps to an event */
-                configASSERT( pxRxPacket->xHeader.usIPCApiId > IPC_SYS_EVT_OFFSET );
-
                 if( pxRxPacket->xHeader.usIPCApiId == IPC_WIFI_EVT_STATUS )
                 {
                     pxCtx->xEventCallback( pxRxPacket->xData.xEventStatus.status, pxCtx->pxEventCallbackCtx );
@@ -516,8 +517,6 @@ void prvControlPlaneRouter( void * pvParameters )
             /* Otherwise, message is a response, find the relevant IPCRequestCtx to send the packet to */
             else
             {
-                LogDebug("Response packet received.");
-
                 /* Wait for xContextArrayMutex */
                 xResult = xSemaphoreTake( xContextArrayMutex, portMAX_DELAY );
 
@@ -538,7 +537,7 @@ void prvControlPlaneRouter( void * pvParameters )
                     pxTargetCtx->pxRxPbuf == NULL &&
                     pxTargetCtx->xWaitingTask != NULL )
                 {
-                    LogDebug("Notifying waiting task of RX packet.");
+                    LogDebug("Notifying waiting task %d of RX packet.", pxTargetCtx->xWaitingTask );
                     pxTargetCtx->pxRxPbuf = pxRxPbuf;
                     xResult = xTaskNotify( pxTargetCtx->xWaitingTask, 0, eNoAction );
 
@@ -567,7 +566,7 @@ void prvControlPlaneRouter( void * pvParameters )
                 configASSERT( xResult == pdTRUE );
             }
 
-            LogDebug( "Decreasing reference count of pxRxPbuf %p", pxRxPbuf );
+            LogDebug( "Decreasing reference count of pxRxPbuf %p from %d to %d", pxRxPbuf, pxRxPbuf->ref, ( pxRxPbuf->ref - 1 ) );
             PBUF_FREE( pxRxPbuf );
         }
         else

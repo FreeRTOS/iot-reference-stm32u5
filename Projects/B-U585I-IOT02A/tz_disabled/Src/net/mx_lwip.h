@@ -82,7 +82,8 @@ static inline void vStartDhcp( NetInterface_t * pxNetif )
     /* Start DHCP if necessary */
     struct dhcp * pxDHCP = netif_dhcp_data( pxNetif );
 
-    if( pxDHCP->state == DHCP_STATE_OFF )
+    if( pxDHCP == NULL ||
+        ( pxDHCP != NULL && pxDHCP->state == DHCP_STATE_OFF ) )
     {
         LogInfo( "Starting DHCP." );
         err_t xLwipError = netifapi_dhcp_start( pxNetif );
@@ -98,7 +99,8 @@ static inline void vStopDhcp( NetInterface_t * pxNetif )
     /* Start DHCP if necessary */
     struct dhcp * pxDHCP = netif_dhcp_data( pxNetif );
 
-    if( pxDHCP->state != DHCP_STATE_OFF )
+    if( pxDHCP != NULL &&
+        pxDHCP->state != DHCP_STATE_OFF )
     {
         LogInfo( "Stopping DHCP." );
         err_t xLwipError = netifapi_dhcp_start( pxNetif );
