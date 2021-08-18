@@ -84,10 +84,7 @@ static void spi_transfer_done_callback( SPI_HandleTypeDef *hspi )
                                           &xHigherPriorityTaskWoken );
         configASSERT( rslt == pdTRUE );
 
-        if( xHigherPriorityTaskWoken == pdTRUE )
-        {
-            vPortYield();
-        }
+        portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
     }
 }
 
@@ -106,10 +103,7 @@ static void spi_transfer_error_callback( SPI_HandleTypeDef *hspi )
                                           &xHigherPriorityTaskWoken );
         configASSERT( rslt == pdTRUE );
 
-        if( xHigherPriorityTaskWoken == pdTRUE )
-        {
-            vPortYield();
-        }
+        portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
     }
 }
 
@@ -125,10 +119,7 @@ static void spi_notify_callback( void * pvContext )
                                        DATA_WAITING_IDX,
                                        &xHigherPriorityTaskWoken );
 
-        if( xHigherPriorityTaskWoken == pdTRUE )
-        {
-            vPortYield();
-        }
+        portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
     }
 }
 
@@ -144,10 +135,7 @@ static void spi_flow_callback( void * pvContext )
                                        SPI_EVT_FLOW_IDX,
                                        &xHigherPriorityTaskWoken );
 
-        if( xHigherPriorityTaskWoken == pdTRUE )
-        {
-            vPortYield();
-        }
+        portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
     }
 }
 
@@ -173,7 +161,7 @@ static inline void vDoHardReset( MxDataplaneCtx_t * pxCtx )
     vTaskDelay(100);
 
     vGpioSet( pxCtx->gpio_reset );
-    vTaskDelay(1200);
+    vTaskDelay( 5200 );
 }
 
 /* SPI protocol definitions */
@@ -359,16 +347,14 @@ static inline BaseType_t xTransmitMessage( MxDataplaneCtx_t * pxCtx,
 //                                          uint32_t usRxDataLen )
 //{
 //    HAL_StatusTypeDef xHalStatus = HAL_OK;
-//
-//    LogDebug("Entering xTransmitPacket");
-//
+////
 //    /* Split into up to two dma transactions if both rx and tx ops are necessary */
 //    if( usTxDataLen > 0 &&
 //        usRxDataLen > 0 )
 //    {
 //        LogDebug("Starting simultaneous transmit");
 //        /* Perform TXRX transaction for common data length */
-//        if( usTxDataLen > usRxDataLen )
+//        if( usTxDataLen >= usRxDataLen )
 //        {
 //            LogDebug( "TXRX %d Bytes", usRxDataLen );
 //
@@ -390,7 +376,6 @@ static inline BaseType_t xTransmitMessage( MxDataplaneCtx_t * pxCtx,
 //                                                      pxTxBuffer,
 //                                                      pxRxBuffer,
 //                                                      usTxDataLen );
-//
 //        }
 //        else
 //        {
@@ -614,18 +599,15 @@ void vDataplaneThread( void * pvParameters )
     /* Do hardware reset */
     vDoHardReset( pxCtx );
 
-//    vTaskDelay(10 * 1000);
-
     while( exitFlag == pdFALSE )
     {
         PacketBuffer_t * pxTxBuff = NULL;
         PacketBuffer_t * pxRxBuff = NULL;
-        uint32_t ulNotificationValue = 0;
 
         LogDebug("Starting wait for DATA_WAITING_IDX event");
-        ulNotificationValue = ulTaskNotifyTakeIndexed( DATA_WAITING_IDX,
-                                                       pdFALSE,
-                                                       portMAX_DELAY );
+        ulTaskNotifyTakeIndexed( DATA_WAITING_IDX,
+                                 pdFALSE,
+                                 portMAX_DELAY );
 
         /* Get IRQ / notify pin state */
         BaseType_t xNotifyGpioLevel = xGpioGet( pxCtx->gpio_notify );
@@ -746,7 +728,7 @@ void vDataplaneThread( void * pvParameters )
                 }
                 else
                 {
-                    //configASSERT( 0 );
+                    LogError( "usTxLen and usRxLen are both > 0. usTxLen: %d, usRxLen: %d", usTxLen, usRxLen );
                 }
             }
         }

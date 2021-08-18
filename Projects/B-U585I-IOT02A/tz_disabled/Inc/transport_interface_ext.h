@@ -39,8 +39,12 @@
 /*
  * Socket Options
  */
+#ifndef SO_SNDTIMEO
 #define SO_SNDTIMEO     0x1005
+#endif
+#ifndef SO_RCVTIMEO
 #define SO_RCVTIMEO     0x1006
+#endif
 
 /*
  * Protocols
