@@ -735,21 +735,21 @@ TlsTransportStatus_t mbedtls_transport_connect( NetworkContext_t * pxNetworkCont
     if( returnStatus == TLS_TRANSPORT_SUCCESS )
     {
 
-//        socketError |= pxSocketInterface->setsockopt( pxTLSContext->pxSocketContext,
-//                                                      SO_RCVTIMEO,
-//                                                      (void *)&receiveTimeoutMs,
-//                                                      sizeof( receiveTimeoutMs ) );
-//
-//        socketError |= pxSocketInterface->setsockopt( pxTLSContext->pxSocketContext,
-//                                                      SO_SNDTIMEO,
-//                                                      (void *)&sendTimeoutMs,
-//                                                      sizeof(sendTimeoutMs) );
+        socketError |= pxSocketInterface->setsockopt( pxTLSContext->pxSocketContext,
+                                                      SO_RCVTIMEO,
+                                                      (void *)&receiveTimeoutMs,
+                                                      sizeof( receiveTimeoutMs ) );
 
-//        if( socketError != SOCK_OK )
-//        {
-//            LogError( "Failed to set socket options SO_RCVTIMEO or SO_SNDTIMEO." );
-//            returnStatus = TLS_TRANSPORT_INVALID_PARAMETER;
-//        }
+        socketError |= pxSocketInterface->setsockopt( pxTLSContext->pxSocketContext,
+                                                      SO_SNDTIMEO,
+                                                      (void *)&sendTimeoutMs,
+                                                      sizeof(sendTimeoutMs) );
+
+        if( socketError != SOCK_OK )
+        {
+            LogError( "Failed to set socket options SO_RCVTIMEO or SO_SNDTIMEO." );
+            returnStatus = TLS_TRANSPORT_INVALID_PARAMETER;
+        }
     }
 
     /* Establish a TCP connection with the server. */

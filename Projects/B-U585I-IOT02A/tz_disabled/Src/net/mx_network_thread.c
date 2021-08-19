@@ -25,7 +25,7 @@
  */
 
 #include "logging_levels.h"
-#define LOG_LEVEL LOG_DEBUG
+#define LOG_LEVEL LOG_ERROR
 #include "logging.h"
 
 #include <stdint.h>
@@ -92,8 +92,6 @@ static uint32_t ulWaitForNotifyBits( BaseType_t uxIndexToWaitOn, uint32_t ulTarg
 
     uint32_t ulNotifyValueAccumulate = 0x0;
 
-    LogDebug( "Starting wait for notification at index: %d matching bitmask: 0x%X.", uxIndexToWaitOn, ulTargetBits );
-
     while( ( ulNotifyValueAccumulate & ulTargetBits ) != ulTargetBits )
     {
         uint32_t ulNotifyValue = 0x0;
@@ -102,8 +100,6 @@ static uint32_t ulWaitForNotifyBits( BaseType_t uxIndexToWaitOn, uint32_t ulTarg
                                        ulTargetBits, /* Clear only the target bits on return */
                                        &ulNotifyValue,
                                        xRemainingTicks );
-
-        LogDebug("ulNotifyValue: %d", ulNotifyValue);
 
         /* Accumulate notification bits */
         if( ulNotifyValue > 0 )
@@ -114,7 +110,6 @@ static uint32_t ulWaitForNotifyBits( BaseType_t uxIndexToWaitOn, uint32_t ulTarg
         /* xTaskCheckForTimeOut adjusts xRemainingTicks */
         if( xTaskCheckForTimeOut( &xTimeOut, &xRemainingTicks ) == pdTRUE )
         {
-            LogDebug( "Timed out while waiting for notification at index: %d matching bitmask: 0x%X.", uxIndexToWaitOn, ulTargetBits );
             /* Timed out. Exit loop */
             break;
         }
@@ -313,11 +308,6 @@ static void vInitializeWifiModule( MxNetConnectCtx_t * pxCtx )
     }
 }
 
-static void vNetConnectMainLoop( MxNetConnectCtx_t * pxCtx )
-{
-
-}
-
 static void vInitializeContexts( MxNetConnectCtx_t * pxCtx )
 {
     MessageBufferHandle_t xControlPlaneResponseBuff;
@@ -325,7 +315,7 @@ static void vInitializeContexts( MxNetConnectCtx_t * pxCtx )
     QueueHandle_t xDataPlaneSendQueue;
 
     /* Construct queues */
-    xDataPlaneSendQueue = xQueueCreate( CONTROL_PLANE_QUEUE_LEN, sizeof( PacketBuffer_t * ) );
+    xDataPlaneSendQueue = xQueueCreate( DATA_PLANE_QUEUE_LEN, sizeof( PacketBuffer_t * ) );
     configASSERT( xDataPlaneSendQueue != NULL );
 
     xControlPlaneResponseBuff = xMessageBufferCreate( CONTROL_PLANE_BUFFER_SZ );
@@ -359,7 +349,6 @@ static void vInitializeContexts( MxNetConnectCtx_t * pxCtx )
 
     /* Initialize waiting packet counters */
     xDataPlaneCtx.ulTxPacketsWaiting = 0;
-
 
     /* Set queue handles */
     xDataPlaneCtx.xControlPlaneSendQueue = xControlPlaneSendQueue;
@@ -404,7 +393,7 @@ void net_main( void * pvParameters )
 
 	/* Start dataplane thread (does hw reset on initialization) */
 	xResult = xTaskCreate( &vDataplaneThread,
-	                       "MxDataPlane",
+	                       "MxData",
 	                       4096,
 	                       &xDataPlaneCtx,
 	                       25,
@@ -416,7 +405,7 @@ void net_main( void * pvParameters )
 
 	/* Start control plane thread */
 	xResult = xTaskCreate( &prvControlPlaneRouter,
-	                       "MxControlPlaneRouter",
+	                       "MxCtrl",
 	                       4096,
 	                       &xControlPlaneCtx,
 	                       24,
@@ -429,10 +418,6 @@ void net_main( void * pvParameters )
 
 
 	err_t xLwipError = ERR_OK;
-
-    /* Set lwip status callback */
-//	pxNetif->status_callback = vLwipStatusCallback;
-//	pxNetif->link_callback = vLwipStatusCallback;
 
     /* Register lwip netif */
 	xLwipError = netifapi_netif_add( pxNetif,
@@ -489,10 +474,12 @@ void net_main( void * pvParameters )
 
 	        if( ulNotificationValue & NET_LWIP_IP_CHANGE_BIT )
 	        {
-                LogInfo( "IP Address Change.");
+	            LogSys( "IP Address Change.");
                 vLogAddress( "IP Address:", pxNetif->ip_addr );
                 vLogAddress( "Gateway:", pxNetif->gw );
                 vLogAddress( "Netmask:", pxNetif->netmask );
+                lwiperf_start_tcp_server_default( NULL, NULL );
+                LogSys("Started Iperf server");
 	        }
 
 	        if( ulNotificationValue & NET_LWIP_IFUP_BIT )
@@ -508,6 +495,7 @@ void net_main( void * pvParameters )
 
                 vSetAdminUp( pxNetif );
                 vStartDhcp( pxNetif );
+                LogSys("Network Link Up.");
             }
 	        else if( ulNotificationValue & NET_LWIP_IFDOWN_BIT )
 	        {
@@ -519,11 +507,10 @@ void net_main( void * pvParameters )
 	        else if( ( ulNotificationValue & NET_LWIP_LINK_DOWN_BIT ) &&
 	                 ( ucNetifFlags & NETIF_FLAG_LINK_UP ) == 0 )
 	        {
-	            LogInfo( "Link DOWN event." );
-
 	            vSetAdminDown( pxNetif );
                 vStopDhcp( pxNetif );
                 vClearAddress( pxNetif );
+                LogSys("Network Link Down.");
 	        }
 
 	        /* Reconnect requested by configStore or cli process */

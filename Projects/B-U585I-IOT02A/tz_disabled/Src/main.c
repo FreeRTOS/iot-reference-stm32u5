@@ -16,6 +16,11 @@
   *
   ******************************************************************************
   */
+#include "logging_levels.h"
+
+#define LOG_LEVEL LOG_ERROR
+
+#include "logging.h"
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -23,7 +28,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <inttypes.h>
-#include "mx_wifi_conf.h"
+#include "FreeRTOS.h"
 
 /* USER CODE END Includes */
 
@@ -409,8 +414,7 @@ void MX_SPI2_Init(void)
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
-//  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8; /* 20 MHz */
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -439,7 +443,7 @@ void MX_SPI2_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN SPI2_Init 2 */
-//  SPI2->CFG1 |= 0x00000007 << SPI_CFG1_CRCSIZE_Pos;
+  SPI2->CFG1 |= 0x00000007 << SPI_CFG1_CRCSIZE_Pos;
   /* USER CODE END SPI2_Init 2 */
 
 }
@@ -526,6 +530,7 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pin = MXCHIP_FLOW_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   HAL_GPIO_Init(MXCHIP_FLOW_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LED_RED_Pin LED_GREEN_Pin */
@@ -539,13 +544,14 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pin = MXCHIP_NOTIFY_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   HAL_GPIO_Init(MXCHIP_NOTIFY_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : MXCHIP_NSS_Pin */
   GPIO_InitStruct.Pin = MXCHIP_NSS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   HAL_GPIO_Init(MXCHIP_NSS_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : MXCHIP_RESET_Pin */
@@ -556,17 +562,18 @@ void MX_GPIO_Init(void)
   HAL_GPIO_Init(MXCHIP_RESET_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI14_IRQn, 5, 0);
-  HAL_NVIC_EnableIRQ(EXTI14_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI15_IRQn, 5, 0);
+  HAL_NVIC_SetPriority(EXTI15_IRQn, 5, 3);
   HAL_NVIC_EnableIRQ(EXTI15_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI14_IRQn, 5, 4);
+  HAL_NVIC_EnableIRQ(EXTI14_IRQn);
 
 }
 
 /* USER CODE BEGIN 4 */
-static GPIOInterruptCallback_t xGpioCallbacks[ 16 ] = { NULL };
-static void * xGpioCallbackContext[ 16 ] = { NULL };
+static GPIOInterruptCallback_t volatile xGpioCallbacks[ 16 ] = { NULL };
+static void * volatile xGpioCallbackContext[ 16 ] = { NULL };
 
 /*
  * @brief Register a callback function for a given gpio.
@@ -580,9 +587,16 @@ void GPIO_EXTI_Register_Callback( uint16_t usGpioPinMask, GPIOInterruptCallback_
 
     configASSERT( ulIndex < 16 );
 
+    LogDebug( "Registering callback addr: %p, ctx: %p, to gpio pin_num: %d, pin_mask: %d.",
+              pvCallback,
+              pvContext,
+              ulIndex,
+              usGpioPinMask );
+
     xGpioCallbacks[ ulIndex ] = pvCallback;
     xGpioCallbackContext[ ulIndex ] = pvContext;
 }
+
 
 /**
   * @brief  EXTI line rising detection callback.
@@ -594,17 +608,18 @@ void HAL_GPIO_EXTI_Rising_Callback( uint16_t usGpioPinMask )
     uint32_t ulIndex = POSITION_VAL( usGpioPinMask );
     if( xGpioCallbacks[ ulIndex ] != NULL )
     {
-        xGpioCallbacks[ ulIndex ]( xGpioCallbackContext[ ulIndex ] );
+        (*(xGpioCallbacks[ ulIndex ]))( xGpioCallbackContext[ ulIndex ] );
     }
 }
 
+/**
+  * @brief  EXTI line rising detection callback.
+  * @param  GPIO_Pin: Specifies the port pin connected to corresponding EXTI line.
+  * @retval None
+  */
 void HAL_GPIO_EXTI_Falling_Callback( uint16_t usGpioPinMask )
 {
-    uint32_t ulIndex = POSITION_VAL( usGpioPinMask );
-    if( xGpioCallbacks[ ulIndex ] != NULL )
-    {
-        xGpioCallbacks[ ulIndex ]( xGpioCallbackContext[ ulIndex ] );
-    }
+    ( void ) usGpioPinMask;
 }
 
 /* USER CODE END 4 */

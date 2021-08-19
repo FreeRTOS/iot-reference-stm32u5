@@ -146,6 +146,8 @@ err_t prvxLinkOutput( NetInterface_t * pxNetif, PacketBuffer_t * pxPbuf )
         pbuf_ref( pxPbufToSend );
     }
 
+//    vPrintBuffer("ETH_TX", pxPbuf->payload, pxPbuf->tot_len );
+
     /* Get context from netif struct */
     MxNetConnectCtx_t * pxCtx = ( MxNetConnectCtx_t * ) pxNetif->state;
 
@@ -202,6 +204,9 @@ BaseType_t prvxLinkInput( NetInterface_t * pxNetif, PacketBuffer_t * pxPbufIn )
     else if( ( pxNetif->flags & NETIF_FLAG_UP ) > 0 &&
                pxNetif->input != NULL )
     {
+
+
+
         struct eth_hdr * pxEthHeader = (struct eth_hdr *) pxPbufIn->payload;
 
         /* Filter by ethertype */
@@ -210,6 +215,8 @@ BaseType_t prvxLinkInput( NetInterface_t * pxNetif, PacketBuffer_t * pxPbufIn )
         switch( usEthertype )
         {
         case ETHTYPE_IP:
+//            vPrintBuffer("ETH_RX", pxPbufIn->payload, pxPbufIn->tot_len );
+            /* intentional fall through */
         case ETHTYPE_IPV6:
         case ETHTYPE_ARP:
             if( pxNetif->input( pxPbufIn, pxNetif ) != ERR_OK )

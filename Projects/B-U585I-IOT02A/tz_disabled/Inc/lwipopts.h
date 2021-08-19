@@ -22,8 +22,7 @@
 
 #include "lwipopts_freertos.h"
 
-/* Options for Test_MXCHIP porting */
-#define LWIP_DEBUG        0
+//#define LWIP_DEBUG        1
 // #define DHCP_DEBUG     LWIP_DBG_ON
 // #define ETHARP_DEBUG     LWIP_DBG_ON
 // #define SOCKETS_DEBUG     LWIP_DBG_ON
@@ -31,12 +30,14 @@
 // #define UDP_DEBUG         LWIP_DBG_ON
 // #define IP_DEBUG          LWIP_DBG_ON
 // #define MEM_DEBUG         LWIP_DBG_ON
+//#define PBUF_DEBUG          LWIP_DBG_ON
 
 //#define LWIP_IPV6                       1
 //#define LWIP_IPV6_DHCP6                 1
 #define LWIP_DHCP                       1
 #define LWIP_DNS                        1
 #define LWIP_SO_SNDTIMEO                1
+#define LWIP_SO_RCVTIMEO                1
 #define LWIP_SO_SNDRCVTIMEO_NONSTANDARD   1
 #define LWIP_SO_RCVRCVTIMEO_NONSTANDARD   1
 #define LWIP_TCPIP_CORE_LOCKING         1
@@ -45,8 +46,8 @@
 #define LWIP_POSIX_SOCKETS_IO_NAMES      0
 #define LWIP_COMPAT_SOCKETS              2
 
-// #define LWIP_TCP_KEEPALIVE                  1   /* Keep the TCP link active. Important for MQTT/TLS */
-// #define LWIP_RANDOMIZE_INITIAL_LOCAL_PORTS  1   /* Prevent the same port to be used after reset.
+ #define LWIP_TCP_KEEPALIVE                  1   /* Keep the TCP link active. Important for MQTT/TLS */
+ #define LWIP_RANDOMIZE_INITIAL_LOCAL_PORTS  1   /* Prevent the same port to be used after reset.
 //                                                   Otherwise, the remote host may be confused if the port was not explicitly closed before the reset. */
 
 //#define TCP_LISTEN_BACKLOG            1
@@ -100,7 +101,7 @@
 //#define DEFAULT_UDP_RECVMBOX_SIZE       10
 //#define DEFAULT_TCP_RECVMBOX_SIZE       20
 //#define DEFAULT_ACCEPTMBOX_SIZE         10
-#define DEFAULT_THREAD_STACKSIZE        500
+#define DEFAULT_THREAD_STACKSIZE        2048
 #define LWIP_COMPAT_MUTEX               0
 
 #define MEM_ALIGNMENT                   8
@@ -119,26 +120,18 @@
 
 /* Controls if TCP should queue segments that arrive out of
    order. Define to 0 if your device is low on memory. */
-#define TCP_QUEUE_OOSEQ         0
-
-/* TCP Maximum segment size. */
-/* limits KO -5 -7 -8 Ok -10*/
-//#define TCP_MSS                 (1500 - 40 )
-
-/* TCP sender buffer space (bytes). */
-//#define TCP_SND_BUF             (4*TCP_MSS)
+#define TCP_QUEUE_OOSEQ         1
 
 /*  TCP_SND_QUEUELEN: TCP sender buffer space (pbufs). This must be at least
   as much as (2 * TCP_SND_BUF/TCP_MSS) for things to work. */
 
-#define TCP_SND_QUEUELEN        (2* TCP_SND_BUF/TCP_MSS)
+#define TCP_SND_QUEUELEN        (4 * TCP_SND_BUF/TCP_MSS)
 
 /* TCP receive window. */
-//#define TCP_WND                 (20*TCP_MSS)
-#define PBUF_POOL_SIZE                 20
+#define PBUF_POOL_SIZE                 40
 
 
-#define TCP_MSL 6000UL /* The maximum segment lifetime in milliseconds */
+#define TCP_MSL 20 * 1000UL /* The maximum segment lifetime in milliseconds */
 
 /* ---------- ICMP options ---------- */
 #define LWIP_SO_RCVTIMEO                1 /* ICPM PING */
@@ -147,8 +140,8 @@
 //#define DEFAULT_RAW_RECVMBOX_SIZE       3 /* for ICMP PING */
 
 /* To use single transmit pbuf ,this may be more efficient for MXCHIP */
-#define LWIP_NETIF_TX_SINGLE_PBUF 1
-#define TCP_OVERSIZE              1
+//#define LWIP_NETIF_TX_SINGLE_PBUF 1
+//#define TCP_OVERSIZE              1
 /* when allocating buffer for MXCHIP , an header must be provisionned for TX buffers , default is zero */
 #define PBUF_LINK_ENCAPSULATION_HLEN    28
 #endif /* LWIP_HDR_LWIPOPTS_H */

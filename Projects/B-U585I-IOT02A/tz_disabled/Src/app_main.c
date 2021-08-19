@@ -37,7 +37,7 @@ static void hw_init( void )
 	/* ???? */
 	__HAL_RCC_SYSCFG_CLK_ENABLE();
 
-	/*
+	/*x`
 	 * Initializes flash interface and systick timer.
 	 * Note: HAL_Init calls HAL_MspInit.
 	 */
@@ -103,11 +103,11 @@ int main( void )
 	configASSERT( xResult == pdTRUE );
     //TODO
 
-	xResult = xTaskCreate( &net_main, "net_main", 2 * 4096, NULL, 23, NULL );
+	xResult = xTaskCreate( &net_main, "MxNet", 2 * 4096, NULL, 23, NULL );
 
     configASSERT( xResult == pdTRUE );
 
-    vStartMQTTAgentDemo();
+//    vStartMQTTAgentDemo();
 
     /* Start scheduler */
     vTaskStartScheduler();

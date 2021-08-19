@@ -53,7 +53,7 @@ static inline void vLogAddress( const char * pucLabel, ip_addr_t xAddress )
 
     (void) pucAddrOctets;
 
-    LogInfo( "%-12s%d.%d.%d.%d", pucLabel,
+    LogSys( "%-12s%d.%d.%d.%d", pucLabel,
             pucAddrOctets[ 0 ], pucAddrOctets[ 1 ], pucAddrOctets[ 2 ], pucAddrOctets[ 3 ] );
 }
 
@@ -72,7 +72,7 @@ static inline void vClearAddress( NetInterface_t * pxNetif )
                                               &xEmptyAddr );
         if( xLwipError != ERR_OK )
         {
-            LogError( "Could not clear ip address rc: %d", xLwipError );
+            LogError( "Failed to clear ip address rc: %d", xLwipError );
         }
     }
 }
@@ -89,7 +89,7 @@ static inline void vStartDhcp( NetInterface_t * pxNetif )
         err_t xLwipError = netifapi_dhcp_start( pxNetif );
         if( xLwipError != ERR_OK )
         {
-            LogError( "Could not start DHCP on link rc: %d", xLwipError );
+            LogError( "Failed to start DHCP on link rc: %d", xLwipError );
         }
     }
 }
@@ -106,7 +106,7 @@ static inline void vStopDhcp( NetInterface_t * pxNetif )
         err_t xLwipError = netifapi_dhcp_start( pxNetif );
         if( xLwipError != ERR_OK )
         {
-            LogError( "Could not stop DHCP on link rc: %d", xLwipError );
+            LogError( "Failed to stop DHCP on link rc: %d", xLwipError );
         }
     }
 }
@@ -120,7 +120,7 @@ static inline void vSetAdminUp( NetInterface_t * pxNetif )
         err_t xLwipError = netifapi_netif_set_up( pxNetif );
         if( xLwipError != ERR_OK )
         {
-            LogError( "Could not set link administrative state to UP rc: %d", xLwipError );
+            LogError( "Failed to set link administrative state to UP rc: %d", xLwipError );
         }
     }
 }
@@ -134,7 +134,7 @@ static inline void vSetAdminDown( NetInterface_t * pxNetif )
         err_t xLwipError = netifapi_netif_set_down( pxNetif );
         if( xLwipError != ERR_OK )
         {
-            LogError( "Could not set administrative state to DOWN rc: %d", xLwipError );
+            LogError( "Failed to set administrative state to DOWN rc: %d", xLwipError );
         }
     }
 }
@@ -144,7 +144,7 @@ static inline void vSetLinkUp( NetInterface_t * pxNetif )
     err_t xLwipError = netifapi_netif_set_link_up( pxNetif );
     if( xLwipError != ERR_OK )
     {
-        LogError( "Could not set link state to UP rc: %d", xLwipError );
+        LogError( "Failed to set link state to UP rc: %d", xLwipError );
     }
 }
 
@@ -153,7 +153,7 @@ static inline void vSetLinkDown( NetInterface_t * pxNetif )
     err_t xLwipError = netifapi_netif_set_link_down( pxNetif );
     if( xLwipError != ERR_OK )
     {
-        LogError( "Could not set link state to DOWN rc: %d", xLwipError );
+        LogError( "Failed to set link state to DOWN rc: %d", xLwipError );
     }
 }
 

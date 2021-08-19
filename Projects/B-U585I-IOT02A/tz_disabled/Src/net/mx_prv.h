@@ -21,14 +21,14 @@
  * http://www.FreeRTOS.org
  * http://aws.amazon.com/freertos
  */
-#ifndef _MXFREE_PRV_
-#define _MXFREE_PRV_
+#ifndef _MX_PRV_
+#define _MX_PRV_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Private definitions to be shared between mxfree driver files */
+/* Private definitions to be shared between mx driver files */
 #include "message_buffer.h"
 #include "stm32u5_iot_board.h"
 #include "task.h"
@@ -69,12 +69,13 @@ extern "C" {
 #define MX_BSSID_LEN                    MX_MACADDR_LEN
 #define MX_SPI_TRANSACTION_TIMEOUT      MX_DEFAULT_TIMEOUT_TICK
 #define MX_MAX_MESSAGE_LEN              4096
-#define MX_ETH_PACKET_ENQUEUE_TIMEOUT   pdMS_TO_TICKS( 10000 )
+#define MX_ETH_PACKET_ENQUEUE_TIMEOUT   pdMS_TO_TICKS( 5 * 10000 )
 #define MX_SPI_EVENT_TIMEOUT            pdMS_TO_TICKS( 10000 )
-#define MX_SPI_FLOW_TIMEOUT             pdMS_TO_TICKS( 20 )
+#define MX_SPI_FLOW_TIMEOUT             pdMS_TO_TICKS( 10 )
 
-#define CONTROL_PLANE_QUEUE_LEN         1
-#define CONTROL_PLANE_BUFFER_SZ         ( sizeof( void *) + sizeof( size_t ) )
+#define CONTROL_PLANE_QUEUE_LEN         10
+#define DATA_PLANE_QUEUE_LEN            10
+#define CONTROL_PLANE_BUFFER_SZ         ( 25 * sizeof( void *) + sizeof( size_t ) )
 
 typedef struct
 {
@@ -274,10 +275,32 @@ typedef struct
 #define MX_MAX_MTU          1500
 #define MX_RX_BUFF_SZ       ( MX_MAX_MTU + sizeof( BypassInOut_t ) + PBUF_LINK_HLEN )
 
-static inline BaseType_t xMessageBuffRemainingSpaces( MessageBufferHandle_t xMessageBuffer )
+/*
+static inline void vPrintBuffer( const char * ucPrefix,
+                                 uint8_t * pcBuffer,
+                                 uint32_t usDataLen )
 {
-    return xMessageBufferSpaceAvailable( xMessageBuffer ) / ( sizeof( PacketBuffer_t * ) + sizeof( size_t ) );
+    char * ucPrintBuf = pvPortMalloc( 2 * usDataLen + 1 );
+    if( ucPrintBuf != NULL )
+    {
+        for( uint32_t i = 0; i < usDataLen; i++ )
+        {
+            snprintf( &ucPrintBuf[ 2 * i ], 3, "%02X", pcBuffer[i] );
+        }
+        ucPrintBuf[ 2 * usDataLen ] = 0;
+        LogError("%s: %s", ucPrefix, ucPrintBuf);
+        vPortFree(ucPrintBuf);
+    }
 }
+
+static inline void vPrintSpiHeader( const char * ucPrefix,
+                                    SPIHeader_t * pxHdr )
+{
+    LogError("%s: Type: 0x%02X, Len: 0x%04X, Lenx: 0x%04X", ucPrefix, pxHdr->type, pxHdr->len, pxHdr->lenx );
+}
+
+*/
+
 
 BaseType_t prvxLinkInput( NetInterface_t * pxNetif, PacketBuffer_t * pxPbufIn );
 void prvControlPlaneRouter( void * pvParameters );
@@ -288,4 +311,4 @@ void vDataplaneThread( void * pvParameters );
 }
 #endif
 
-#endif /* _MXFREE_PRV_ */
+#endif /* _MX_PRV_ */

@@ -32,11 +32,17 @@
 #ifndef __ARCH_CC_H__
 #define __ARCH_CC_H__
 
+#include "logging_levels.h"
+
+#ifndef LOG_LEVEL
+#define LOG_LEVEL LOG_ERROR
+#endif
+
+#include "logging.h"
+
 /* Include some files for defining library routines */
-//#include <stdio.h>  /* printf, fflush, FILE */
 #include <string.h>
 #include <stdlib.h> /* abort */
-/*#include <errno.h> */
 #if ( !defined( __CC_ARM ) ) && ( !defined( __ICCARM__ ) ) && ( !defined( __ARMCC_VERSION ) )
     #include <sys/time.h>
 #endif
@@ -88,15 +94,14 @@ typedef u32_t            sys_prot_t;
 /* Compiler hints for packing structures */
 #define PACK_STRUCT_STRUCT    __attribute__( ( packed ) )
 
-#if 0
-    #ifndef LWIP_DEBUG_USE_PRINTF
-        #define LWIP_LOGE( fmt, arg ... )    LOG_E( lwip, "[lwip]: "fmt, ## arg )
-        #define LWIP_LOGW( fmt, arg ... )    LOG_W( lwip, "[lwip]: "fmt, ## arg )
-        #define LWIP_LOGI( fmt, arg ... )    LOG_I( lwip, "[lwip]: "fmt, ## arg )
-    #endif
-#endif
+//#ifndef LWIP_DEBUG_USE_PRINTF
+//    #define LWIP_LOGE( fmt, arg ... )    LogError( fmt, ## arg )
+//    #define LWIP_LOGW( fmt, arg ... )    LogWarn( fmt, ## arg )
+//    #define LWIP_LOGI( fmt, arg ... )    LogInfo( fmt, ## arg )
+//#endif
 
-#define LWIP_PLATFORM_DIAG( message ) do { LogDebug( message ); } while( 0 )
+//#define LWIP_PLATFORM_DIAG( message ) do { LogError( #message ); } while( 0 )
+#define LWIP_PLATFORM_DIAG( message )
 
 #define LWIP_PLATFORM_ASSERT( message ) \
     do { LogAssert( "Assertion \"%s\" failed.", message ); portDISABLE_INTERRUPTS(); while( 1 ) { __NOP(); } } while( 0 )

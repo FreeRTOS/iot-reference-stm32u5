@@ -37,8 +37,8 @@
 
 /* tcpip_thread should run on HIGH priority */
 #define TCPIP_THREAD_NAME             "lwIP"
-#define TCPIP_THREAD_STACKSIZE        ( 512 * 4 )
-#define TCPIP_THREAD_PRIO             tskIDLE_PRIORITY + 5
+#define TCPIP_THREAD_STACKSIZE        ( 4096 )
+#define TCPIP_THREAD_PRIO             25
 
 
 #define TCPIP_MBOX_SIZE               16
@@ -91,7 +91,7 @@
  * MEM_SIZE: the size of the heap memory. If the application will send
  * a lot of data that needs to be copied, this should be set high.
  */
-#define MEM_SIZE    ( 10 * 1024 )
+#define MEM_SIZE    ( 50 * 1600 )
 
 /*
  * ------------------------------------------------
@@ -226,7 +226,7 @@
  * thread calling socket/netconn functions instead of allocating one
  * semaphore per netconn (and per select etc.)
  */
-#define LWIP_NETCONN_SEM_PER_THREAD    1
+//#define LWIP_NETCONN_SEM_PER_THREAD    1
 
 /** LWIP_NETCONN_FULLDUPLEX==1: Enable code that allows reading from one thread,
  * writing from a 2nd thread and closing from a 3rd thread at the same time.
@@ -245,13 +245,14 @@
  * ------------------------------------
  */
 
-/*#define LWIP_DEBUG */
+//#define LWIP_DEBUG      LWIP_DBG_ON
 /*#define UDP_DEBUG LWIP_DBG_ON */
-/*#define SOCKETS_DEBUG LWIP_DBG_ON */
-#define NETIF_DEBUG    LWIP_DBG_ON
+//#define SOCKETS_DEBUG LWIP_DBG_ON
+//#define TCP_DEBUG   LWIP_DBG_ON
+//#define NETIF_DEBUG    LWIP_DBG_ON
 /*#define ETHARP_DEBUG LWIP_DBG_ON */
 /*#define DHCP_DEBUG LWIP_DBG_ON */
-/*#define IP_DEBUG LWIP_DBG_ON */
+//#define IP_DEBUG LWIP_DBG_ON
 
 
 /*
