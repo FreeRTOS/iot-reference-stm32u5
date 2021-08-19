@@ -158,11 +158,10 @@ to all Cortex-M ports, and do not rely on any particular library functions. */
 See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 #define configMAX_SYSCALL_INTERRUPT_PRIORITY 	( configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY << (8 - configPRIO_BITS) )
 
-
 #define configASSERT( x )  do { \
                                if( ( x ) == 0 ) { \
                                    LogAssert("Assertion failed."); \
-                                   portDISABLE_INTERRUPTS(); \
+                                   vDyingGasp(); \
                                    while( 1 ) { \
                                        __NOP(); \
                                    } \

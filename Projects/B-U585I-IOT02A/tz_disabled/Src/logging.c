@@ -33,7 +33,7 @@
 /* FreeRTOS includes. */
 #include "FreeRTOS.h"
 #include "task.h"
-#include "semphr.h"
+#include "stream_buffer.h"
 
 /* Project Includes */
 #include "logging.h"
@@ -42,65 +42,152 @@
 /*-----------------------------------------------------------*/
 
 /* Dimensions the arrays into which print messages are created. */
-#define dlMAX_PRINT_STRING_LENGTH    2048
+#define dlMAX_PRINT_STRING_LENGTH       4096    /* maximum length of any single log line */
+#define dlLOGGING_STREAM_LENGTH         4096    /* how many bytes to accept for logging before blocking */
+#define dlLOGGING_HW_FIFO_LENGTH        8       /* How many bytes at a time can be inserted into the hardware fifo */
+#define LOGGING_LINE_ENDING             "\r\n\0"
 
-/*
- * Maximum amount of time to wait for the semaphore that protects the local
- * buffers and the serial output.
- */
-#define dlMAX_SEMAPHORE_WAIT_TIME    ( pdMS_TO_TICKS( 2000UL ) )
+#define TASK_NOTIFY_UART_DONE_IDX       2
 
 int _write( int fd, const void * buffer, unsigned int count );
 
-static char cPrintString[ dlMAX_PRINT_STRING_LENGTH ];
-static SemaphoreHandle_t xLoggingMutex = NULL;
-static SemaphoreHandle_t xWriteMutex = NULL;
+static volatile StreamBufferHandle_t xLogStream = NULL;
+static TaskHandle_t xLoggingTaskHandle = NULL;
 
 #ifdef LOGGING_OUTPUT_UART
 extern UART_HandleTypeDef huart1;
 #endif
 
-int _write( int fd, const void * buffer, unsigned int count )
+static void vUartTransmitDoneCallback( UART_HandleTypeDef * xUart )
 {
-	(void) fd;
-	BaseType_t ret = 0;
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    ( void ) xUart;
+
+    configASSERT( xLoggingTaskHandle != NULL );
+
+    if( xLoggingTaskHandle != NULL )
+    {
+        vTaskNotifyGiveIndexedFromISR( xLoggingTaskHandle,
+                                       TASK_NOTIFY_UART_DONE_IDX,
+                                       &xHigherPriorityTaskWoken );
+    }
+
+    portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+}
+
+static void vLoggingThread( void * pxThreadParameters )
+{
+    (void) pxThreadParameters;
+
+    char cOutBuffer[ dlLOGGING_HW_FIFO_LENGTH ];
+    BaseType_t xRecvResult = 0;
+    HAL_StatusTypeDef xHalStatus;
+
+    HAL_UART_RegisterCallback( &huart1, HAL_UART_TX_COMPLETE_CB_ID, vUartTransmitDoneCallback );
+
+    while( 1 )
+    {
+        /* Blocking read up to cOutBuffer size on xStreamBuffer */
+        xRecvResult = xStreamBufferReceive( xLogStream, cOutBuffer, dlLOGGING_HW_FIFO_LENGTH, pdMS_TO_TICKS( 4 ) );
+        if( xRecvResult > 0 )
+        {
+            xHalStatus = HAL_UART_Transmit_IT( &huart1, ( uint8_t * ) cOutBuffer, xRecvResult );
+
+            configASSERT( xHalStatus == HAL_OK );
+
+            uint32_t ulWaitRslt = ulTaskNotifyTakeIndexed( TASK_NOTIFY_UART_DONE_IDX, pdTRUE, pdMS_TO_TICKS( 1000 ) );
+
+            /* Assert if vUartTransmitDoneCallback did not get called within the timeout */
+            configASSERT( ulWaitRslt != 0 );
+        }
+    }
+}
+
+/* Should only be called during an assert with the scheduler suspended. */
+void vDyingGasp( void )
+{
+    char cOutBuffer[ dlLOGGING_HW_FIFO_LENGTH ];
+    BaseType_t xNumBytes = 0;
+
+    do
+    {
+        xNumBytes = xStreamBufferReceiveFromISR( xLogStream, cOutBuffer, dlLOGGING_HW_FIFO_LENGTH, 0 );
+        (void) HAL_UART_Transmit( &huart1, ( uint8_t * ) cOutBuffer, xNumBytes, 10 * 1000);
+    }
+    while( xNumBytes != 0 );
+}
+
+/*
+ * Blocking write function for early printing
+ * PRE: must be called when scheduler is not running.
+ */
+static void vSendLogMessageEarly( const void * buffer, unsigned int count )
+{
+    configASSERT( xTaskGetSchedulerState() != taskSCHEDULER_RUNNING );
 
 #ifdef LOGGING_OUTPUT_ITM
+    uint32_t i = 0;
     for(unsigned int i = 0; i < len; i++)
     {
-        (void) ITM_SendChar(lineOutBuf[i]);
+        (void) ITM_SendChar( lineOutBuf[ i ] );
     }
 #endif
 
 
 #ifdef LOGGING_OUTPUT_UART
-	/* blocking write to UART */
-	ret = (BaseType_t) HAL_UART_Transmit( &huart1, (uint8_t *)buffer, count, 100000 );
+    /* blocking write to UART */
+    ( void ) HAL_UART_Transmit( &huart1, (uint8_t *)buffer, count, 100000 );
 #endif
+}
 
-	if( ret == 0 )
-	{
-		return 0;
-	}
-	else
-	{
-		return count;
-	}
+static void vSendLogMessage( const void * buffer, unsigned int count )
+{
+    if( xTaskGetSchedulerState() != taskSCHEDULER_RUNNING )
+    {
+        vSendLogMessageEarly( buffer, count );
+    }
+    else if( xPortIsInsideInterrupt() == pdTRUE )
+    {
+        UBaseType_t uxContext;
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        configASSERT( xLogStream != NULL );
+
+        /* Enter critical section to preserve ordering of log messages */
+        uxContext = taskENTER_CRITICAL_FROM_ISR();
+
+        ( void ) xStreamBufferSendFromISR( xLogStream, buffer, count, &xHigherPriorityTaskWoken );
+
+        taskEXIT_CRITICAL_FROM_ISR( uxContext );
+
+        portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+    }
+    else
+    {
+        taskENTER_CRITICAL();
+
+        ( void ) xStreamBufferSend( xLogStream, buffer, count, 0 );
+
+        taskEXIT_CRITICAL();
+    }
 }
 
 void vLoggingInit( void )
 {
-	xLoggingMutex = xSemaphoreCreateMutex();
-	xWriteMutex = xSemaphoreCreateMutex();
-	memset( &cPrintString, 0, dlMAX_PRINT_STRING_LENGTH );
-
 #ifdef LOGGING_OUTPUT_UART
 	MX_USART1_UART_Init();
 #endif
 
+    xLogStream = xStreamBufferCreate( dlLOGGING_STREAM_LENGTH, dlLOGGING_HW_FIFO_LENGTH );
 
-	xSemaphoreGive( xLoggingMutex );
-	xSemaphoreGive( xWriteMutex );
+	BaseType_t xResult = xTaskCreate( vLoggingThread,
+	                                  "logger",
+	                                  1024,
+	                                  NULL,
+	                                  30,
+	                                  &xLoggingTaskHandle );
+
+	 configASSERT( xResult != pdFALSE );
+	 configASSERT( xLoggingTaskHandle != NULL );
 }
 
 /*-----------------------------------------------------------*/
@@ -114,30 +201,27 @@ void vLoggingPrintf( const char * const     pcLogLevel,
     int32_t iLengthHeader = -1;
     int32_t iLengthMessage = -1;
     va_list args;
-    const char * const pcNewline = "\r\n";
     const char * pcTaskName;
-    const char * pcNoTask = "None";
+    static const char * pcNoTask = "None";
+    char * pcPrintString = pvPortMalloc( dlMAX_PRINT_STRING_LENGTH + sizeof( LOGGING_LINE_ENDING ) );
 
-
-    /* Additional info to place at the start of the log. */
-    if( xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED )
+    if( pcPrintString != NULL )
     {
-        pcTaskName = pcTaskGetName( NULL );
-    }
-    else
-    {
-        pcTaskName = pcNoTask;
-    }
 
-    configASSERT( xLoggingMutex );
+        /* Additional info to place at the start of the log. */
+        if( xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED )
+        {
+            pcTaskName = pcTaskGetName( NULL );
+        }
+        else
+        {
+            pcTaskName = pcNoTask;
+        }
 
-
-    if( xSemaphoreTake( xLoggingMutex, dlMAX_SEMAPHORE_WAIT_TIME ) != pdFAIL )
-    {
         /* Print Header
          * [LOGLEVEL] [taskName] functionName:line
          */
-        iLengthHeader = snprintf( cPrintString,
+        iLengthHeader = snprintf( pcPrintString,
                                   dlMAX_PRINT_STRING_LENGTH,
                                   "[%s] [%s] %10lu %s:%lu --- ",
                                   pcLogLevel,
@@ -148,10 +232,9 @@ void vLoggingPrintf( const char * const     pcLogLevel,
 
         configASSERT( iLengthHeader > 0 );
 
-
         /* There are a variable number of parameters. */
         va_start( args, pcFormat );
-        iLengthMessage = vsnprintf( &cPrintString[ iLengthHeader ],
+        iLengthMessage = vsnprintf( &pcPrintString[ iLengthHeader ],
                                     ( dlMAX_PRINT_STRING_LENGTH - iLengthHeader ),
                                     pcFormat,
                                     args );
@@ -160,28 +243,20 @@ void vLoggingPrintf( const char * const     pcLogLevel,
         configASSERT( iLengthMessage > 0 );
         configASSERT( ( iLengthHeader + iLengthMessage ) <  dlMAX_PRINT_STRING_LENGTH );
 
-        _write( 0, cPrintString, iLengthHeader + iLengthMessage );
-        _write( 0, pcNewline, strlen( pcNewline ) );
+        ( void ) strncpy( &pcPrintString[ iLengthHeader + iLengthMessage ],
+                          LOGGING_LINE_ENDING,
+                          dlMAX_PRINT_STRING_LENGTH + sizeof( LOGGING_LINE_ENDING ) - iLengthHeader - iLengthMessage );
 
-        xSemaphoreGive( xLoggingMutex );
+        vSendLogMessage( ( void * ) pcPrintString, iLengthHeader + iLengthMessage + sizeof( LOGGING_LINE_ENDING ) );
+        vPortFree(pcPrintString);
     }
 }
+
+
 
 /*-----------------------------------------------------------*/
 
 void vLoggingDeInit( void )
 {
-	/* Scheduler must be suspended */
-	if( xLoggingMutex != NULL &&
-	    xTaskGetSchedulerState() != taskSCHEDULER_RUNNING )
-	{
-		vSemaphoreDelete( xLoggingMutex );
 
-	}
-
-    if( xWriteMutex != NULL &&
-        xTaskGetSchedulerState() != taskSCHEDULER_RUNNING )
-    {
-        vSemaphoreDelete( xWriteMutex );
-    }
 }

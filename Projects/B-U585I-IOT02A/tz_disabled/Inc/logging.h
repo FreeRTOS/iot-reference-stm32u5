@@ -53,14 +53,21 @@ void vLoggingPrintf( const char * const     pcLogLevel,
                      ... );
 void vLoggingInit( void );
 void vLoggingDeInit( void );
-int _write( int fd, const void * buffer, unsigned int count );
+void vDyingGasp( void );
+
 
 /* Generic logging macros */
 #define SdkLog( level, ... )        do { vLoggingPrintf( level, __func__, __LINE__, __VA_ARGS__ ); } while( 0 )
 
-#define LogAssert( ... )            SdkLog( "ASSERT", __VA_ARGS__ )
+#define LogAssert( ... )            do { vTaskSuspendAll(); vDyingGasp(); SdkLog( "ASSERT", __VA_ARGS__ ); } while( 0 )
 
 #define LogKernel( ... )            SdkLog( "KERNEL", __VA_ARGS__ )
+
+#ifdef LOGGING_REMOVE_PARENS
+    #define LogSys( ARGS )         SdkLog( "SYSTEM", REMOVE_PARENS ARGS  )
+#else
+    #define LogSys( ... )          SdkLog( "SYSTEM", __VA_ARGS__ )
+#endif
 
 #if !defined( LOG_LEVEL ) ||       \
     ( ( LOG_LEVEL != LOG_NONE ) && \
