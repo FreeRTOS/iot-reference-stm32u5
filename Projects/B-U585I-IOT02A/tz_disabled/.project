@@ -42,6 +42,11 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
+			<name>Drivers/CommonIO</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Drivers/CommonIO</locationURI>
+		</link>
+		<link>
 			<name>Drivers/STM32U5_HAL</name>
 			<type>2</type>
 			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL</locationURI>
@@ -62,6 +67,11 @@
 			<locationURI>WORKSPACE_LOC/Drivers/stm32u5_mbedtls_accel</locationURI>
 		</link>
 		<link>
+			<name>Inc/stm32u5_iot_board.h</name>
+			<type>1</type>
+			<locationURI>WORKSPACE_LOC/Boards/stm32u5_iot_board.h</locationURI>
+		</link>
+		<link>
 			<name>Libraries/FreeRTOS</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
@@ -70,6 +80,11 @@
 			<name>Libraries/lwip</name>
 			<type>2</type>
 			<locationURI>WORKSPACE_LOC/Middleware/lwip/src</locationURI>
+		</link>
+		<link>
+			<name>Src/stm32u5_iot_board.c</name>
+			<type>1</type>
+			<locationURI>WORKSPACE_LOC/Boards/stm32u5_iot_board.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/FreeRTOS/backoff_algorithm.c</name>

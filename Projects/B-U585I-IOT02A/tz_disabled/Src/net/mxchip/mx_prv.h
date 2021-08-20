@@ -30,7 +30,7 @@ extern "C" {
 
 /* Private definitions to be shared between mx driver files */
 #include "message_buffer.h"
-#include "stm32u5_iot_board.h"
+#include "iot_gpio_stm32_prv.h"
 #include "task.h"
 #include "mx_ipc.h"
 #include "semphr.h"

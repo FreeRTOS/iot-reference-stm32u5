@@ -36,6 +36,7 @@
 /* STM Board includes. */
 #include "stm32u5xx_hal_gpio.h"
 #include "stm32u5xx_hal_gpio_ex.h"
+#include "stm32u5xx_ll_gpio.h"
 #include "stm32u585xx.h"
 
 #include "iot_gpio_stm32_prv.h"
@@ -43,7 +44,7 @@
 /* Common IO includes */
 #include "iot_gpio.h"
 #include <stdbool.h>
-#include "iot_gpio_stm32u5_iot_board.h"
+//#include "iot_gpio_stm32u5_iot_board.h"
 
 /* Note, this depends on logging task being created and running */
 #if ( IOT_GPIO_LOGGING_ENABLED == 1 )

@@ -48,6 +48,8 @@
 #include "lwip/prot/dhcp.h"
 #include "lwip/apps/lwiperf.h"
 
+#include "stm32u5_iot_board.h"
+
 #define MACADDR_RETRY_WAIT_TIME_TICKS   pdMS_TO_TICKS( 10 * 1000 )
 
 static TaskHandle_t xNetTaskHandle = NULL;
