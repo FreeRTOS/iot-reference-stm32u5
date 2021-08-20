@@ -55,19 +55,38 @@ void vLoggingInit( void );
 void vLoggingDeInit( void );
 void vDyingGasp( void );
 
+/* task.h cannot be included here because this file is included by FreeRTOSConfig.h */
+extern void vTaskSuspendAll( void );
+
+static inline const char * pcPathToBasename( const char * pcFileName )
+{
+    const char * pcIter = pcFileName;
+    const char * pcBasename = pcFileName;
+
+    /* Extract basename from file name */
+    while( *pcIter != '\0' )
+    {
+        if( *pcIter == '/' || *pcIter == '\\')
+        {
+            pcBasename = pcIter + 1;
+        }
+        pcIter++;
+    }
+
+    return pcBasename;
+}
+
+/* Get basename of file using gcc builtins. */
+#define __NAME_ARG__ (__builtin_strrchr (__BASE_FILE__, '/') ? __builtin_strrchr (__BASE_FILE__, '/') + 1 : __BASE_FILE__)
 
 /* Generic logging macros */
-#define SdkLog( level, ... )        do { vLoggingPrintf( level, __func__, __LINE__, __VA_ARGS__ ); } while( 0 )
+#define SdkLog( level, ... )        do { vLoggingPrintf( level, __NAME_ARG__, __LINE__, __VA_ARGS__ ); } while( 0 )
 
-#define LogAssert( ... )            do { vTaskSuspendAll(); vDyingGasp(); SdkLog( "ASSERT", __VA_ARGS__ ); } while( 0 )
+#define LogAssert( ... )            do { vTaskSuspendAll(); vDyingGasp(); SdkLog( "ASRT", __VA_ARGS__ ); } while( 0 )
 
-#define LogKernel( ... )            SdkLog( "KERNEL", __VA_ARGS__ )
+#define LogSys( ... )               do { vLoggingPrintf( "SYS", "", 0, __VA_ARGS__ ); } while( 0 )
 
-#ifdef LOGGING_REMOVE_PARENS
-    #define LogSys( ARGS )         SdkLog( "SYSTEM", REMOVE_PARENS ARGS  )
-#else
-    #define LogSys( ... )          SdkLog( "SYSTEM", __VA_ARGS__ )
-#endif
+#define LogKernel( ... )            SdkLog( "KRN", __VA_ARGS__ )
 
 #if !defined( LOG_LEVEL ) ||       \
     ( ( LOG_LEVEL != LOG_NONE ) && \
@@ -81,9 +100,9 @@ void vDyingGasp( void );
 
     #if ( LOG_LEVEL >= LOG_ERROR )
         #ifdef LOGGING_REMOVE_PARENS
-            #define LogError( ARGS )        SdkLog( "ERROR ", REMOVE_PARENS ARGS  )
+            #define LogError( ARGS )        SdkLog( "ERR", REMOVE_PARENS ARGS  )
         #else
-            #define LogError( ... )         SdkLog( "ERROR ", __VA_ARGS__ )
+            #define LogError( ... )         SdkLog( "ERR", __VA_ARGS__ )
         #endif
     #else
         #define LogError( ... )
@@ -91,9 +110,9 @@ void vDyingGasp( void );
 
     #if ( LOG_LEVEL >= LOG_WARN )
         #ifdef LOGGING_REMOVE_PARENS
-            #define LogWarn( ARGS )         SdkLog( "WARN  ", REMOVE_PARENS ARGS  )
+            #define LogWarn( ARGS )         SdkLog( "WRN", REMOVE_PARENS ARGS  )
         #else
-            #define LogWarn( ... )          SdkLog( "WARN  ", __VA_ARGS__ )
+            #define LogWarn( ... )          SdkLog( "WRN", __VA_ARGS__ )
         #endif
     #else
         #define LogWarn( ... )
@@ -101,9 +120,9 @@ void vDyingGasp( void );
 
     #if ( LOG_LEVEL >= LOG_INFO )
         #ifdef LOGGING_REMOVE_PARENS
-            #define LogInfo( ARGS )         SdkLog( "INFO  ", REMOVE_PARENS ARGS  )
+            #define LogInfo( ARGS )         SdkLog( "INF", REMOVE_PARENS ARGS  )
         #else
-            #define LogInfo( ... )          SdkLog( "INFO  ", __VA_ARGS__ )
+            #define LogInfo( ... )          SdkLog( "INF", __VA_ARGS__ )
         #endif
     #else
         #define LogInfo( ... )
@@ -111,15 +130,14 @@ void vDyingGasp( void );
 
     #if ( LOG_LEVEL >= LOG_DEBUG )
         #ifdef LOGGING_REMOVE_PARENS
-            #define LogDebug( ARGS )        SdkLog( "DEBUG ", REMOVE_PARENS ARGS  )
+            #define LogDebug( ARGS )        SdkLog( "DBG", REMOVE_PARENS ARGS  )
         #else
-            #define LogDebug( ... )         SdkLog( "DEBUG ", __VA_ARGS__ )
+            #define LogDebug( ... )         SdkLog( "DBG", __VA_ARGS__ )
         #endif
     #else
         #define LogDebug( ... )
     #endif
 
-#endif /* if !defined( LOG_LEVEL ) || ( ( LOG_LEVEL != LOG_NONE ) && ( LOG_LEVEL != LOG_ERROR ) && ( LOG_LEVEL != LOG_WARN ) && ( LOG_LEVEL != LOG_INFO ) && ( LOG_LEVEL != LOG_DEBUG ) ) */
-
+#endif
 
 #endif /* LOGGING_H */

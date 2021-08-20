@@ -42,10 +42,11 @@
 /*-----------------------------------------------------------*/
 
 /* Dimensions the arrays into which print messages are created. */
-#define dlMAX_PRINT_STRING_LENGTH       4096    /* maximum length of any single log line */
+#define dlMAX_PRINT_STRING_LENGTH       256     /* maximum length of any single log line */
 #define dlLOGGING_STREAM_LENGTH         4096    /* how many bytes to accept for logging before blocking */
 #define dlLOGGING_HW_FIFO_LENGTH        8       /* How many bytes at a time can be inserted into the hardware fifo */
-#define LOGGING_LINE_ENDING             "\r\n\0"
+#define LOGGING_LINE_ENDING             "\r\n"
+#define dlMAX_LOG_LINE_LENGTH           dlMAX_PRINT_STRING_LENGTH - sizeof( LOGGING_LINE_ENDING )
 
 #define TASK_NOTIFY_UART_DONE_IDX       2
 
@@ -193,66 +194,107 @@ void vLoggingInit( void )
 /*-----------------------------------------------------------*/
 
 void vLoggingPrintf( const char * const     pcLogLevel,
-                     const char * const     pcFunctionName,
+                     const char * const     pcFileName,
                      const unsigned long    ulLineNumber,
                      const char * const     pcFormat,
                      ... )
 {
-    int32_t iLengthHeader = -1;
-    int32_t iLengthMessage = -1;
+    uint32_t ulLenTotal = 0;
+    int32_t lLenPart = -1;
     va_list args;
-    const char * pcTaskName;
-    static const char * pcNoTask = "None";
-    char * pcPrintString = pvPortMalloc( dlMAX_PRINT_STRING_LENGTH + sizeof( LOGGING_LINE_ENDING ) );
+    const char * pcTaskName = NULL;
+    char pcPrintString[ dlMAX_PRINT_STRING_LENGTH ];
+    pcPrintString[ 0 ] = '\0';
 
-    if( pcPrintString != NULL )
+    /* Additional info to place at the start of the log line */
+    if( xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED )
     {
+        pcTaskName = pcTaskGetName( NULL );
+    }
+    else
+    {
+        pcTaskName = "None";
+    }
 
-        /* Additional info to place at the start of the log. */
-        if( xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED )
+    lLenPart = snprintf( pcPrintString,
+                         dlMAX_LOG_LINE_LENGTH,
+                         "<%-3.3s> %-8.8lu [%-10.10s] ",
+                         pcLogLevel,
+                         ( ( unsigned long ) xTaskGetTickCount() / portTICK_PERIOD_MS ) & 0xFFFFFF,
+                         pcTaskName );
+
+    configASSERT( lLenPart > 0 );
+
+    if( lLenPart < dlMAX_LOG_LINE_LENGTH )
+    {
+        ulLenTotal = lLenPart;
+    }
+    else
+    {
+        ulLenTotal = dlMAX_LOG_LINE_LENGTH;
+    }
+
+    /* There are a variable number of parameters. */
+    va_start( args, pcFormat );
+    lLenPart = vsnprintf( &pcPrintString[ ulLenTotal ],
+                          ( dlMAX_LOG_LINE_LENGTH - ulLenTotal ),
+                          pcFormat,
+                          args );
+    va_end( args );
+
+    configASSERT( lLenPart > 0 );
+
+    if( lLenPart + ulLenTotal < dlMAX_LOG_LINE_LENGTH )
+    {
+        ulLenTotal += lLenPart;
+    }
+    else
+    {
+        ulLenTotal = dlMAX_LOG_LINE_LENGTH;
+    }
+
+    /* remove any \r\n\0 characters at the end of the message */
+    while( ulLenTotal > 0 &&
+           ( pcPrintString[ ulLenTotal - 1 ] == '\r' ||
+             pcPrintString[ ulLenTotal - 1 ] == '\n' ||
+             pcPrintString[ ulLenTotal - 1 ] == '\0' ) )
+    {
+        pcPrintString[ ulLenTotal - 1 ] = '\0';
+        ulLenTotal--;
+    }
+
+    if( pcFileName != NULL &&
+        ulLineNumber > 0 &&
+        ulLenTotal < dlMAX_LOG_LINE_LENGTH )
+    {
+        /* Add the trailer including file name and line number */
+        lLenPart = snprintf( &pcPrintString[ ulLenTotal ],
+                             ( dlMAX_LOG_LINE_LENGTH - ulLenTotal ),
+                             " (%s:%lu) ",
+                             pcFileName,
+                             ulLineNumber );
+
+        configASSERT( lLenPart > 0 );
+
+        if( lLenPart + ulLenTotal < dlMAX_LOG_LINE_LENGTH )
         {
-            pcTaskName = pcTaskGetName( NULL );
+            ulLenTotal += lLenPart;
         }
         else
         {
-            pcTaskName = pcNoTask;
+            ulLenTotal = dlMAX_LOG_LINE_LENGTH;
         }
 
-        /* Print Header
-         * [LOGLEVEL] [taskName] functionName:line
-         */
-        iLengthHeader = snprintf( pcPrintString,
-                                  dlMAX_PRINT_STRING_LENGTH,
-                                  "[%s] [%s] %10lu %s:%lu --- ",
-                                  pcLogLevel,
-                                  pcTaskName,
-                                  ( unsigned long ) xTaskGetTickCount() / portTICK_PERIOD_MS,
-                                  pcFunctionName,
-                                  ulLineNumber );
-
-        configASSERT( iLengthHeader > 0 );
-
-        /* There are a variable number of parameters. */
-        va_start( args, pcFormat );
-        iLengthMessage = vsnprintf( &pcPrintString[ iLengthHeader ],
-                                    ( dlMAX_PRINT_STRING_LENGTH - iLengthHeader ),
-                                    pcFormat,
-                                    args );
-        va_end( args );
-
-        configASSERT( iLengthMessage > 0 );
-        configASSERT( ( iLengthHeader + iLengthMessage ) <  dlMAX_PRINT_STRING_LENGTH );
-
-        ( void ) strncpy( &pcPrintString[ iLengthHeader + iLengthMessage ],
-                          LOGGING_LINE_ENDING,
-                          dlMAX_PRINT_STRING_LENGTH + sizeof( LOGGING_LINE_ENDING ) - iLengthHeader - iLengthMessage );
-
-        vSendLogMessage( ( void * ) pcPrintString, iLengthHeader + iLengthMessage + sizeof( LOGGING_LINE_ENDING ) );
-        vPortFree(pcPrintString);
     }
+
+    ( void ) strncpy( &pcPrintString[ ulLenTotal ],
+                      LOGGING_LINE_ENDING,
+                      dlMAX_PRINT_STRING_LENGTH - ulLenTotal );
+
+    ulLenTotal += sizeof( LOGGING_LINE_ENDING );
+
+    vSendLogMessage( ( void * ) pcPrintString, ulLenTotal );
 }
-
-
 
 /*-----------------------------------------------------------*/
 
