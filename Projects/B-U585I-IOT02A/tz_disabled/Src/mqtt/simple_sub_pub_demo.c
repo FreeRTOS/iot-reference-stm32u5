@@ -1,5 +1,5 @@
 /*
- * Lab-Project-coreMQTT-Agent 201215
+ * FreeRTOS V202107.00
  * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -19,8 +19,9 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
- * http://www.FreeRTOS.org
- * http://aws.amazon.com/freertos
+ * https://www.FreeRTOS.org
+ * https://github.com/FreeRTOS
+ *
  */
 
 /*
@@ -40,15 +41,18 @@
  * or failure message.
  */
 
+
+
 #include "logging_levels.h"
 /* define LOG_LEVEL here if you want to modify the logging level from the default */
 
 /* Remove extra C89 style parentheses */
 #define LOGGING_REMOVE_PARENS
 
-#define LOG_LEVEL LOG_DEBUG
+#define LOG_LEVEL LOG_ERROR
 
 #include "logging.h"
+
 
 /* Standard includes. */
 #include <string.h>
@@ -83,18 +87,12 @@
  * @brief Size of statically allocated buffers for holding topic names and
  * payloads.
  */
-#define mqttexampleTASK_NAME_PREFIX                       "Publisher"
+#define mqttexampleSTRING_BUFFER_LENGTH                   ( 100 )
 
 /**
- * @brief Size of statically allocated buffers for holding topic names and
- * payloads.
+ * @brief Delay for each task between publishes.
  */
-#define mqttexampleSTRING_BUFFER_LENGTH                   ( 512 )
-
-/**
- * @brief Delay for the synchronous publisher task between publishes.
- */
-#define mqttexampleDELAY_BETWEEN_PUBLISH_OPERATIONS_MS    ( 500U )
+#define mqttexampleDELAY_BETWEEN_PUBLISH_OPERATIONS_MS    ( 100U )
 
 /**
  * @brief Number of publishes done by each task in this demo.
@@ -138,7 +136,7 @@ struct MQTTAgentCommandContext
  * @param[in] pxCommandContext Context of the initial command.
  * @param[in].xReturnStatus The result of the command.
  */
-static void prvSubscribeCommandCallback( MQTTAgentCommandContext_t * pxCommandContext,
+static void prvSubscribeCommandCallback( void * pxCommandContext,
                                          MQTTAgentReturnInfo_t * pxReturnInfo );
 
 /**
@@ -220,24 +218,7 @@ extern MQTTAgentContext_t xGlobalMqttAgentContext;
  *
  * @note The topic strings must persist until unsubscribed.
  */
-#if democonfigNUM_SIMPLE_SUB_PUB_TASKS_TO_CREATE > 0
-    static char topicBuf[ democonfigNUM_SIMPLE_SUB_PUB_TASKS_TO_CREATE ][ mqttexampleSTRING_BUFFER_LENGTH ];
-#else
-    static char topicBuf[ 1U ][ mqttexampleSTRING_BUFFER_LENGTH ];
-#endif
-
-/**
- * @brief Pass and fail counts for each created task.
- */
-#if democonfigNUM_SIMPLE_SUB_PUB_TASKS_TO_CREATE > 0
-    static volatile uint32_t ulQoS0FailCount[ ( democonfigNUM_SIMPLE_SUB_PUB_TASKS_TO_CREATE + 1 ) / 2 ] = { 0UL },
-                             ulQoS1FailCount[ ( democonfigNUM_SIMPLE_SUB_PUB_TASKS_TO_CREATE + 1 ) / 2 ] = { 0UL };
-    static volatile uint32_t ulQoS0PassCount[ ( democonfigNUM_SIMPLE_SUB_PUB_TASKS_TO_CREATE + 1 ) / 2 ] = { 0UL },
-                             ulQoS1PassCount[ ( democonfigNUM_SIMPLE_SUB_PUB_TASKS_TO_CREATE + 1 ) / 2 ] = { 0UL };
-#else
-    static volatile uint32_t ulQoS0FailCount[ 1 ] = { 0UL }, ulQoS1FailCount[ 1 ] = { 0UL };
-    static volatile uint32_t ulQoS0PassCount[ 1 ] = { 0UL }, ulQoS1PassCount[ 1 ] = { 0UL };
-#endif
+static char topicBuf[ democonfigNUM_SIMPLE_SUB_PUB_TASKS_TO_CREATE ][ mqttexampleSTRING_BUFFER_LENGTH ];
 
 /*-----------------------------------------------------------*/
 
@@ -287,17 +268,18 @@ static void prvPublishCommandCallback( MQTTAgentCommandContext_t * pxCommandCont
 
 /*-----------------------------------------------------------*/
 
-static void prvSubscribeCommandCallback( MQTTAgentCommandContext_t * pxCommandContext,
+static void prvSubscribeCommandCallback( void * pxCommandContext,
                                          MQTTAgentReturnInfo_t * pxReturnInfo )
 {
     bool xSubscriptionAdded = false;
-    MQTTAgentSubscribeArgs_t * pxSubscribeArgs = ( MQTTAgentSubscribeArgs_t * ) pxCommandContext->pArgs;
+    MQTTAgentCommandContext_t * pxApplicationDefinedContext = ( MQTTAgentCommandContext_t * ) pxCommandContext;
+    MQTTAgentSubscribeArgs_t * pxSubscribeArgs = ( MQTTAgentSubscribeArgs_t * ) pxApplicationDefinedContext->pArgs;
 
     /* Store the result in the application defined context so the task that
      * initiated the subscribe can check the operation's status.  Also send the
      * status as the notification value.  These things are just done for
      * demonstration purposes. */
-    pxCommandContext->xReturnStatus = pxReturnInfo->returnCode;
+    pxApplicationDefinedContext->xReturnStatus = pxReturnInfo->returnCode;
 
     /* Check if the subscribe operation is a success. Only one topic is
      * subscribed by this demo. */
@@ -319,7 +301,7 @@ static void prvSubscribeCommandCallback( MQTTAgentCommandContext_t * pxCommandCo
         }
     }
 
-    xTaskNotify( pxCommandContext->xTaskToNotify,
+    xTaskNotify( pxApplicationDefinedContext->xTaskToNotify,
                  ( uint32_t ) ( pxReturnInfo->returnCode ),
                  eSetValueWithOverwrite );
 }
@@ -371,11 +353,12 @@ static bool prvSubscribeToTopic( MQTTQoS_t xQoS,
 {
     MQTTStatus_t xCommandAdded;
     BaseType_t xCommandAcknowledged = pdFALSE;
+    uint32_t ulSubscribeMessageID;
     MQTTAgentSubscribeArgs_t xSubscribeArgs;
     MQTTSubscribeInfo_t xSubscribeInfo;
     static int32_t ulNextSubscribeMessageID = 0;
-    MQTTAgentCommandContext_t xApplicationDefinedContext = { 0UL };
-    MQTTAgentCommandInfo_t xCommandParams = { 0UL };
+    MQTTAgentCommandContext_t xApplicationDefinedContext = { 0 };
+    MQTTAgentCommandInfo_t xCommandParams = { 0 };
 
     /* Create a unique number of the subscribe that is about to be sent.  The number
      * is used as the command context and is sent back to this task as a notification
@@ -385,6 +368,7 @@ static bool prvSubscribeToTopic( MQTTQoS_t xQoS,
     taskENTER_CRITICAL();
     {
         ulNextSubscribeMessageID++;
+        ulSubscribeMessageID = ulNextSubscribeMessageID;
     }
     taskEXIT_CRITICAL();
 
@@ -413,7 +397,7 @@ static bool prvSubscribeToTopic( MQTTQoS_t xQoS,
      * calling this function. */
     LogInfo( ( "Sending subscribe request to agent for topic filter: %s with id %d",
                pcTopicFilter,
-               ( int ) ulNextSubscribeMessageID ) );
+               ( int ) ulSubscribeMessageID ) );
 
     do
     {
@@ -445,23 +429,22 @@ static bool prvSubscribeToTopic( MQTTQoS_t xQoS,
 
     return xCommandAcknowledged;
 }
-/*-----------------------------------------------------------*/
 
-#define STRINGIFY(X) #X
-#define TASK_NAME_LEN sizeof( mqttexampleTASK_NAME_PREFIX ) + sizeof( STRINGIFY( INT32_MIN ) )
+/*-----------------------------------------------------------*/
 
 static void prvSimpleSubscribePublishTask( void * pvParameters )
 {
-    MQTTPublishInfo_t xPublishInfo = { 0UL };
+    extern UBaseType_t uxRand( void );
+    MQTTPublishInfo_t xPublishInfo = { 0 };
     char payloadBuf[ mqttexampleSTRING_BUFFER_LENGTH ];
-    char taskName[ TASK_NAME_LEN ];
+    char taskName[ mqttexampleSTRING_BUFFER_LENGTH ];
     MQTTAgentCommandContext_t xCommandContext;
     uint32_t ulNotification = 0U, ulValueToNotify = 0UL;
     MQTTStatus_t xCommandAdded;
     uint32_t ulTaskNumber = ( uint32_t ) pvParameters;
     MQTTQoS_t xQoS;
     TickType_t xTicksToDelay;
-    MQTTAgentCommandInfo_t xCommandParams = { 0UL };
+    MQTTAgentCommandInfo_t xCommandParams = { 0 };
     char * pcTopicBuffer = topicBuf[ ulTaskNumber ];
 
     /* Have different tasks use different QoS.  0 and 1.  2 can also be used
@@ -470,10 +453,10 @@ static void prvSimpleSubscribePublishTask( void * pvParameters )
 
     /* Create a unique name for this task from the task number that is passed into
      * the task using the task's parameter. */
-    snprintf( taskName, TASK_NAME_LEN, mqttexampleTASK_NAME_PREFIX"%d", ( int ) ulTaskNumber );
+    snprintf( taskName, mqttexampleSTRING_BUFFER_LENGTH, "Publisher%d", ( int ) ulTaskNumber );
 
     /* Create a topic name for this task to publish to. */
-    snprintf( pcTopicBuffer, mqttexampleSTRING_BUFFER_LENGTH, "/test_stm32u5_01/%s", taskName );
+    snprintf( pcTopicBuffer, mqttexampleSTRING_BUFFER_LENGTH, "/filter/%s", taskName );
 
     /* Subscribe to the same topic to which this task will publish.  That will
      * result in each published message being published from the server back to
@@ -526,7 +509,10 @@ static void prvSimpleSubscribePublishTask( void * pvParameters )
         xCommandAdded = MQTTAgent_Publish( &xGlobalMqttAgentContext,
                                            &xPublishInfo,
                                            &xCommandParams );
-        configASSERT( xCommandAdded == MQTTSuccess );
+        if(xCommandAdded != MQTTSuccess)
+        {
+            LogError(("MQTTAgent_Publish failed"));
+        }
 
         /* For QoS 1 and 2, wait for the publish acknowledgment.  For QoS0,
          * wait for the publish to be sent. */
@@ -536,51 +522,21 @@ static void prvSimpleSubscribePublishTask( void * pvParameters )
         prvWaitForCommandAcknowledgment( &ulNotification );
 
         /* The value received by the callback that executed when the publish was
-         * acked came from the context passed into MQTTAgent_Publish() above, so
-         * should match the value set in the context above. */
-        if( ulNotification == ulValueToNotify )
+         * completed came from the context passed into MQTTAgent_Publish() above,
+         * so should match the value set in the context above. */
+        if( ulNotification != ulValueToNotify )
         {
-            if( xQoS == 0 )
-            {
-                ( ulQoS0PassCount[ ulTaskNumber / 2 ] )++;
-                LogInfo( ( "Rx'ed QoS0 ack from Tx to %s (P%d:F%d).",
-                           pcTopicBuffer,
-                           ( int ) ulQoS0PassCount[ ulTaskNumber / 2 ],
-                           ( int ) ulQoS0FailCount[ ulTaskNumber / 2 ] ) );
-            }
-            else
-            {
-                ( ulQoS1PassCount[ ulTaskNumber / 2 ] )++;
-                LogInfo( ( "Rx'ed QoS1 ack from Tx to %s (P%d:F%d).",
-                           pcTopicBuffer,
-                           ( int ) ulQoS1PassCount[ ulTaskNumber / 2 ],
-                           ( int ) ulQoS1FailCount[ ulTaskNumber / 2 ] ) );
-            }
+            LogError(("timed out while waiting for response."));
+            LogError(("DEMO FAIL"));
         }
         else
         {
-            if( xQoS == 0 )
-            {
-                ( ulQoS0FailCount[ ulTaskNumber / 2 ] )++;
-                LogError( ( "Timed out Rx'ing QoS0 ack from Tx to %s (P%d:F%d)",
-                            pcTopicBuffer,
-                            ( int ) ulQoS0PassCount[ ulTaskNumber / 2 ],
-                            ( int ) ulQoS0FailCount[ ulTaskNumber / 2 ] ) );
-            }
-            else
-            {
-                ( ulQoS1FailCount[ ulTaskNumber / 2 ] )++;
-                LogError( ( "Timed out Rx'ing QoS1 ack from Tx to %s (P%d:F%d)",
-                            pcTopicBuffer,
-                            ( int ) ulQoS1PassCount[ ulTaskNumber / 2 ],
-                            ( int ) ulQoS1FailCount[ ulTaskNumber / 2 ] ) );
-            }
+            LogInfo(("DEMO SUCCESS"));
         }
-
         /* Add a little randomness into the delay so the tasks don't remain
          * in lockstep. */
         xTicksToDelay = pdMS_TO_TICKS( mqttexampleDELAY_BETWEEN_PUBLISH_OPERATIONS_MS ) +
-                        ( uxRand() % 0xff );
+                        ( uxRand() % 0xf );
         vTaskDelay( xTicksToDelay );
     }
 
@@ -588,5 +544,3 @@ static void prvSimpleSubscribePublishTask( void * pvParameters )
     LogInfo( ( "Task %s completed.", taskName ) );
     vTaskDelete( NULL );
 }
-#undef TASK_NAME_LEN
-#undef STRINGIFY

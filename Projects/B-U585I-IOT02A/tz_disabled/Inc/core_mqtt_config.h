@@ -25,10 +25,9 @@
 #ifndef CORE_MQTT_CONFIG_H
 #define CORE_MQTT_CONFIG_H
 
-
 #include "logging_levels.h"
 /* define LOG_LEVEL here if you want to modify the logging level from the default */
-
+#define LOG_LEVEL LOG_ERROR
 /* Remove extra C89 style parentheses */
 #define LOGGING_REMOVE_PARENS
 
@@ -49,7 +48,7 @@
 
 /*_RB_ To document and add to the mqtt config defaults header file. */
 #define MQTT_AGENT_COMMAND_QUEUE_LENGTH              ( 25 )
-#define MQTT_COMMAND_CONTEXTS_POOL_SIZE              ( 10 )
+#define MQTT_COMMAND_CONTEXTS_POOL_SIZE              ( 20 )
 
 /**
  * @brief The maximum number of subscriptions to track for a single connection.

@@ -80,7 +80,7 @@
 #define configENABLE_BACKWARD_COMPATIBILITY      0
 #define configNUM_THREAD_LOCAL_STORAGE_POINTERS  5
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION  0
-#define configCHECK_FOR_STACK_OVERFLOW           1
+#define configCHECK_FOR_STACK_OVERFLOW           2
 #define configMESSAGE_BUFFER_LENGTH_TYPE         size_t
 
 /* For lwip errno support */

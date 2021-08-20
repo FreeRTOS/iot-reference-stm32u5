@@ -149,7 +149,7 @@
  * @brief Timeout for receiving CONNACK after sending an MQTT CONNECT packet.
  * Defined in milliseconds.
  */
-#define mqttexampleCONNACK_RECV_TIMEOUT_MS           ( 1000U )
+#define mqttexampleCONNACK_RECV_TIMEOUT_MS           ( 2000U )
 
 /**
  * @brief The maximum number of retries for network operation with server.
@@ -177,12 +177,12 @@
  *  absence of sending any other Control Packets, the Client MUST send a
  *  PINGREQ Packet.
  *//*_RB_ Move to be the responsibility of the agent. */
-#define mqttexampleKEEP_ALIVE_INTERVAL_SECONDS       ( 60U )
+#define mqttexampleKEEP_ALIVE_INTERVAL_SECONDS       ( 1200U )
 
 /**
  * @brief Socket send and receive timeouts to use.  Specified in milliseconds.
  */
-#define mqttexampleTRANSPORT_SEND_RECV_TIMEOUT_MS    ( 750 )
+#define mqttexampleTRANSPORT_SEND_RECV_TIMEOUT_MS    ( 2000 )
 
 /**
  * @brief Used to convert times to/from ticks and milliseconds.
@@ -374,8 +374,8 @@ void vStartMQTTAgentDemo( void )
      * tasks that will interact with the broker via the MQTT agent, then turns
      * itself into the MQTT agent task. */
     xTaskCreate( prvMQTTAgentTask, /* Function that implements the task. */
-                 "MqttAgentTask",              /* Text name for the task - only used for debugging. */
-                 2 * democonfigDEMO_STACKSIZE,     /* Size of stack (in words, not bytes) to allocate for the task. */
+                 "MQTTAgent",      /* Text name for the task - only used for debugging. */
+                 4096,             /* Size of stack (in words, not bytes) to allocate for the task. */
                  NULL,                         /* Optional - task parameter - not used in this case. */
                  tskIDLE_PRIORITY + 1,         /* Task priority, must be between 0 and configMAX_PRIORITIES - 1. */
                  NULL );                       /* Optional - used to pass out a handle to the created task. */
@@ -645,8 +645,8 @@ static BaseType_t prvSocketConnect( void )
                                                     ConfigStore_getEntryData( CS_CORE_MQTT_ENDPOINT ),
                                                     (uint16_t) *( ( uint32_t * ) ConfigStore_getEntryData( CS_CORE_MQTT_ENDPOINT_PORT ) ),
                                                     &xNetworkCredentials,
-                                                    0,
-                                                    0 );
+                                                    mqttexampleTRANSPORT_SEND_RECV_TIMEOUT_MS,
+                                                    mqttexampleTRANSPORT_SEND_RECV_TIMEOUT_MS );
 
         xConnected = ( xNetworkStatus == TLS_TRANSPORT_SUCCESS ) ? pdPASS : pdFAIL;
 
@@ -763,7 +763,7 @@ static void prvMQTTAgentTask( void * pvParameters )
         {
             vStartSimpleSubscribePublishTask( democonfigNUM_SIMPLE_SUB_PUB_TASKS_TO_CREATE,
                                               democonfigSIMPLE_SUB_PUB_TASK_STACK_SIZE,
-                                              tskIDLE_PRIORITY );
+                                              tskIDLE_PRIORITY + 2 );
         }
     #endif
 
@@ -804,12 +804,15 @@ static void prvMQTTAgentTask( void * pvParameters )
              * clean up and reconnect however the application writer prefers. */
             xMQTTStatus = MQTTAgent_CommandLoop( &xGlobalMqttAgentContext );
 
+
+            mbedtls_transport_disconnect( pxNetworkContext );
+
             /* Success is returned for disconnect or termination. The socket should
              * be disconnected. */
             if( xMQTTStatus == MQTTSuccess )
             {
                 /* MQTT Disconnect. Disconnect the socket. */
-                mbedtls_transport_disconnect( pxNetworkContext );
+
             }
             /* Error. */
             else
@@ -850,7 +853,10 @@ static void prvConnectToMQTTBroker( void )
     BaseType_t xNetworkStatus = pdFAIL;
     MQTTStatus_t xMQTTStatus;
 
-    pxNetworkContext = mbedtls_transport_allocate( &xLwipTransportInterface );
+    if( pxNetworkContext == NULL )
+    {
+        pxNetworkContext = mbedtls_transport_allocate( &xLwipTransportInterface );
+    }
 
     configASSERT( pxNetworkContext != NULL );
 

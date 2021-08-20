@@ -62,11 +62,6 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
-			<name>Drivers/mx_wifi</name>
-			<type>2</type>
-			<locationURI>WORKSPACE_LOC/Drivers/BSP/Components/mx_wifi</locationURI>
-		</link>
-		<link>
 			<name>Drivers/stm32u5_mbedtls_accel</name>
 			<type>2</type>
 			<locationURI>WORKSPACE_LOC/Drivers/stm32u5_mbedtls_accel</locationURI>

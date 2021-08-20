@@ -1,5 +1,6 @@
 /*
  * FreeRTOS STM32 Reference Integration
+ *
  * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -24,17 +25,16 @@
  *
  */
 
-#include "main.h"
 #include "logging.h"
+#include "main.h"
 #include "FreeRTOS.h"
 #include "task.h"
-#include "network_thread.h"
+#include "net/mxchip/mx_netconn.h"
 #include "stm32u5xx_ll_rng.h"
 
 /* Initialize hardware / STM32 HAL library */
 static void hw_init( void )
 {
-	/* ???? */
 	__HAL_RCC_SYSCFG_CLK_ENABLE();
 
 	/*x`
@@ -74,15 +74,17 @@ static void hw_init( void )
 
 }
 
-static void testTask( void * pvParameters )
+static void vHeartbeatTask( void * pvParameters )
 {
 	( void ) pvParameters;
 	while(1)
 	{
-		LogInfo(("30 seconds has elapsed"));
+		LogSys( "Idle priority heartbeat." );
 		vTaskDelay( pdMS_TO_TICKS( 30 * 1000 ) );
 	}
 }
+
+extern void vStartMQTTAgentDemo( void );
 
 int main( void )
 {
@@ -94,20 +96,17 @@ int main( void )
 
 	BaseType_t xResult;
 
-	// TODO: Add an "init" task to manage provisioning state and network state and start/stop daemons when necessary.
-
     /* Initialize threads */
 
-	xResult = xTaskCreate( testTask, "testTask", 1024, NULL, tskIDLE_PRIORITY + 1, NULL );
+	xResult = xTaskCreate( vHeartbeatTask, "Heartbeat", 1024, NULL, tskIDLE_PRIORITY, NULL );
 
 	configASSERT( xResult == pdTRUE );
-    //TODO
 
 	xResult = xTaskCreate( &net_main, "MxNet", 2 * 4096, NULL, 23, NULL );
 
     configASSERT( xResult == pdTRUE );
 
-//    vStartMQTTAgentDemo();
+    vStartMQTTAgentDemo();
 
     /* Start scheduler */
     vTaskStartScheduler();
@@ -117,7 +116,7 @@ int main( void )
 	/* This loop should be inaccessible.*/
 	while(1)
 	{
-
+	    __NOP();
 	}
 }
 
@@ -125,7 +124,6 @@ UBaseType_t uxRand( void )
 {
     return LL_RNG_ReadRandData32( RNG_NS );
 }
-
 
 /*-----------------------------------------------------------*/
 
@@ -187,7 +185,7 @@ void vApplicationGetTimerTaskMemory( StaticTask_t ** ppxTimerTaskTCBBuffer,
 
 void vApplicationMallocFailedHook( void )
 {
-    LogError( ( "Malloc failed\n" ) );
+    LogError( "Malloc failed" );
 }
 /*-----------------------------------------------------------*/
 
@@ -199,12 +197,13 @@ void vApplicationStackOverflowHook( TaskHandle_t xTask,
 
     taskENTER_CRITICAL();
 
-    LogDebug( ( "Stack overflow in %s\n", pcTaskName ) );
+    LogDebug( "Stack overflow in %s", pcTaskName );
     ( void ) xTask;
     ( void ) pcTaskName; /* Remove compiler warnings if LogDebug() is not defined. */
 
     while( ulSetToZeroToStepOut != 0 )
     {
+        __NOP();
     }
 
     taskEXIT_CRITICAL();

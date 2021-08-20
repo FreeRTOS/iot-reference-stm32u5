@@ -1,4 +1,5 @@
 /*
+ * FreeRTOS STM32 Reference Integration
  * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -145,8 +146,8 @@ void mbedtls_transport_disconnect( NetworkContext_t * pxNetworkContext );
  * negative value on error.
  */
 int32_t mbedtls_transport_recv( NetworkContext_t * pxNetworkContext,
-                           void * pBuffer,
-                           size_t bytesToRecv );
+                                void * pBuffer,
+                                size_t bytesToRecv );
 
 /**
  * @brief Sends data over an established TLS connection.

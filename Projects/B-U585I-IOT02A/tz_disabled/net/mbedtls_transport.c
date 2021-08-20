@@ -1,6 +1,5 @@
 /*
- * FreeRTOS STM32 Reference Integration
- * Copyright (C) 2020-2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -22,26 +21,35 @@
 
 /**
  * @file mbedtls_transport.c
- * @brief TLS transport interface implementations using mbedtls.
+ * @brief TLS transport interface implementations. This implementation uses
+ * mbedTLS.
  */
+
+#ifdef LOGGING_REMOVE_PARENS
+#undef LOGGING_REMOVE_PARENS
+#endif
+
 #include "logging_levels.h"
 
-#define LOG_LEVEL LOG_ERROR
+#define LOG_LEVEL LOG_DEBUG
 
 #include "logging.h"
 
-#include "transport_interface_ext.h"
+/* Standard includes. */
+#include <transport_interface_ext.h>
 #include "mbedtls_transport.h"
+
 #include <string.h>
 
 /* FreeRTOS includes. */
 #include "FreeRTOS.h"
 
-/* mbedTLS includes. */
-#include "mbedtls/error.h"
+/* STM32 Network lib includes. */
 #include "mbedtls_config.h"
 #include "mbedtls/debug.h"
-#include "mbedtls/net_sockets.h"
+
+/* mbedTLS util includes. */
+#include "mbedtls/error.h"
 
 #define MBEDTLS_DEBUG_THRESHOLD 1
 
@@ -458,7 +466,6 @@ static void setOptionalConfigurations( TLSContext_t * pxTLSContext,
         }
     #endif /* ifdef MBEDTLS_SSL_MAX_FRAGMENT_LENGTH */
 }
-
 /*-----------------------------------------------------------*/
 
 static TlsTransportStatus_t tlsSetup( TLSContext_t * pxTLSContext,
@@ -506,88 +513,12 @@ static TlsTransportStatus_t tlsSetup( TLSContext_t * pxTLSContext,
             setOptionalConfigurations( pxTLSContext,
                                        pHostName,
                                        pNetworkCredentials );
+            LogDebug("tlsSetup Success");
         }
     }
 
     return returnStatus;
 }
-
-/*-----------------------------------------------------------*/
-
-static int mbedtls_ssl_send( void * pvCtx,
-                             const unsigned char * pcBuf,
-                             size_t xLen )
-{
-    TLSContext_t * pxTLSContext = ( TLSContext_t * ) pvCtx;
-    const TransportInterfaceExtended_t * pxSock = pxTLSContext->pxSocketInterface;
-    int lReturnValue = 0;
-
-    lReturnValue = pxSock->send( pxTLSContext->pxSocketContext,
-                                 ( void * const ) pcBuf,
-                                 xLen );
-
-    if( lReturnValue < 0 )
-    {
-        /* force use of newlibc errno */
-        switch( *__errno() )
-        {
-#if EAGAIN != EWOULDBLOCK
-        case EAGAIN:
-#endif
-        case EINTR:
-        case EWOULDBLOCK:
-            lReturnValue = MBEDTLS_ERR_SSL_WANT_WRITE;
-            break;
-        case EPIPE:
-        case ECONNRESET:
-            lReturnValue = MBEDTLS_ERR_NET_CONN_RESET;
-            break;
-        default:
-            lReturnValue = MBEDTLS_ERR_NET_SEND_FAILED;
-            break;
-        }
-    }
-    return lReturnValue;
-}
-
-/*-----------------------------------------------------------*/
-
-static int mbedtls_ssl_recv( void * pvCtx,
-                             unsigned char * pcBuf,
-                             size_t xLen )
-{
-    TLSContext_t * pxTLSContext = ( TLSContext_t * ) pvCtx;
-    const TransportInterfaceExtended_t * pxSock = pxTLSContext->pxSocketInterface;
-    int lReturnValue = 0;
-
-    lReturnValue = pxSock->recv( pxTLSContext->pxSocketContext,
-                                 ( void * ) pcBuf,
-                                 xLen );
-
-    if( lReturnValue < 0 )
-    {
-        /* force use of newlibc errno */
-        switch( *__errno() )
-        {
-#if EAGAIN != EWOULDBLOCK
-        case EAGAIN:
-#endif
-        case EINTR:
-        case EWOULDBLOCK:
-            lReturnValue = MBEDTLS_ERR_SSL_WANT_READ;
-            break;
-        case EPIPE:
-        case ECONNRESET:
-            lReturnValue = MBEDTLS_ERR_NET_CONN_RESET;
-            break;
-        default:
-            lReturnValue = MBEDTLS_ERR_NET_RECV_FAILED;
-            break;
-        }
-    }
-    return lReturnValue;
-}
-
 /*-----------------------------------------------------------*/
 
 static TlsTransportStatus_t tlsHandshake( TLSContext_t * pxTLSContext,
@@ -621,9 +552,9 @@ static TlsTransportStatus_t tlsHandshake( TLSContext_t * pxTLSContext,
          */
         /* coverity[misra_c_2012_rule_11_2_violation] */
         mbedtls_ssl_set_bio( &( pxTLSContext->xSslContext ),
-                             ( void * ) pxTLSContext,
-                             mbedtls_ssl_send,
-                             mbedtls_ssl_recv,
+                             ( void * ) pxTLSContext->pxSocketContext,
+                             ( mbedtls_ssl_send_t * ) ( pxTLSContext->pxSocketInterface->send ),
+                             ( mbedtls_ssl_recv_t * ) ( pxTLSContext->pxSocketInterface->recv ),
                              NULL );
     }
 
@@ -700,6 +631,11 @@ static TlsTransportStatus_t initMbedtls( mbedtls_entropy_context * pEntropyConte
                       mbedtlsLowLevelCodeOrDefault( mbedtlsError ) );
             returnStatus = TLS_TRANSPORT_INTERNAL_ERROR;
         }
+    }
+
+    if( returnStatus == TLS_TRANSPORT_SUCCESS )
+    {
+        LogDebug( "Successfully initialized mbedTLS." );
     }
 
     return returnStatus;
@@ -932,8 +868,8 @@ void mbedtls_transport_disconnect( NetworkContext_t * pxNetworkContext )
 /*-----------------------------------------------------------*/
 
 int32_t mbedtls_transport_recv( NetworkContext_t * pxNetworkContext,
-                                void * pBuffer,
-                                size_t bytesToRecv )
+                           void * pBuffer,
+                           size_t bytesToRecv )
 {
     int32_t tlsStatus = 0;
     TLSContext_t * pxTLSContext = ( TLSContext_t * ) pxNetworkContext;
@@ -1009,44 +945,25 @@ int32_t mbedtls_transport_send( NetworkContext_t * pxNetworkContext,
 }
 /*-----------------------------------------------------------*/
 
-
-
 #ifdef MBEDTLS_DEBUG_C
-
-    static inline const char * pcMbedtlsLevelToFrLevel( int lLevel )
+    static void vTLSDebugPrint( void *ctx, int level, const char *file, int line, const char *str )
     {
-        const char * pcFrLogLevel;
-        switch( lLevel )
+        const char *p, *basename;
+        (void) ctx;
+        ( void ) line;
+        ( void ) level;
+        ( void ) str;
+
+        /* Extract basename from file */
+        for( p = basename = file; *p != '\0'; p++ )
         {
-        case 1:
-            pcFrLogLevel = "E";
-            break;
-        case 2:
-        case 3:
-            pcFrLogLevel = "I";
-            break;
-        case 4:
-        default:
-            pcFrLogLevel = "D";
-            break;
+            if( *p == '/' || *p == '\\')
+            {
+                basename = p + 1;
+            }
         }
-        return pcFrLogLevel;
-    }
 
-    /*-------------------------------------------------------*/
-
-    static void vTLSDebugPrint( void *ctx,
-                                int lLevel,
-                                const char * pcFileName,
-                                int lLineNumber,
-                                const char * pcErrStr )
-    {
-        ( void ) ctx;
-
-        vLoggingPrintf( pcMbedtlsLevelToFrLevel( lLevel ),
-                        pcPathToBasename( pcFileName ),
-                        lLineNumber,
-                        pcErrStr );
+        LogDebug( "%s:%04d: |%d| %s", basename, line, level, str );
     }
 #endif
 

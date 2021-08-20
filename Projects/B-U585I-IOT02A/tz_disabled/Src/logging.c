@@ -1,5 +1,6 @@
 /*
  * FreeRTOS STM32 Reference Integration
+ *
  * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -218,7 +219,7 @@ void vLoggingPrintf( const char * const     pcLogLevel,
 
     lLenPart = snprintf( pcPrintString,
                          dlMAX_LOG_LINE_LENGTH,
-                         "<%-3.3s> %-8.8lu [%-10.10s] ",
+                         "<%-3.3s> %8lu [%-10.10s] ",
                          pcLogLevel,
                          ( ( unsigned long ) xTaskGetTickCount() / portTICK_PERIOD_MS ) & 0xFFFFFF,
                          pcTaskName );
@@ -270,7 +271,7 @@ void vLoggingPrintf( const char * const     pcLogLevel,
         /* Add the trailer including file name and line number */
         lLenPart = snprintf( &pcPrintString[ ulLenTotal ],
                              ( dlMAX_LOG_LINE_LENGTH - ulLenTotal ),
-                             " (%s:%lu) ",
+                             " (%s:%lu)",
                              pcFileName,
                              ulLineNumber );
 
