@@ -49,7 +49,7 @@
 static const uint8_t spiTestPort[ SPI_TEST_SET ] = { 0 };
 static const uint32_t spiIotMode[ SPI_TEST_SET ] = { eSPIMode0 };
 static const uint32_t spiIotSpitBitOrder[ SPI_TEST_SET ] = { eSPIMSBFirst };
-static const uint32_t spiIotFrequency[ SPI_TEST_SET ] = { 115200 };
+static const uint32_t spiIotFrequency[ SPI_TEST_SET ] = { 500000 };
 static const uint32_t spiIotDummyValue[ SPI_TEST_SET ] = { 0 };
 
 #endif /* ifndef _TEST_IOT_CONFIG_H_ */
