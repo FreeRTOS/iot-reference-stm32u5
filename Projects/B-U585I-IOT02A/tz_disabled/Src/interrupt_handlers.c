@@ -1,5 +1,6 @@
 /*
  * FreeRTOS STM32 Reference Integration
+ *
  * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -26,6 +27,8 @@
 
 #include "main.h"
 #include "stm32u5xx_it.h"
+#include "FreeRTOS.h"
+#include "task.h"
 
 extern DMA_HandleTypeDef handle_GPDMA1_Channel7;
 extern DMA_HandleTypeDef handle_GPDMA1_Channel6;
@@ -123,4 +126,18 @@ void SPI2_IRQHandler(void)
 void USART1_IRQHandler(void)
 {
   HAL_UART_IRQHandler(&huart1);
+}
+
+extern void SysTick_Handler( void );
+
+void _SysTick_Handler( void )
+{
+    /* Clear overflow flag */
+    SysTick->CTRL;
+
+    if ( xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED )
+    {
+    /* Call the cortex-m33 port systick handler */
+        SysTick_Handler();
+    }
 }

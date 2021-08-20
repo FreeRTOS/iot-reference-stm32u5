@@ -171,9 +171,6 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
                                } \
                            } while(0)
 
-
-#define SysTick_Handler xPortSysTickHandler
-
 #include "stack_macros.h"
 
 

@@ -80,7 +80,7 @@ static void vHeartbeatTask( void * pvParameters )
 	while(1)
 	{
 		LogSys( "Idle priority heartbeat." );
-		vTaskDelay( pdMS_TO_TICKS( 30 * 1000 ) );
+		vTaskDelay( pdMS_TO_TICKS( 10 * 1000 ) );
 	}
 }
 
@@ -208,6 +208,3 @@ void vApplicationStackOverflowHook( TaskHandle_t xTask,
 
     taskEXIT_CRITICAL();
 }
-/*-----------------------------------------------------------*/
-
-
