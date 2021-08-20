@@ -83,6 +83,9 @@
 #define configCHECK_FOR_STACK_OVERFLOW           1
 #define configMESSAGE_BUFFER_LENGTH_TYPE         size_t
 
+/* For lwip errno support */
+#define configUSE_NEWLIB_REENTRANT               1
+
 /* Co-routine definitions. */
 #define configUSE_CO_ROUTINES                    0
 #define configMAX_CO_ROUTINE_PRIORITIES          ( 2 )
