@@ -43,6 +43,8 @@
 #include "mbedtls/debug.h"
 #include "mbedtls/net_sockets.h"
 
+#include "errno.h"
+
 #define MBEDTLS_DEBUG_THRESHOLD 1
 
 /**
@@ -1019,15 +1021,15 @@ int32_t mbedtls_transport_send( NetworkContext_t * pxNetworkContext,
         switch( lLevel )
         {
         case 1:
-            pcFrLogLevel = "E";
+            pcFrLogLevel = "ERR";
             break;
         case 2:
         case 3:
-            pcFrLogLevel = "I";
+            pcFrLogLevel = "INF";
             break;
         case 4:
         default:
-            pcFrLogLevel = "D";
+            pcFrLogLevel = "DBG";
             break;
         }
         return pcFrLogLevel;

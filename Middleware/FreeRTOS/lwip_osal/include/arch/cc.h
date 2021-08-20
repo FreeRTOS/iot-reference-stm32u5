@@ -47,6 +47,8 @@
     #include <sys/time.h>
 #endif
 
+#include <stdint.h>
+
 #include "FreeRTOS.h"
 
 #ifndef BYTE_ORDER
@@ -65,18 +67,18 @@
     #pragma warning (disable: 4103) /* structure packing changed by including file */
 #endif
 
-#if !defined( LWIP_PROVIDE_ERRNO ) && !defined( LWIP_ERRNO_INCLUDE ) && !defined( LWIP_ERRNO_STDINCLUDE )
-    #define LWIP_PROVIDE_ERRNO
-#endif
+/* User errno from newlibc */
+#define LWIP_ERRNO_STDINCLUDE
 
 /* Define generic types used in lwIP */
 #define LWIP_NO_STDINT_H    1
-typedef unsigned char    u8_t;
-typedef signed char      s8_t;
-typedef unsigned short   u16_t;
-typedef signed short     s16_t;
-typedef unsigned long    u32_t;
-typedef signed long      s32_t;
+
+typedef uint8_t          u8_t;
+typedef int8_t           s8_t;
+typedef uint16_t         u16_t;
+typedef int16_t          s16_t;
+typedef uint32_t         u32_t;
+typedef int32_t          s32_t;
 
 typedef size_t           mem_ptr_t;
 typedef u32_t            sys_prot_t;
@@ -94,14 +96,7 @@ typedef u32_t            sys_prot_t;
 /* Compiler hints for packing structures */
 #define PACK_STRUCT_STRUCT    __attribute__( ( packed ) )
 
-//#ifndef LWIP_DEBUG_USE_PRINTF
-//    #define LWIP_LOGE( fmt, arg ... )    LogError( fmt, ## arg )
-//    #define LWIP_LOGW( fmt, arg ... )    LogWarn( fmt, ## arg )
-//    #define LWIP_LOGI( fmt, arg ... )    LogInfo( fmt, ## arg )
-//#endif
-
-//#define LWIP_PLATFORM_DIAG( message ) do { LogError( #message ); } while( 0 )
-#define LWIP_PLATFORM_DIAG( message )
+#define LWIP_PLATFORM_DIAG( message ) do { vLoggingPrintf( "L", NULL, 0, REMOVE_PARENS message ); } while( 0 )
 
 #define LWIP_PLATFORM_ASSERT( message ) \
     do { LogAssert( "Assertion \"%s\" failed.", message ); portDISABLE_INTERRUPTS(); while( 1 ) { __NOP(); } } while( 0 )
@@ -119,10 +114,7 @@ typedef u32_t            sys_prot_t;
     while( 0 )
 
 
-/* C runtime functions redefined */
-/*#define snprintf _snprintf //2015-07-22 Cheng Liu @132663 */
-
-u32_t dns_lookup_external_hosts_file( const char * name );
+extern UBaseType_t uxRand( void );
 
 #define LWIP_RAND()    ( ( u32_t ) uxRand() )
 

@@ -57,11 +57,6 @@
 			<locationURI>WORKSPACE_LOC/Drivers/CMSIS/Device/ST/STM32U5xx/Include</locationURI>
 		</link>
 		<link>
-			<name>Drivers/cmsis_rtos</name>
-			<type>2</type>
-			<locationURI>virtual:/virtual</locationURI>
-		</link>
-		<link>
 			<name>Drivers/stm32u5_mbedtls_accel</name>
 			<type>2</type>
 			<locationURI>WORKSPACE_LOC/Drivers/stm32u5_mbedtls_accel</locationURI>
@@ -75,26 +70,6 @@
 			<name>Libraries/lwip</name>
 			<type>2</type>
 			<locationURI>WORKSPACE_LOC/Middleware/lwip/src</locationURI>
-		</link>
-		<link>
-			<name>Drivers/cmsis_rtos/cmsis_os2.h</name>
-			<type>1</type>
-			<locationURI>WORKSPACE_LOC/Drivers/CMSIS/RTOS2/Include/cmsis_os2.h</locationURI>
-		</link>
-		<link>
-			<name>Drivers/cmsis_rtos/os_systick.c</name>
-			<type>1</type>
-			<locationURI>WORKSPACE_LOC/Drivers/CMSIS/RTOS2/Source/os_systick.c</locationURI>
-		</link>
-		<link>
-			<name>Drivers/cmsis_rtos/os_tick.h</name>
-			<type>1</type>
-			<locationURI>WORKSPACE_LOC/Drivers/CMSIS/RTOS2/Include/os_tick.h</locationURI>
-		</link>
-		<link>
-			<name>Drivers/cmsis_rtos/os_tick_ptim.c</name>
-			<type>1</type>
-			<locationURI>WORKSPACE_LOC/Drivers/CMSIS/RTOS2/Source/os_tick_ptim.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/FreeRTOS/backoff_algorithm.c</name>
@@ -157,11 +132,6 @@
 			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/corePKCS11/source/dependency/3rdparty/mbedtls_utils/mbedtls_utils.c</locationURI>
 		</link>
 		<link>
-			<name>Libraries/FreeRTOS/kernel/cmsis_freertos</name>
-			<type>2</type>
-			<locationURI>virtual:/virtual</locationURI>
-		</link>
-		<link>
 			<name>Libraries/FreeRTOS/kernel/event_groups.c</name>
 			<type>1</type>
 			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/kernel/event_groups.c</locationURI>
@@ -205,41 +175,6 @@
 			<name>Libraries/FreeRTOS/kernel/timers.c</name>
 			<type>1</type>
 			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/kernel/timers.c</locationURI>
-		</link>
-		<link>
-			<name>Libraries/FreeRTOS/kernel/cmsis_freertos/cmsis_os.h</name>
-			<type>1</type>
-			<locationURI>WORKSPACE_LOC/Drivers/CMSIS/RTOS2/FreeRTOS/Include1/cmsis_os.h</locationURI>
-		</link>
-		<link>
-			<name>Libraries/FreeRTOS/kernel/cmsis_freertos/cmsis_os1.c</name>
-			<type>1</type>
-			<locationURI>WORKSPACE_LOC/Drivers/CMSIS/RTOS2/FreeRTOS/Source/cmsis_os1.c</locationURI>
-		</link>
-		<link>
-			<name>Libraries/FreeRTOS/kernel/cmsis_freertos/cmsis_os2.c</name>
-			<type>1</type>
-			<locationURI>WORKSPACE_LOC/Drivers/CMSIS/RTOS2/FreeRTOS/Source/cmsis_os2.c</locationURI>
-		</link>
-		<link>
-			<name>Libraries/FreeRTOS/kernel/cmsis_freertos/freertos_evr.c</name>
-			<type>1</type>
-			<locationURI>WORKSPACE_LOC/Drivers/CMSIS/RTOS2/FreeRTOS/Source/freertos_evr.c</locationURI>
-		</link>
-		<link>
-			<name>Libraries/FreeRTOS/kernel/cmsis_freertos/freertos_evr.h</name>
-			<type>1</type>
-			<locationURI>WORKSPACE_LOC/Drivers/CMSIS/RTOS2/FreeRTOS/Include/freertos_evr.h</locationURI>
-		</link>
-		<link>
-			<name>Libraries/FreeRTOS/kernel/cmsis_freertos/freertos_mpool.h</name>
-			<type>1</type>
-			<locationURI>WORKSPACE_LOC/Drivers/CMSIS/RTOS2/FreeRTOS/Include/freertos_mpool.h</locationURI>
-		</link>
-		<link>
-			<name>Libraries/FreeRTOS/kernel/cmsis_freertos/freertos_os2.h</name>
-			<type>1</type>
-			<locationURI>WORKSPACE_LOC/Drivers/CMSIS/RTOS2/FreeRTOS/Include/freertos_os2.h</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>
