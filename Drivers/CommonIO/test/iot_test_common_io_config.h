@@ -29,8 +29,25 @@
 /* SPI includes */
 #include "iot_spi.h"
 
+/* UART includes */
+#include "stm32u5xx_hal.h"
+#include "stm32u5xx_hal_uart.h"
+
 /*------------------------UART-------------------------------*/
-#define IOT_TEST_COMMON_IO_UART_SUPPORTED     0
+#define IOT_TEST_COMMON_IO_UART_SUPPORTED                    0
+
+/* How many UART ports are being test. */
+#define UART_TEST_SET                                        1
+#define IOT_TEST_COMMON_IO_UART_SUPPORTED_CANCEL             1
+
+/* Instance ID 3 corresponds to UART4. */
+static const uint8_t uartTestPort[ UART_TEST_SET ] = { 3 };
+
+/* Following configurations are not being used for now. */
+static const uint32_t uartIotUartFlowControl[ UART_TEST_SET ] = { UART_HWCONTROL_NONE };
+static const uint32_t uartIotUartParity[ UART_TEST_SET ] = { UART_PARITY_NONE };
+static const uint32_t uartIotUartWordLength[ UART_TEST_SET ] = { UART_WORDLENGTH_8B };
+static const uint32_t uartIotUartStopBits[ UART_TEST_SET ] = { UART_STOPBITS_1 };
 
 /*------------------------SPI-------------------------------*/
 #define IOT_TEST_COMMON_IO_SPI_SUPPORTED      1
