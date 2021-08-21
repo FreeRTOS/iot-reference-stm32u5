@@ -377,6 +377,7 @@ int32_t iot_uart_read_sync( IotUARTHandle_t const pxUartPeripheral,
         if( xSemaphoreTake( pxUartPeripheral->xSemphr, pdMS_TO_TICKS( IOT_UART_BLOCKING_TIMEOUT ) ) == pdFALSE )
         {
             HAL_UART_Abort( pxUartPeripheral->pxHuart );
+            lError = IOT_UART_READ_FAILED;
         }
     }
 
