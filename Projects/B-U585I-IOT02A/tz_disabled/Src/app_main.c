@@ -32,30 +32,34 @@
 #include "net/mxchip/mx_netconn.h"
 #include "stm32u5xx_ll_rng.h"
 
+#include "cli.h"
+#include "lfs.h"
+#include "lfs_port.h"
+
 /* Initialize hardware / STM32 HAL library */
 static void hw_init( void )
 {
-	__HAL_RCC_SYSCFG_CLK_ENABLE();
+    __HAL_RCC_SYSCFG_CLK_ENABLE();
 
-	/*x`
-	 * Initializes flash interface and systick timer.
-	 * Note: HAL_Init calls HAL_MspInit.
-	 */
-	HAL_Init();
-	HAL_PWREx_EnableVddIO2();
+    /*x`
+     * Initializes flash interface and systick timer.
+     * Note: HAL_Init calls HAL_MspInit.
+     */
+    HAL_Init();
+    HAL_PWREx_EnableVddIO2();
 
-	/* System interrupt init*/
-	/* PendSV_IRQn interrupt configuration */
-	HAL_NVIC_SetPriority(PendSV_IRQn, 7, 0);
+    /* System interrupt init*/
+    /* PendSV_IRQn interrupt configuration */
+    HAL_NVIC_SetPriority(PendSV_IRQn, 7, 0);
 
-	/* Configure the system clock */
-	SystemClock_Config();
+    /* Configure the system clock */
+    SystemClock_Config();
 
-	/* initialize ICACHE peripheral (makes flash access faster) */
-	MX_ICACHE_Init();
+    /* initialize ICACHE peripheral (makes flash access faster) */
+    MX_ICACHE_Init();
 
-	/* Initialize GPIO */
-	MX_GPIO_Init();
+    /* Initialize GPIO */
+    MX_GPIO_Init();
 
     MX_RTC_Init();
 
@@ -64,45 +68,69 @@ static void hw_init( void )
     HAL_SPI_RegisterCallback( &hspi2, HAL_SPI_MSPINIT_CB_ID, &HAL_SPI_MspInit );
 
     MX_GPDMA1_Init();
-	MX_SPI2_Init();
+    MX_SPI2_Init();
 
-	/* Initialize crypto accelerators */
-	MX_HASH_Init();
+    /* Initialize crypto accelerators */
+    MX_HASH_Init();
     MX_RNG_Init();
     MX_PKA_Init();
 
 
 }
 
+static int fs_init( void )
+{
+    lfs_t * pLFS = lfs_port_get_fs_handle();
+    struct lfs_config * pCfg = lfs_port_get_config();
+
+    // mount the filesystem
+    int err = lfs_mount(pLFS, pCfg);
+
+    // format if we can't mount the filesystem
+    // this should only happen on the first boot
+    if (err) {
+        LogError( "Failed to mount partition. Formatting..." );
+        lfs_format(pLFS, pCfg);
+        err = lfs_mount(pLFS, pCfg);
+    }
+
+    return err;
+}
+
 static void vHeartbeatTask( void * pvParameters )
 {
-	( void ) pvParameters;
-	while(1)
-	{
-		LogSys( "Idle priority heartbeat." );
-		vTaskDelay( pdMS_TO_TICKS( 10 * 1000 ) );
-	}
+    ( void ) pvParameters;
+    while(1)
+    {
+        LogSys( "Idle priority heartbeat." );
+        vTaskDelay( pdMS_TO_TICKS( 10 * 1000 ) );
+    }
 }
 
 extern void vStartMQTTAgentDemo( void );
 
 int main( void )
 {
-	hw_init();
+    hw_init();
 
-	vLoggingInit();
+    vLoggingInit();
 
-	LogInfo(("HW Init Complete."));
+    LogInfo(("HW Init Complete."));
 
-	BaseType_t xResult;
+    /* Initialize filesystem */
+    int xMountStatus = fs_init();
+    configASSERT( xMountStatus == LFS_ERR_OK );
+    LogInfo( "Filesystem initialized" );
+
+    BaseType_t xResult;
 
     /* Initialize threads */
 
-	xResult = xTaskCreate( vHeartbeatTask, "Heartbeat", 1024, NULL, tskIDLE_PRIORITY, NULL );
+    xResult = xTaskCreate( vHeartbeatTask, "Heartbeat", 1024, NULL, tskIDLE_PRIORITY, NULL );
 
-	configASSERT( xResult == pdTRUE );
+    configASSERT( xResult == pdTRUE );
 
-	xResult = xTaskCreate( &net_main, "MxNet", 2 * 4096, NULL, 23, NULL );
+    xResult = xTaskCreate( &net_main, "MxNet", 2 * 4096, NULL, 23, NULL );
 
     configASSERT( xResult == pdTRUE );
 
@@ -113,11 +141,11 @@ int main( void )
 
     LogError(("Kernel start returned."));
 
-	/* This loop should be inaccessible.*/
-	while(1)
-	{
-	    __NOP();
-	}
+    /* This loop should be inaccessible.*/
+    while(1)
+    {
+        __NOP();
+    }
 }
 
 UBaseType_t uxRand( void )

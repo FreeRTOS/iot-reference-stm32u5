@@ -9,6 +9,8 @@
 
 struct lfs_config const * lfs_port_get_config( void );
 
+lfs_t * lfs_port_get_fs_handle( void );
+
 // Read a region in a block. Negative error codes are propogated
 // to the user.
 int lfs_port_bd_read( const struct lfs_config *c, lfs_block_t block,

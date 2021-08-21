@@ -43,11 +43,18 @@ static const struct lfs_config cfg =
 	.block_cycles = 500
 };
 
+static lfs_t lfs = { 0 };
+
 
 
 struct lfs_config const * lfs_port_get_config( void )
 {
 	return &cfg;
+}
+
+lfs_t * lfs_port_get_fs_handle( void )
+{
+	return &lfs;
 }
 
 int lfs_port_bd_read( const struct lfs_config *c, lfs_block_t block,
