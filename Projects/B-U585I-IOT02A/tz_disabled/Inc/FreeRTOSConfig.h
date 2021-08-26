@@ -173,5 +173,8 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 
 #include "stack_macros.h"
 
+#define configAPPLICATION_PROVIDES_cOutputBuffer 1
+#define configCOMMAND_INT_MAX_OUTPUT_SIZE 128
+
 
 #endif /* FREERTOS_CONFIG_H */

@@ -82,6 +82,16 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
+			<name>Libraries/FreeRTOS-Plus-CLI</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/Distro/FreeRTOS-Plus/Source/FreeRTOS-Plus-CLI</locationURI>
+		</link>
+		<link>
+			<name>Libraries/LittleFS</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Middleware/3rdparty/LittleFS</locationURI>
+		</link>
+		<link>
 			<name>Libraries/lwip</name>
 			<type>2</type>
 			<locationURI>WORKSPACE_LOC/Middleware/lwip/src</locationURI>

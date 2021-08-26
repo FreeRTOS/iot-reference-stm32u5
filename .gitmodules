@@ -64,3 +64,9 @@
 [submodule "Middleware/lwip"]
 	path = Middleware/lwip
 	url = https://github.com/lwip-tcpip/lwip.git
+[submodule "Middleware/3rdparty/LittleFS"]
+	path = Middleware/3rdparty/LittleFS
+	url = git@github.com:littlefs-project/littlefs.git
+[submodule "Middleware/FreeRTOS/Distro"]
+	path = Middleware/FreeRTOS/Distro
+	url = git@github.com:FreeRTOS/FreeRTOS.git
