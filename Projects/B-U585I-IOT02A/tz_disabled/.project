@@ -42,6 +42,11 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
+			<name>Drivers/BSP</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Drivers/BSP</locationURI>
+		</link>
+		<link>
 			<name>Drivers/CommonIO</name>
 			<type>2</type>
 			<locationURI>WORKSPACE_LOC/Drivers/CommonIO</locationURI>
@@ -75,6 +80,11 @@
 			<name>Libraries/FreeRTOS</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>Libraries/LittleFS</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Middleware/ARM/littlefs</locationURI>
 		</link>
 		<link>
 			<name>Libraries/lwip</name>
@@ -125,6 +135,11 @@
 			<name>Libraries/FreeRTOS/lwip_osal</name>
 			<type>2</type>
 			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/lwip_osal</locationURI>
+		</link>
+		<link>
+			<name>Libraries/FreeRTOS/plus_cli</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/plus_cli</locationURI>
 		</link>
 		<link>
 			<name>Libraries/FreeRTOS/crypto/core_pkcs11.c</name>

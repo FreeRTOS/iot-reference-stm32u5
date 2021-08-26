@@ -29,10 +29,10 @@
 
 /* Standard Include. */
 #include <stdio.h>
+#include "iot_uart.h"
 
 /* Include header for logging level macros. */
 #include "logging_levels.h"
-// #include "iot_uart.h"
 
 /* Default logging config */
 #if( !defined( LOGGING_OUTPUT_UART ) && !defined( LOGGING_OUTPUT_ITM ) && !defined( LOGGING_OUTPUT_NONE ) )
@@ -55,7 +55,7 @@ void vLoggingPrintf( const char * const     pcLogLevel,
 void vLoggingInit( void );
 void vLoggingDeInit( void );
 void vDyingGasp( void );
-// IotUARTHandle_t xLoggingGetIOHandle( void );
+IotUARTHandle_t xLoggingGetIOHandle( void );
 
 /* task.h cannot be included here because this file is included by FreeRTOSConfig.h */
 extern void vTaskSuspendAll( void );

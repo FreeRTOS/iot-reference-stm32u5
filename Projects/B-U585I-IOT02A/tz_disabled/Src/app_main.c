@@ -34,8 +34,7 @@
 
 #include "cli.h"
 #include "lfs.h"
-//#include "lfs_port.h"
-
+#include "lfs_port.h"
 /* Initialize hardware / STM32 HAL library */
 static void hw_init( void )
 {
@@ -78,22 +77,21 @@ static void hw_init( void )
 
 static int fs_init( void )
 {
-//    lfs_t * pLFS = lfs_port_get_fs_handle();
-//    struct lfs_config * pCfg = lfs_port_get_config();
-//
-//    // mount the filesystem
-//    int err = lfs_mount(pLFS, pCfg);
-//
-//    // format if we can't mount the filesystem
-//    // this should only happen on the first boot
-//    if (err) {
-//        LogError( "Failed to mount partition. Formatting..." );
-//        lfs_format(pLFS, pCfg);
-//        err = lfs_mount(pLFS, pCfg);
-//    }
-//
-//    return err;
-    return 0;
+	lfs_t * pLFS = lfs_port_get_fs_handle();
+	struct lfs_config * pCfg = lfs_port_get_config();
+
+    // mount the filesystem
+    int err = lfs_mount(pLFS, pCfg);
+
+    // reformat if we can't mount the filesystem
+    // this should only happen on the first boot
+    if (err) {
+    	printf("Failed to mount partition. Reformatting...\n");
+        lfs_format(pLFS, pCfg);
+        err = lfs_mount(pLFS, pCfg);
+    }
+
+    return err;
 }
 
 static void vHeartbeatTask( void * pvParameters )
@@ -117,10 +115,11 @@ int main( void )
 
     LogInfo(("HW Init Complete."));
 
-    /* Initialize filesystem */
-    int xMountStatus = fs_init();
-    configASSERT( xMountStatus == LFS_ERR_OK );
-    LogInfo( "Filesystem initialized" );
+	int xMountStatus = fs_init();
+
+	configASSERT( xMountStatus == LFS_ERR_OK );
+
+	LogInfo(("File System mounted."));
 
     BaseType_t xResult;
 
@@ -131,6 +130,10 @@ int main( void )
     configASSERT( xResult == pdTRUE );
 
     xResult = xTaskCreate( &net_main, "MxNet", 2 * 4096, NULL, 23, NULL );
+
+    configASSERT( xResult == pdTRUE );
+
+    xResult = xTaskCreate( Task_CLI, "cli", 4096, NULL, tskIDLE_PRIORITY + 2, NULL );
 
     configASSERT( xResult == pdTRUE );
 

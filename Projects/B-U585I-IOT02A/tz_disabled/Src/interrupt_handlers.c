@@ -123,11 +123,6 @@ void SPI2_IRQHandler(void)
   HAL_SPI_IRQHandler(&hspi2);
 }
 
-void USART1_IRQHandler(void)
-{
-  HAL_UART_IRQHandler(&huart1);
-}
-
 extern void SysTick_Handler( void );
 
 void _SysTick_Handler( void )
