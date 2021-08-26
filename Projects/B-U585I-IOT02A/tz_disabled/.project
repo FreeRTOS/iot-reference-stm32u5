@@ -42,6 +42,11 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
+			<name>Drivers/BSP</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Drivers/BSP</locationURI>
+		</link>
+		<link>
 			<name>Drivers/CommonIO</name>
 			<type>2</type>
 			<locationURI>WORKSPACE_LOC/Drivers/CommonIO</locationURI>

@@ -565,43 +565,40 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
   RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
-  if(huart->Instance==USART1)
-  {
-  /* USER CODE BEGIN USART1_MspInit 0 */
 
-  /* USER CODE END USART1_MspInit 0 */
+  if( huart->Instance == UART4 )
+  {
   /** Initializes the peripherals clock
   */
-    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1;
-    PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
-    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
-    {
-      Error_Handler();
-    }
 
-    /* Peripheral clock enable */
-    __HAL_RCC_USART1_CLK_ENABLE();
+	PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_UART4;
+	PeriphClkInit.Uart4ClockSelection = RCC_UART4CLKSOURCE_PCLK1;
+	if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
+	{
+	  Error_Handler();
+	}
 
-    __HAL_RCC_GPIOA_CLK_ENABLE();
-    /**USART1 GPIO Configuration
-    PA10     ------> USART1_RX
-    PA9     ------> USART1_TX
-    */
-    GPIO_InitStruct.Pin = GPIO_PIN_10|GPIO_PIN_9;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    GPIO_InitStruct.Alternate = GPIO_AF7_USART1;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-    /* USART1 interrupt Init */
-    HAL_NVIC_SetPriority(USART1_IRQn, 5, 1);
-    HAL_NVIC_EnableIRQ(USART1_IRQn);
-  /* USER CODE BEGIN USART1_MspInit 1 */
+	/* Peripheral clock enable */
+	__HAL_RCC_UART4_CLK_ENABLE();
 
-  /* USER CODE END USART1_MspInit 1 */
+	__HAL_RCC_GPIOC_CLK_ENABLE();
+
+	/** GPIO Configuration (Route to Arduino RX/TX Connector
+		RX: PC11
+		TX: PC10
+	*/
+	GPIO_InitStruct.Pin = GPIO_PIN_10 | GPIO_PIN_11;
+	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+	GPIO_InitStruct.Alternate = GPIO_AF8_UART4;
+	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+	/* Interrupt Init */
+	HAL_NVIC_SetPriority(UART4_IRQn, 2, 0);
+	HAL_NVIC_EnableIRQ(UART4_IRQn);
   }
-
 }
 
 /**
