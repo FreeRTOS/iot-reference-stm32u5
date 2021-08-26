@@ -32,6 +32,8 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "FreeRTOS.h"
+#include "semphr.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -57,6 +59,7 @@ void SystemClock_Config(void);
 void GPIO_EXTI_Register_Callback( uint16_t usGpioPinMask,
                                   GPIOInterruptCallback_t pvCallback,
                                   void * pvContext );
+SemaphoreHandle_t xHwMutexI2C2;
 
 /* USER CODE END EFP */
 
