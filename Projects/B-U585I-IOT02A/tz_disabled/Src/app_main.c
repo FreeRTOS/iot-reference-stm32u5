@@ -136,6 +136,8 @@ int main( void )
 
     vStartMQTTAgentDemo();
 
+    vStartSensorPublishTask();
+
     xHwMutexI2C2 = xSemaphoreCreateMutex();
 
     /* Start scheduler */

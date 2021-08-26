@@ -87,7 +87,7 @@
  * @brief Size of statically allocated buffers for holding topic names and
  * payloads.
  */
-#define mqttexampleSTRING_BUFFER_LENGTH                   ( 100 )
+#define MQTT_PUBLISH_MAX_LEN                   ( 100 )
 
 /**
  * @brief Delay for each task between publishes.
@@ -136,8 +136,8 @@ struct MQTTAgentCommandContext
  * @param[in] pxCommandContext Context of the initial command.
  * @param[in].xReturnStatus The result of the command.
  */
-static void prvSubscribeCommandCallback( void * pxCommandContext,
-                                         MQTTAgentReturnInfo_t * pxReturnInfo );
+ static void prvSubscribeCommandCallback( MQTTAgentCommandContext_t * pxCommandContext,
+                                          MQTTAgentReturnInfo_t * pxReturnInfo );
 
 /**
  * @brief Passed into MQTTAgent_Publish() as the callback to execute when the
@@ -218,7 +218,7 @@ extern MQTTAgentContext_t xGlobalMqttAgentContext;
  *
  * @note The topic strings must persist until unsubscribed.
  */
-static char topicBuf[ democonfigNUM_SIMPLE_SUB_PUB_TASKS_TO_CREATE ][ mqttexampleSTRING_BUFFER_LENGTH ];
+static char topicBuf[ democonfigNUM_SIMPLE_SUB_PUB_TASKS_TO_CREATE ][ MQTT_PUBLISH_MAX_LEN ];
 
 /*-----------------------------------------------------------*/
 
@@ -268,7 +268,7 @@ static void prvPublishCommandCallback( MQTTAgentCommandContext_t * pxCommandCont
 
 /*-----------------------------------------------------------*/
 
-static void prvSubscribeCommandCallback( void * pxCommandContext,
+static void prvSubscribeCommandCallback( MQTTAgentCommandContext_t * pxCommandContext,
                                          MQTTAgentReturnInfo_t * pxReturnInfo )
 {
     bool xSubscriptionAdded = false;
@@ -326,21 +326,21 @@ static BaseType_t prvWaitForCommandAcknowledgment( uint32_t * pulNotifiedValue )
 static void prvIncomingPublishCallback( void * pvIncomingPublishCallbackContext,
                                         MQTTPublishInfo_t * pxPublishInfo )
 {
-    static char cTerminatedString[ mqttexampleSTRING_BUFFER_LENGTH ];
+    static char cTerminatedString[ MQTT_PUBLISH_MAX_LEN ];
 
     ( void ) pvIncomingPublishCallbackContext;
 
     /* Create a message that contains the incoming MQTT payload to the logger,
      * terminating the string first. */
-    if( pxPublishInfo->payloadLength < mqttexampleSTRING_BUFFER_LENGTH )
+    if( pxPublishInfo->payloadLength < MQTT_PUBLISH_MAX_LEN )
     {
         memcpy( ( void * ) cTerminatedString, pxPublishInfo->pPayload, pxPublishInfo->payloadLength );
         cTerminatedString[ pxPublishInfo->payloadLength ] = 0x00;
     }
     else
     {
-        memcpy( ( void * ) cTerminatedString, pxPublishInfo->pPayload, mqttexampleSTRING_BUFFER_LENGTH );
-        cTerminatedString[ mqttexampleSTRING_BUFFER_LENGTH - 1 ] = 0x00;
+        memcpy( ( void * ) cTerminatedString, pxPublishInfo->pPayload, MQTT_PUBLISH_MAX_LEN );
+        cTerminatedString[ MQTT_PUBLISH_MAX_LEN - 1 ] = 0x00;
     }
 
     LogInfo( ( "Received incoming publish message %s", cTerminatedString ) );
@@ -353,12 +353,13 @@ static bool prvSubscribeToTopic( MQTTQoS_t xQoS,
 {
     MQTTStatus_t xCommandAdded;
     BaseType_t xCommandAcknowledged = pdFALSE;
-    uint32_t ulSubscribeMessageID;
     MQTTAgentSubscribeArgs_t xSubscribeArgs;
     MQTTSubscribeInfo_t xSubscribeInfo;
     static int32_t ulNextSubscribeMessageID = 0;
+    int32_t ulSubscribeMessageID = 0;
     MQTTAgentCommandContext_t xApplicationDefinedContext = { 0 };
     MQTTAgentCommandInfo_t xCommandParams = { 0 };
+
 
     /* Create a unique number of the subscribe that is about to be sent.  The number
      * is used as the command context and is sent back to this task as a notification
@@ -436,8 +437,8 @@ static void prvSimpleSubscribePublishTask( void * pvParameters )
 {
     extern UBaseType_t uxRand( void );
     MQTTPublishInfo_t xPublishInfo = { 0 };
-    char payloadBuf[ mqttexampleSTRING_BUFFER_LENGTH ];
-    char taskName[ mqttexampleSTRING_BUFFER_LENGTH ];
+    char payloadBuf[ MQTT_PUBLISH_MAX_LEN ];
+    char taskName[ MQTT_PUBLISH_MAX_LEN ];
     MQTTAgentCommandContext_t xCommandContext;
     uint32_t ulNotification = 0U, ulValueToNotify = 0UL;
     MQTTStatus_t xCommandAdded;
@@ -453,10 +454,10 @@ static void prvSimpleSubscribePublishTask( void * pvParameters )
 
     /* Create a unique name for this task from the task number that is passed into
      * the task using the task's parameter. */
-    snprintf( taskName, mqttexampleSTRING_BUFFER_LENGTH, "Publisher%d", ( int ) ulTaskNumber );
+    snprintf( taskName, MQTT_PUBLISH_MAX_LEN, "Publisher%d", ( int ) ulTaskNumber );
 
     /* Create a topic name for this task to publish to. */
-    snprintf( pcTopicBuffer, mqttexampleSTRING_BUFFER_LENGTH, "/filter/%s", taskName );
+    snprintf( pcTopicBuffer, MQTT_PUBLISH_MAX_LEN, "/filter/%s", taskName );
 
     /* Subscribe to the same topic to which this task will publish.  That will
      * result in each published message being published from the server back to
@@ -486,7 +487,7 @@ static void prvSimpleSubscribePublishTask( void * pvParameters )
         /* Create a payload to send with the publish message.  This contains
          * the task name and an incrementing number. */
         snprintf( payloadBuf,
-                  mqttexampleSTRING_BUFFER_LENGTH,
+                  MQTT_PUBLISH_MAX_LEN,
                   "%s publishing message %d",
                   taskName,
                   ( int ) ulValueToNotify );

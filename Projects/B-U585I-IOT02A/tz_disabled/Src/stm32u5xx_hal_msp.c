@@ -157,73 +157,18 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* hi2c)
     GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF4_I2C2;
     HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
 
     /* Peripheral clock enable */
     __HAL_RCC_I2C2_CLK_ENABLE();
 
-    /* I2C2 DMA Init */
-    /* GPDMA1_REQUEST_I2C2_TX Init */
-    handle_GPDMA1_Channel7.Instance = GPDMA1_Channel7;
-    handle_GPDMA1_Channel7.Init.Request = GPDMA1_REQUEST_I2C2_TX;
-    handle_GPDMA1_Channel7.Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
-    handle_GPDMA1_Channel7.Init.Direction = DMA_MEMORY_TO_PERIPH;
-    handle_GPDMA1_Channel7.Init.SrcInc = DMA_SINC_INCREMENTED;
-    handle_GPDMA1_Channel7.Init.DestInc = DMA_DINC_FIXED;
-    handle_GPDMA1_Channel7.Init.SrcDataWidth = DMA_SRC_DATAWIDTH_BYTE;
-    handle_GPDMA1_Channel7.Init.DestDataWidth = DMA_DEST_DATAWIDTH_BYTE;
-    handle_GPDMA1_Channel7.Init.Priority = DMA_LOW_PRIORITY_MID_WEIGHT;
-    handle_GPDMA1_Channel7.Init.SrcBurstLength = 1;
-    handle_GPDMA1_Channel7.Init.DestBurstLength = 1;
-    handle_GPDMA1_Channel7.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0|DMA_DEST_ALLOCATED_PORT1;
-    handle_GPDMA1_Channel7.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
-    handle_GPDMA1_Channel7.Init.Mode = DMA_NORMAL;
-    if (HAL_DMA_Init(&handle_GPDMA1_Channel7) != HAL_OK)
-    {
-      Error_Handler();
-    }
-
-    __HAL_LINKDMA(hi2c, hdmatx, handle_GPDMA1_Channel7);
-
-    if (HAL_DMA_ConfigChannelAttributes(&handle_GPDMA1_Channel7, DMA_CHANNEL_NPRIV) != HAL_OK)
-    {
-      Error_Handler();
-    }
-
-    /* GPDMA1_REQUEST_I2C2_RX Init */
-    handle_GPDMA1_Channel6.Instance = GPDMA1_Channel6;
-    handle_GPDMA1_Channel6.Init.Request = GPDMA1_REQUEST_I2C2_RX;
-    handle_GPDMA1_Channel6.Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
-    handle_GPDMA1_Channel6.Init.Direction = DMA_PERIPH_TO_MEMORY;
-    handle_GPDMA1_Channel6.Init.SrcInc = DMA_SINC_FIXED;
-    handle_GPDMA1_Channel6.Init.DestInc = DMA_DINC_INCREMENTED;
-    handle_GPDMA1_Channel6.Init.SrcDataWidth = DMA_SRC_DATAWIDTH_BYTE;
-    handle_GPDMA1_Channel6.Init.DestDataWidth = DMA_DEST_DATAWIDTH_BYTE;
-    handle_GPDMA1_Channel6.Init.Priority = DMA_LOW_PRIORITY_MID_WEIGHT;
-    handle_GPDMA1_Channel6.Init.SrcBurstLength = 1;
-    handle_GPDMA1_Channel6.Init.DestBurstLength = 1;
-    handle_GPDMA1_Channel6.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0|DMA_DEST_ALLOCATED_PORT1;
-    handle_GPDMA1_Channel6.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
-    handle_GPDMA1_Channel6.Init.Mode = DMA_NORMAL;
-    if (HAL_DMA_Init(&handle_GPDMA1_Channel6) != HAL_OK)
-    {
-      Error_Handler();
-    }
-
-    __HAL_LINKDMA(hi2c, hdmarx, handle_GPDMA1_Channel6);
-
-    if (HAL_DMA_ConfigChannelAttributes(&handle_GPDMA1_Channel6, DMA_CHANNEL_NPRIV) != HAL_OK)
-    {
-      Error_Handler();
-    }
 
   /* USER CODE BEGIN I2C2_MspInit 1 */
 
   /* USER CODE END I2C2_MspInit 1 */
   }
-
 }
 
 /**
@@ -250,14 +195,10 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* hi2c)
 
     HAL_GPIO_DeInit(GPIOH, GPIO_PIN_5);
 
-    /* I2C2 DMA DeInit */
-    HAL_DMA_DeInit(hi2c->hdmatx);
-    HAL_DMA_DeInit(hi2c->hdmarx);
   /* USER CODE BEGIN I2C2_MspDeInit 1 */
 
   /* USER CODE END I2C2_MspDeInit 1 */
   }
-
 }
 
 /**

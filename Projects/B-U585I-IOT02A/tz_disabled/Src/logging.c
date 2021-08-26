@@ -43,7 +43,7 @@
 /*-----------------------------------------------------------*/
 
 /* Dimensions the arrays into which print messages are created. */
-#define dlMAX_PRINT_STRING_LENGTH       256     /* maximum length of any single log line */
+#define dlMAX_PRINT_STRING_LENGTH       512     /* maximum length of any single log line */
 #define dlLOGGING_STREAM_LENGTH         4096    /* how many bytes to accept for logging before blocking */
 #define dlLOGGING_HW_FIFO_LENGTH        8       /* How many bytes at a time can be inserted into the hardware fifo */
 #define LOGGING_LINE_ENDING             "\r\n"

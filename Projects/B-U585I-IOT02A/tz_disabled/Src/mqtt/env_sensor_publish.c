@@ -62,10 +62,10 @@
  * @brief Size of statically allocated buffers for holding topic names and
  * payloads.
  */
-#define MQTT_PUBLISH_MAX_LEN              ( 100 )
+#define MQTT_PUBLISH_MAX_LEN              ( 256 )
 #define MQTT_PUBLISH_FREQUENCY_HZ         ( 1 )
 #define MQTT_PUBLISH_TOPIC                "/stm32u5/env_sensor_data"
-#define MQTT_PUBLISH_BLOCK_TIME_MS        ( 500 )
+#define MQTT_PUBLISH_BLOCK_TIME_MS        ( 2000 )
 #define MQTT_NOTIFY_IDX                   ( 1 )
 #define MQTT_PUBLISH_QOS                  ( 0 )
 
@@ -120,6 +120,8 @@ static void prvPublishCommandCallback( MQTTAgentCommandContext_t * pxCommandCont
     configASSERT( pxCommandContext != NULL );
     configASSERT( pxReturnInfo != NULL );
 
+    pxCommandContext->xReturnStatus = pxReturnInfo->returnCode;
+
     if( pxCommandContext->xTaskToNotify != NULL )
     {
         /* Send the context's ulNotificationValue as the notification value so
@@ -136,8 +138,8 @@ static BaseType_t prvPublishAndWaitForAck( const char * pcTopic,
                                            const void * pvPublishData,
                                            size_t xPublishDataLen )
 {
-    MQTTStatus_t xStatus = 0xFFFFFFFF;
     BaseType_t xResult = pdFALSE;
+    MQTTStatus_t xStatus;
 
     configASSERT( pcTopic != NULL );
     configASSERT( pvPublishData != NULL );
@@ -167,28 +169,34 @@ static BaseType_t prvPublishAndWaitForAck( const char * pcTopic,
         .pCmdCompleteCallbackContext =  &xCommandContext
     };
 
-
-
     /* Clear the notification index */
     xStatus = MQTTAgent_Publish( &xGlobalMqttAgentContext,
                                  &xPublishInfo,
                                  &xCommandParams );
 
-    xResult = ulTaskNotifyTakeIndexed( MQTT_NOTIFY_IDX,
-                                       pdTRUE,
-                                       pdMS_TO_TICKS( MQTT_PUBLISH_BLOCK_TIME_MS ) );
+    if( xStatus == MQTTSuccess )
+    {
+        xResult = ulTaskNotifyTakeIndexed( MQTT_NOTIFY_IDX,
+                                           pdTRUE,
+                                           pdMS_TO_TICKS( MQTT_PUBLISH_BLOCK_TIME_MS ) );
 
-    if( xResult == 0 )
-    {
-        LogError( "Timed out while waiting for publish ACK or Sent event. xTimeout = %d",
-                  pdMS_TO_TICKS( MQTT_PUBLISH_BLOCK_TIME_MS ) );
-        xResult = pdFALSE;
+        if( xResult == 0 )
+        {
+            LogError( "Timed out while waiting for publish ACK or Sent event. xTimeout = %d",
+                      pdMS_TO_TICKS( MQTT_PUBLISH_BLOCK_TIME_MS ) );
+            xResult = pdFALSE;
+        }
+        else if( xCommandContext.xReturnStatus != MQTTSuccess )
+        {
+            LogError( "MQTT Agent returned error code: %d during publish operation.",
+                      xCommandContext.xReturnStatus );
+            xResult = pdFALSE;
+        }
     }
-    else if( xCommandContext.xReturnStatus != MQTTSuccess )
+    else
     {
-        LogError( "MQTT Agent returned error code: %d during publish operation.",
-                  xCommandContext.xReturnStatus );
-        xResult = pdFALSE;
+        LogError( "MQTTAgent_Publish returned error code: %d.",
+                  xStatus );
     }
 
     return xResult;
@@ -254,7 +262,6 @@ extern UBaseType_t uxRand( void );
 
 static void prvSensorPublishTask( void * pvParameters )
 {
-
     (void) pvParameters;
     BaseType_t xResult = pdFALSE;
     BaseType_t xExitFlag = pdFALSE;
@@ -266,6 +273,11 @@ static void prvSensorPublishTask( void * pvParameters )
     {
         LogError("Error while initializing environmental sensors.");
         vTaskDelete( NULL );
+    }
+
+    while( xGlobalMqttAgentContext.mqttContext.connectStatus != MQTTConnected )
+    {
+        vTaskDelay(10 * 1000);
     }
 
     while( xExitFlag == pdFALSE )
@@ -285,7 +297,7 @@ static void prvSensorPublishTask( void * pvParameters )
             /* Write to */
             bytesWritten = snprintf( payloadBuf,
                                      MQTT_PUBLISH_MAX_LEN,
-                                     "{ \"temperature0\": %f, \"humidity\": %f, \"temperature1\": %f, \"baro_pressure\": %f }",
+                                     "{ \"temperature0_deg_c\": %f, \"humidity\": %f, \"temperature1_deg_c\": %f, \"baro_pressure_mbar\": %f }",
                                      xEnvData.fTemperature0,
                                      xEnvData.fHumidity,
                                      xEnvData.fTemperature1,
@@ -296,6 +308,15 @@ static void prvSensorPublishTask( void * pvParameters )
                 xResult = prvPublishAndWaitForAck( MQTT_PUBLISH_TOPIC,
                                                    payloadBuf,
                                                    bytesWritten );
+            }
+            else
+            {
+                LogError("Not enough buffer space.");
+            }
+
+            if( xResult == pdTRUE )
+            {
+                LogDebug("Published sensor data: %s", payloadBuf );
             }
         }
         else
@@ -308,6 +329,7 @@ static void prvSensorPublishTask( void * pvParameters )
         {
             /* Wait until its time to poll the sensors again */
             vTaskDelay( xTicksToWait );
+            LogDebug( "Slept for %d seconds.", xTicksToWait );
         }
     }
 }

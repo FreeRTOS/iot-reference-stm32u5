@@ -46,7 +46,7 @@
 #define democonfigLARGE_MESSAGE_SUB_PUB_TASK_STACK_SIZE    ( configMINIMAL_STACK_SIZE )
 
 #define democonfigNUM_SIMPLE_SUB_PUB_TASKS_TO_CREATE       1
-#define democonfigSIMPLE_SUB_PUB_TASK_STACK_SIZE           ( configMINIMAL_STACK_SIZE )
+#define democonfigSIMPLE_SUB_PUB_TASK_STACK_SIZE           ( 2048 )
 
 #define democonfigCREATE_CODE_SIGNING_OTA_DEMO             0
 #define democonfigCODE_SIGNING_OTA_TASK_STACK_SIZE         ( configMINIMAL_STACK_SIZE )
@@ -78,7 +78,19 @@
  *
  * #define democonfigROOT_CA_PEM    "...insert here..."
  */
-#define democonfigROOT_CA_PEM                              "-----BEGIN CERTIFICATE-----\n"
+#define democonfigROOT_CA_PEM                              "-----BEGIN CERTIFICATE-----\n\
+MIIBtjCCAVugAwIBAgITBmyf1XSXNmY/Owua2eiedgPySjAKBggqhkjOPQQDAjA5\n\
+MQswCQYDVQQGEwJVUzEPMA0GA1UEChMGQW1hem9uMRkwFwYDVQQDExBBbWF6b24g\n\
+Um9vdCBDQSAzMB4XDTE1MDUyNjAwMDAwMFoXDTQwMDUyNjAwMDAwMFowOTELMAkG\n\
+A1UEBhMCVVMxDzANBgNVBAoTBkFtYXpvbjEZMBcGA1UEAxMQQW1hem9uIFJvb3Qg\n\
+Q0EgMzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABCmXp8ZBf8ANm+gBG1bG8lKl\n\
+ui2yEujSLtf6ycXYqm0fc4E7O5hrOXwzpcVOho6AF2hiRVd9RFgdszflZwjrZt6j\n\
+QjBAMA8GA1UdEwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQDAgGGMB0GA1UdDgQWBBSr\n\
+ttvXBp43rDCGB5Fwx5zEGbF4wDAKBggqhkjOPQQDAgNJADBGAiEA4IWSoxe3jfkr\n\
+BqWTrBqYaGFy+uGh0PsceGCmQ5nFuMQCIQCcAu/xlJyzlvnrxir4tiz+OpAUFteM\n\
+YyRIHN8wfdVoOw==\n\
+-----END CERTIFICATE-----"
+
 /**
  * @brief Client certificate.
  *
@@ -95,7 +107,26 @@
  *
  * #define democonfigCLIENT_CERTIFICATE_PEM    "...insert here..."
  */
-#define democonfigCLIENT_CERTIFICATE_PEM                   "-----BEGIN CERTIFICATE-----\n"
+#define democonfigCLIENT_CERTIFICATE_PEM                   "-----BEGIN CERTIFICATE-----\n\
+MIIDWTCCAkGgAwIBAgIUSMYbzEptnfB4dbPP3VQE2St0jC4wDQYJKoZIhvcNAQEL\n\
+BQAwTTFLMEkGA1UECwxCQW1hem9uIFdlYiBTZXJ2aWNlcyBPPUFtYXpvbi5jb20g\n\
+SW5jLiBMPVNlYXR0bGUgU1Q9V2FzaGluZ3RvbiBDPVVTMB4XDTIxMDcyNzIzMDMx\n\
+OFoXDTQ5MTIzMTIzNTk1OVowHjEcMBoGA1UEAwwTQVdTIElvVCBDZXJ0aWZpY2F0\n\
+ZTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKTrTumXyNDHFF/qsLci\n\
+25OhdpM/BSkDiB+ZO9AZViY9hnMfB7OXqtLTpB6a+WOLZwWcHtTbhiI+bZyZqRrq\n\
+8xau1L7xtEqZlNRMXheWqNkvWJVYilmCGN4xmOTfv882f7jQbL4yOVyjuP2ROoDc\n\
+rl2ofE4UCIJWxDZNDIUWwBrhC8/6IXjBLKBMtvjAYReIRZatOBvGUR7++TYLgcL8\n\
+3+g+B1ybqJ/Vxvsr1ygUapHWxkZj6t9E/YrtoxmZoF51M+kcPq9WEtHxVDxlZg8j\n\
+WgCzkwqn+XbswegiX6ocXYbf70o2VomPLjvYo/pJtL71/DAxBLb1iohN0wn2/lSi\n\
+AR0CAwEAAaNgMF4wHwYDVR0jBBgwFoAUMk6pVM44agDHU3tDQv5aK0crrhowHQYD\n\
+VR0OBBYEFP8hfnVldwP0PxhgPGIpZ7gVEMTJMAwGA1UdEwEB/wQCMAAwDgYDVR0P\n\
+AQH/BAQDAgeAMA0GCSqGSIb3DQEBCwUAA4IBAQDObemaWkGFsAP+ymgLSWWMFXbO\n\
+oPh5TpcJyVvAs80b72v8ge+ThQG6qD3hy4mM/Jb8U6eg5KaTLfdIH8HzaLicMx28\n\
+E0PZGpVcsePlBw8TdxN+syS35/WtMuIaTT5sSxoXyEngULo8MIkOqetMqHHA1tYh\n\
+HnGls+tWWWdNAEpUTvjoikzAl5f20KYy/sgDfPiHRcrjRbKdWgVI4RREaAojzAcq\n\
+uZxn0TaB/dh6QOy1F9eNyDHwXH3OcoFXMpFTsx6DJUZgNAX0EEMauliWmN1CGM79\n\
+dlO6EIiVqtyKEymJEsxThbQtYrGblfhjm8jyTlPcngzwBLsN5R0XttHYQa7t\n\
+-----END CERTIFICATE-----"
 
 /**
  * @brief Client's private key.
@@ -121,7 +152,33 @@
  *
  * #define democonfigCLIENT_PRIVATE_KEY_PEM    "...insert here..."
  */
-#define democonfigCLIENT_PRIVATE_KEY_PEM                   "-----BEGIN RSA PRIVATE KEY-----\n"
+#define democonfigCLIENT_PRIVATE_KEY_PEM                   "-----BEGIN RSA PRIVATE KEY-----\n\
+MIIEowIBAAKCAQEApOtO6ZfI0McUX+qwtyLbk6F2kz8FKQOIH5k70BlWJj2Gcx8H\n\
+s5eq0tOkHpr5Y4tnBZwe1NuGIj5tnJmpGurzFq7UvvG0SpmU1ExeF5ao2S9YlViK\n\
+WYIY3jGY5N+/zzZ/uNBsvjI5XKO4/ZE6gNyuXah8ThQIglbENk0MhRbAGuELz/oh\n\
+eMEsoEy2+MBhF4hFlq04G8ZRHv75NguBwvzf6D4HXJuon9XG+yvXKBRqkdbGRmPq\n\
+30T9iu2jGZmgXnUz6Rw+r1YS0fFUPGVmDyNaALOTCqf5duzB6CJfqhxdht/vSjZW\n\
+iY8uO9ij+km0vvX8MDEEtvWKiE3TCfb+VKIBHQIDAQABAoIBAHYFPy/Dw55FGbua\n\
+hGRKucBoqCavzs2PDXcvfbJqr1Amb3UrG6PWQhUmCCku1pH6TPuiwh2qC8+txVtw\n\
+S6hLwzLUYsNSzaclSXC0RhGza5ohW89k0X1EsO8xpy0DQozTf4uO/IMQBiTZtaUg\n\
+rTFSvCWiUXK+u2grF7eUZAVKRqf0hp2sK8V5MlMgYZW9TLC+st04/jh8h1e1yks1\n\
+184EtJnF3lZoJVYMTuv53c83PEnB54SulY6w5DxHFYKcXof7TovTLE/ndhx114ou\n\
+VUJj+GmqqJ9CtiQ0Ltvy9C6nYjYDA1hr/6boEvloN10ML23hHsIWE8fokpTkqN01\n\
+3ofEkIECgYEA2cRSFO6YNUvcoNQbPIQQL9+Pp9MUUHDGwJa5IsfsaWwWW3i27fcr\n\
+VNA0SSxEOmNaEJ7eTejIB4XYeOqVRlHugo4cOozpRgCYX89cQdYAuTZ3mSSoTkGv\n\
+JhyMHdH8hvR03oWrYDn/wNymli8zDLoNHOIfEPmuM0aVh9aFYFdghMkCgYEAwd+2\n\
+O6XXAOm+YNMaM6x+azHSU+fep0rIZmFbZMoLfgah8IMRwGk1R/Y2Z3D3lDJAncaq\n\
+yJ+OCnMmZ1SgTbYC00otwcl0NmfpsLgy6ZLuNkElR0nTcqolukY9HAqVmrfbN750\n\
+bev02zWE+VmfDHyOJlsqcHbiiv6bdrSNpywdp7UCgYB46DJ2or5poPQfa4SvxddC\n\
+7UpScLSvsN35IfYqpHvTUIrdQJm4Z+psDalqEyTSkkT4Q2zELwGYg6zb/crhny3g\n\
+2Mw9ie0ey8fOMlBT0WDXdLFUmvDDel6nt2PoTqV5vJKC1g5/v9QLHbd0XUJnx4ju\n\
+R3HeN/KLT55ILEgjZIAXWQKBgQCBCEWfGVcpkmhUxOtxbOKOsZAMrAvyR8Fs8msD\n\
+f716WSu6iWFtMBh4FpRK8FK23WNIHwtXj2nX5p+ushIm5nam7X3athuUgkB0j4PD\n\
+FTlZ/q2y7p2+eSO3ADx3x0uet7M9PJL8/cfvhYVE97L1eoiZWp+6TkWkwKPzs2N7\n\
+2c666QKBgChyQ61UoBQ9KNmW13CWt24HaHQBxjReejiPOgx5gc1/f89k0LK+mDF6\n\
+5ho+zwBI8DEsRsODB7tk5Rq1C0YbcRVCJdM27/BCxg2Ofsc6cGJ4ifX7fVqlzxRI\n\
+BDgKDNxI/MsSS3N06K/44DWfb8nAGN5Q7YwogmkQyP8s6UQJH1KA\n\
+-----END RSA PRIVATE KEY-----"
 
 
 
@@ -164,27 +221,27 @@
  * The current value is given as an example. Please update for your specific
  * operating system.
  */
-//#define democonfigOS_NAME                   "FreeRTOS"
+#define democonfigOS_NAME                   "FreeRTOS"
 
 /**
  * @brief The version of the operating system that the application is running
  * on. The current value is given as an example. Please update for your specific
  * operating system version.
  */
-//#define democonfigOS_VERSION                tskKERNEL_VERSION_NUMBER
+#define democonfigOS_VERSION                tskKERNEL_VERSION_NUMBER
 
 /**
  * @brief The name of the hardware platform the application is running on. The
  * current value is given as an example. Please update for your specific
  * hardware platform.
  */
-//#define democonfigHARDWARE_PLATFORM_NAME    "STM32"
+#define democonfigHARDWARE_PLATFORM_NAME    "WinSim"
 
 /**
  * @brief The name of the MQTT library used and its version, following an "@"
  * symbol.
  */
-//#define democonfigMQTT_LIB                  "core-mqtt@1.0.0"
+#define democonfigMQTT_LIB                  "core-mqtt@1.0.0"
 
 /**
  * @brief Whether to use mutual authentication. If this macro is not set to 1
