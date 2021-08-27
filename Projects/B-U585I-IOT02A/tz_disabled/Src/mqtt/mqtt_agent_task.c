@@ -682,8 +682,14 @@ static BaseType_t prvSocketConnect( void )
 
         xConnected = ( xNetworkStatus == TLS_TRANSPORT_SUCCESS ) ? pdPASS : pdFAIL;
 
-        if( !xConnected )
+        if( xConnected == pdPASS )
         {
+            /* Set event group to wake tasks waiting for */
+            (void) xEventGroupSetBits( xAgentEvents, ( 1u << EVENT_BIT_AGENT_READY ) );
+        }
+        else
+        {
+        	(void) xEventGroupClearBits( xAgentEvents, ( 1u << EVENT_BIT_AGENT_READY ) );
             /* Get back-off value (in milliseconds) for the next connection retry. */
             xBackoffAlgStatus = BackoffAlgorithm_GetNextBackoff( &xReconnectParams, uxRand(), &usNextRetryBackOff );
 
@@ -783,10 +789,6 @@ static void prvMQTTAgentTask( void * pvParameters )
     /* Create the TCP connection to the broker, then the MQTT connection to the
      * same. */
     prvConnectToMQTTBroker();
-
-    /* Set event group to wake tasks waiting for */
-    xEventGroupSetBits( xAgentEvents, ( 1u << EVENT_BIT_AGENT_READY ) );
-
 
     /* Selectively create demo tasks as per the compile time constant settings. */
     #if ( democonfigCREATE_LARGE_MESSAGE_SUB_PUB_TASK == 1 )
@@ -909,65 +911,7 @@ static void prvConnectToMQTTBroker( void )
     xMQTTStatus = prvMQTTConnect( true );
     configASSERT( xMQTTStatus == MQTTSuccess );
 }
-/*-----------------------------------------------------------*/
 
-//static void prvConnectAndCreateDemoTasks( void * pvParameters )
-//{
-//    ( void ) pvParameters;
-//
-//    /* Miscellaneous initialization. */
-//    ulGlobalEntryTimeMs = prvGetTimeMs();
-//
-//    /* Create the TCP connection to the broker, then the MQTT connection to the
-//     * same. */
-//    prvConnectToMQTTBroker();
-//
-//    /* Selectively create demo tasks as per the compile time constant settings. */
-//    #if ( democonfigCREATE_LARGE_MESSAGE_SUB_PUB_TASK == 1 )
-//        {
-//            vStartLargeMessageSubscribePublishTask( democonfigLARGE_MESSAGE_SUB_PUB_TASK_STACK_SIZE,
-//                                                    tskIDLE_PRIORITY );
-//        }
-//    #endif
-//
-//    #if ( democonfigNUM_SIMPLE_SUB_PUB_TASKS_TO_CREATE > 0 )
-//        {
-//            vStartSimpleSubscribePublishTask( democonfigNUM_SIMPLE_SUB_PUB_TASKS_TO_CREATE,
-//                                              democonfigSIMPLE_SUB_PUB_TASK_STACK_SIZE,
-//                                              tskIDLE_PRIORITY );
-//        }
-//    #endif
-//
-//    #if ( democonfigCREATE_CODE_SIGNING_OTA_DEMO == 1 )
-//        {
-//            vStartOTACodeSigningDemo( democonfigCODE_SIGNING_OTA_TASK_STACK_SIZE,
-//                                      tskIDLE_PRIORITY + 1 );
-//        }
-//    #endif
-//
-//    #if ( democonfigCREATE_DEFENDER_DEMO == 1 )
-//        {
-//            vStartDefenderDemo( democonfigDEFENDER_TASK_STACK_SIZE,
-//                                tskIDLE_PRIORITY );
-//        }
-//    #endif
-//
-//    #if ( democonfigCREATE_SHADOW_DEMO == 1 )
-//        {
-//            vStartShadowDemo( democonfigSHADOW_TASK_STACK_SIZE,
-//                              tskIDLE_PRIORITY );
-//        }
-//    #endif
-//
-//    /* This task has nothing left to do, so rather than create the MQTT
-//     * agent as a separate thread, it simply calls the function that implements
-//     * the agent - in effect turning itself into the agent. */
-//    prvMQTTAgentTask( NULL );
-//
-//    /* Should not get here.  Force an assert if the task returns from
-//     * prvMQTTAgentTask(). */
-//    configASSERT( pvParameters == ( void * ) ~1 );
-//}
 
 /*-----------------------------------------------------------*/
 

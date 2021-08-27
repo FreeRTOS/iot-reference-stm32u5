@@ -237,21 +237,11 @@ static BaseType_t xInitSensors( void )
 static BaseType_t xUpdateSensorData( EnvironmentalSensorData_t * pxData )
 {
     int32_t lBspError = BSP_ERROR_NONE;
+	lBspError = BSP_ENV_SENSOR_GetValue( 0, ENV_TEMPERATURE, &pxData->fTemperature0 );
+	lBspError |= BSP_ENV_SENSOR_GetValue( 0, ENV_HUMIDITY, &pxData->fHumidity );
+	lBspError |= BSP_ENV_SENSOR_GetValue( 1, ENV_TEMPERATURE, &pxData->fTemperature1 );
+	lBspError |= BSP_ENV_SENSOR_GetValue( 1, ENV_PRESSURE, &pxData->fBarometricPressure );
 
-    if( xSemaphoreTake( xHwMutexI2C2, portMAX_DELAY ) == pdTRUE )
-    {
-        lBspError = BSP_ENV_SENSOR_GetValue( 0, ENV_TEMPERATURE, &pxData->fTemperature0 );
-        lBspError |= BSP_ENV_SENSOR_GetValue( 0, ENV_HUMIDITY, &pxData->fHumidity );
-        lBspError |= BSP_ENV_SENSOR_GetValue( 1, ENV_TEMPERATURE, &pxData->fTemperature1 );
-        lBspError |= BSP_ENV_SENSOR_GetValue( 1, ENV_PRESSURE, &pxData->fBarometricPressure );
-
-        (void) xSemaphoreGive( xHwMutexI2C2 );
-    }
-    else
-    {
-        LogError( "Failed to acquire xHwMutexI2C2." );
-        lBspError = BSP_ERROR_UNKNOWN_FAILURE;
-    }
     return ( lBspError == BSP_ERROR_NONE ? pdTRUE : pdFALSE );
 }
 
@@ -274,10 +264,7 @@ static void prvSensorPublishTask( void * pvParameters )
         vTaskDelete( NULL );
     }
 
-    while( xGlobalMqttAgentContext.mqttContext.connectStatus != MQTTConnected )
-    {
-        vTaskDelay(10 * 1000);
-    }
+    vSleepUntilMQTTAgentReady();
 
     while( xExitFlag == pdFALSE )
     {

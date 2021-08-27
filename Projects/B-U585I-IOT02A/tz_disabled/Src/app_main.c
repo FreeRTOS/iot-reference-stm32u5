@@ -146,8 +146,6 @@ int main( void )
 
     vStartSensorPublishTask();
 
-    xHwMutexI2C2 = xSemaphoreCreateMutex();
-
     /* Start scheduler */
     vTaskStartScheduler();
 

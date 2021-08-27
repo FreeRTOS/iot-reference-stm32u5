@@ -45,7 +45,7 @@
 #define democonfigCREATE_LARGE_MESSAGE_SUB_PUB_TASK        0
 #define democonfigLARGE_MESSAGE_SUB_PUB_TASK_STACK_SIZE    ( configMINIMAL_STACK_SIZE )
 
-#define democonfigNUM_SIMPLE_SUB_PUB_TASKS_TO_CREATE       1
+#define democonfigNUM_SIMPLE_SUB_PUB_TASKS_TO_CREATE       0
 #define democonfigSIMPLE_SUB_PUB_TASK_STACK_SIZE           ( 2048 )
 
 #define democonfigCREATE_CODE_SIGNING_OTA_DEMO             0
