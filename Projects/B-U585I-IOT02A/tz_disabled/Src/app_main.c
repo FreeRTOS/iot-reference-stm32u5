@@ -37,8 +37,13 @@
 #include "lfs.h"
 #include "lfs_port.h"
 
+#include "motion_sensors_publish.h"
+
 #define CLI_TASK_STACK_SIZE ( configMINIMAL_STACK_SIZE + 1024 )
 #define CLI_TASK_PRIORITY   ( tskIDLE_PRIORITY + 2 )
+
+#define MOTIONS_PUBLISH_TASK_STACK_SIZE ( configMINIMAL_STACK_SIZE + 1024 )
+#define MOTIONS_PUBLISH_TASK_PRIORITY   ( tskIDLE_PRIORITY + 3 )
 
 /* Initialize hardware / STM32 HAL library */
 static void hw_init( void )
@@ -104,7 +109,7 @@ static void vHeartbeatTask( void * pvParameters )
 	( void ) pvParameters;
 	while(1)
 	{
-		LogSys( "Idle priority heartbeat." );
+		//LogSys( "Idle priority heartbeat." );
 		vTaskDelay( pdMS_TO_TICKS( 10 * 1000 ) );
 	}
 }
@@ -137,8 +142,20 @@ int main( void )
 
     configASSERT( xResult == pdTRUE );
 
-    xResult = xTaskCreate( Task_CLI, "cli", CLI_TASK_STACK_SIZE, NULL, CLI_TASK_PRIORITY, NULL );
+    xResult = xTaskCreate( Task_CLI,
+    					   "cli",
+						   CLI_TASK_STACK_SIZE,
+						   NULL,
+						   CLI_TASK_PRIORITY,
+						   NULL );
+    configASSERT( xResult == pdTRUE );
 
+    xResult = xTaskCreate( Task_MotionSensorsPublish,
+    					   "motion_sensors",
+						   MOTIONS_PUBLISH_TASK_STACK_SIZE,
+						   NULL,
+						   MOTIONS_PUBLISH_TASK_PRIORITY,
+						   NULL );
     configASSERT( xResult == pdTRUE );
 
     vStartMQTTAgentDemo();

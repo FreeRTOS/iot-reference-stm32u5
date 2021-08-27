@@ -86,6 +86,8 @@
                                     <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Libraries/LittleFS}&quot;"/>
                                     									
                                     <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Libraries/FreeRTOS-Plus-CLI}&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Src/mqtt}&quot;"/>
                                     								
                                 </option>
                                 								
@@ -206,6 +208,8 @@
                                     <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Libraries/LittleFS}&quot;"/>
                                     									
                                     <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Libraries/FreeRTOS-Plus-CLI}&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Src/mqtt}&quot;"/>
                                     								
                                 </option>
                                 								
@@ -311,7 +315,13 @@
                     					
                     <sourceEntries>
                         						
-                        <entry excluding="BSP/Components|BSP/B-U585I-IOT02A/b_u585i_iot02a_usbpd_pwr.h|BSP/B-U585I-IOT02A/b_u585i_iot02a_usbpd_pwr.c|BSP/B-U585I-IOT02A/b_u585i_iot02a_ospi.h|BSP/B-U585I-IOT02A/b_u585i_iot02a_ospi.c|BSP/B-U585I-IOT02A/b_u585i_iot02a_motion_sensors.h|BSP/B-U585I-IOT02A/b_u585i_iot02a_motion_sensors.c|BSP/B-U585I-IOT02A/b_u585i_iot02a_errno.h|BSP/B-U585I-IOT02A/b_u585i_iot02a_env_sensors.h|BSP/B-U585I-IOT02A/b_u585i_iot02a_env_sensors.c|BSP/B-U585I-IOT02A/b_u585i_iot02a_eeprom.h|BSP/B-U585I-IOT02A/b_u585i_iot02a_eeprom.c|BSP/B-U585I-IOT02A/b_u585i_iot02a_conf_template.h|BSP/B-U585I-IOT02A/b_u585i_iot02a_camera.h|BSP/B-U585I-IOT02A/b_u585i_iot02a_camera.c|BSP/B-U585I-IOT02A/b_u585i_iot02a_bus.h|BSP/B-U585I-IOT02A/b_u585i_iot02a_bus.c|BSP/B-U585I-IOT02A/b_u585i_iot02a_audio.h|BSP/B-U585I-IOT02A/b_u585i_iot02a_audio.c|CommonIO/spi/iot_spi_stm32u5.c|CommonIO/gpio/iot_gpio_stm32.c|cmsis_rtos/os_tick_ptim.c|cmsis_rtos/os_systick.c|mx_wifi|mx_wifi/core/mx_rtos_abs.c|STM32U5_HAL/Src/stm32u5xx_ll_spi.c|STM32U5_HAL/Src/stm32u5xx_ll_lpgpio.c|STM32U5_HAL/Src/stm32u5xx_ll_gpio.c|STM32U5_HAL/Src/stm32u5xx_ll_dma2d.c|STM32U5_HAL/Src/stm32u5xx_ll_icache.c|STM32U5_HAL/Src/stm32u5xx_ll_utils.c|STM32U5_HAL/Src/stm32u5xx_ll_i2c.c|STM32U5_HAL/Src/stm32u5xx_ll_comp.c|STM32U5_HAL/Src/stm32u5xx_ll_adc.c|STM32U5_HAL/Src/stm32u5xx_ll_ucpd.c|STM32U5_HAL/Src/stm32u5xx_ll_pka.c|STM32U5_HAL/Src/stm32u5xx_ll_usb.c|STM32U5_HAL/Src/stm32u5xx_ll_fmac.c|STM32U5_HAL/Src/stm32u5xx_ll_lpuart.c|STM32U5_HAL/Src/stm32u5xx_ll_usart.c|STM32U5_HAL/Src/stm32u5xx_ll_rng.c|STM32U5_HAL/Src/stm32u5xx_ll_rcc.c|STM32U5_HAL/Src/stm32u5xx_ll_pwr.c|STM32U5_HAL/Src/stm32u5xx_hal_timebase_rtc_wakeup_template.c|STM32U5_HAL/Src/stm32u5xx_ll_cordic.c|STM32U5_HAL/Src/stm32u5xx_ll_sdmmc.c|STM32U5_HAL/Src/stm32u5xx_ll_rtc.c|STM32U5_HAL/Src/stm32u5xx_ll_dlyb.c|STM32U5_HAL/Src/stm32u5xx_ll_tim.c|mx_wifi/io_pattern/mx_wifi_uart.c|STM32U5_HAL/Src/stm32u5xx_ll_dma.c|STM32U5_HAL/Src/stm32u5xx_hal_timebase_tim_template.c|STM32U5_HAL/Src/stm32u5xx_ll_fmc.c|STM32U5_HAL/Src/stm32u5xx_ll_exti.c|STM32U5_HAL/Src/stm32u5xx_ll_crc.c|STM32U5_HAL/Src/stm32u5xx_hal_msp_template.c|STM32U5_HAL/Src/stm32u5xx_ll_crs.c|STM32U5_HAL/Src/stm32u5xx_ll_opamp.c|STM32U5_HAL/Src/stm32u5xx_ll_dac.c|STM32U5_HAL/Src/stm32u5xx_hal_timebase_rtc_alarm_template.c|STM32U5_HAL/Src/stm32u5xx_ll_lptim.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
+                        <entry excluding="BSP/Components|BSP/B-U585I-IOT02A/b_u585i_iot02a_usbpd_pwr.h|BSP/B-U585I-IOT02A/b_u585i_iot02a_usbpd_pwr.c|BSP/B-U585I-IOT02A/b_u585i_iot02a_ospi.h|BSP/B-U585I-IOT02A/b_u585i_iot02a_ospi.c|BSP/B-U585I-IOT02A/b_u585i_iot02a_errno.h|BSP/B-U585I-IOT02A/b_u585i_iot02a_env_sensors.h|BSP/B-U585I-IOT02A/b_u585i_iot02a_env_sensors.c|BSP/B-U585I-IOT02A/b_u585i_iot02a_eeprom.h|BSP/B-U585I-IOT02A/b_u585i_iot02a_eeprom.c|BSP/B-U585I-IOT02A/b_u585i_iot02a_conf_template.h|BSP/B-U585I-IOT02A/b_u585i_iot02a_camera.h|BSP/B-U585I-IOT02A/b_u585i_iot02a_camera.c|BSP/B-U585I-IOT02A/b_u585i_iot02a_audio.h|BSP/B-U585I-IOT02A/b_u585i_iot02a_audio.c|CommonIO/spi/iot_spi_stm32u5.c|CommonIO/gpio/iot_gpio_stm32.c|cmsis_rtos/os_tick_ptim.c|cmsis_rtos/os_systick.c|mx_wifi|mx_wifi/core/mx_rtos_abs.c|STM32U5_HAL/Src/stm32u5xx_ll_spi.c|STM32U5_HAL/Src/stm32u5xx_ll_lpgpio.c|STM32U5_HAL/Src/stm32u5xx_ll_gpio.c|STM32U5_HAL/Src/stm32u5xx_ll_dma2d.c|STM32U5_HAL/Src/stm32u5xx_ll_icache.c|STM32U5_HAL/Src/stm32u5xx_ll_utils.c|STM32U5_HAL/Src/stm32u5xx_ll_i2c.c|STM32U5_HAL/Src/stm32u5xx_ll_comp.c|STM32U5_HAL/Src/stm32u5xx_ll_adc.c|STM32U5_HAL/Src/stm32u5xx_ll_ucpd.c|STM32U5_HAL/Src/stm32u5xx_ll_pka.c|STM32U5_HAL/Src/stm32u5xx_ll_usb.c|STM32U5_HAL/Src/stm32u5xx_ll_fmac.c|STM32U5_HAL/Src/stm32u5xx_ll_lpuart.c|STM32U5_HAL/Src/stm32u5xx_ll_usart.c|STM32U5_HAL/Src/stm32u5xx_ll_rng.c|STM32U5_HAL/Src/stm32u5xx_ll_rcc.c|STM32U5_HAL/Src/stm32u5xx_ll_pwr.c|STM32U5_HAL/Src/stm32u5xx_hal_timebase_rtc_wakeup_template.c|STM32U5_HAL/Src/stm32u5xx_ll_cordic.c|STM32U5_HAL/Src/stm32u5xx_ll_sdmmc.c|STM32U5_HAL/Src/stm32u5xx_ll_rtc.c|STM32U5_HAL/Src/stm32u5xx_ll_dlyb.c|STM32U5_HAL/Src/stm32u5xx_ll_tim.c|mx_wifi/io_pattern/mx_wifi_uart.c|STM32U5_HAL/Src/stm32u5xx_ll_dma.c|STM32U5_HAL/Src/stm32u5xx_hal_timebase_tim_template.c|STM32U5_HAL/Src/stm32u5xx_ll_fmc.c|STM32U5_HAL/Src/stm32u5xx_ll_exti.c|STM32U5_HAL/Src/stm32u5xx_ll_crc.c|STM32U5_HAL/Src/stm32u5xx_hal_msp_template.c|STM32U5_HAL/Src/stm32u5xx_ll_crs.c|STM32U5_HAL/Src/stm32u5xx_ll_opamp.c|STM32U5_HAL/Src/stm32u5xx_ll_dac.c|STM32U5_HAL/Src/stm32u5xx_hal_timebase_rtc_alarm_template.c|STM32U5_HAL/Src/stm32u5xx_ll_lptim.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
+                        						
+                        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers/BSP/Components/Common"/>
+                        						
+                        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers/BSP/Components/iis2mdc"/>
+                        						
+                        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers/BSP/Components/ism330dlc"/>
                         						
                         <entry excluding="LittleFS/Makefile|FreeRTOS/kernel/cmsis_freertos/cmsis_os1.c|FreeRTOS/kernel/cmsis_freertos/freertos_evr.c|lwip/apps/tftp|lwip/apps/sntp|lwip/apps/snmp|lwip/apps/smtp|lwip/apps/netbiosns|lwip/apps/mqtt|lwip/apps/mdns|lwip/apps/http|lwip/apps/altcp_tls|lwip/netif/zepif.c|lwip/netif/slipif.c|lwip/netif/lowpan6.c|lwip/netif/lowpan6_common.c|lwip/netif/lowpan6_ble.c|lwip/netif/bridgeif.c|lwip/netif/bridgeif_fdb.c|lwip/netif/ppp|STM32_Network_Library/core/net_os.c|FreeRTOS/coreMQTTAgent/dependency|FreeRTOS/http_parser.c|STM32_Network_Library/netif/wifi_if/st_wifi|STM32_Network_Library/templates/net_conf_mxchip_uart.c|STM32_Network_Library/templates/net_conf_ethernet_h7_template.c|STM32_Network_Library/netif/wifi_if/cypress_wifi|STM32_Network_Library/services|STM32_Network_Library/services/net_sdhcp.c|STM32_Network_Library/services/net_ip_lwip.c|STM32_Network_Library/services/net_mbedtls.c|STM32_Network_Library/netif/cellular_if|STM32_Network_Library/templates/net_conf_es_wifi_spi_mx.c|STM32_Network_Library/templates/net_conf_cellular_template.c|STM32_Network_Library/templates/net_conf_ethernet_template.c|STM32_Network_Library/netif/wifi_if/es_wifi|FreeRTOS/crypto|STM32_Network_Library/templates|STM32_Network_Library/netif/ethernet_if|STM32_Network_Library/templates/net_conf_es_wifi_spi_template.c|FreeRTOS/core_http_client.c|STM32_Network_Library/doxydoc" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Libraries"/>
                         						
@@ -424,6 +434,8 @@
                                     <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Libraries/LittleFS}&quot;"/>
                                     									
                                     <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Libraries/FreeRTOS-Plus-CLI}&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Src/mqtt}&quot;"/>
                                     								
                                 </option>
                                 								
@@ -476,6 +488,8 @@
                                     <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Libraries/LittleFS}&quot;"/>
                                     									
                                     <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Libraries/FreeRTOS-Plus-CLI}&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Src/mqtt}&quot;"/>
                                     								
                                 </option>
                                 								
