@@ -70,6 +70,8 @@ extern "C" {
 /* Usage of USBPD PWR TRACE system */
 #define USE_BSP_USBPD_PWR_TRACE       0U      /* USBPD BSP trace system is disabled */
 
+#define BSP_USE_CMSIS_OS 1
+
 /**
   * @}
   */
