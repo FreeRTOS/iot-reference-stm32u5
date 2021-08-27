@@ -64,6 +64,7 @@
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "task.h"
+#include "event_groups.h"
 
 #include "ConfigStore.h"
 /* Demo Specific configs. */
@@ -195,6 +196,8 @@
  * context used by this demo.
  */
 #define mqttexampleMQTT_CONTEXT_HANDLE               ( ( MQTTContextHandle_t ) 0 )
+
+#define EVENT_BIT_AGENT_READY 0
 
 /*-----------------------------------------------------------*/
 
@@ -363,6 +366,8 @@ static MQTTAgentMessageContext_t xCommandQueue;
  */
 SubscriptionElement_t xGlobalSubscriptionList[ SUBSCRIPTION_MANAGER_MAX_SUBSCRIPTIONS ];
 
+static EventGroupHandle_t xAgentEvents = NULL;
+
 /*-----------------------------------------------------------*/
 
 /*
@@ -379,6 +384,33 @@ void vStartMQTTAgentDemo( void )
                  NULL,                         /* Optional - task parameter - not used in this case. */
                  tskIDLE_PRIORITY + 1,         /* Task priority, must be between 0 and configMAX_PRIORITIES - 1. */
                  NULL );                       /* Optional - used to pass out a handle to the created task. */
+}
+
+
+/*-----------------------------------------------------------*/
+void vSleepUntilMQTTAgentReady( void )
+{
+	while( 1 )
+	{
+		if( xAgentEvents == NULL )
+		{
+			/* Agent has not even initialized its event groups yet. Sleep the task while agent initializes */
+			vTaskDelay( pdMS_TO_TICKS( 3*1000 ) );
+		}
+		else
+		{
+			EventBits_t uxEvents = xEventGroupWaitBits( xAgentEvents,
+													    1u << EVENT_BIT_AGENT_READY,
+													    pdFALSE,
+													    pdTRUE,
+													    portMAX_DELAY );
+
+			if( uxEvents & ( 1u << EVENT_BIT_AGENT_READY ) )
+			{
+				return;
+			}
+		}
+	}
 }
 
 /*-----------------------------------------------------------*/
@@ -739,7 +771,8 @@ static void prvIncomingPublishCallback( MQTTAgentContext_t * pMqttAgentContext,
 
 static void prvMQTTAgentTask( void * pvParameters )
 {
-
+	xAgentEvents = xEventGroupCreate();
+	configASSERT( xAgentEvents != NULL );
 
     vTaskDelay(10*1000); //HACK wait for interface
     // TODO: Replace with event group
@@ -750,6 +783,10 @@ static void prvMQTTAgentTask( void * pvParameters )
     /* Create the TCP connection to the broker, then the MQTT connection to the
      * same. */
     prvConnectToMQTTBroker();
+
+    /* Set event group to wake tasks waiting for */
+    xEventGroupSetBits( xAgentEvents, ( 1u << EVENT_BIT_AGENT_READY ) );
+
 
     /* Selectively create demo tasks as per the compile time constant settings. */
     #if ( democonfigCREATE_LARGE_MESSAGE_SUB_PUB_TASK == 1 )

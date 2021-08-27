@@ -35,6 +35,7 @@
 #include "cli.h"
 #include "lfs.h"
 #include "lfs_port.h"
+
 /* Initialize hardware / STM32 HAL library */
 static void hw_init( void )
 {
@@ -100,12 +101,13 @@ static void vHeartbeatTask( void * pvParameters )
     while(1)
     {
         LogSys( "Idle priority heartbeat." );
-        vTaskDelay( pdMS_TO_TICKS( 10 * 1000 ) );
+        vTaskDelay( pdMS_TO_TICKS( 60 * 1000 ) );
     }
 }
 
 extern void vStartMQTTAgentDemo( void );
 extern void vStartSensorPublishTask( void );
+extern void Task_MotionSensorsPublish( void * );
 
 int main( void )
 {
@@ -135,6 +137,9 @@ int main( void )
 
     xResult = xTaskCreate( Task_CLI, "cli", 4096, NULL, tskIDLE_PRIORITY + 2, NULL );
 
+    configASSERT( xResult == pdTRUE );
+
+    xResult = xTaskCreate( Task_MotionSensorsPublish, "MotionS", 4096, NULL, tskIDLE_PRIORITY + 3, NULL );
     configASSERT( xResult == pdTRUE );
 
     vStartMQTTAgentDemo();
