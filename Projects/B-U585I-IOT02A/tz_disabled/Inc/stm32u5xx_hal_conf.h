@@ -59,11 +59,11 @@
 /*#define HAL_NAND_MODULE_ENABLED */
 /*#define HAL_NOR_MODULE_ENABLED */
 /*#define HAL_OPAMP_MODULE_ENABLED */
-/*#define HAL_OSPI_MODULE_ENABLED */
+#define HAL_OSPI_MODULE_ENABLED
 /*#define HAL_OTFDEC_MODULE_ENABLED */
 /*#define HAL_PCD_MODULE_ENABLED */
 #define HAL_PKA_MODULE_ENABLED
-/*#define HAL_QSPI_MODULE_ENABLED */
+#define HAL_OSPI_MODULE_ENABLED
 #define HAL_RNG_MODULE_ENABLED
 #define HAL_RTC_MODULE_ENABLED
 /*#define HAL_SAI_MODULE_ENABLED */
@@ -209,7 +209,7 @@
 #define  USE_HAL_FMAC_REGISTER_CALLBACKS       0U /* FMAC register callback disabled      */
 #define  USE_HAL_HASH_REGISTER_CALLBACKS       0U /* HASH register callback disabled      */
 #define  USE_HAL_HCD_REGISTER_CALLBACKS        0U /* HCD register callback disabled       */
-#define  USE_HAL_I2C_REGISTER_CALLBACKS        0U /* I2C register callback disabled       */
+#define  USE_HAL_I2C_REGISTER_CALLBACKS        1U /* I2C register callback disabled       */
 #define  USE_HAL_IWDG_REGISTER_CALLBACKS       0U /* IWDG register callback disabled      */
 #define  USE_HAL_IRDA_REGISTER_CALLBACKS       0U /* IRDA register callback disabled      */
 #define  USE_HAL_LPTIM_REGISTER_CALLBACKS      0U /* LPTIM register callback disabled     */
@@ -219,9 +219,10 @@
 #define  USE_HAL_NAND_REGISTER_CALLBACKS       0U /* NAND register callback disabled      */
 #define  USE_HAL_NOR_REGISTER_CALLBACKS        0U /* NOR register callback disabled       */
 #define  USE_HAL_OPAMP_REGISTER_CALLBACKS      0U /* MDIO register callback disabled      */
-#define  USE_HAL_OTFDEC_REGISTER_CALLBACKS     0U /* OTFDEC register callback disabled    */
+#define  USE_HAL_OTFDEC_REGISTER_CALLBACKS     1U /* OTFDEC register callback disabled    */
 #define  USE_HAL_PCD_REGISTER_CALLBACKS        0U /* PCD register callback disabled       */
 #define  USE_HAL_PKA_REGISTER_CALLBACKS        0U /* PKA register callback disabled       */
+#define  USE_HAL_OSPI_REGISTER_CALLBACKS       1U /* OSPI register callback enabled       */
 #define  USE_HAL_RAMCFG_REGISTER_CALLBACKS     0U /* RAMCFG register callback disabled    */
 #define  USE_HAL_RNG_REGISTER_CALLBACKS        0U /* RNG register callback disabled       */
 #define  USE_HAL_RTC_REGISTER_CALLBACKS        0U /* RTC register callback disabled       */
@@ -234,8 +235,8 @@
 #define  USE_HAL_SRAM_REGISTER_CALLBACKS       0U /* SRAM register callback disabled      */
 #define  USE_HAL_TIM_REGISTER_CALLBACKS        0U /* TIM register callback disabled       */
 #define  USE_HAL_TSC_REGISTER_CALLBACKS        0U /* TSC register callback disabled       */
-#define  USE_HAL_UART_REGISTER_CALLBACKS       0U /* UART register callback disabled      */
-#define  USE_HAL_USART_REGISTER_CALLBACKS      0U /* USART register callback disabled     */
+#define  USE_HAL_UART_REGISTER_CALLBACKS       1U /* UART register callback disabled      */
+#define  USE_HAL_USART_REGISTER_CALLBACKS      1U /* USART register callback disabled     */
 #define  USE_HAL_WWDG_REGISTER_CALLBACKS       0U /* WWDG register callback disabled      */
 
 /* ################## SPI peripheral configuration ########################## */
@@ -289,6 +290,10 @@
 
 #ifdef HAL_PKA_MODULE_ENABLED
   #include "stm32u5xx_hal_pka.h"
+#endif /* HAL_PKA_MODULE_ENABLED */
+
+#ifdef HAL_PKA_MODULE_ENABLED
+  #include "stm32u5xx_hal_ospi.h"
 #endif /* HAL_PKA_MODULE_ENABLED */
 
 #ifdef HAL_ADC_MODULE_ENABLED

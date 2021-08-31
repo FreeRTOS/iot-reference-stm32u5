@@ -34,7 +34,20 @@
 
 #include "cli.h"
 #include "lfs.h"
-#include "lfs_port.h"
+
+volatile lfs_t * pxLfsCtx = NULL;
+
+lfs_t * pxGetDefaultFsCtx( void )
+{
+    while( pxLfsCtx == NULL )
+    {
+        LogDebug( "Waiting for FS Initialization." );
+        /* Wait for FS to be initialized */
+        vTaskDelay( 1000 );
+        //TODO block on an event group bit instead
+    }
+    return pxLfsCtx;
+}
 
 /* Initialize hardware / STM32 HAL library */
 static void hw_init( void )
@@ -78,18 +91,35 @@ static void hw_init( void )
 
 static int fs_init( void )
 {
-	lfs_t * pLFS = lfs_port_get_fs_handle();
-	struct lfs_config * pCfg = lfs_port_get_config();
+    static lfs_t xLfsCtx = { 0 };
+    /* Block time of up to 1000ms if filesystem is busy */
+    struct lfs_config * pCfg = pxInitializeOSPIFlashFs( pdMS_TO_TICKS( 1000 ) );
 
-    // mount the filesystem
-    int err = lfs_mount(pLFS, pCfg);
+    /* mount the filesystem */
+    int err = lfs_mount( &xLfsCtx, pCfg );
 
-    // reformat if we can't mount the filesystem
-    // this should only happen on the first boot
-    if (err) {
-    	printf("Failed to mount partition. Reformatting...\n");
-        lfs_format(pLFS, pCfg);
-        err = lfs_mount(pLFS, pCfg);
+    /* format if we can't mount the filesystem
+     * this should only happen on the first boot
+     */
+    if( err != 0 )
+    {
+        LogError( "Failed to mount partition. Formatting..." );
+        err = lfs_format( &xLfsCtx, pCfg );
+        if( err == 0 )
+        {
+            err = lfs_mount( &xLfsCtx, pCfg );
+        }
+
+        if( err != 0 )
+        {
+            LogError( "Failed to format littlefs devices." );
+        }
+    }
+
+    if( err == 0 )
+    {
+        /* Export the FS context */
+        pxLfsCtx = &xLfsCtx;
     }
 
     return err;

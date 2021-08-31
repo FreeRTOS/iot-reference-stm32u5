@@ -28,7 +28,6 @@
 #ifndef MBEDTLS_TRANSPORT
 #define MBEDTLS_TRANSPORT
 
-
 /* socket definitions  */
 #include "transport_interface_ext.h"
 
@@ -39,6 +38,24 @@
 #include "mbedtls/threading.h"
 #include "mbedtls/x509.h"
 
+/*
+ * Define MBEDTLS_TRANSPORT_PKCS11_ENABLE if you intend to use a pkcs11 module for TLS.
+ */
+#define MBEDTLS_TRANSPORT_PKCS11_ENABLE
+
+
+/*
+ * Define MBEDTLS_DEBUG_C if you would like to enable mbedtls debugging
+ */
+/* #define MBEDTLS_DEBUG_C */
+
+typedef enum PkiObjectForm
+{
+    OBJ_FORM_NONE,
+    OBJ_FORM_PEM,
+    OBJ_FORM_DER,
+    OBJ_FORM_PKCS11_LABEL
+} PkiObjectForm_t;
 
 /**
  * @brief Contains the credentials necessary for tls connection setup.
@@ -60,12 +77,54 @@ typedef struct NetworkCredentials
      */
     BaseType_t disableSni;
 
-    const uint8_t * pRootCa;     /**< @brief String representing a trusted server root certificate. */
-    size_t rootCaSize;           /**< @brief Size associated with #NetworkCredentials.pRootCa. */
-    const uint8_t * pClientCert; /**< @brief String representing the client certificate. */
-    size_t clientCertSize;       /**< @brief Size associated with #NetworkCredentials.pClientCert. */
-    const uint8_t * pPrivateKey; /**< @brief String representing the client certificate's private key. */
-    size_t privateKeySize;       /**< @brief Size associated with #NetworkCredentials.pPrivateKey. */
+    /**
+     * @brief Form of the private key specified in #NetworkCredentials.pvPrivateKey.
+     */
+    PkiObjectForm_t xPrivateKeyForm;
+
+    /**
+     * @brief Pointer to a buffer containing the private key or private key PKCS#11 label.
+     */
+    const void * pvPrivateKey;
+
+    /**
+     * @brief Size of the private key or private key PKCS#11 label specified in
+     * #NetworkCredentials.pvPrivateKey.
+     */
+    size_t privateKeySize;
+
+    /**
+     * @brief Form of the certificate specified in #NetworkCredentials.pvClientCert.
+     */
+    PkiObjectForm_t xClientCertForm;
+
+    /**
+     * @brief Pointer to a buffer containing the client certificate or PKCS#11 label.
+     */
+    const void * pvClientCert;
+
+    /**
+     * @brief Size of the certificate or PKCS#11 label specified in
+     * #NetworkCredentials.pvClientCert.
+     */
+    size_t clientCertSize;
+
+    /**
+     * @brief Form of the certificate specified in #NetworkCredentials.pvRootCaCert.
+     */
+    PkiObjectForm_t xRootCaCertForm;
+
+    /**
+     * @brief Pointer to a buffer containing the CA certificate or PKCS#11 label.
+     */
+    const void * pvRootCaCert;
+
+    /**
+     * @brief Size of the certificate or PKCS#11 label specified in
+     * #NetworkCredentials.pvRootCaCert.
+     */
+    size_t rootCaCertSize;
+
 } NetworkCredentials_t;
 
 /**
@@ -118,11 +177,11 @@ void mbedtls_transport_free( NetworkContext_t * pxNetworkContext );
  * #TLS_TRANSPORT_HANDSHAKE_FAILED, #TLS_TRANSPORT_INTERNAL_ERROR, or #TLS_TRANSPORT_CONNECT_FAILURE.
  */
 TlsTransportStatus_t mbedtls_transport_connect( NetworkContext_t * pxNetworkContext,
-                                           const char * pHostName,
-                                           uint16_t port,
-                                           const NetworkCredentials_t * pNetworkCredentials,
-                                           uint32_t receiveTimeoutMs,
-                                           uint32_t sendTimeoutMs );
+                                                const char * pHostName,
+                                                uint16_t port,
+                                                const NetworkCredentials_t * pNetworkCredentials,
+                                                uint32_t receiveTimeoutMs,
+                                                uint32_t sendTimeoutMs );
 
 /**
  * @brief Gracefully disconnect an established TLS connection and free any heap allocated resources.
@@ -167,4 +226,4 @@ int32_t mbedtls_transport_send( NetworkContext_t * pxNetworkContext,
                                 const void * pBuffer,
                                 size_t bytesToSend );
 
-#endif /* ifndef MBEDTLS_TRANSPORT */
+#endif /* MBEDTLS_TRANSPORT */

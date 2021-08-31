@@ -642,12 +642,18 @@ static BaseType_t prvSocketConnect( void )
     xNetworkCredentials.pAlpnProtos = pcAlpnProtocols;
 
     /* Set the credentials for establishing a TLS connection. */
-    xNetworkCredentials.pRootCa = ( const unsigned char * ) democonfigROOT_CA_PEM;
-    xNetworkCredentials.rootCaSize = sizeof( democonfigROOT_CA_PEM );
-    xNetworkCredentials.pClientCert = ( const unsigned char * ) democonfigCLIENT_CERTIFICATE_PEM;
+    xNetworkCredentials.xRootCaCertForm = OBJ_FORM_PEM;
+    xNetworkCredentials.pvRootCaCert = democonfigROOT_CA_PEM;
+    xNetworkCredentials.rootCaCertSize = sizeof( democonfigROOT_CA_PEM );
+
+    xNetworkCredentials.xClientCertForm = OBJ_FORM_PEM;
+    xNetworkCredentials.pvClientCert = democonfigCLIENT_CERTIFICATE_PEM;
     xNetworkCredentials.clientCertSize = sizeof( democonfigCLIENT_CERTIFICATE_PEM );
-    xNetworkCredentials.pPrivateKey = ( const unsigned char * ) democonfigCLIENT_PRIVATE_KEY_PEM;
+
+    xNetworkCredentials.xPrivateKeyForm = OBJ_FORM_PEM;
+    xNetworkCredentials.pvPrivateKey = democonfigCLIENT_PRIVATE_KEY_PEM;
     xNetworkCredentials.privateKeySize = sizeof( democonfigCLIENT_PRIVATE_KEY_PEM );
+
     xNetworkCredentials.disableSni = democonfigDISABLE_SNI;
 
     /* We will use a retry mechanism with an exponential backoff mechanism and

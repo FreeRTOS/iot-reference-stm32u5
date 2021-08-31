@@ -2327,7 +2327,7 @@ int mbedtls_platform_entropy_poll( void * data,
  * Requires: MBEDTLS_AES_C or MBEDTLS_DES_C
  *
  */
-//#define MBEDTLS_CMAC_C
+#define MBEDTLS_CMAC_C
 
 /**
  * \def MBEDTLS_CTR_DRBG_C
@@ -2555,7 +2555,7 @@ int mbedtls_platform_entropy_poll( void * data,
  * This module adds support for the Hashed Message Authentication Code
  * (HMAC)-based key derivation function (HKDF).
  */
-// #define MBEDTLS_HKDF_C
+ #define MBEDTLS_HKDF_C
 
 /**
  * \def MBEDTLS_HMAC_DRBG_C

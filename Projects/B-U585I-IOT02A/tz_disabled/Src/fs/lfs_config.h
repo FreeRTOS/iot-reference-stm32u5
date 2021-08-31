@@ -42,11 +42,10 @@ extern "C"
 
 #include "logging_levels.h"
 
-#ifndef LOG_LEVEL
 #define LOG_LEVEL LOG_DEBUG
-#endif
 
 #include "logging.h"
+
 
 // System includes
 #include <stdint.h>
@@ -55,22 +54,59 @@ extern "C"
 #include <inttypes.h>
 #include "FreeRTOS.h"
 
-/* Configuration */
-#define LFS_THREADSAFE
-/* #define LFS_NO_MALLOC */
+//#include <stdlib.h>
 
-/* Logging */
-#define LFS_TRACE(...)  LogDebug( __VA_ARGS__ )
-#define LFS_DEBUG(...)  LogDebug( __VA_ARGS__ )
-#define LFS_WARN(...)   LogWarn( __VA_ARGS__ )
-#define LFS_ERROR(...)  LogError( __VA_ARGS__ )
+// Logging functions
 
-/* Runtime assertions */
+#define LFS_TRACE(...)
+
+#ifndef LFS_TRACE
+#ifdef LFS_YES_TRACE
+#define LFS_TRACE_(fmt, ...) \
+    printf("%s:%d:trace: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
+#define LFS_TRACE(...) LFS_TRACE_(__VA_ARGS__, "")
+#else
+#define LFS_TRACE(...)
+#endif
+#endif
+
+#ifndef LFS_DEBUG
+#ifndef LFS_NO_DEBUG
+#define LFS_DEBUG_(fmt, ...) \
+    printf("%s:%d:debug: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
+#define LFS_DEBUG(...) LFS_DEBUG_(__VA_ARGS__, "")
+#else
+#define LFS_DEBUG(...)
+#endif
+#endif
+
+#ifndef LFS_WARN
+#ifndef LFS_NO_WARN
+#define LFS_WARN_(fmt, ...) \
+    printf("%s:%d:warn: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
+#define LFS_WARN(...) LFS_WARN_(__VA_ARGS__, "")
+#else
+#define LFS_WARN(...)
+#endif
+#endif
+
+#ifndef LFS_ERROR
+#ifndef LFS_NO_ERROR
+#define LFS_ERROR_(fmt, ...) \
+    printf("%s:%d:error: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
+#define LFS_ERROR(...) LFS_ERROR_(__VA_ARGS__, "")
+#else
+#define LFS_ERROR(...)
+#endif
+#endif
+
+// Runtime assertions
 #define LFS_ASSERT(a) configASSERT(a)
 
-/* Builtin functions, these may be replaced by more efficient
-   toolchain-specific implementations. LFS_NO_INTRINSICS falls back to a more
-   expensive basic C implementation for debugging purposes */
+
+// Builtin functions, these may be replaced by more efficient
+// toolchain-specific implementations. LFS_NO_INTRINSICS falls back to a more
+// expensive basic C implementation for debugging purposes
 
 // Min/max functions for unsigned 32-bit numbers
 static inline uint32_t lfs_max(uint32_t a, uint32_t b) {
@@ -184,28 +220,30 @@ static inline uint32_t lfs_tobe32(uint32_t a) {
 // Calculate CRC-32 with polynomial = 0x04c11db7
 uint32_t lfs_crc(uint32_t crc, const void *buffer, size_t size);
 
-#if !defined( LFS_NO_MALLOC ) && !defined( configSUPPORT_DYNAMIC_ALLOCATION )
-#error "You must define either LFS_NO_MALLOC or configSUPPORT_DYNAMIC_ALLOCATION"
-#endif
-
-static inline void * lfs_malloc(size_t size)
-{
+// Allocate memory, only used if buffers are not provided to littlefs
+// Note, memory must be 64-bit aligned
+static inline void *lfs_malloc(size_t size) {
 #ifndef LFS_NO_MALLOC
-    return pvPortMalloc(size);
+    return pvPortMalloc( size );
 #else
     (void)size;
     return NULL;
 #endif
 }
 
-static inline void lfs_free( void *p )
-{
+#if !defined( LFS_NO_MALLOC ) && !defined( configSUPPORT_DYNAMIC_ALLOCATION )
+#error "To use LFS with dynamic allocation, you must define configSUPPORT_DYNAMIC_ALLOCATION"
+#endif
+
+// Deallocate memory, only used if buffers are not provided to littlefs
+static inline void lfs_free(void *p) {
 #ifndef LFS_NO_MALLOC
-    vPortFree(p);
+    vPortFree( p );
 #else
     (void)p;
 #endif
 }
+
 
 #ifdef __cplusplus
 } /* extern "C" */
