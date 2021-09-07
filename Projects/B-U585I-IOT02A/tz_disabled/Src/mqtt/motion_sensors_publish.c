@@ -125,7 +125,7 @@ static BaseType_t prvPublishAndWaitForAck( const char * pcTopic,
                                            const void * pvPublishData,
                                            size_t xPublishDataLen )
 {
-    MQTTStatus_t xStatus = 0xFFFFFFFF;
+    MQTTStatus_t xStatus = 0xFF;
     BaseType_t xResult = pdPASS;
     uint32_t ulNotifications = 0;
     uint32_t ulAckNotification = 1u;
@@ -234,21 +234,21 @@ void Task_MotionSensorsPublish( void * pvParameters )
                                      "{"
                                           "\"acceleration_mG\":"
                                             "{"
-                                                "\"x\": %d,"
-                                                "\"y\": %d,"
-                                                "\"z\": %d"
+                                                "\"x\": %ld,"
+                                                "\"y\": %ld,"
+                                                "\"z\": %ld"
                                             "},"
                                           "\"gyro_mDPS\":"
                                             "{"
-                                                "\"x\": %d,"
-                                                "\"y\": %d,"
-                                                "\"z\": %d"
+                                                "\"x\": %ld,"
+                                                "\"y\": %ld,"
+                                                "\"z\": %ld"
                                             "},"
                                           "\"magnetism_mGauss\":"
                                             "{"
-                                                "\"x\": %d,"
-                                                "\"y\": %d,"
-                                                "\"z\": %d"
+                                                "\"x\": %ld,"
+                                                "\"y\": %ld,"
+                                                "\"z\": %ld"
                                             "}"
                                      "}",
                                      xAcceleroAxes.x, xAcceleroAxes.y, xAcceleroAxes.z,

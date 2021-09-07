@@ -1,6 +1,6 @@
 /*
- * corePKCS11 v3.2.0
- * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * FreeRTOS STM32 Reference Integration
+ * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -22,7 +22,7 @@
 
 /**
  * @file core_pkcs11_pal.c
- * @brief Linux file save and read implementation
+ * @brief Littlefs file save and read implementation
  * for PKCS #11 based on mbedTLS with for software keys. This
  * file deviates from the FreeRTOS style standard for some function names and
  * data types in order to maintain compliance with the PKCS #11 standard.
@@ -172,8 +172,7 @@ static CK_RV prvReadData( const char * pcFileName,
     }
     else /* Successful read */
     {
-        lReturn = lfs_file_close( pLfsCtx, &xFile );
-        configASSERT( lReturn == 0 );
+        ( void ) lfs_file_close( pLfsCtx, &xFile );
     }
 
     return xReturn;

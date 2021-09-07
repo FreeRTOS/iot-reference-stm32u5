@@ -47,16 +47,16 @@ extern "C"
 #include "logging.h"
 
 
-// System includes
+/* Standard includes */
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
 #include <inttypes.h>
+
+/* System includes */
 #include "FreeRTOS.h"
 
-//#include <stdlib.h>
-
-// Logging functions
+/* Logging definitions */
 
 #define LFS_TRACE(...)
 

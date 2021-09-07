@@ -57,9 +57,7 @@
 /* Sensor includes */
 #include "b_u585i_iot02a_env_sensors.h"
 
-/**
- * @brief Size of statically allocated buffers for holding topic names and
- * payloads.
+/*
  */
 #define MQTT_PUBLISH_MAX_LEN              ( 256 )
 #define MQTT_PUBLISH_FREQUENCY_HZ         ( 1 )

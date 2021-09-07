@@ -36,6 +36,7 @@ const struct lfs_config * pxInitializeOSPIFlashFs( TickType_t xBlockTime );
 const struct lfs_config * pxInitializeInternalFlashFs( TickType_t xBlockTime );
 #endif
 
-
+/* Provided outside of the lfs port */
+lfs_t * pxGetDefaultFsCtx( void );
 
 
