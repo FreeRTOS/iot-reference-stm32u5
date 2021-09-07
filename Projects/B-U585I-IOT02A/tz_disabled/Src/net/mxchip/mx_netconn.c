@@ -40,7 +40,7 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
-#include "ConfigStore.h"
+#include "kvstore.h"
 
 /* lwip includes */
 #include "lwip/tcpip.h"
@@ -243,6 +243,9 @@ static void vLwipReadyCallback( void * pvCtx )
     }
 }
 
+static char pcSSID[ MX_SSID_BUF_LEN ] = { 0 };
+static char pcPSK[ MX_PSK_BUF_LEN ] = { 0 };
+
 static BaseType_t xConnectToAP( MxNetConnectCtx_t * pxCtx )
 {
     IPCError_t xErr = IPC_SUCCESS;
@@ -254,10 +257,14 @@ static BaseType_t xConnectToAP( MxNetConnectCtx_t * pxCtx )
         xErr |= mx_SetBypassMode( pdTRUE,
                                   pdMS_TO_TICKS( MX_DEFAULT_TIMEOUT_MS ) );
 
-        const char * pcSSID = (char *) ConfigStore_getEntryData( CS_WIFI_PREFERRED_AP_SSID );
-        const char * pcPSK = (char *) ConfigStore_getEntryData( CS_WIFI_PREFERRED_AP_CREDENTIALS );
+        ( void ) KVStore_getString( CS_WIFI_SSID, pcSSID, MX_SSID_BUF_LEN );
+        ( void ) KVStore_getString( CS_WIFI_CREDENTIAL, pcPSK, MX_PSK_BUF_LEN );
 
         xErr = mx_Connect( pcSSID, pcPSK, MX_TIMEOUT_CONNECT );
+
+        /* Clear sensitive data */
+        memset( pcSSID, 0, MX_SSID_BUF_LEN );
+        memset( pcPSK, 0, MX_SSID_BUF_LEN );
 
         if( xErr != IPC_SUCCESS)
         {

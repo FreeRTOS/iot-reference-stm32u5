@@ -66,7 +66,7 @@
 #include "task.h"
 #include "event_groups.h"
 
-#include "ConfigStore.h"
+#include <kvstore.h>
 /* Demo Specific configs. */
 #include "demo_config.h"
 
@@ -191,6 +191,8 @@
 #define mqttexampleMILLISECONDS_PER_SECOND           ( 1000U )
 #define mqttexampleMILLISECONDS_PER_TICK             ( 1U )
 
+
+
 /**
  * @brief The MQTT agent manages the MQTT contexts.  This set the handle to the
  * context used by this demo.
@@ -198,6 +200,18 @@
 #define mqttexampleMQTT_CONTEXT_HANDLE               ( ( MQTTContextHandle_t ) 0 )
 
 #define EVENT_BIT_AGENT_READY 0
+
+typedef struct
+{
+	char * pcMqttEndpointAddress;
+	uint32_t ulMqttEndpointLen;
+	char * pcMqttClientId;
+	uint32_t ulMqttClientIdLen;
+	uint32_t ulMqttPort;
+
+} MqttConnectCtx_t;
+
+static MqttConnectCtx_t xConnectCtx = { 0 };
 
 /*-----------------------------------------------------------*/
 
@@ -286,19 +300,6 @@ static void prvSubscriptionCommandCallback( MQTTAgentCommandContext_t * pxComman
 static void prvMQTTAgentTask( void * pvParameters );
 
 /**
- * @brief The main task used in the MQTT demo.
- *
- * After creating the publisher and subscriber tasks, this task will enter a
- * loop, processing commands from the command queue and calling the MQTT API.
- * After the termination command is received on the command queue, the task
- * will break from the loop.
- *
- * @param[in] pvParameters Parameters as passed at the time of task creation. Not
- * used in this example.
- */
-static void prvConnectAndCreateDemoTasks( void * pvParameters );
-
-/**
  * @brief The timer query function provided to the MQTT context.
  *
  * @return Time in milliseconds.
@@ -314,12 +315,6 @@ static void prvConnectToMQTTBroker( void );
 /*
  * Functions that start the tasks demonstrated by this project.
  */
-
-extern void vStartLargeMessageSubscribePublishTask( configSTACK_DEPTH_TYPE uxStackSize,
-                                                    UBaseType_t uxPriority );
-extern void vStartSimpleSubscribePublishTask( uint32_t ulTaskNumber,
-                                              configSTACK_DEPTH_TYPE uxStackSize,
-                                              UBaseType_t uxPriority );
 
 extern void vStartOTACodeSigningDemo( configSTACK_DEPTH_TYPE uxStackSize,
                                       UBaseType_t uxPriority );
@@ -413,6 +408,43 @@ void vSleepUntilMQTTAgentReady( void )
 	}
 }
 
+static BaseType_t xInitializMqttConnectCtx( MqttConnectCtx_t * pxCtx )
+{
+	 if( xConnectCtx.pcMqttEndpointAddress == NULL )
+	 {
+		 xConnectCtx.ulMqttEndpointLen = KVStore_getSize( CS_CORE_MQTT_ENDPOINT );
+		 configASSERT( xConnectCtx.ulMqttEndpointLen > 0 );
+		 xConnectCtx.pcMqttEndpointAddress = ( char * ) pvPortMalloc( xConnectCtx.ulMqttEndpointLen );
+		 if( xConnectCtx.pcMqttEndpointAddress == NULL )
+		 {
+			 xConnectCtx.ulMqttEndpointLen = 0;
+		 }
+		 else
+		 {
+			 ( void ) KVStore_getString( CS_CORE_MQTT_ENDPOINT,
+					 	 	 			 xConnectCtx.pcMqttClientId,
+										 xConnectCtx.ulMqttClientIdLen );
+		 }
+
+		 xConnectCtx.ulMqttClientIdLen = KVStore_getSize( CS_CORE_THING_NAME );
+		 configASSERT( xConnectCtx.ulMqttClientIdLen > 0 );
+		 xConnectCtx.pcMqttClientId = ( char * ) pvPortMalloc( xConnectCtx.ulMqttClientIdLen );
+		 if( xConnectCtx.pcMqttClientId == NULL )
+		 {
+			 xConnectCtx.ulMqttClientIdLen = 0;
+		 }
+		 else
+		 {
+			 ( void ) KVStore_getString( CS_CORE_THING_NAME,
+					 	 	 			 xConnectCtx.pcMqttClientId,
+										 xConnectCtx.ulMqttClientIdLen );
+		 }
+
+		 xConnectCtx.ulMqttPort = KVStore_getUInt32( CS_CORE_MQTT_PORT, NULL );
+	 }
+	 return( xConnectCtx.pcMqttEndpointAddress != NULL );
+}
+
 /*-----------------------------------------------------------*/
 
 static MQTTStatus_t prvMQTTInit( void )
@@ -448,6 +480,8 @@ static MQTTStatus_t prvMQTTInit( void )
     xTransport.send = mbedtls_transport_send;
     xTransport.recv = mbedtls_transport_recv;
 
+    xInitializMqttConnectCtx( &xConnectCtx );
+
     /* Initialize MQTT library. */
     xReturn = MQTTAgent_Init( &xGlobalMqttAgentContext,
                               &messageInterface,
@@ -481,8 +515,8 @@ static MQTTStatus_t prvMQTTConnect( bool xCleanSession )
     /* The client identifier is used to uniquely identify this MQTT client to
      * the MQTT broker. In a production device the identifier can be something
      * unique, such as a device serial number. */
-    xConnectInfo.pClientIdentifier = ConfigStore_getEntryData( CS_CORE_THING_NAME );
-    xConnectInfo.clientIdentifierLength = ( uint16_t ) ConfigStore_getEntrySize( CS_CORE_THING_NAME );
+    xConnectInfo.pClientIdentifier = xConnectCtx.pcMqttClientId;
+    xConnectInfo.clientIdentifierLength = xConnectCtx.ulMqttClientIdLen;
 
     /* Set MQTT keep-alive period. It is the responsibility of the application
      * to ensure that the interval between Control Packets being sent does not
@@ -675,13 +709,15 @@ static BaseType_t prvSocketConnect( void )
         * the MQTT broker as specified in democonfigMQTT_BROKER_ENDPOINT and
         * democonfigMQTT_BROKER_PORT at the top of this file. */
 
+
+
         LogInfo( ( "Creating a TLS connection to %s:%d.",
-                   ConfigStore_getEntryData( CS_CORE_MQTT_ENDPOINT ),
-                   *( ( uint32_t * ) ConfigStore_getEntryData( CS_CORE_MQTT_ENDPOINT_PORT ) ) ) );
+        		xConnectCtx.pcMqttEndpointAddress,
+				xConnectCtx.ulMqttPort ) );
 
         xNetworkStatus = mbedtls_transport_connect( pxNetworkContext,
-                                                    ConfigStore_getEntryData( CS_CORE_MQTT_ENDPOINT ),
-                                                    (uint16_t) *( ( uint32_t * ) ConfigStore_getEntryData( CS_CORE_MQTT_ENDPOINT_PORT ) ),
+        										    xConnectCtx.pcMqttEndpointAddress,
+                                                    (uint16_t) xConnectCtx.ulMqttPort,
                                                     &xNetworkCredentials,
                                                     mqttexampleTRANSPORT_SEND_RECV_TIMEOUT_MS,
                                                     mqttexampleTRANSPORT_SEND_RECV_TIMEOUT_MS );
