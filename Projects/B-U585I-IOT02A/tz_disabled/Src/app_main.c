@@ -34,8 +34,9 @@
 
 #include "cli.h"
 #include "lfs.h"
+#include "fs/lfs_port.h"
 
-volatile lfs_t * pxLfsCtx = NULL;
+static lfs_t * pxLfsCtx = NULL;
 
 lfs_t * pxGetDefaultFsCtx( void )
 {
@@ -128,10 +129,16 @@ static int fs_init( void )
 static void vHeartbeatTask( void * pvParameters )
 {
     ( void ) pvParameters;
+
+    HAL_GPIO_WritePin( LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_RESET );
+    HAL_GPIO_WritePin( LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET );
+
     while(1)
     {
         LogSys( "Idle priority heartbeat." );
-        vTaskDelay( pdMS_TO_TICKS( 60 * 1000 ) );
+        vTaskDelay( pdMS_TO_TICKS( 1000 ) );
+        HAL_GPIO_TogglePin( LED_GREEN_GPIO_Port, LED_GREEN_Pin );
+        HAL_GPIO_TogglePin( LED_RED_GPIO_Port, LED_RED_Pin );
     }
 }
 
@@ -148,6 +155,7 @@ int main( void )
     LogInfo(("HW Init Complete."));
 
 	int xMountStatus = fs_init();
+	KVStore_init();
 
 	configASSERT( xMountStatus == LFS_ERR_OK );
 
@@ -178,8 +186,6 @@ int main( void )
 
     /* Start scheduler */
     vTaskStartScheduler();
-
-    vStartSensorPublishTask();
 
     LogError( "Kernel start returned." );
 
