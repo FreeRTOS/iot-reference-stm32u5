@@ -32,6 +32,7 @@
 /* FreeRTOS includes. */
 #include "FreeRTOS.h"
 #include "task.h"
+#include "stream_buffer.h"
 
 /* Utils includes. */
 #include "FreeRTOS_CLI.h"
