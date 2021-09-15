@@ -59,10 +59,9 @@
 [submodule "Middleware/ST/STM32CubeU5"]
 	path = Middleware/ST/STM32CubeU5
 	url = https://github.com/STMicroelectronics/STM32CubeU5.git
-	update = none
 [submodule "Middleware/lwip"]
 	path = Middleware/lwip
 	url = https://github.com/lwip-tcpip/lwip.git
 [submodule "Middleware/ARM/littlefs"]
 	path = Middleware/ARM/littlefs
-	url = git@github.com:littlefs-project/littlefs.git
+	url = https://github.com/littlefs-project/littlefs.git
