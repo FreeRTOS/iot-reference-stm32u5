@@ -33,13 +33,14 @@ typedef struct
 {
 	KVStoreValueType_t type;
 	size_t length;
-//	ValueDataUnion_t data;
-	void * pvData;
-	char * pcData;
-	UBaseType_t uxData;
-	BaseType_t xData;
-	uint32_t ulData;
-	int32_t lData;
+	union {
+		void * pvData;
+		char * pcData;
+		UBaseType_t uxData;
+		BaseType_t xData;
+		uint32_t ulData;
+		int32_t lData;
+	};
 	BaseType_t xChangePending;
 } KVStoreCacheEntry_t;
 

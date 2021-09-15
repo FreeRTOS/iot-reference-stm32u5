@@ -3,6 +3,7 @@
 	<name>tz_disabled</name>
 	<comment></comment>
 	<projects>
+		<project>mbedtls</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
@@ -72,11 +73,6 @@
 			<locationURI>WORKSPACE_LOC/Drivers/stm32u5_mbedtls_accel</locationURI>
 		</link>
 		<link>
-			<name>Inc/stm32u5_iot_board.h</name>
-			<type>1</type>
-			<locationURI>WORKSPACE_LOC/Boards/stm32u5_iot_board.h</locationURI>
-		</link>
-		<link>
 			<name>Libraries/FreeRTOS</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
@@ -92,9 +88,9 @@
 			<locationURI>WORKSPACE_LOC/Middleware/lwip/src</locationURI>
 		</link>
 		<link>
-			<name>Src/stm32u5_iot_board.c</name>
-			<type>1</type>
-			<locationURI>WORKSPACE_LOC/Boards/stm32u5_iot_board.c</locationURI>
+			<name>Src/Boards</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Boards</locationURI>
 		</link>
 		<link>
 			<name>Libraries/FreeRTOS/backoff_algorithm.c</name>
@@ -137,11 +133,6 @@
 			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/lwip_osal</locationURI>
 		</link>
 		<link>
-			<name>Libraries/FreeRTOS/plus_cli</name>
-			<type>2</type>
-			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/plus_cli</locationURI>
-		</link>
-		<link>
 			<name>Libraries/FreeRTOS/crypto/core_pkcs11.c</name>
 			<type>1</type>
 			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/corePKCS11/source/core_pkcs11.c</locationURI>
@@ -160,6 +151,11 @@
 			<name>Libraries/FreeRTOS/crypto/mbedtls_utils.c</name>
 			<type>1</type>
 			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/corePKCS11/source/dependency/3rdparty/mbedtls_utils/mbedtls_utils.c</locationURI>
+		</link>
+		<link>
+			<name>Libraries/FreeRTOS/crypto/pal_utils</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/corePKCS11/source/portable/os</locationURI>
 		</link>
 		<link>
 			<name>Libraries/FreeRTOS/kernel/event_groups.c</name>

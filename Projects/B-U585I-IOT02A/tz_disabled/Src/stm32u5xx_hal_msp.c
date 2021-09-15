@@ -24,10 +24,6 @@
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
-extern DMA_HandleTypeDef handle_GPDMA1_Channel7;
-
-extern DMA_HandleTypeDef handle_GPDMA1_Channel6;
-
 extern DMA_HandleTypeDef handle_GPDMA1_Channel5;
 
 extern DMA_HandleTypeDef handle_GPDMA1_Channel4;
@@ -514,86 +510,5 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef* hspi)
   }
 
 }
-
-/**
-* @brief UART MSP Initialization
-* This function configures the hardware resources used in this example
-* @param huart: UART handle pointer
-* @retval None
-*/
-void HAL_UART_MspInit(UART_HandleTypeDef* huart)
-{
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
-
-  if( huart->Instance == UART4 )
-  {
-  /** Initializes the peripherals clock
-  */
-
-	PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_UART4;
-	PeriphClkInit.Uart4ClockSelection = RCC_UART4CLKSOURCE_PCLK1;
-	if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
-	{
-	  Error_Handler();
-	}
-
-
-	/* Peripheral clock enable */
-	__HAL_RCC_UART4_CLK_ENABLE();
-
-	__HAL_RCC_GPIOC_CLK_ENABLE();
-
-	/** GPIO Configuration (Route to Arduino RX/TX Connector
-		RX: PC11
-		TX: PC10
-	*/
-	GPIO_InitStruct.Pin = GPIO_PIN_10 | GPIO_PIN_11;
-	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-	GPIO_InitStruct.Alternate = GPIO_AF8_UART4;
-	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-
-	/* Interrupt Init */
-	HAL_NVIC_SetPriority(UART4_IRQn, 2, 0);
-	HAL_NVIC_EnableIRQ(UART4_IRQn);
-  }
-}
-
-/**
-* @brief UART MSP De-Initialization
-* This function freeze the hardware resources used in this example
-* @param huart: UART handle pointer
-* @retval None
-*/
-void HAL_UART_MspDeInit(UART_HandleTypeDef* huart)
-{
-  if(huart->Instance==USART1)
-  {
-  /* USER CODE BEGIN USART1_MspDeInit 0 */
-
-  /* USER CODE END USART1_MspDeInit 0 */
-    /* Peripheral clock disable */
-    __HAL_RCC_USART1_CLK_DISABLE();
-
-    /**USART1 GPIO Configuration
-    PA10     ------> USART1_RX
-    PA9     ------> USART1_TX
-    */
-    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_10|GPIO_PIN_9);
-
-    /* USART1 interrupt DeInit */
-    HAL_NVIC_DisableIRQ(USART1_IRQn);
-  /* USER CODE BEGIN USART1_MspDeInit 1 */
-
-  /* USER CODE END USART1_MspDeInit 1 */
-  }
-
-}
-
-/* USER CODE BEGIN 1 */
-
-/* USER CODE END 1 */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

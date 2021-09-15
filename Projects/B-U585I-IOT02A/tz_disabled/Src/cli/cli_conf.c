@@ -27,125 +27,163 @@
 #include "cli.h"
 #include "logging.h"
 
-#include "lfs.h"
+#include "kvstore.h"
 
 #include <string.h>
 
+#define WRITE_BUFFER_LEN 128
 
-static void vSubCommand_GetConfig( char * pcWriteBuffer, size_t xWriteBufferLen, char * pcKey )
+static void vSubCommand_GetConfig( ConsoleIO_t * pxConsoleIO, char * pcKey )
 {
-    lfs_t * pLFS = pxGetDefaultFsCtx();
-    struct lfs_info xFileInfo = { 0 };
+    char pcWriteBuffer[ WRITE_BUFFER_LEN ];
 
-    int xStatus = lfs_stat( pLFS, pcKey, &xFileInfo );
-    if( xStatus == LFS_ERR_NOENT || xStatus == LFS_ERR_NOTDIR )
+    KVStoreKey_t xKey = kvStringToKey( pcKey );
+    KVStoreValueType_t xKvType = KVStore_getType( xKey );
+
+    int32_t lResponseLen = 0;
+
+    switch( xKvType )
     {
-        /* Key has not been set yet */
-        snprintf( pcWriteBuffer, xWriteBufferLen, "%s=\r\n", pcKey );
+    case KV_TYPE_BASE_T:
+    {
+        BaseType_t xValue = KVStore_getBase( xKey, NULL );
+        lResponseLen = snprintf( pcWriteBuffer, WRITE_BUFFER_LEN, "%s=%ld\r\n", pcKey, xValue );
+        break;
     }
-    else
+    case KV_TYPE_UBASE_T:
     {
-        lfs_file_t xFile = { 0 };
-        lfs_file_open( pLFS, &xFile, pcKey, LFS_O_RDONLY );
-        int lValueSize = lfs_file_size( pLFS, &xFile );
-        if( lValueSize < 0 )
+        UBaseType_t xValue = KVStore_getUBase( xKey, NULL );
+        lResponseLen = snprintf( pcWriteBuffer, WRITE_BUFFER_LEN, "%s=%lu\r\n", pcKey, xValue );
+        break;
+    }
+    case KV_TYPE_INT32:
+    {
+        int32_t lValue = KVStore_getInt32( xKey, NULL );
+        lResponseLen = snprintf( pcWriteBuffer, WRITE_BUFFER_LEN, "%s=%ld\r\n", pcKey, lValue );
+        break;
+    }
+    case KV_TYPE_UINT32:
+    {
+        uint32_t ulValue = KVStore_getUInt32( xKey, NULL );
+        lResponseLen = snprintf( pcWriteBuffer, WRITE_BUFFER_LEN, "%s=%lu\r\n", pcKey, ulValue );
+        break;
+    }
+    case KV_TYPE_STRING:
+    case KV_TYPE_BLOB:
+    {
+        char * pcWorkPtr = pcWriteBuffer;
+        pcWorkPtr = strncpy( pcWorkPtr, pcKey, WRITE_BUFFER_LEN );
+
+        lResponseLen = ( ( uintptr_t ) pcWorkPtr - ( uintptr_t ) pcWriteBuffer );
+
+        if( lResponseLen < WRITE_BUFFER_LEN )
         {
-            snprintf( pcWriteBuffer, xWriteBufferLen, "File stat error\r\n" );
-        }
-        else
-        {
-            /* Copy value from file */
-            char pcValue[ lValueSize ];
-            int lNBytesRead = lfs_file_read( pLFS, &xFile, pcValue, lValueSize );
-            if( lNBytesRead == lValueSize )
-            {
-                /* Key was set, and entirely read */
-                snprintf( pcWriteBuffer, xWriteBufferLen, "%s=%s\r\n", pcKey, pcValue );
-            }
-            else
-            {
-                snprintf( pcWriteBuffer, xWriteBufferLen, "File read error\r\n");
-            }
+            *pcWorkPtr = '=';
+            pcWorkPtr++;
+            lResponseLen++;
         }
 
-        lfs_file_close( pLFS, &xFile );
+        if(lResponseLen  < WRITE_BUFFER_LEN )
+        {
+            lResponseLen += KVStore_getString( xKey, pcWorkPtr, WRITE_BUFFER_LEN - lResponseLen - 1 );
+        }
+    }
+    case KV_TYPE_LAST:
+    case KV_TYPE_NONE:
+        lResponseLen = snprintf( pcWriteBuffer, WRITE_BUFFER_LEN, "%s=\r\n", pcKey );
+        break;
+    }
+
+    if( lResponseLen > 0 )
+    {
+        /* Correct lResponseLen for any responses that were truncated by snprintf */
+        if( lResponseLen > WRITE_BUFFER_LEN )
+        {
+            lResponseLen = WRITE_BUFFER_LEN;
+        }
+        pcWriteBuffer[ WRITE_BUFFER_LEN - 1 ] = 0;
+
+
+        /* Write function does not require null termination */
+        pxConsoleIO->write( pcWriteBuffer, ( uint32_t ) lResponseLen );
     }
 }
-static void vSubCommand_SetConfig( char * pcWriteBuffer, size_t xWriteBufferLen, char * pcKey, char * pcValue )
+static void vSubCommand_SetConfig( ConsoleIO_t * pxConsoleIO, char * pcKey, char * pcValue )
 {
-	lfs_t * pLFS = pxGetDefaultFsCtx();
-    lfs_file_t xFile = { 0 };
-
-    int xOpenStatus = lfs_file_open( pLFS, &xFile, pcKey, LFS_O_RDWR | LFS_O_CREAT | LFS_O_TRUNC );
-    if( xOpenStatus == LFS_ERR_OK )
-    {
-        size_t xValueLength = strlen( pcValue ) + 1; // Include terminator
-        int lNBytesWritten = lfs_file_write( pLFS, &xFile, pcValue, xValueLength );
-        if( lNBytesWritten == xValueLength )
-        {
-            snprintf( pcWriteBuffer, xWriteBufferLen, "%s=%s\r\n", pcKey, pcValue );
-        }
-        else
-        {
-            snprintf( pcWriteBuffer, xWriteBufferLen, "Failed to write full value\r\n");
-        }
-
-        lfs_file_close( pLFS, &xFile );
-    }
-    else
-    {
-        snprintf( pcWriteBuffer, xWriteBufferLen, "Failed to create/open file for write\r\n" );
-    }
+    //	lfs_t * pLFS = pxGetDefaultFsCtx();
+    //    lfs_file_t xFile = { 0 };
+    //
+    //    int xOpenStatus = lfs_file_open( pLFS, &xFile, pcKey, LFS_O_RDWR | LFS_O_CREAT | LFS_O_TRUNC );
+    //    if( xOpenStatus == LFS_ERR_OK )
+    //    {
+    //        size_t xValueLength = strlen( pcValue ) + 1; // Include terminator
+    //        int lNBytesWritten = lfs_file_write( pLFS, &xFile, pcValue, xValueLength );
+    //        if( lNBytesWritten == xValueLength )
+    //        {
+    //            snprintf( pcWriteBuffer, xWriteBufferLen, "%s=%s\r\n", pcKey, pcValue );
+    //        }
+    //        else
+    //        {
+    //            snprintf( pcWriteBuffer, xWriteBufferLen, "Failed to write full value\r\n");
+    //        }
+    //
+    //        lfs_file_close( pLFS, &xFile );
+    //    }
+    //    else
+    //    {
+    //        snprintf( pcWriteBuffer, xWriteBufferLen, "Failed to create/open file for write\r\n" );
+    //    }
 }
 
 /* Assumes FS was already mounted */
-static BaseType_t xCommand_Configure( char *pcWriteBuffer, size_t xWriteBufferLen, const char *pcCommandString )
+static BaseType_t xCommand_Configure( ConsoleIO_t * pxConsoleIO, const char *pcCommandString )
 {
     /* Fetch mode */
     BaseType_t xModeRefLength = 0;
-    char * pcModeRef = FreeRTOS_CLIGetParameter( pcCommandString, 1, &xModeRefLength );
+    const char * pcModeRef = FreeRTOS_CLIGetParameter( pcCommandString, 1, &xModeRefLength );
     char pcMode[xModeRefLength + 1];
     memcpy( pcMode, pcModeRef, xModeRefLength);
     pcMode[xModeRefLength] = '\0';
 
     /* Fetch key */
     BaseType_t xKeyRefLength = 0;
-    char * pcKeyRef = FreeRTOS_CLIGetParameter( pcCommandString, 2, &xKeyRefLength );
+    const char * pcKeyRef = FreeRTOS_CLIGetParameter( pcCommandString, 2, &xKeyRefLength );
     char pcKey[xKeyRefLength + 1];
     memcpy( pcKey, pcKeyRef, xKeyRefLength );
     pcKey[xKeyRefLength] = '\0';
 
     if( 0 == strcmp( "get", pcMode ) && xKeyRefLength > 1 )
     {
-        vSubCommand_GetConfig( pcWriteBuffer, xWriteBufferLen, pcKey );
+        vSubCommand_GetConfig( pxConsoleIO, pcKey );
     }
     else if( 0 == strcmp( "set", pcMode ) && xKeyRefLength > 1 )
     {
         /* Fetch value */
         BaseType_t xValueRefLength = 0;
-        char * pcValueRef = FreeRTOS_CLIGetParameter( pcCommandString, 3, &xValueRefLength );
+        const char * pcValueRef = FreeRTOS_CLIGetParameter( pcCommandString, 3, &xValueRefLength );
         char pcValue[xValueRefLength + 1];
         memcpy( pcValue, pcValueRef, xValueRefLength );
         pcValue[xValueRefLength] = '\0';
 
-        vSubCommand_SetConfig( pcWriteBuffer, xWriteBufferLen, pcKey, pcValue );
+        vSubCommand_SetConfig( pxConsoleIO, pcKey, pcValue );
     }
     else
     {
-        strncpy( pcWriteBuffer, "Usage:\r\n conf get <key>\r\n conf set <key> <value>\r\n", xWriteBufferLen );
+        const char * confErrStr = "Usage:\r\n conf get <key>\r\n conf set <key> <value>\r\n";
+        pxConsoleIO->write( confErrStr, strlen(confErrStr) );
     }
 
     return pdFALSE;
 }
 
-CLI_Command_Definition_t xCommandDef_Configure =
+const CLI_Command_Definition_t xCommandDef_conf =
 {
         .pcCommand = "conf",
         .pcHelpString = "conf\r\n"
-                        "    Set/Get NVM stored configuration values\r\n"
-                        "    Usage:\r\n"
-                        "        conf get <key>\r\n"
-                        "        conf set <key> <value>\r\n",
-        .pxCommandInterpreter = xCommand_Configure,
-        .cExpectedNumberOfParameters = -1
+                "    Set/Get NVM stored configuration values\r\n"
+                "    Usage:\r\n"
+                "        conf get <key>\r\n"
+                "        conf set <key> <value>\r\n",
+                .pxCommandInterpreter = xCommand_Configure,
+                .cExpectedNumberOfParameters = -1
 };

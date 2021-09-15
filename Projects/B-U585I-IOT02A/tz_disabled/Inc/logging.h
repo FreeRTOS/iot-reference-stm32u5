@@ -55,6 +55,7 @@ void vLoggingPrintf( const char * const     pcLogLevel,
 void vLoggingInit( void );
 void vLoggingDeInit( void );
 void vDyingGasp( void );
+void vInitLoggingEarly( void );
 IotUARTHandle_t xLoggingGetIOHandle( void );
 
 /* task.h cannot be included here because this file is included by FreeRTOSConfig.h */
@@ -86,7 +87,7 @@ static inline const char * pcPathToBasename( const char * pcFileName )
 
 #define LogAssert( ... )            do { vTaskSuspendAll(); vDyingGasp(); SdkLog( "ASRT", __VA_ARGS__ ); } while( 0 )
 
-#define LogSys( ... )               do { vLoggingPrintf( "SYS", "", 0, __VA_ARGS__ ); } while( 0 )
+#define LogSys( ... )               do { vLoggingPrintf( "SYS", __NAME_ARG__, __LINE__, __VA_ARGS__ ); } while( 0 )
 
 #define LogKernel( ... )            SdkLog( "KRN", __VA_ARGS__ )
 

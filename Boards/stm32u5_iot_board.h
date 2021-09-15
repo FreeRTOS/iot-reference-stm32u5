@@ -19,8 +19,8 @@ typedef enum GpioPin
     GPIO_MAX
 } GpioPin_t;
 
-extern const IotMappedPin_t xGpioMap[];
+extern const IotMappedPin_t xGpioMap[ GPIO_MAX ];
 
-extern const IotGpioDescriptor_t xGpioDesc[ GPIO_MAX ];
+//extern const IotGpioDescriptor_t xGpioDesc[ GPIO_MAX ];
 
 #endif /* _COMMON_IO_BOAD_U5_ */

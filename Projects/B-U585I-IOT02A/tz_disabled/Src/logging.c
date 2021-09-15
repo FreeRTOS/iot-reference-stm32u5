@@ -1,5 +1,6 @@
 /*
  * FreeRTOS STM32 Reference Integration
+ *
  * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -33,62 +34,45 @@
 /* FreeRTOS includes. */
 #include "FreeRTOS.h"
 #include "task.h"
-#include "stream_buffer.h"
+#include "message_buffer.h"
 
 /* Project Includes */
 #include "logging.h"
 #include "main.h"
 
-/* CommonIO Includes */
-#include "iot_uart.h"
-
 /*-----------------------------------------------------------*/
+
 /* Dimensions the arrays into which print messages are created. */
 #define dlMAX_PRINT_STRING_LENGTH       512     /* maximum length of any single log line */
-#define dlLOGGING_STREAM_LENGTH         4096    /* how many bytes to accept for logging before blocking */
-#define dlLOGGING_HW_FIFO_LENGTH        8       /* How many bytes at a time can be inserted into the hardware fifo */
+#define dlLOGGING_STREAM_LENGTH        	4096    /* how many bytes to accept for logging before blocking */
 #define LOGGING_LINE_ENDING             "\r\n"
 #define dlMAX_LOG_LINE_LENGTH           dlMAX_PRINT_STRING_LENGTH - sizeof( LOGGING_LINE_ENDING )
 
 #define TASK_NOTIFY_UART_DONE_IDX       2
 
-static volatile StreamBufferHandle_t xLogStream = NULL;
-static TaskHandle_t xLoggingTaskHandle = NULL;
-static IotUARTHandle_t xConsoleUart = NULL;
+volatile StreamBufferHandle_t xLogBuf = NULL;
 
-int _write( int fd, const void * buffer, unsigned int count );
+UART_HandleTypeDef * pxEarlyUart = NULL;
 
-static void vLoggingThread( void * pxThreadParameters )
+extern UART_HandleTypeDef * vInitUartEarly( void );
+
+void vInitLoggingEarly( void )
 {
-    (void) pxThreadParameters;
-
-    char cOutBuffer[ dlLOGGING_HW_FIFO_LENGTH ];
-    BaseType_t xRecvResult = 0;
-    uint32_t xWriteStatus;
-
-    while( 1 )
-    {
-        /* Blocking read up to cOutBuffer size on xStreamBuffer */
-        xRecvResult = xStreamBufferReceive( xLogStream, cOutBuffer, dlLOGGING_HW_FIFO_LENGTH, pdMS_TO_TICKS( 4 ) );
-        if( xRecvResult > 0 )
-        {
-            xWriteStatus = iot_uart_write_sync( xConsoleUart, ( uint8_t * ) cOutBuffer, xRecvResult );
-
-            configASSERT( IOT_UART_SUCCESS == HAL_OK );
-        }
-    }
+	pxEarlyUart = vInitUartEarly();
 }
+
 
 /* Should only be called during an assert with the scheduler suspended. */
 void vDyingGasp( void )
 {
-    char cOutBuffer[ dlLOGGING_HW_FIFO_LENGTH ];
+    char cOutBuffer[ dlMAX_PRINT_STRING_LENGTH ];
     BaseType_t xNumBytes = 0;
+    pxEarlyUart = vInitUartEarly();
 
     do
     {
-        xNumBytes = xStreamBufferReceiveFromISR( xLogStream, cOutBuffer, dlLOGGING_HW_FIFO_LENGTH, 0 );
-        iot_uart_write_sync( xConsoleUart, ( uint8_t * ) cOutBuffer, xNumBytes );
+        xNumBytes = xStreamBufferReceiveFromISR( xLogBuf, cOutBuffer, dlMAX_PRINT_STRING_LENGTH, 0 );
+        (void) HAL_UART_Transmit( pxEarlyUart, ( uint8_t * ) cOutBuffer, xNumBytes, 10 * 1000);
     }
     while( xNumBytes != 0 );
 }
@@ -97,7 +81,7 @@ void vDyingGasp( void )
  * Blocking write function for early printing
  * PRE: must be called when scheduler is not running.
  */
-static void vSendLogMessageEarly( const void * buffer, unsigned int count )
+static void vSendLogMessageEarly( const char * buffer, unsigned int count )
 {
     configASSERT( xTaskGetSchedulerState() != taskSCHEDULER_RUNNING );
 
@@ -112,11 +96,11 @@ static void vSendLogMessageEarly( const void * buffer, unsigned int count )
 
 #ifdef LOGGING_OUTPUT_UART
     /* blocking write to UART */
-    iot_uart_write_sync( xConsoleUart, (uint8_t *)buffer, count );
+    ( void ) HAL_UART_Transmit( pxEarlyUart, (uint8_t *)buffer, count, 100000 );
 #endif
 }
 
-static void vSendLogMessage( const void * buffer, unsigned int count )
+static void vSendLogMessage( const char * buffer, unsigned int count )
 {
     if( xTaskGetSchedulerState() != taskSCHEDULER_RUNNING )
     {
@@ -126,12 +110,12 @@ static void vSendLogMessage( const void * buffer, unsigned int count )
     {
         UBaseType_t uxContext;
         BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-        configASSERT( xLogStream != NULL );
+        configASSERT( xLogBuf != NULL );
 
         /* Enter critical section to preserve ordering of log messages */
         uxContext = taskENTER_CRITICAL_FROM_ISR();
 
-        ( void ) xStreamBufferSendFromISR( xLogStream, buffer, count, &xHigherPriorityTaskWoken );
+        ( void ) xStreamBufferSendFromISR( xLogBuf, buffer, count, &xHigherPriorityTaskWoken );
 
         taskEXIT_CRITICAL_FROM_ISR( uxContext );
 
@@ -141,7 +125,7 @@ static void vSendLogMessage( const void * buffer, unsigned int count )
     {
         taskENTER_CRITICAL();
 
-        ( void ) xStreamBufferSend( xLogStream, buffer, count, 0 );
+        ( void ) xStreamBufferSend( xLogBuf, buffer, count, portMAX_DELAY );
 
         taskEXIT_CRITICAL();
     }
@@ -149,32 +133,7 @@ static void vSendLogMessage( const void * buffer, unsigned int count )
 
 void vLoggingInit( void )
 {
-    int32_t status = IOT_UART_SUCCESS;
-
-    xConsoleUart = iot_uart_open( 0 );
-    configASSERT( xConsoleUart != NULL );
-    IotUARTConfig_t xConfig =
-    {
-        .ulBaudrate    = 115200,
-        .xParity      = UART_PARITY_NONE,
-        .ucWordlength  = UART_WORDLENGTH_8B,
-        .xStopbits    = UART_STOPBITS_1,
-        .ucFlowControl = UART_HWCONTROL_NONE
-    };
-    status = iot_uart_ioctl( xConsoleUart, eUartSetConfig, &xConfig );
-    configASSERT( status == IOT_UART_SUCCESS );
-
-    xLogStream = xStreamBufferCreate( dlLOGGING_STREAM_LENGTH, dlLOGGING_HW_FIFO_LENGTH );
-
-	BaseType_t xResult = xTaskCreate( vLoggingThread,
-	                                  "logger",
-	                                  1024,
-	                                  NULL,
-	                                  30,
-	                                  &xLoggingTaskHandle );
-
-	 configASSERT( xResult != pdFALSE );
-	 configASSERT( xLoggingTaskHandle != NULL );
+    xLogBuf = xStreamBufferCreate( dlLOGGING_STREAM_LENGTH, 1 );
 }
 
 /*-----------------------------------------------------------*/
@@ -270,7 +229,6 @@ void vLoggingPrintf( const char * const     pcLogLevel,
         {
             ulLenTotal = dlMAX_LOG_LINE_LENGTH;
         }
-
     }
 
     ( void ) strncpy( &pcPrintString[ ulLenTotal ],
@@ -284,15 +242,7 @@ void vLoggingPrintf( const char * const     pcLogLevel,
 
 /*-----------------------------------------------------------*/
 
-IotUARTHandle_t xLoggingGetIOHandle( void )
-{
-	return xConsoleUart;
-}
-
-/*-----------------------------------------------------------*/
-
 void vLoggingDeInit( void )
 {
 
 }
-

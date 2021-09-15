@@ -29,7 +29,7 @@
 #include "FreeRTOS.h"
 #include <stddef.h>
 
-typedef enum
+typedef enum KVStoreKey
 {
 	KV_TYPE_NONE = 0,
 	KV_TYPE_BASE_T,
@@ -72,6 +72,8 @@ void KVStore_init( void );
 
 size_t KVStore_getSize( KVStoreKey_t key );
 
+KVStoreValueType_t KVStore_getType( KVStoreKey_t key );
+
 BaseType_t KVStore_getBlob( KVStoreKey_t key, void * pvBuffer, size_t xMaxLength );
 BaseType_t KVStore_setBlob( KVStoreKey_t key, size_t xLength, const void * pvNewValue );
 
@@ -81,7 +83,7 @@ BaseType_t KVStore_setString( KVStoreKey_t key, size_t xLength, const char * pcN
 uint32_t KVStore_getUInt32( KVStoreKey_t key, BaseType_t * pxSuccess );
 BaseType_t KVStore_setUInt32( KVStoreKey_t key, uint32_t ulNewVal );
 
-int32_t lKVStore_getInt32( KVStoreKey_t key, BaseType_t * pxSuccess );
+int32_t KVStore_getInt32( KVStoreKey_t key, BaseType_t * pxSuccess );
 BaseType_t KVStore_setInt32( KVStoreKey_t key, int32_t lNewVal );
 
 UBaseType_t KVStore_getUBase( KVStoreKey_t key, BaseType_t * pxSuccess );

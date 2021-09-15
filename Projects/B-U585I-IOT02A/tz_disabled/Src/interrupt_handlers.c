@@ -35,7 +35,6 @@ extern DMA_HandleTypeDef handle_GPDMA1_Channel6;
 extern DMA_HandleTypeDef handle_GPDMA1_Channel5;
 extern DMA_HandleTypeDef handle_GPDMA1_Channel4;
 extern SPI_HandleTypeDef hspi2;
-extern UART_HandleTypeDef huart1;
 extern TIM_HandleTypeDef htim6;
 
 

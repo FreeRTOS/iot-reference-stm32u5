@@ -25,6 +25,7 @@
 
 #include "FreeRTOS.h"
 #include "semphr.h"
+#include "kvstore.h"
 #include "kvstore_prv.h"
 #include <string.h>
 
@@ -220,6 +221,17 @@ BaseType_t KVStore_getBlob( KVStoreKey_t key, void * pvBuffer, size_t xMaxLength
 	return xSuccess;
 }
 
+KVStoreValueType_t KVStore_getType( KVStoreKey_t key )
+{
+	KVStoreValueType_t xKvType = KV_TYPE_NONE;
+
+	if( key < CS_NUM_KEYS )
+	{
+		xKvType = kvStoreDefaults[ key ].type;
+	}
+	return( xKvType );
+}
+
 size_t KVStore_getString( KVStoreKey_t key, char * pvBuffer, size_t xMaxLength )
 {
 	size_t xSizeWritten = 0;
@@ -264,7 +276,7 @@ uint32_t KVStore_getUInt32( KVStoreKey_t key, BaseType_t * pxSuccess )
 	return ulReturnValue;
 }
 
-int32_t lKVStore_getInt32( KVStoreKey_t key, BaseType_t * pxSuccess )
+int32_t KVStore_getInt32( KVStoreKey_t key, BaseType_t * pxSuccess )
 {
 	int32_t lReturnValue = 0;
 
@@ -288,7 +300,7 @@ int32_t lKVStore_getInt32( KVStoreKey_t key, BaseType_t * pxSuccess )
 	return lReturnValue;
 }
 
-BaseType_t lKVStore_getBase( KVStoreKey_t key, BaseType_t * pxSuccess )
+BaseType_t KVStore_getBase( KVStoreKey_t key, BaseType_t * pxSuccess )
 {
 	BaseType_t xReturnValue = 0;
 
@@ -312,7 +324,7 @@ BaseType_t lKVStore_getBase( KVStoreKey_t key, BaseType_t * pxSuccess )
 	return xReturnValue;
 }
 
-UBaseType_t lKVStore_getUBase( KVStoreKey_t key, BaseType_t * pxSuccess )
+UBaseType_t KVStore_getUBase( KVStoreKey_t key, BaseType_t * pxSuccess )
 {
 	UBaseType_t xReturnValue = 0;
 

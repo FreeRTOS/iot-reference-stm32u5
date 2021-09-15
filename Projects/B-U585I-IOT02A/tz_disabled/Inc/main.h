@@ -79,7 +79,6 @@ void GPIO_EXTI_Register_Callback( uint16_t usGpioPinMask,
 #define MXCHIP_RESET_GPIO_Port GPIOF
 void   MX_ICACHE_Init(void);
 void   MX_GPIO_Init(void);
-void   MX_USART1_UART_Init(void);
 void   MX_RNG_Init(void);
 void   MX_RTC_Init(void);
 void   MX_GPDMA1_Init(void);

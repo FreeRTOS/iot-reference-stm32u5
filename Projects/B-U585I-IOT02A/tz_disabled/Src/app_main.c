@@ -25,14 +25,17 @@
  *
  */
 
+#include "logging_levels.h"
+#define LOG_LEVEL LOG_DEBUG
 #include "logging.h"
 #include "main.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "net/mxchip/mx_netconn.h"
 #include "stm32u5xx_ll_rng.h"
+#include "stm32u5xx.h"
 
-#include "cli.h"
+#include "cli/cli.h"
 #include "lfs.h"
 #include "fs/lfs_port.h"
 
@@ -50,12 +53,36 @@ lfs_t * pxGetDefaultFsCtx( void )
     return pxLfsCtx;
 }
 
+typedef void( * VectorTable_t)(void);
+#define NUM_CORE_INTERRUPT_VECTORS 	( ( 0 - Reset_IRQn ) + 1 )	/* 16 core ARM vectors (including intial SP) */
+#define NUM_NONCORE_IRQ				( FMAC_IRQn + 1 ) /* MCU specific */
+#define VECTOR_TABLE_SIZE_CM33 		( NUM_CORE_INTERRUPT_VECTORS + NUM_NONCORE_IRQ )
+#define VECTOR_TABLE_ALIGN_CM33		0x100U
+
+static VectorTable_t ulVectorTableSRAM[ VECTOR_TABLE_SIZE_CM33 ] __attribute__(( aligned (VECTOR_TABLE_ALIGN_CM33) ));
+
+/* Relocate vector table to ram for runtime interrupt registration */
+static void vRelocateVectorTable( void )
+{
+    /* Disable interrupts */
+    __disable_irq();
+
+    /* Copy vector table to ram */
+    ( void ) memcpy( ulVectorTableSRAM, ( void * ) SCB->VTOR, sizeof( ulVectorTableSRAM ) );
+
+    /* Set VTOR register to point to our new sram table */
+    SCB->VTOR = ( uintptr_t ) ulVectorTableSRAM;
+
+    __DSB();
+    __enable_irq();
+}
+
 /* Initialize hardware / STM32 HAL library */
 static void hw_init( void )
 {
     __HAL_RCC_SYSCFG_CLK_ENABLE();
 
-    /*x`
+    /*
      * Initializes flash interface and systick timer.
      * Note: HAL_Init calls HAL_MspInit.
      */
@@ -71,6 +98,9 @@ static void hw_init( void )
 
     /* initialize ICACHE peripheral (makes flash access faster) */
     MX_ICACHE_Init();
+
+    /* Initialize uart for logging before cli is up and running */
+    vInitLoggingEarly();
 
     /* Initialize GPIO */
     MX_GPIO_Init();
@@ -94,10 +124,10 @@ static int fs_init( void )
 {
     static lfs_t xLfsCtx = { 0 };
     /* Block time of up to 1000ms if filesystem is busy */
-    struct lfs_config * pCfg = pxInitializeOSPIFlashFs( pdMS_TO_TICKS( 1000 ) );
+    const struct lfs_config * pxCfg = pxInitializeOSPIFlashFs( pdMS_TO_TICKS( 1000 ) );
 
     /* mount the filesystem */
-    int err = lfs_mount( &xLfsCtx, pCfg );
+    int err = lfs_mount( &xLfsCtx, pxCfg );
 
     /* format if we can't mount the filesystem
      * this should only happen on the first boot
@@ -105,15 +135,15 @@ static int fs_init( void )
     if( err != 0 )
     {
         LogError( "Failed to mount partition. Formatting..." );
-        err = lfs_format( &xLfsCtx, pCfg );
+        err = lfs_format( &xLfsCtx, pxCfg );
         if( err == 0 )
         {
-            err = lfs_mount( &xLfsCtx, pCfg );
+            err = lfs_mount( &xLfsCtx, pxCfg );
         }
 
         if( err != 0 )
         {
-            LogError( "Failed to format littlefs devices." );
+            LogError( "Failed to format littlefs device." );
         }
     }
 
@@ -135,7 +165,7 @@ static void vHeartbeatTask( void * pvParameters )
 
     while(1)
     {
-        LogSys( "Idle priority heartbeat." );
+//        LogSys( "Idle priority heartbeat." );
         vTaskDelay( pdMS_TO_TICKS( 1000 ) );
         HAL_GPIO_TogglePin( LED_GREEN_GPIO_Port, LED_GREEN_Pin );
         HAL_GPIO_TogglePin( LED_RED_GPIO_Port, LED_RED_Pin );
@@ -148,6 +178,8 @@ extern void Task_MotionSensorsPublish( void * );
 
 int main( void )
 {
+//	vRelocateVectorTable();
+
     hw_init();
 
     vLoggingInit();
@@ -177,12 +209,12 @@ int main( void )
 
     configASSERT( xResult == pdTRUE );
 
-    xResult = xTaskCreate( Task_MotionSensorsPublish, "MotionS", 4096, NULL, tskIDLE_PRIORITY + 3, NULL );
+//    xResult = xTaskCreate( Task_MotionSensorsPublish, "MotionS", 4096, NULL, tskIDLE_PRIORITY + 3, NULL );
     configASSERT( xResult == pdTRUE );
 
-    vStartMQTTAgentDemo();
+//    vStartMQTTAgentDemo();
 
-    vStartSensorPublishTask();
+//    vStartSensorPublishTask();
 
     /* Start scheduler */
     vTaskStartScheduler();

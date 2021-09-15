@@ -20,5 +20,10 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-CLI_Command_Definition_t xCommandDef_conf;
-CLI_Command_Definition_t xCommandDef_pki;
+#ifndef _CLI_PRIV
+#define _CLI_PRIV
+
+const CLI_Command_Definition_t xCommandDef_conf;
+const CLI_Command_Definition_t xCommandDef_pki;
+
+#endif /* _CLI_PRIV */

@@ -26,76 +26,106 @@
 
 #include "cli.h"
 #include "logging.h"
-
-#include "lfs.h"
+#include "cli_prv.h"
+#include "stream_buffer.h"
 
 #include <string.h>
 
 #define CLI_COMMAND_BUFFER_SIZE 128
 #define CLI_COMMAND_OUTPUT_BUFFER_SIZE configCOMMAND_INT_MAX_OUTPUT_SIZE
 
-static IotUARTHandle_t xUART_USB = NULL;
-static uint8_t ucBuffer_UART[ CLI_COMMAND_BUFFER_SIZE ] = { 0 };
-static size_t xBuffer_Index = 0;
-char cOutputBuffer[ CLI_COMMAND_OUTPUT_BUFFER_SIZE ] = { 0 };
+static char ucCommandBuffer[ CLI_COMMAND_BUFFER_SIZE ] = { 0 };
+
+extern ConsoleIO_t xConsoleIODesc;
+
+extern volatile BaseType_t xPartialCommand;
+
+static int32_t readline( ConsoleIO_t * pxConsoleIO,
+					     char * const pcInputBuffer,
+						 uint32_t xInputBufferLen )
+{
+	int32_t lBytesWritten = 0;
+	/* Read a single character to start */
+
+	//TODO timeout struct here to timeout xPartialCommand flag
+
+	uint32_t ulWriteIdx = 0;
+	BaseType_t xFoundEOL = pdFALSE;
+
+	/* Ensure null termination */
+	pcInputBuffer[ xInputBufferLen - 1 ] = '\0';
+
+    uart_console_init();
+
+	while( ulWriteIdx < ( xInputBufferLen - 1 ) &&
+		   xFoundEOL == pdFALSE )
+	{
+		pxConsoleIO->read_timeout( &( pcInputBuffer[ ulWriteIdx ] ),
+								   1,
+								   portMAX_DELAY );
+
+		xPartialCommand = pdTRUE;
+
+		switch( pcInputBuffer[ ulWriteIdx ] )
+		{
+		case '\n':
+		case '\r':
+		case '\00':
+			/* If we have an actual string to report, do so */
+			if( ulWriteIdx > 0 )
+			{
+				pcInputBuffer[ ulWriteIdx ] = '\0';
+				lBytesWritten = ulWriteIdx;
+				xFoundEOL = pdTRUE;
+				xPartialCommand = pdFALSE;
+				/* Turn every line ending into an \r\n */
+				( void ) pxConsoleIO->write( "\r\n", 2 );
+			}
+			/* Otherwise, drop the single \r or \n character */
+			else
+			{
+				pcInputBuffer[ ulWriteIdx ] = '\0';
+			}
+			break;
+			/* Handle backspace / delete characters */
+		case '\b':
+		case '\x7F': /* ASCII DEL character */
+			if( ulWriteIdx > 0 )
+			{
+				( void ) pxConsoleIO->write( &( pcInputBuffer[ ulWriteIdx ] ), 1 );
+				/* Erase current character (del or backspace) and previous character */
+				pcInputBuffer[ ulWriteIdx ] = '\0';
+				pcInputBuffer[ ulWriteIdx - 1 ] = '\0';
+				ulWriteIdx--;
+			}
+			break;
+			/* Otherwise consume the character as normal */
+		default:
+			( void ) pxConsoleIO->write( &( pcInputBuffer[ ulWriteIdx ] ), 1 );
+			ulWriteIdx++;
+			break;
+		}
+
+	}
+	return lBytesWritten;
+}
 
 void Task_CLI( void * pvParameters )
 {
-    /* UART Bringup */
-    xUART_USB = xLoggingGetIOHandle();
-    if( xUART_USB == NULL )
+    FreeRTOS_CLIRegisterCommand( &xCommandDef_conf );
+//    FreeRTOS_CLIRegisterCommand( &xCommandDef_pki );
+
+    for( ; ; )
     {
-        LogError(( "NULL USB-UART Descriptor. Exiting.\r\n" ));
-        vTaskDelete( NULL );
-    }
+    	/* Read a line of input from readline */
+    	int32_t lLen = readline( &xConsoleIODesc, ucCommandBuffer, CLI_COMMAND_BUFFER_SIZE );
+    	if( lLen > 0 )
+    	{
+    		while( FreeRTOS_CLIProcessCommand( ucCommandBuffer, &xConsoleIODesc ) == pdTRUE )
+    		{
 
-    /* FreeRTOS CLI bringup */
-    FreeRTOS_CLIRegisterCommand( &xCommandDef_Configure );
+    		}
+    	}
 
-    LogInfo(( "Starting CLI...\r\n" ));
-    uint8_t ucByteIn = 0;
-    int32_t lReadStatus = 0;
-    int32_t lioctlStatus = 0;
-    int32_t lNBytesRead = 0;
-    size_t xNBytesOut = 0;
-
-    /* Start an async uart read */
-
-
-    while( 1 )
-    {
-        lReadStatus = iot_uart_read_sync( xUART_USB, &ucByteIn, 1 );
-        lioctlStatus = iot_uart_ioctl( xUART_USB, eGetRxNoOfbytes, &lNBytesRead );
-        if( lReadStatus == IOT_UART_SUCCESS && lioctlStatus == IOT_UART_SUCCESS && lNBytesRead > 0 )
-        {
-            iot_uart_write_sync( xUART_USB, &ucByteIn, 1);
-            switch( ucByteIn )
-            {
-                case '\r':
-                case '\n':
-                    ucBuffer_UART[xBuffer_Index] = '\0';
-                    while( pdTRUE == FreeRTOS_CLIProcessCommand( ucBuffer_UART, cOutputBuffer, CLI_COMMAND_OUTPUT_BUFFER_SIZE ) )
-                    {
-                        xNBytesOut = strnlen( (char*)cOutputBuffer, CLI_COMMAND_OUTPUT_BUFFER_SIZE );
-                        iot_uart_write_sync( xUART_USB, cOutputBuffer, xNBytesOut );
-                    }
-                    /* Flush remaining */
-                    xNBytesOut = strnlen( (char*)cOutputBuffer, CLI_COMMAND_OUTPUT_BUFFER_SIZE );
-                    iot_uart_write_sync( xUART_USB, cOutputBuffer, xNBytesOut );
-                    cOutputBuffer[0] = '\0';
-
-                    xBuffer_Index = 0;
-                    break;
-
-                default:
-                    if( xBuffer_Index < CLI_COMMAND_BUFFER_SIZE - 1 )
-                    {
-                        ucBuffer_UART[xBuffer_Index++] = ucByteIn;
-                    }
-                    break;
-            }
-        }
-
-        vTaskDelay( pdMS_TO_TICKS( 1 ) );
     }
 }

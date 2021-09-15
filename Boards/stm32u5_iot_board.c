@@ -1,7 +1,6 @@
 /* STM32u5 Common-IO board file */
-
-#include "stm32u5_iot_board.h"
 #include "iot_gpio_stm32_prv.h"
+#include "stm32u5_iot_board.h"
 
 const IotMappedPin_t xGpioMap[ GPIO_MAX ] = {
         { GPIOG,    GPIO_PIN_15,    EXTI15_IRQn },   /* GPIO_MX_FLOW     */
