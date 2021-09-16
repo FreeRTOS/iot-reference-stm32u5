@@ -37,6 +37,7 @@
 static char ucCommandBuffer[ CLI_COMMAND_BUFFER_SIZE ] = { 0 };
 
 extern ConsoleIO_t xConsoleIODesc;
+extern BaseType_t xInitConsoleUart( void );
 
 extern volatile BaseType_t xPartialCommand;
 
@@ -45,7 +46,6 @@ static int32_t readline( ConsoleIO_t * pxConsoleIO,
 						 uint32_t xInputBufferLen )
 {
 	int32_t lBytesWritten = 0;
-	/* Read a single character to start */
 
 	//TODO timeout struct here to timeout xPartialCommand flag
 
@@ -55,57 +55,57 @@ static int32_t readline( ConsoleIO_t * pxConsoleIO,
 	/* Ensure null termination */
 	pcInputBuffer[ xInputBufferLen - 1 ] = '\0';
 
-    uart_console_init();
+	pxConsoleIO ->write( "> ", 2 );
 
 	while( ulWriteIdx < ( xInputBufferLen - 1 ) &&
 		   xFoundEOL == pdFALSE )
 	{
-		pxConsoleIO->read_timeout( &( pcInputBuffer[ ulWriteIdx ] ),
-								   1,
-								   portMAX_DELAY );
-
-		xPartialCommand = pdTRUE;
-
-		switch( pcInputBuffer[ ulWriteIdx ] )
+		if( pxConsoleIO->read_timeout( &( pcInputBuffer[ ulWriteIdx ] ), 1, portMAX_DELAY ) )
 		{
-		case '\n':
-		case '\r':
-		case '\00':
-			/* If we have an actual string to report, do so */
-			if( ulWriteIdx > 0 )
-			{
-				pcInputBuffer[ ulWriteIdx ] = '\0';
-				lBytesWritten = ulWriteIdx;
-				xFoundEOL = pdTRUE;
-				xPartialCommand = pdFALSE;
-				/* Turn every line ending into an \r\n */
-				( void ) pxConsoleIO->write( "\r\n", 2 );
-			}
-			/* Otherwise, drop the single \r or \n character */
-			else
-			{
-				pcInputBuffer[ ulWriteIdx ] = '\0';
-			}
-			break;
-			/* Handle backspace / delete characters */
-		case '\b':
-		case '\x7F': /* ASCII DEL character */
-			if( ulWriteIdx > 0 )
-			{
-				( void ) pxConsoleIO->write( &( pcInputBuffer[ ulWriteIdx ] ), 1 );
-				/* Erase current character (del or backspace) and previous character */
-				pcInputBuffer[ ulWriteIdx ] = '\0';
-				pcInputBuffer[ ulWriteIdx - 1 ] = '\0';
-				ulWriteIdx--;
-			}
-			break;
-			/* Otherwise consume the character as normal */
-		default:
-			( void ) pxConsoleIO->write( &( pcInputBuffer[ ulWriteIdx ] ), 1 );
-			ulWriteIdx++;
-			break;
-		}
+            xPartialCommand = pdTRUE;
 
+            switch( pcInputBuffer[ ulWriteIdx ] )
+            {
+            case '\n':
+            case '\r':
+            case '\00':
+                /* If we have an actual string to report, do so */
+                if( ulWriteIdx > 0 )
+                {
+                    /* Null terminate the output string */
+                    pcInputBuffer[ ulWriteIdx ] = '\0';
+                    lBytesWritten = ulWriteIdx;
+                    xFoundEOL = pdTRUE;
+                    xPartialCommand = pdFALSE;
+
+                    /* Turn every line ending into an \r\n */
+                    ( void ) pxConsoleIO->write( "\r\n", 2 );
+                }
+                /* Otherwise, drop the single \r or \n character */
+                else
+                {
+                    pcInputBuffer[ ulWriteIdx ] = '\0';
+                }
+                break;
+                /* Handle backspace / delete characters */
+            case '\b':
+            case '\x7F': /* ASCII DEL character */
+                if( ulWriteIdx > 0 )
+                {
+                    /* Erase current character (del or backspace) and previous character */
+                    pcInputBuffer[ ulWriteIdx ] = '\0';
+                    pcInputBuffer[ ulWriteIdx - 1 ] = '\0';
+                    ulWriteIdx--;
+                    ( void ) pxConsoleIO->print( "\b \b" );
+                }
+                break;
+                /* Otherwise consume the character as normal */
+            default:
+                ( void ) pxConsoleIO ->write( &( pcInputBuffer[ ulWriteIdx ] ), 1 );
+                ulWriteIdx++;
+                break;
+            }
+		}
 	}
 	return lBytesWritten;
 }
@@ -115,17 +115,16 @@ void Task_CLI( void * pvParameters )
     FreeRTOS_CLIRegisterCommand( &xCommandDef_conf );
 //    FreeRTOS_CLIRegisterCommand( &xCommandDef_pki );
 
-    for( ; ; )
+    if( xInitConsoleUart() == pdTRUE )
     {
-    	/* Read a line of input from readline */
-    	int32_t lLen = readline( &xConsoleIODesc, ucCommandBuffer, CLI_COMMAND_BUFFER_SIZE );
-    	if( lLen > 0 )
-    	{
-    		while( FreeRTOS_CLIProcessCommand( ucCommandBuffer, &xConsoleIODesc ) == pdTRUE )
-    		{
-
-    		}
-    	}
-
+        for( ; ; )
+        {
+            /* Read a line of input */
+            int32_t lLen = readline( &xConsoleIODesc, ucCommandBuffer, CLI_COMMAND_BUFFER_SIZE );
+            if( lLen > 0 )
+            {
+                while( FreeRTOS_CLIProcessCommand( ucCommandBuffer, &xConsoleIODesc ) == pdTRUE );
+            }
+        }
     }
 }

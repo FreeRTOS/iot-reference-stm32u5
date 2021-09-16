@@ -98,8 +98,8 @@ static void vUart1MspInitCallback( UART_HandleTypeDef *huart )
 	RCC_PeriphCLKInitTypeDef xClockInit = { 0 };
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-//	if( huart == &xConsoleHandle  )
-//	{
+	if( huart == &xConsoleHandle  )
+	{
 		__HAL_RCC_USART1_CLK_DISABLE();
 
 		xClockInit.PeriphClockSelection = RCC_PERIPHCLK_USART1;
@@ -130,7 +130,7 @@ static void vUart1MspInitCallback( UART_HandleTypeDef *huart )
 
 		HAL_NVIC_SetPriority( USART1_IRQn, 5, 1 );
 		HAL_NVIC_EnableIRQ( USART1_IRQn );
-//	}
+	}
 }
 
 void USART1_IRQHandler(void)
@@ -159,9 +159,7 @@ static void rxErrorCallback( UART_HandleTypeDef * pxUartHandle );
 /* Should only be called before the scheduler has been initialized / after an assertion has occurred */
 UART_HandleTypeDef * vInitUartEarly( void )
 {
-//	( void ) HAL_UART_RegisterCallback( &xConsoleHandle, HAL_UART_MSPINIT_CB_ID, &vUart1MspInitCallback );
-//	( void ) HAL_UART_RegisterCallback( &xConsoleHandle, HAL_UART_MSPDEINIT_CB_ID, &vUart1MspDeInitCallback );
-//	( void ) HAL_UART_DeInit( &xConsoleHandle );
+	( void ) HAL_UART_DeInit( &xConsoleHandle );
 
 	( void ) HAL_UART_RegisterCallback( &xConsoleHandle, HAL_UART_MSPINIT_CB_ID, vUart1MspInitCallback );
 	( void ) HAL_UART_RegisterCallback( &xConsoleHandle, HAL_UART_MSPDEINIT_CB_ID, vUart1MspDeInitCallback );
@@ -169,7 +167,7 @@ UART_HandleTypeDef * vInitUartEarly( void )
 	return &xConsoleHandle;
 }
 
-BaseType_t uart_console_init( void )
+BaseType_t xInitConsoleUart( void )
 {
 	HAL_StatusTypeDef xHalRslt = HAL_OK;
 
@@ -206,9 +204,6 @@ BaseType_t uart_console_init( void )
 	{
 		xHalRslt |= HAL_UARTEx_SetRxFifoThreshold( &xConsoleHandle, UART_RXFIFO_THRESHOLD_8_8 );
 	}
-
-	/* Set timeout info */
-
 
 	/* Enable fifo mode */
 	if( xHalRslt == HAL_OK )
@@ -382,14 +377,14 @@ static void vTxThread( void * pvParameters )
 	}
 }
 
-static void uart_write( const char * const pcOutputBuffer,
+static void uart_write( const void * const pvOutputBuffer,
                  	    uint32_t xOutputBufferLen )
 {
-	if( pcOutputBuffer != NULL &&
+	if( pvOutputBuffer != NULL &&
 		xOutputBufferLen > 0 )
 	{
 		size_t xBytesSent = xStreamBufferSend( xUartTxStream,
-											   pcOutputBuffer,
+		                                       ( const void * ) pvOutputBuffer,
 											   xOutputBufferLen,
 											   portMAX_DELAY );
 		configASSERT( xBytesSent == xOutputBufferLen );
@@ -429,21 +424,21 @@ static int32_t uart_read_timeout( char * const pcInputBuffer,
 	return ulBytesRead;
 }
 
-static void uart_write_string( const char * const pcString )
+static void uart_print( const char * const pcString )
 {
 	if( pcString != NULL )
 	{
 		( void ) xStreamBufferSend( xUartTxStream,
-								    pcString,
+								    ( const void * ) pcString,
 								    strnlen( pcString, TX_STREAM_LEN ),
 									portMAX_DELAY );
 	}
 }
 
-ConsoleIO_t xConsoleIODesc =
+const ConsoleIO_t xConsoleIODesc =
 {
 	.read = uart_read,
 	.write = uart_write,
 	.read_timeout = uart_read_timeout,
-	.write_string = uart_write_string,
+	.print = uart_print,
 };

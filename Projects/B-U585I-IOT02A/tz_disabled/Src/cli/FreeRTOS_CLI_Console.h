@@ -57,15 +57,19 @@ typedef struct xConsoleIO
 							          TickType_t xTimeout );
 
     /**
-     * Function writes the output of a finite length buffer to the console. The buffer will be a null
-     * terminated string, length of the buffer does not include the null termination.
-     * FreeRTOS CLI uses this function to write command output or error logs to the console.
-     * The API is not thread-safe.
+     * Function writes the output of a finite length buffer to the console. If the buffer is a null
+     * terminated string, the entire length of the buffer (including null characters) will be sent
+     * to the serial port.
      */
-    const void ( * write )( const char * const buffer,
+    const void ( * write )( const void * const pvBuffer,
                             uint32_t length );
 
-    const void ( * write_string ) ( const char * const pcString );
+    /**
+     * Function writes a null terminated string to the console. Strings can be up to TX_STREAM_LEN in length.
+     * If the buffer is not a null terminated string, this function will print until the first null byte or
+     * TX_STREAM_LEN bytes, whichever occurs first.
+     */
+    const void ( * print ) ( const char * const pcString );
 } ConsoleIO_t;
 
 #endif /* ifndef FREERTOS_CLI_CONSOLE_H */

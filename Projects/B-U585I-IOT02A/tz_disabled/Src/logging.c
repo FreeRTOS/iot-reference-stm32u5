@@ -110,12 +110,19 @@ static void vSendLogMessage( const char * buffer, unsigned int count )
     {
         UBaseType_t uxContext;
         BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        BaseType_t xTaskWokenAccumulate = pdFALSE;
         configASSERT( xLogBuf != NULL );
 
         /* Enter critical section to preserve ordering of log messages */
         uxContext = taskENTER_CRITICAL_FROM_ISR();
+        ( void ) xStreamBufferSendFromISR( xLogBuf, "\x7F\x7F", 2, &xHigherPriorityTaskWoken );
+        xTaskWokenAccumulate |= xHigherPriorityTaskWoken;
 
         ( void ) xStreamBufferSendFromISR( xLogBuf, buffer, count, &xHigherPriorityTaskWoken );
+        xTaskWokenAccumulate |= xHigherPriorityTaskWoken;
+
+        ( void ) xStreamBufferSendFromISR( xLogBuf, "> ", 2, &xHigherPriorityTaskWoken );
+        xTaskWokenAccumulate |= xHigherPriorityTaskWoken;
 
         taskEXIT_CRITICAL_FROM_ISR( uxContext );
 
@@ -124,8 +131,9 @@ static void vSendLogMessage( const char * buffer, unsigned int count )
     else
     {
         taskENTER_CRITICAL();
-
+        ( void ) xStreamBufferSend( xLogBuf, "\r", 2, portMAX_DELAY );
         ( void ) xStreamBufferSend( xLogBuf, buffer, count, portMAX_DELAY );
+        ( void ) xStreamBufferSend( xLogBuf, "> ", 2, portMAX_DELAY );
 
         taskEXIT_CRITICAL();
     }
