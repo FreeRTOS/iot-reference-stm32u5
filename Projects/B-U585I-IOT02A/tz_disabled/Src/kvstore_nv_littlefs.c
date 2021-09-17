@@ -23,6 +23,7 @@
  *
  */
 
+#include "logging_levels.h"
 #include "logging.h"
 #include "kvstore_prv.h"
 #include <string.h>
@@ -41,6 +42,8 @@ typedef struct
 
 static inline void vLfsSSizeToErr( lfs_ssize_t * pxReturnValue, size_t xExpectedLength )
 {
+    LogDebug("xReturnValue: %ld, xExpectedLength: %lu", *pxReturnValue, xExpectedLength );
+
 	if( *pxReturnValue == xExpectedLength )
 	{
 		*pxReturnValue = LFS_ERR_OK;
@@ -128,35 +131,39 @@ BaseType_t xprvReadValueFromImplStatic( KVStoreKey_t xKey,
 		configASSERT( ( xTlvHeader.length ) < KVSTORE_VAL_MAX_LEN );
 
 		/* copy data to provided buffer */
-		if( lReturn == LFS_ERR_OK )
+		if( lReturn >= LFS_ERR_OK )
 		{
 			lReturn = lfs_file_read( pLfsCtx, &xFile,
 									 pvBuffer,
 									 xTlvHeader.length );
+			vLfsSSizeToErr( &lReturn, xTlvHeader.length );
 		}
 
-		if( pxType != NULL )
+		if( lReturn == LFS_ERR_OK )
 		{
-			if( lReturn == LFS_ERR_OK )
-			{
-				*pxType = xTlvHeader.type;
-			}
-			else
-			{
-				*pxType = KV_TYPE_NONE;
-			}
-		}
+            if( pxType != NULL )
+            {
+                if( lReturn == LFS_ERR_OK )
+                {
+                    *pxType = xTlvHeader.type;
+                }
+                else
+                {
+                    *pxType = KV_TYPE_NONE;
+                }
+            }
 
-		if( pxLength != NULL )
-		{
-			if( lReturn == LFS_ERR_OK )
-			{
-				*pxLength = xTlvHeader.length;
-			}
-			else
-			{
-				*pxLength = 0;
-			}
+            if( pxLength != NULL )
+            {
+                if( lReturn == LFS_ERR_OK )
+                {
+                    *pxLength = xTlvHeader.length;
+                }
+                else
+                {
+                    *pxLength = 0;
+                }
+            }
 		}
 
 		if( xFileOpenFlag == pdTRUE )
@@ -214,6 +221,7 @@ BaseType_t xprvWriteValueToImpl( KVStoreKey_t xKey,
 			};
 
 			lReturn = lfs_file_write( pLfsCtx, &xFile, &xTlvHeader, sizeof( KVStoreTLVHeader_t ) );
+			vLfsSSizeToErr( &lReturn, sizeof( KVStoreTLVHeader_t ) );
 		}
 
 		if( lReturn != LFS_ERR_OK )
@@ -224,6 +232,7 @@ BaseType_t xprvWriteValueToImpl( KVStoreKey_t xKey,
 		else /* Write the data */
 		{
 			lReturn = lfs_file_write( pLfsCtx, &xFile, pvData, xLength );
+			vLfsSSizeToErr( &lReturn, xLength );
 		}
 
 		if( lReturn != LFS_ERR_OK )
@@ -249,6 +258,6 @@ BaseType_t xprvWriteValueToImpl( KVStoreKey_t xKey,
 
 void vprvNvImplInit( void )
 {
-
+    //TODO: Wait for filesystem initialization
 }
 

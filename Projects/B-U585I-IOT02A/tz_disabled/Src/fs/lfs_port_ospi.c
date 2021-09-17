@@ -25,6 +25,7 @@
  *
  */
 
+#include "logging_levels.h"
 #include "logging.h"
 
 #include "FreeRTOS.h"
@@ -88,7 +89,7 @@ static void vPopulateConfig( struct lfs_config * pxCfg, struct LfsPortCtx * pxCt
 
     /* Read size is one word */
     pxCfg->read_size = sizeof( void * );
-    pxCfg->prog_size = xNorInfo.ProgPageSize;
+    pxCfg->prog_size = sizeof( void * ); //xNorInfo.ProgPageSize;
 
     /* Number of erasable blocks */
     pxCfg->block_count = xNorInfo.EraseSubSectorNumber;
@@ -202,6 +203,10 @@ static int lfs_port_read( const struct lfs_config *c,
     /* Read while not in memory mapped mode */
     lReturnValue = BSP_OSPI_NOR_Read( 0, buffer, ulReadAddr, size );
 
+    LogDebug( "Reading address %lu, size: %lu, rv: %ld", ulReadAddr, size, lReturnValue );
+
+    configASSERT( lReturnValue == BSP_ERROR_NONE );
+
 	return lReturnValue;
 }
 
@@ -231,6 +236,10 @@ static int lfs_port_prog( const struct lfs_config *pxCfg,
 	lReturnValue = BSP_OSPI_NOR_Write( 0, buffer, ulWriteAddr, size );
 #pragma GCC diagnostic pop
 
+	LogDebug( "Programming address %lu, size: %lu, rv: %ld", ulWriteAddr, size, lReturnValue );
+
+	configASSERT( lReturnValue == BSP_ERROR_NONE );
+
 	return lReturnValue;
 }
 
@@ -245,6 +254,10 @@ static int lfs_port_erase( const struct lfs_config *pxCfg, lfs_block_t block )
 	configASSERT( xSemaphoreGetMutexHolder( pxCtx->xMutex ) == xTaskGetCurrentTaskHandle() );
 
 	lReturnValue = BSP_OSPI_NOR_Erase_Block( 0, block, MX25LM51245G_ERASE_4K );
+
+	LogDebug( "Erasing block %lu Return Value: %ld", block, lReturnValue );
+
+	configASSERT( lReturnValue == BSP_ERROR_NONE );
 
 	return lReturnValue;
 }

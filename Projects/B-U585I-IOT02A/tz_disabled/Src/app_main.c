@@ -34,6 +34,7 @@
 #include "net/mxchip/mx_netconn.h"
 #include "stm32u5xx_ll_rng.h"
 #include "stm32u5xx.h"
+#include "kvstore.h"
 
 #include "cli/cli.h"
 #include "lfs.h"
@@ -123,8 +124,11 @@ static void hw_init( void )
 static int fs_init( void )
 {
     static lfs_t xLfsCtx = { 0 };
-    /* Block time of up to 1000ms if filesystem is busy */
-    const struct lfs_config * pxCfg = pxInitializeOSPIFlashFs( pdMS_TO_TICKS( 1000 ) );
+
+    struct lfs_info xDirInfo = { 0 };
+
+    /* Block time of up to 1 s for filesystem to initialize */
+    const struct lfs_config * pxCfg = pxInitializeOSPIFlashFs( pdMS_TO_TICKS( 1 * 1000 ) );
 
     /* mount the filesystem */
     int err = lfs_mount( &xLfsCtx, pxCfg );
@@ -132,7 +136,7 @@ static int fs_init( void )
     /* format if we can't mount the filesystem
      * this should only happen on the first boot
      */
-    if( err != 0 )
+    if( err != LFS_ERR_OK )
     {
         LogError( "Failed to mount partition. Formatting..." );
         err = lfs_format( &xLfsCtx, pxCfg );
@@ -141,9 +145,19 @@ static int fs_init( void )
             err = lfs_mount( &xLfsCtx, pxCfg );
         }
 
-        if( err != 0 )
+        if( err != LFS_ERR_OK )
         {
             LogError( "Failed to format littlefs device." );
+        }
+    }
+
+    if( lfs_stat( &xLfsCtx, "/cfg", &xDirInfo ) == LFS_ERR_NOENT )
+    {
+        err = lfs_mkdir( &xLfsCtx, "/cfg" );
+
+        if( err != LFS_ERR_OK )
+        {
+            LogError( "Failed to create /cfg directory." );
         }
     }
 
@@ -184,14 +198,14 @@ int main( void )
 
     vLoggingInit();
 
-    LogInfo(("HW Init Complete."));
+    LogInfo( "HW Init Complete." );
 
 	int xMountStatus = fs_init();
 	KVStore_init();
 
 	configASSERT( xMountStatus == LFS_ERR_OK );
 
-	LogInfo(("File System mounted."));
+	LogInfo( "File System mounted." );
 
     BaseType_t xResult;
 
@@ -209,10 +223,12 @@ int main( void )
 
     configASSERT( xResult == pdTRUE );
 
-//    xResult = xTaskCreate( Task_MotionSensorsPublish, "MotionS", 4096, NULL, tskIDLE_PRIORITY + 3, NULL );
-    configASSERT( xResult == pdTRUE );
+
 
 //    vStartMQTTAgentDemo();
+
+    //    xResult = xTaskCreate( Task_MotionSensorsPublish, "MotionS", 4096, NULL, tskIDLE_PRIORITY + 3, NULL );
+        configASSERT( xResult == pdTRUE );
 
 //    vStartSensorPublishTask();
 

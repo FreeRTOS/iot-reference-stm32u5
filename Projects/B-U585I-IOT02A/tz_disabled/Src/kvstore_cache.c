@@ -67,7 +67,7 @@ static inline const void * pvGetDataReadPtr( KVStoreKey_t key )
 	const void * pvData = NULL;
 	if( kvStoreCache[ key ].type == KV_TYPE_NONE )
 	{
-		pvData = kvStoreDefaults[ key ].blob;
+		pvData = NULL;
 	}
 	else if( kvStoreCache[ key ].length > sizeof( void * ) )
 	{
@@ -77,7 +77,6 @@ static inline const void * pvGetDataReadPtr( KVStoreKey_t key )
 	{
 		pvData = ( void * )&( kvStoreCache[ key ].pvData );
 	}
-	configASSERT( pvData != NULL );
 	return pvData;
 }
 
@@ -135,6 +134,10 @@ void vprvCacheInit( void )
 	{
 		/* pvData pointer should be NULL on startup */
 		configASSERT( kvStoreCache[ i ].pvData == NULL );
+
+
+		kvStoreCache[ i ].xChangePending = pdFALSE;
+		kvStoreCache[ i ].type = KV_TYPE_NONE;
 
 		size_t xNvLength = xprvGetValueLengthFromImpl( i );
 		if( xNvLength > 0 )
@@ -210,13 +213,14 @@ BaseType_t xprvWriteCacheEntry( KVStoreKey_t xKey,
 		kvStoreCache[ xKey ].xChangePending = pdTRUE;
 	}
 	/* Otherwise, type / length are the same, so check value */
-	else if( memcmp( pvGetDataReadPtr( xKey ), pvNewValue, xLength ) != 0 )
-	{
-		kvStoreCache[ xKey ].xChangePending = pdTRUE;
-	}
 	else
 	{
-		/* No change */
+	    void * pvReadPtr = pvGetDataReadPtr( xKey );
+	    if( pvReadPtr == NULL ||
+	        memcmp( pvReadPtr, pvNewValue, xLength ) != 0 )
+	    {
+            kvStoreCache[ xKey ].xChangePending = pdTRUE;
+        }
 	}
 
 	if( kvStoreCache[ xKey ].xChangePending == pdTRUE )
