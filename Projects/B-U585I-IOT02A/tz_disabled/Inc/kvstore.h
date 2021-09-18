@@ -78,7 +78,7 @@ size_t KVStore_getBlob( KVStoreKey_t key, void * pvBuffer, size_t xMaxLength );
 BaseType_t KVStore_setBlob( KVStoreKey_t key, size_t xLength, const void * pvNewValue );
 
 size_t KVStore_getString( KVStoreKey_t key, char * pvBuffer, size_t xMaxLength );
-BaseType_t KVStore_setString( KVStoreKey_t key, size_t xLength, const char * pcNewValue );
+BaseType_t KVStore_setString( KVStoreKey_t key, const char * pcNewValue );
 
 uint32_t KVStore_getUInt32( KVStoreKey_t key, BaseType_t * pxSuccess );
 BaseType_t KVStore_setUInt32( KVStoreKey_t key, uint32_t ulNewVal );

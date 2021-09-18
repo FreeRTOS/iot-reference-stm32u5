@@ -2,6 +2,7 @@
  * FreeRTOS STM32 Reference Integration
  *
  * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved
+ * SPDX-License-Identifier: BSD-3-Clause AND MIT
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -26,10 +27,10 @@
  */
 
 /*
- * Derived from lfs_util.h and inheirting the following terms:
+ * Derived from lfs_util.h and inheriting the following terms:
  *
  * Copyright (c) 2017, Arm Limited. All rights reserved.
- * SPDX-License-Identifier: BSD-3-Clause
+ * SPDX-License-Identifier: BSD-3-Clause AND MIT
  */
 
 #ifndef FS_LFS_CONFIG_H_
@@ -42,13 +43,15 @@ extern "C"
 
 #include "logging_levels.h"
 
-#ifndef LOG_LEVEL
-#define LOG_LEVEL LOG_DEBUG
-#endif
+/*
+ * #ifndef LOG_LEVEL
+ * #define LOG_LEVEL LOG_DEBUG
+ * #endif
+ */
 
 #include "logging.h"
 
-// System includes
+/* System includes */
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
@@ -68,11 +71,12 @@ extern "C"
 /* Runtime assertions */
 #define LFS_ASSERT(a) configASSERT(a)
 
+
 /* Builtin functions, these may be replaced by more efficient
    toolchain-specific implementations. LFS_NO_INTRINSICS falls back to a more
    expensive basic C implementation for debugging purposes */
 
-// Min/max functions for unsigned 32-bit numbers
+/* Min/max functions for unsigned 32-bit numbers */
 static inline uint32_t lfs_max(uint32_t a, uint32_t b) {
     return (a > b) ? a : b;
 }
@@ -181,7 +185,7 @@ static inline uint32_t lfs_tobe32(uint32_t a) {
     return lfs_frombe32(a);
 }
 
-// Calculate CRC-32 with polynomial = 0x04c11db7
+/* Calculate CRC-32 with polynomial = 0x04c11db7 */
 uint32_t lfs_crc(uint32_t crc, const void *buffer, size_t size);
 
 #if !defined( LFS_NO_MALLOC ) && !defined( configSUPPORT_DYNAMIC_ALLOCATION )

@@ -29,9 +29,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-
-//#include "FreeRTOS_CLI.h"
-
 /**
  * Defines the interface for different console implementations. Interface
  * defines the contract of how bytes are transferred between console
@@ -56,6 +53,8 @@ typedef struct xConsoleIO
                                       uint32_t length,
 							          TickType_t xTimeout );
 
+    const int32_t ( * readline ) ( char * * const bufferPtr );
+
     /**
      * Function writes the output of a finite length buffer to the console. If the buffer is a null
      * terminated string, the entire length of the buffer (including null characters) will be sent
@@ -65,11 +64,12 @@ typedef struct xConsoleIO
                             uint32_t length );
 
     /**
-     * Function writes a null terminated string to the console. Strings can be up to TX_STREAM_LEN in length.
-     * If the buffer is not a null terminated string, this function will print until the first null byte or
-     * TX_STREAM_LEN bytes, whichever occurs first.
+     * Function writes a null terminated string to the console.
      */
     const void ( * print ) ( const char * const pcString );
+
+    const void ( * lock ) ( void );
+    const void ( * unlock ) ( void );
 } ConsoleIO_t;
 
 #endif /* ifndef FREERTOS_CLI_CONSOLE_H */

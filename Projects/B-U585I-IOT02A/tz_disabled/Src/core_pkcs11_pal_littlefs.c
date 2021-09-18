@@ -39,6 +39,7 @@
 
 #include "lfs_util.h"
 #include "lfs.h"
+#include "lfs_port.h"
 
 /*-----------------------------------------------------------*/
 

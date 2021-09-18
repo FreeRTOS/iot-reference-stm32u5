@@ -112,14 +112,15 @@ BaseType_t KVStore_setBlob( KVStoreKey_t key, size_t xLength, const void * pvNew
     return xReturn;
 }
 
-BaseType_t KVStore_setString( KVStoreKey_t key, size_t xLength, const char * pcNewValue )
+BaseType_t KVStore_setString( KVStoreKey_t key, const char * pcNewValue )
 {
     BaseType_t xReturn = pdFALSE;
 
-    if( key < CS_NUM_KEYS && pcNewValue != NULL && xLength > 0
-                    && kvStoreDefaults[ key ].type == KV_TYPE_STRING )
+    if( key < CS_NUM_KEYS &&
+        pcNewValue != NULL &&
+        kvStoreDefaults[ key ].type == KV_TYPE_STRING )
     {
-        xReturn = WRITE_ENTRY( key, KV_TYPE_STRING, xLength, ( const void* ) pcNewValue );
+        xReturn = WRITE_ENTRY( key, KV_TYPE_STRING, strlen( pcNewValue ) + 1, ( const void* ) pcNewValue );
     }
     return xReturn;
 }
@@ -177,10 +178,11 @@ size_t KVStore_getSize( KVStoreKey_t xKey )
         /* First check cache if available */
 #if KV_STORE_CACHE_ENABLE
         xDataLen = prvGetCacheEntryLength( xKey );
-        /* Otherwise, fall back to reading from nv memory */
-#elif KV_STORE_NVIMPL_ENABLE
+#else
+        /* otherwise read directly from NV */
         xDataLen = xprvGetValueLengthFromImpl( xKey );
 #endif
+
         if( xDataLen == 0 )
         {
             /* Otherwise read default value */
@@ -226,7 +228,7 @@ size_t KVStore_getString( KVStoreKey_t key, char * pcBuffer, size_t xMaxLength )
     {
         ( void ) xSemaphoreTake( xKvMutex, portMAX_DELAY );
 
-        xSizeWritten = xReadEntryOrDefault( key, ( void* ) pcBuffer, xMaxLength - 1 );
+        xSizeWritten = xReadEntryOrDefault( key, ( void* ) pcBuffer, xMaxLength );
 
         /* Ensure null terminated */
         pcBuffer[ xMaxLength - 1 ] = '\0';

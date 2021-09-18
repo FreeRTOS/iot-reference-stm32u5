@@ -22,7 +22,6 @@
  * http://www.FreeRTOS.org
  * http://aws.amazon.com/freertos
  *
- * 1 tab == 4 spaces!
  */
 
 /* Standard includes. */
@@ -36,8 +35,6 @@
 /* Utils includes. */
 #include "FreeRTOS_CLI.h"
 
-#define console_error( pxIO, msg ) ( pxIO->write( msg, strlen( msg ) ) )
-
 typedef struct xCOMMAND_INPUT_LIST
 {
     const CLI_Command_Definition_t * pxCommandLineDefinition;
@@ -48,22 +45,29 @@ typedef struct xCOMMAND_INPUT_LIST
  * The callback function that is executed when "help" is entered.  This is the
  * only default command that is always present.
  */
-static BaseType_t prvHelpCommand( ConsoleIO_t * const pxConsoleIO,
-                                  const char * pcCommandString );
+static void prvHelpCommand( ConsoleIO_t * const pxConsoleIO,
+                            uint32_t ulArgc,
+                            char * ppcArgv[] );
 
 /*
- * Return the number of parameters that follow the command name.
+ * Return the number of arguments in the command string ( including the command name ).
+ * This is used to build an posix-style "argc" variable.
  */
-static int8_t prvGetNumberOfParameters( const char * pcCommandString );
+static uint32_t prvGetNumberOfArgs( const char * pcCommandString );
 
 /* The definition of the "help" command.  This command is always at the front
  * of the list of registered commands. */
 static const CLI_Command_Definition_t xHelpCommand =
 {
     "help",
-    "\r\nhelp:\r\n Lists all the registered commands\r\n\r\n",
-    prvHelpCommand,
-    0
+    "help:\r\n"
+    "    List available commands and their arguments.\r\n"
+    "    Usage:\r\n\n"
+    "    help\r\n"
+    "        Print help for all recognized commands\r\n\n"
+    "    help <command>\r\n"
+    "        Print help test for a specific command\r\n\n",
+    prvHelpCommand
 };
 
 /* The definition of the list of commands.  Commands that are registered are
@@ -117,79 +121,69 @@ BaseType_t FreeRTOS_CLIRegisterCommand( const CLI_Command_Definition_t * const p
 }
 /*-----------------------------------------------------------*/
 
-BaseType_t FreeRTOS_CLIProcessCommand( const char * const pcCommandInput,
-								       ConsoleIO_t * const pxConsoleIO )
+static const CLI_Definition_List_Item_t * prvFindMatchingCommand( const char * const pcCommandInput )
 {
-    static const CLI_Definition_List_Item_t * pxCommand = NULL;
-    BaseType_t xReturn = pdTRUE;
-    const char * pcRegisteredCommandString;
-    size_t xCommandStringLength;
+    const CLI_Definition_List_Item_t * pxCommand = &xRegisteredCommands;
 
-    /* Note:  This function is not re-entrant.  It must not be called from more
-     * than one task. */
-
-    if( pxCommand == NULL )
+    while( pxCommand != NULL )
     {
-        /* Search for the command string in the list of registered commands. */
-        for( pxCommand = &xRegisteredCommands; pxCommand != NULL; pxCommand = pxCommand->pxNext )
+        const char * pcRegisteredCommandString = pxCommand->pxCommandLineDefinition->pcCommand;
+        size_t xCommandStringLength = strlen( pcRegisteredCommandString );
+
+        /* Match the provided command string to members of our list of commands */
+        if( strncmp( pcCommandInput, pcRegisteredCommandString, xCommandStringLength ) == 0 &&
+            ( ( pcCommandInput[ xCommandStringLength ] == ' ' ) || ( pcCommandInput[ xCommandStringLength ] == '\x00' ) ) )
         {
-            pcRegisteredCommandString = pxCommand->pxCommandLineDefinition->pcCommand;
-            xCommandStringLength = strlen( pcRegisteredCommandString );
-
-            /* To ensure the string lengths match exactly, so as not to pick up
-             * a sub-string of a longer command, check the byte after the expected
-             * end of the string is either the end of the string or a space before
-             * a parameter. */
-            if( strncmp( pcCommandInput, pcRegisteredCommandString, xCommandStringLength ) == 0 )
-            {
-                if( ( pcCommandInput[ xCommandStringLength ] == ' ' ) || ( pcCommandInput[ xCommandStringLength ] == 0x00 ) )
-                {
-                    /* The command has been found.  Check it has the expected
-                     * number of parameters.  If cExpectedNumberOfParameters is -1,
-                     * then there could be a variable number of parameters and no
-                     * check is made. */
-                    if( pxCommand->pxCommandLineDefinition->cExpectedNumberOfParameters >= 0 )
-                    {
-                        if( prvGetNumberOfParameters( pcCommandInput ) != pxCommand->pxCommandLineDefinition->cExpectedNumberOfParameters )
-                        {
-                            xReturn = pdFALSE;
-                        }
-                    }
-
-                    break;
-                }
-            }
+            break;
+        }
+        else
+        {
+            pxCommand = pxCommand->pxNext;
         }
     }
+    return pxCommand;
+}
 
-    if( ( pxCommand != NULL ) && ( xReturn == pdFALSE ) )
+/*-----------------------------------------------------------*/
+
+void FreeRTOS_CLIProcessCommand( ConsoleIO_t * const pxCIO,
+                                 char * pcCommandInput )
+{
+    const CLI_Definition_List_Item_t * pxCommand;
+
+    /* Search for the command string in the list of registered commands. */
+    pxCommand = prvFindMatchingCommand( pcCommandInput );
+
+    if( pxCommand != NULL )
     {
-        /* The command was found, but the number of parameters with the command
-         * was incorrect. */
-    	console_error( pxConsoleIO, "Incorrect command parameter(s).  Enter \"help\" to view a list of available commands.\r\n" );
-        pxCommand = NULL;
-    }
-    else if( pxCommand != NULL )
-    {
+        uint32_t ulArgC = prvGetNumberOfArgs( pcCommandInput );
+
+        /* Tokenize into ulArgC / pcArgv */
+        char * pcArgv[ ulArgC ]; // TODO fix const
+
+        char * pcTokenizerCtx = NULL;
+
+        /* pcArgv[ 0 ] is the command passed into the cli which was matched on */
+        pcArgv[ 0 ] = strtok_r( pcCommandInput, " ", &pcTokenizerCtx );
+
+        /* Subsequent members of pcArgv are command line parameters */
+        for( uint32_t i = 1; i < ulArgC; i++ )
+        {
+            pcArgv[ i ] = strtok_r( NULL, " ", &pcTokenizerCtx );
+            configASSERT( pcArgv[ i ] != NULL );
+        }
+
+        /* Assert that we read all of the tokens */
+        configASSERT( strtok_r( NULL, " ", &pcTokenizerCtx ) == NULL );
+
         /* Call the callback function that is registered to this command. */
-        xReturn = pxCommand->pxCommandLineDefinition->pxCommandInterpreter( pxConsoleIO, pcCommandInput );
-
-        /* If xReturn is pdFALSE, then no further strings will be returned
-         * after this one, and	pxCommand can be reset to NULL ready to search
-         * for the next entered command. */
-        if( xReturn == pdFALSE )
-        {
-            pxCommand = NULL;
-        }
+        pxCommand->pxCommandLineDefinition->pxCommandInterpreter( pxCIO, ulArgC, pcArgv );
     }
     else
     {
         /* pxCommand was NULL, the command was not found. */
-    	console_error( pxConsoleIO, "Command not recognized.  Enter 'help' to view a list of available commands.\r\n" );
-        xReturn = pdFALSE;
+        pxCIO->print( "Command not recognized. Enter 'help' to view a list of available commands.\r\n" );
     }
-
-    return xReturn;
 }
 
 /*-----------------------------------------------------------*/
@@ -256,72 +250,73 @@ const char * FreeRTOS_CLIGetParameter( const char * pcCommandString,
 }
 /*-----------------------------------------------------------*/
 
-static BaseType_t prvHelpCommand( ConsoleIO_t * const pxConsoleIO,
-                                  const char * pcCommandString )
+static void prvHelpCommand( ConsoleIO_t * const pxConsoleIO,
+                            uint32_t ulArgc,
+                            char * ppcArgv[] )
 {
     static const CLI_Definition_List_Item_t * pxCommand = NULL;
-    BaseType_t xReturn;
 
-    ( void ) pcCommandString;
-
-    if( pxCommand == NULL )
+    /* Check for an argument containing a recognized command */
+    if( ulArgc > 1 &&
+        ppcArgv[ 1 ] != NULL )
     {
-        /* Reset the pxCommand pointer back to the start of the list. */
+        BaseType_t xFound = pdFALSE;
         pxCommand = &xRegisteredCommands;
+        while( pxCommand!= NULL &&
+               xFound == pdFALSE )
+        {
+            if( strncmp( pxCommand->pxCommandLineDefinition->pcCommand,
+                         ppcArgv[ 1 ],
+                         strlen( pxCommand->pxCommandLineDefinition->pcCommand ) ) == 0 )
+            {
+                xFound = pdTRUE;
+            }
+            else
+            {
+                pxCommand = pxCommand->pxNext;
+            }
+        }
     }
 
-    /* Return the next command help string, before moving the pointer on to
-     * the next command in the list. */
-    console_error( pxConsoleIO, pxCommand->pxCommandLineDefinition->pcHelpString );
-    pxCommand = pxCommand->pxNext;
-
-    if( pxCommand == NULL )
+    /* Print help for a single command if we found one specified */
+    if( pxCommand != NULL )
     {
-        /* There are no more commands in the list, so there will be no more
-         *  strings to return after this one and pdFALSE should be returned. */
-        xReturn = pdFALSE;
+        pxConsoleIO->print( pxCommand->pxCommandLineDefinition->pcHelpString );
     }
+    /* Otherwise, print help for all commands */
     else
     {
-        xReturn = pdTRUE;
+        pxCommand = &xRegisteredCommands;
+        while( pxCommand != NULL )
+        {
+            pxConsoleIO->print( pxCommand->pxCommandLineDefinition->pcHelpString );
+            pxCommand = pxCommand->pxNext;
+        }
     }
-
-    return xReturn;
 }
 /*-----------------------------------------------------------*/
 
-static int8_t prvGetNumberOfParameters( const char * pcCommandString )
+static uint32_t prvGetNumberOfArgs( const char * pcCommandString )
 {
-    int8_t cParameters = 0;
-    BaseType_t xLastCharacterWasSpace = pdFALSE;
+    uint32_t luArgCount = 0;
+
+    const char * pcCurrentChar = pcCommandString;
 
     /* Count the number of space delimited words in pcCommandString. */
-    while( *pcCommandString != 0x00 )
+    while( *pcCurrentChar != '\x00' )
     {
-        if( ( *pcCommandString ) == ' ' )
+        /*
+         * If the current character is not a space and
+         * the next character is a space or null
+         */
+        if( pcCurrentChar[ 0 ] != ' ' &&
+            ( pcCurrentChar[ 1 ] == ' ' ||
+              pcCurrentChar[ 1 ] == '\x00' ) )
         {
-            if( xLastCharacterWasSpace != pdTRUE )
-            {
-                cParameters++;
-                xLastCharacterWasSpace = pdTRUE;
-            }
+            luArgCount++;
         }
-        else
-        {
-            xLastCharacterWasSpace = pdFALSE;
-        }
-
-        pcCommandString++;
+        pcCurrentChar++;
     }
 
-    /* If the command string ended with spaces, then there will have been too
-     * many parameters counted. */
-    if( xLastCharacterWasSpace == pdTRUE )
-    {
-        cParameters--;
-    }
-
-    /* The value returned is one less than the number of space delimited words,
-     * as the first word should be the command itself. */
-    return cParameters;
+    return luArgCount;
 }

@@ -23,6 +23,12 @@
 #ifndef _CLI_PRIV
 #define _CLI_PRIV
 
+#include "semphr.h"
+#include "FreeRTOS_CLI.h"
+#include "cli.h"
+
+UART_HandleTypeDef * vInitUartEarly( void );
+
 const CLI_Command_Definition_t xCommandDef_conf;
 const CLI_Command_Definition_t xCommandDef_pki;
 

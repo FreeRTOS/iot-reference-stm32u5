@@ -35,32 +35,23 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "message_buffer.h"
+#include "cli_prv.h"
 
 /* Project Includes */
 #include "logging.h"
 #include "main.h"
 
 /*-----------------------------------------------------------*/
+// todo take into account maximum cli line length
+#if ( CLI_UART_TX_STREAM_LEN < dlMAX_LOG_LINE_LENGTH )
+#error "CLI_UART_TX_STREAM_LEN must be >= dlMAX_LOG_LINE_LENGTH"
+#endif
 
-/* Dimensions the arrays into which print messages are created. */
-#define dlMAX_PRINT_STRING_LENGTH       512     /* maximum length of any single log line */
-#define dlLOGGING_STREAM_LENGTH        	4096    /* how many bytes to accept for logging before blocking */
-#define LOGGING_LINE_ENDING             "\r\n"
-#define dlMAX_LOG_LINE_LENGTH           dlMAX_PRINT_STRING_LENGTH - sizeof( LOGGING_LINE_ENDING )
-
-#define TASK_NOTIFY_UART_DONE_IDX       2
-
-volatile StreamBufferHandle_t xLogBuf = NULL;
+volatile StreamBufferHandle_t xLogMBuf = NULL;
 
 UART_HandleTypeDef * pxEarlyUart = NULL;
 
-extern UART_HandleTypeDef * vInitUartEarly( void );
-
-void vInitLoggingEarly( void )
-{
-	pxEarlyUart = vInitUartEarly();
-}
-
+static char pcPrintBuff[ dlMAX_PRINT_STRING_LENGTH ];
 
 /* Should only be called during an assert with the scheduler suspended. */
 void vDyingGasp( void )
@@ -71,7 +62,7 @@ void vDyingGasp( void )
 
     do
     {
-        xNumBytes = xStreamBufferReceiveFromISR( xLogBuf, cOutBuffer, dlMAX_PRINT_STRING_LENGTH, 0 );
+        xNumBytes = xStreamBufferReceiveFromISR( xLogMBuf, cOutBuffer, dlMAX_PRINT_STRING_LENGTH, 0 );
         (void) HAL_UART_Transmit( pxEarlyUart, ( uint8_t * ) cOutBuffer, xNumBytes, 10 * 1000);
     }
     while( xNumBytes != 0 );
@@ -97,7 +88,14 @@ static void vSendLogMessageEarly( const char * buffer, unsigned int count )
 #ifdef LOGGING_OUTPUT_UART
     /* blocking write to UART */
     ( void ) HAL_UART_Transmit( pxEarlyUart, (uint8_t *)buffer, count, 100000 );
+    ( void ) HAL_UART_Transmit( pxEarlyUart, ( uint8_t * ) "\r\n", 2, 100000 );
 #endif
+}
+
+void vInitLoggingEarly( void )
+{
+    pxEarlyUart = vInitUartEarly();
+    vSendLogMessageEarly( "\r\n", 2 );
 }
 
 static void vSendLogMessage( const char * buffer, unsigned int count )
@@ -110,19 +108,23 @@ static void vSendLogMessage( const char * buffer, unsigned int count )
     {
         UBaseType_t uxContext;
         BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-        BaseType_t xTaskWokenAccumulate = pdFALSE;
-        configASSERT( xLogBuf != NULL );
+        configASSERT( xLogMBuf != NULL );
 
         /* Enter critical section to preserve ordering of log messages */
         uxContext = taskENTER_CRITICAL_FROM_ISR();
-        ( void ) xStreamBufferSendFromISR( xLogBuf, "\x7F\x7F", 2, &xHigherPriorityTaskWoken );
-        xTaskWokenAccumulate |= xHigherPriorityTaskWoken;
+        size_t xSpaceAvailable = xMessageBufferSpaceAvailable( xLogMBuf ) - sizeof( size_t );
 
-        ( void ) xStreamBufferSendFromISR( xLogBuf, buffer, count, &xHigherPriorityTaskWoken );
-        xTaskWokenAccumulate |= xHigherPriorityTaskWoken;
-
-        ( void ) xStreamBufferSendFromISR( xLogBuf, "> ", 2, &xHigherPriorityTaskWoken );
-        xTaskWokenAccumulate |= xHigherPriorityTaskWoken;
+        if( xSpaceAvailable > 0 )
+        {
+            if( xSpaceAvailable < count )
+            {
+                ( void ) xMessageBufferSendFromISR( xLogMBuf, buffer, xSpaceAvailable, &xHigherPriorityTaskWoken );
+            }
+            else
+            {
+                ( void ) xMessageBufferSendFromISR( xLogMBuf, buffer, count, &xHigherPriorityTaskWoken );
+            }
+        }
 
         taskEXIT_CRITICAL_FROM_ISR( uxContext );
 
@@ -130,18 +132,25 @@ static void vSendLogMessage( const char * buffer, unsigned int count )
     }
     else
     {
+        configASSERT( xLogMBuf != NULL );
         taskENTER_CRITICAL();
-        ( void ) xStreamBufferSend( xLogBuf, "\r", 2, portMAX_DELAY );
-        ( void ) xStreamBufferSend( xLogBuf, buffer, count, portMAX_DELAY );
-        ( void ) xStreamBufferSend( xLogBuf, "> ", 2, portMAX_DELAY );
+        size_t xSpaceAvailable = xMessageBufferSpaceAvailable( xLogMBuf ) - sizeof( size_t );
 
+        if( xSpaceAvailable < count )
+        {
+            ( void ) xMessageBufferSend( xLogMBuf, buffer, xSpaceAvailable, 0 );
+        }
+        else
+        {
+            ( void ) xMessageBufferSend( xLogMBuf, buffer, count, 0 );
+        }
         taskEXIT_CRITICAL();
     }
 }
 
 void vLoggingInit( void )
 {
-    xLogBuf = xStreamBufferCreate( dlLOGGING_STREAM_LENGTH, 1 );
+    xLogMBuf = xMessageBufferCreate( dlLOGGING_STREAM_LENGTH );
 }
 
 /*-----------------------------------------------------------*/
@@ -156,8 +165,6 @@ void vLoggingPrintf( const char * const     pcLogLevel,
     int32_t lLenPart = -1;
     va_list args;
     const char * pcTaskName = NULL;
-    char pcPrintString[ dlMAX_PRINT_STRING_LENGTH ];
-    pcPrintString[ 0 ] = '\0';
 
     /* Additional info to place at the start of the log line */
     if( xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED )
@@ -169,7 +176,8 @@ void vLoggingPrintf( const char * const     pcLogLevel,
         pcTaskName = "None";
     }
 
-    lLenPart = snprintf( pcPrintString,
+    pcPrintBuff[ 0 ] = '\0';
+    lLenPart = snprintf( pcPrintBuff,
                          dlMAX_LOG_LINE_LENGTH,
                          "<%-3.3s> %8lu [%-10.10s] ",
                          pcLogLevel,
@@ -189,7 +197,7 @@ void vLoggingPrintf( const char * const     pcLogLevel,
 
     /* There are a variable number of parameters. */
     va_start( args, pcFormat );
-    lLenPart = vsnprintf( &pcPrintString[ ulLenTotal ],
+    lLenPart = vsnprintf( &pcPrintBuff[ ulLenTotal ],
                           ( dlMAX_LOG_LINE_LENGTH - ulLenTotal ),
                           pcFormat,
                           args );
@@ -208,11 +216,11 @@ void vLoggingPrintf( const char * const     pcLogLevel,
 
     /* remove any \r\n\0 characters at the end of the message */
     while( ulLenTotal > 0 &&
-           ( pcPrintString[ ulLenTotal - 1 ] == '\r' ||
-             pcPrintString[ ulLenTotal - 1 ] == '\n' ||
-             pcPrintString[ ulLenTotal - 1 ] == '\0' ) )
+           ( pcPrintBuff[ ulLenTotal - 1 ] == '\r' ||
+             pcPrintBuff[ ulLenTotal - 1 ] == '\n' ||
+             pcPrintBuff[ ulLenTotal - 1 ] == '\0' ) )
     {
-        pcPrintString[ ulLenTotal - 1 ] = '\0';
+        pcPrintBuff[ ulLenTotal - 1 ] = '\0';
         ulLenTotal--;
     }
 
@@ -221,7 +229,7 @@ void vLoggingPrintf( const char * const     pcLogLevel,
         ulLenTotal < dlMAX_LOG_LINE_LENGTH )
     {
         /* Add the trailer including file name and line number */
-        lLenPart = snprintf( &pcPrintString[ ulLenTotal ],
+        lLenPart = snprintf( &pcPrintBuff[ ulLenTotal ],
                              ( dlMAX_LOG_LINE_LENGTH - ulLenTotal ),
                              " (%s:%lu)",
                              pcFileName,
@@ -239,13 +247,7 @@ void vLoggingPrintf( const char * const     pcLogLevel,
         }
     }
 
-    ( void ) strncpy( &pcPrintString[ ulLenTotal ],
-                      LOGGING_LINE_ENDING,
-                      dlMAX_PRINT_STRING_LENGTH - ulLenTotal );
-
-    ulLenTotal += sizeof( LOGGING_LINE_ENDING );
-
-    vSendLogMessage( ( void * ) pcPrintString, ulLenTotal );
+    vSendLogMessage( ( void * ) pcPrintBuff, ulLenTotal );
 }
 
 /*-----------------------------------------------------------*/
