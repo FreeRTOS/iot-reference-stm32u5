@@ -23,35 +23,6 @@
  * http://aws.amazon.com/freertos
  */
 
-/*
- * This demo creates multiple tasks, all of which use the MQTT agent API to
- * communicate with an MQTT broker through the same MQTT connection.
- *
- * This file contains the initial task created after the TCP/IP stack connects
- * to the network.  The task:
- *
- * 1) Connects to the MQTT broker.
- * 2) Creates the other demo tasks, in accordance with the #defines set in
- *    demo_config.h.  For example, if demo_config.h contains the following
- *    settings:
- *
- *    #define democonfigCREATE_LARGE_MESSAGE_SUB_PUB_TASK     1
- *    #define democonfigNUM_SIMPLE_SUB_PUB_TASKS_TO_CREATE 3
- *
- *    then the initial task will create the task implemented in
- *    large_message_sub_pub_demo.c and three instances of the task
- *    implemented in simple_sub_pub_demo.c.  See the comments at the top
- *    of those files for more information.
- *
- * 3) After creating the demo tasks the initial task could create the MQTT
- *    agent task.  However, as it has no other operations to perform, rather
- *    than create the MQTT agent as a separate task the initial task just calls
- *    the agent's implementing function - effectively turning itself into the
- *    MQTT agent.
- */
-
-#define LOGGING_REMOVE_PARENS // This file uses C89 style logging calls
-
 #include "logging_levels.h"
 #define LOG_LEVEL LOG_DEBUG
 #include "logging.h"
@@ -88,69 +59,14 @@
 
 #include "mbedtls_transport.h"
 
-
-/* This demo uses compile time options to select the demo tasks to created.
- * Ensure the compile time options are defined.  These should be defined in
- * demo_config.h. */
-#ifndef democonfigCREATE_LARGE_MESSAGE_SUB_PUB_TASK
-    #error Please define democonfigCREATE_LARGE_MESSAGE_SUB_PUB_TASK to 1 or 0 in demo_config.h - determines if vStartLargeMessageSubscribePublishTask() gets called or not.
-#endif
-
-#if ( democonfigCREATE_LARGE_MESSAGE_SUB_PUB_TASK != 0 ) && !defined( democonfigLARGE_MESSAGE_SUB_PUB_TASK_STACK_SIZE )
-    #error Please define democonfigLARGE_MESSAGE_SUB_PUB_TASK_STACK_SIZE in demo_config.h to set the stack size (in words, not bytes) for the task created by vStartLargeMessageSubscribePublishTask().
-#endif
-
-#ifndef democonfigNUM_SIMPLE_SUB_PUB_TASKS_TO_CREATE
-    #error Please set democonfigNUM_SIMPLE_SUB_PUB_TASKS_TO_CREATE to the number of tasks to create in vStartSimpleSubscribePublishTask().  Can be zero.
-#endif
-
-#if ( democonfigNUM_SIMPLE_SUB_PUB_TASKS_TO_CREATE > 0 ) && !defined( democonfigSIMPLE_SUB_PUB_TASK_STACK_SIZE )
-    #error Please define democonfigSIMPLE_SUB_PUB_TASK_STACK_SIZE in demo_config.h to set the stack size (in words, not bytes) for the tasks created by vStartSimpleSubscribePublishTask().
-#endif
-
-#ifndef democonfigCREATE_CODE_SIGNING_OTA_DEMO
-    #error Please define democonfigCREATE_CODE_SIGNING_OTA_DEMO to 1 or 0 in demo_config.h - determines if vStartOTACodeSigningDemo() gets called or not.
-#endif
-
-#if ( democonfigCREATE_CODE_SIGNING_OTA_DEMO != 0 ) && !defined( democonfigCODE_SIGNING_OTA_TASK_STACK_SIZE )
-    #error Please define democonfigCODE_SIGNING_OTA_TASK_STACK_SIZE in demo_config.h to set the stack size (in words, not bytes) for the task created by vStartOTACodeSigningDemo().
-#endif
-
-#ifndef democonfigCREATE_DEFENDER_DEMO
-    #error Please define democonfigCREATE_DEFENDER_DEMO to 1 or 0 in demo_config.h - determines if vStartDefenderDemo() gets called or not.
-#endif
-
-#if ( democonfigCREATE_DEFENDER_DEMO != 0 ) && !defined( democonfigDEFENDER_TASK_STACK_SIZE )
-    #error Please define democonfigDEFENDER_TASK_STACK_SIZE in demo_config.h to set the stack size (in words, not bytes) for the task created by vStartDefenderDemo().
-#endif
-
-#ifndef democonfigCREATE_SHADOW_DEMO
-    #error Please define democonfigCREATE_SHADOW_DEMO to 1 or 0 in demo_config.h - determines if vStartShadowDemo() gets called or not.
-#endif
-
-#if ( democonfigCREATE_SHADOW_DEMO != 0 ) && !defined( democonfigSHADOW_TASK_STACK_SIZE )
-    #error Please define democonfigSHADOW_TASK_STACK_SIZE in demo_config.h to set the stack size (in words, not bytes) for the tasks created by vStartShadowDemo().
-#endif
-
-/**
- * @brief Dimensions the buffer used to serialize and deserialize MQTT packets.
- * @note Specified in bytes.  Must be large enough to hold the maximum
- * anticipated MQTT payload.
- */
-#ifndef MQTT_AGENT_NETWORK_BUFFER_SIZE
-    #define MQTT_AGENT_NETWORK_BUFFER_SIZE    ( 5000 )
-#endif
-
-
-/**
- * These configuration settings are required to run the demo.
- */
+/*-----------------------------------------------------------*/
+extern TransportInterfaceExtended_t xLwipTransportInterface;
 
 /**
  * @brief Timeout for receiving CONNACK after sending an MQTT CONNECT packet.
  * Defined in milliseconds.
  */
-#define mqttexampleCONNACK_RECV_TIMEOUT_MS           ( 2000U )
+#define CONNACK_RECV_TIMEOUT_MS                      ( 2000U )
 
 /**
  * @brief The maximum number of retries for network operation with server.
@@ -177,27 +93,13 @@
  *  Control Packets being sent does not exceed the this Keep Alive value. In the
  *  absence of sending any other Control Packets, the Client MUST send a
  *  PINGREQ Packet.
- *//*_RB_ Move to be the responsibility of the agent. */
+ */
 #define mqttexampleKEEP_ALIVE_INTERVAL_SECONDS       ( 1200U )
 
 /**
- * @brief Socket send and receive timeouts to use.  Specified in milliseconds.
+ * @brief Socket send and receive timeouts to use.
  */
 #define mqttexampleTRANSPORT_SEND_RECV_TIMEOUT_MS    ( 2000 )
-
-/**
- * @brief Used to convert times to/from ticks and milliseconds.
- */
-#define mqttexampleMILLISECONDS_PER_SECOND           ( 1000U )
-#define mqttexampleMILLISECONDS_PER_TICK             ( 1U )
-
-
-
-/**
- * @brief The MQTT agent manages the MQTT contexts.  This set the handle to the
- * context used by this demo.
- */
-#define mqttexampleMQTT_CONTEXT_HANDLE               ( ( MQTTContextHandle_t ) 0 )
 
 #define EVENT_BIT_AGENT_READY 0
 
@@ -306,11 +208,6 @@ static void prvMQTTAgentTask( void * pvParameters );
  */
 static uint32_t prvGetTimeMs( void );
 
-/**
- * @brief Connects a TCP socket to the MQTT broker, then creates and MQTT
- * connection to the same.
- */
-static void prvConnectToMQTTBroker( void );
 
 /*
  * Functions that start the tasks demonstrated by this project.
@@ -408,41 +305,45 @@ void vSleepUntilMQTTAgentReady( void )
 	}
 }
 
-static BaseType_t xInitializMqttConnectCtx( MqttConnectCtx_t * pxCtx )
+static BaseType_t xInitializeMqttConnectCtx( MqttConnectCtx_t * pxCtx )
 {
-	 if( xConnectCtx.pcMqttEndpointAddress == NULL )
-	 {
-		 xConnectCtx.ulMqttEndpointLen = KVStore_getSize( CS_CORE_MQTT_ENDPOINT );
-		 configASSERT( xConnectCtx.ulMqttEndpointLen > 0 );
-		 xConnectCtx.pcMqttEndpointAddress = ( char * ) pvPortMalloc( xConnectCtx.ulMqttEndpointLen );
-		 if( xConnectCtx.pcMqttEndpointAddress == NULL )
-		 {
-			 xConnectCtx.ulMqttEndpointLen = 0;
-		 }
-		 else
-		 {
-			 ( void ) KVStore_getString( CS_CORE_MQTT_ENDPOINT,
-					 	 	 			 xConnectCtx.pcMqttClientId,
-										 xConnectCtx.ulMqttClientIdLen );
-		 }
+    pxCtx->ulMqttEndpointLen = KVStore_getSize( CS_CORE_MQTT_ENDPOINT );
 
-		 xConnectCtx.ulMqttClientIdLen = KVStore_getSize( CS_CORE_THING_NAME );
-		 configASSERT( xConnectCtx.ulMqttClientIdLen > 0 );
-		 xConnectCtx.pcMqttClientId = ( char * ) pvPortMalloc( xConnectCtx.ulMqttClientIdLen );
-		 if( xConnectCtx.pcMqttClientId == NULL )
-		 {
-			 xConnectCtx.ulMqttClientIdLen = 0;
-		 }
-		 else
-		 {
-			 ( void ) KVStore_getString( CS_CORE_THING_NAME,
-					 	 	 			 xConnectCtx.pcMqttClientId,
-										 xConnectCtx.ulMqttClientIdLen );
-		 }
+    configASSERT( pxCtx->ulMqttEndpointLen > 0 );
 
-		 xConnectCtx.ulMqttPort = KVStore_getUInt32( CS_CORE_MQTT_PORT, NULL );
-	 }
-	 return( xConnectCtx.pcMqttEndpointAddress != NULL );
+    pxCtx->pcMqttEndpointAddress = ( char * ) pvPortMalloc( pxCtx->ulMqttEndpointLen );
+
+    if( pxCtx->pcMqttEndpointAddress == NULL )
+    {
+        pxCtx->ulMqttEndpointLen = 0;
+    }
+    else
+    {
+        ( void ) KVStore_getString( CS_CORE_MQTT_ENDPOINT,
+                                 pxCtx->pcMqttEndpointAddress,
+                                 pxCtx->ulMqttEndpointLen );
+    }
+
+    pxCtx->ulMqttClientIdLen = KVStore_getSize( CS_CORE_THING_NAME );
+
+    configASSERT( pxCtx->ulMqttClientIdLen > 0 );
+
+    pxCtx->pcMqttClientId = ( char * ) pvPortMalloc( pxCtx->ulMqttClientIdLen );
+
+    if( pxCtx->pcMqttClientId == NULL )
+    {
+        pxCtx->ulMqttClientIdLen = 0;
+    }
+    else
+    {
+        ( void ) KVStore_getString( CS_CORE_THING_NAME,
+                                    pxCtx->pcMqttClientId,
+                                    pxCtx->ulMqttClientIdLen );
+    }
+
+    pxCtx->ulMqttPort = KVStore_getUInt32( CS_CORE_MQTT_PORT, NULL );
+
+    return( pxCtx->pcMqttEndpointAddress != NULL );
 }
 
 /*-----------------------------------------------------------*/
@@ -479,8 +380,6 @@ static MQTTStatus_t prvMQTTInit( void )
     xTransport.pNetworkContext = pxNetworkContext;
     xTransport.send = mbedtls_transport_send;
     xTransport.recv = mbedtls_transport_recv;
-
-    xInitializMqttConnectCtx( &xConnectCtx );
 
     /* Initialize MQTT library. */
     xReturn = MQTTAgent_Init( &xGlobalMqttAgentContext,
@@ -537,7 +436,7 @@ static MQTTStatus_t prvMQTTConnect( bool xCleanSession )
     xResult = MQTT_Connect( &( xGlobalMqttAgentContext.mqttContext ),
                             &xConnectInfo,
                             NULL,
-                            mqttexampleCONNACK_RECV_TIMEOUT_MS,
+                            CONNACK_RECV_TIMEOUT_MS,
                             &xSessionPresent );
 
     LogInfo( ( "Session present: %d\n", xSessionPresent ) );
@@ -828,9 +727,31 @@ static void prvMQTTAgentTask( void * pvParameters )
     /* Miscellaneous initialization. */
     ulGlobalEntryTimeMs = prvGetTimeMs();
 
+    xInitializeMqttConnectCtx( &xConnectCtx );
+
     /* Create the TCP connection to the broker, then the MQTT connection to the
      * same. */
-    prvConnectToMQTTBroker();
+
+    BaseType_t xNetworkStatus = pdFAIL;
+    MQTTStatus_t xMQTTStatus;
+
+    if( pxNetworkContext == NULL )
+    {
+        pxNetworkContext = mbedtls_transport_allocate( &xLwipTransportInterface );
+    }
+
+    configASSERT( pxNetworkContext != NULL );
+
+    /* Connect a socket to the broker. */
+    xNetworkStatus = prvSocketConnect();
+
+    /* Initialize the MQTT context with the buffer and transport interface. */
+    xMQTTStatus = prvMQTTInit();
+    configASSERT( xMQTTStatus == MQTTSuccess );
+
+    /* Form an MQTT connection without a persistent session. */
+    xMQTTStatus = prvMQTTConnect( true );
+    configASSERT( xMQTTStatus == MQTTSuccess );
 
     /* Selectively create demo tasks as per the compile time constant settings. */
     #if ( democonfigCREATE_LARGE_MESSAGE_SUB_PUB_TASK == 1 )
@@ -927,50 +848,13 @@ static void prvMQTTAgentTask( void * pvParameters )
 }
 
 /*-----------------------------------------------------------*/
-extern TransportInterfaceExtended_t xLwipTransportInterface;
-
-static void prvConnectToMQTTBroker( void )
-{
-    BaseType_t xNetworkStatus = pdFAIL;
-    MQTTStatus_t xMQTTStatus;
-
-    if( pxNetworkContext == NULL )
-    {
-        pxNetworkContext = mbedtls_transport_allocate( &xLwipTransportInterface );
-    }
-
-    configASSERT( pxNetworkContext != NULL );
-
-    /* Connect a socket to the broker. */
-    xNetworkStatus = prvSocketConnect();
-    configASSERT( xNetworkStatus == pdPASS );
-
-    /* Initialize the MQTT context with the buffer and transport interface. */
-    xMQTTStatus = prvMQTTInit();
-    configASSERT( xMQTTStatus == MQTTSuccess );
-
-    /* Form an MQTT connection without a persistent session. */
-    xMQTTStatus = prvMQTTConnect( true );
-    configASSERT( xMQTTStatus == MQTTSuccess );
-}
-
-
-/*-----------------------------------------------------------*/
 
 static uint32_t prvGetTimeMs( void )
 {
-    TickType_t xTickCount = 0;
     uint32_t ulTimeMs = 0UL;
 
-    /* Get the current tick count. */
-    xTickCount = xTaskGetTickCount();
-
-    /* Convert the ticks to milliseconds. */
-    ulTimeMs = ( uint32_t ) xTickCount * mqttexampleMILLISECONDS_PER_TICK;
-
-    /* Reduce ulGlobalEntryTimeMs from obtained time so as to always return the
-     * elapsed time in the application. */
-    ulTimeMs = ( uint32_t ) ( ulTimeMs - ulGlobalEntryTimeMs );
+    /* Determine the elapsed time in the application */
+    ulTimeMs = ( uint32_t ) ( xTaskGetTickCount() * portTICK_PERIOD_MS ) - ulGlobalEntryTimeMs;
 
     return ulTimeMs;
 }

@@ -26,7 +26,7 @@
  */
 #include "logging_levels.h"
 
-#define LOG_LEVEL LOG_ERROR
+#define LOG_LEVEL LOG_DEBUG
 
 #include "logging.h"
 
@@ -1338,11 +1338,11 @@ void mbedtls_transport_disconnect( NetworkContext_t * pxNetworkContext )
         }
         else
         {
-            /* WANT_READ and WANT_WRITE can be ignored. Logging for debugging purposes. */
-            LogInfo( "(Network connection %p) TLS close-notify sent; ",
-                       "received %s as the TLS status can be ignored for close-notify."
-                       ( tlsStatus == MBEDTLS_ERR_SSL_WANT_READ ) ? "WANT_READ" : "WANT_WRITE",
-                       pxNetworkContext );
+//            /* WANT_READ and WANT_WRITE can be ignored. Logging for debugging purposes. */
+//            LogInfo( "(Network connection %p) TLS close-notify sent; "
+//                       "received %s as the TLS status can be ignored for close-notify."
+//                       ( tlsStatus == MBEDTLS_ERR_SSL_WANT_READ ) ? "WANT_READ" : "WANT_WRITE",
+//                       pxNetworkContext );
         }
 
         if( pxTLSContext->pxSocketContext != NULL &&
@@ -1381,11 +1381,6 @@ int32_t mbedtls_transport_recv( NetworkContext_t * pxNetworkContext,
         ( tlsStatus == MBEDTLS_ERR_SSL_WANT_READ ) ||
         ( tlsStatus == MBEDTLS_ERR_SSL_WANT_WRITE ) )
     {
-        LogDebug( "Failed to read data. However, a read can be retried on this error. "
-                    "mbedTLSError= %s : %s.",
-                    mbedtlsHighLevelCodeOrDefault( tlsStatus ),
-                    mbedtlsLowLevelCodeOrDefault( tlsStatus ) );
-
         /* Mark these set of errors as a timeout. The libraries may retry read
          * on these errors. */
         tlsStatus = 0;

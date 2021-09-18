@@ -28,7 +28,7 @@
 #include "logging_levels.h"
 /* define LOG_LEVEL here if you want to modify the logging level from the default */
 
-#define LOG_LEVEL LOG_ERROR
+#define LOG_LEVEL LOG_DEBUG
 
 #include "logging.h"
 
@@ -42,13 +42,10 @@
 #include "task.h"
 #include "queue.h"
 
-/* For I2c mutex */
-#include "main.h"
+#include "kvstore.h"
 
 /* MQTT library includes. */
 #include "core_mqtt.h"
-
-/* MQTT agent include. */
 #include "core_mqtt_agent.h"
 
 /* Subscription manager header include. */
@@ -61,8 +58,9 @@
  */
 #define MQTT_PUBLISH_MAX_LEN              ( 256 )
 #define MQTT_PUBLISH_FREQUENCY_HZ         ( 1 )
-#define MQTT_PUBLISH_TOPIC                "/stm32u5/env_sensor_data"
-#define MQTT_PUBLISH_BLOCK_TIME_MS        ( 2000 )
+#define MQTT_PUBLISH_TOPIC                "env_sensor_data"
+#define MQTT_PUBLICH_TOPIC_STR_LEN        ( 256 )
+#define MQTT_PUBLISH_BLOCK_TIME_MS        ( 10000 )
 #define MQTT_NOTIFY_IDX                   ( 1 )
 #define MQTT_PUBLISH_QOS                  ( 0 )
 
@@ -86,28 +84,9 @@ typedef struct
     float_t fBarometricPressure;
 } EnvironmentalSensorData_t;
 
-
-/*-----------------------------------------------------------*/
-
-static void prvSensorPublishTask( void * pvParameters );
-
 /*-----------------------------------------------------------*/
 
 extern MQTTAgentContext_t xGlobalMqttAgentContext;
-
-/*-----------------------------------------------------------*/
-
-void vStartSensorPublishTask( void )
-{
-    BaseType_t xResult = pdFALSE;
-    xResult = xTaskCreate( prvSensorPublishTask,
-                           "ESensorPub",
-                           4096,
-                           NULL,
-                           10,
-                           NULL );
-    configASSERT( xResult == pdTRUE );
-}
 
 /*-----------------------------------------------------------*/
 
@@ -247,7 +226,7 @@ static BaseType_t xUpdateSensorData( EnvironmentalSensorData_t * pxData )
 
 extern UBaseType_t uxRand( void );
 
-static void prvSensorPublishTask( void * pvParameters )
+void vEnvironmentSensorPublishTask( void * pvParameters )
 {
     (void) pvParameters;
     BaseType_t xResult = pdFALSE;
@@ -261,12 +240,25 @@ static void prvSensorPublishTask( void * pvParameters )
         LogError("Error while initializing environmental sensors.");
         vTaskDelete( NULL );
     }
+    
+    /* Build the topic string */
+    char pcTopicString[ MQTT_PUBLICH_TOPIC_STR_LEN ] = { 0 };
+    size_t xTopicLen = 0;
+
+    xTopicLen = strlcat( pcTopicString, "/", MQTT_PUBLICH_TOPIC_STR_LEN );
+
+    if( xTopicLen + 1 < MQTT_PUBLICH_TOPIC_STR_LEN )
+    {
+        ( void ) KVStore_getString( CS_CORE_THING_NAME, &( pcTopicString[ xTopicLen ] ), MQTT_PUBLICH_TOPIC_STR_LEN - xTopicLen );
+
+        xTopicLen = strlcat( pcTopicString, "/"MQTT_PUBLISH_TOPIC, MQTT_PUBLICH_TOPIC_STR_LEN );
+    }
 
     vSleepUntilMQTTAgentReady();
 
     while( xExitFlag == pdFALSE )
     {
-        TickType_t xTicksToWait = pdMS_TO_TICKS( MQTT_PUBLISH_BLOCK_TIME_MS );
+        TickType_t xTicksToWait = pdMS_TO_TICKS( 1000 / MQTT_PUBLISH_FREQUENCY_HZ );
         TimeOut_t xTimeOut;
 
         EnvironmentalSensorData_t xEnvData;
@@ -289,7 +281,7 @@ static void prvSensorPublishTask( void * pvParameters )
 
             if( bytesWritten < MQTT_PUBLISH_MAX_LEN )
             {
-                xResult = prvPublishAndWaitForAck( MQTT_PUBLISH_TOPIC,
+                xResult = prvPublishAndWaitForAck( pcTopicString,
                                                    payloadBuf,
                                                    bytesWritten );
             }
@@ -300,7 +292,7 @@ static void prvSensorPublishTask( void * pvParameters )
 
             if( xResult == pdTRUE )
             {
-                LogDebug("Published sensor data: %s", payloadBuf );
+                LogDebug( payloadBuf );
             }
         }
         else
@@ -313,7 +305,6 @@ static void prvSensorPublishTask( void * pvParameters )
         {
             /* Wait until its time to poll the sensors again */
             vTaskDelay( xTicksToWait );
-            LogDebug( "Slept for %d seconds.", xTicksToWait );
         }
     }
 }

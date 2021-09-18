@@ -187,8 +187,8 @@ static void vHeartbeatTask( void * pvParameters )
 }
 
 extern void vStartMQTTAgentDemo( void );
-extern void vStartSensorPublishTask( void );
 extern void Task_MotionSensorsPublish( void * );
+extern void vEnvironmentSensorPublishTask( void * );
 
 int main( void )
 {
@@ -223,14 +223,14 @@ int main( void )
 
     configASSERT( xResult == pdTRUE );
 
+    vStartMQTTAgentDemo();
+
+    xResult = xTaskCreate( vEnvironmentSensorPublishTask, "EnvSense", 4096, NULL, 10, NULL );
+    configASSERT( xResult == pdTRUE );
 
 
-//    vStartMQTTAgentDemo();
-
-    //    xResult = xTaskCreate( Task_MotionSensorsPublish, "MotionS", 4096, NULL, tskIDLE_PRIORITY + 3, NULL );
-        configASSERT( xResult == pdTRUE );
-
-//    vStartSensorPublishTask();
+    xResult = xTaskCreate( Task_MotionSensorsPublish, "MotionS", 4096, NULL, 11, NULL );
+    configASSERT( xResult == pdTRUE );
 
     /* Start scheduler */
     vTaskStartScheduler();
