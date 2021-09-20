@@ -53,12 +53,14 @@
 [submodule "Middleware/ARM/trusted-firmware-m"]
 	path = Middleware/ARM/trusted-firmware-m
 	url = https://review.trustedfirmware.org/TF-M/trusted-firmware-m
+	fetchRecurseSubmodules = false
 [submodule "Drivers/CMSIS/Device/ST/STM32U5xx"]
 	path = Drivers/CMSIS/Device/ST/STM32U5xx
 	url = https://github.com/STMicroelectronics/cmsis_device_u5.git
 [submodule "Middleware/ST/STM32CubeU5"]
 	path = Middleware/ST/STM32CubeU5
 	url = https://github.com/STMicroelectronics/STM32CubeU5.git
+	update = none
 [submodule "Middleware/lwip"]
 	path = Middleware/lwip
 	url = https://github.com/lwip-tcpip/lwip.git
