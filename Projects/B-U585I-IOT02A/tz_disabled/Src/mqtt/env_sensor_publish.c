@@ -273,7 +273,7 @@ void vEnvironmentSensorPublishTask( void * pvParameters )
             /* Write to */
             bytesWritten = snprintf( payloadBuf,
                                      MQTT_PUBLISH_MAX_LEN,
-                                     "{ \"temperature0_deg_c\": %f, \"humidity\": %f, \"temperature1_deg_c\": %f, \"baro_pressure_mbar\": %f }",
+                                     "{ \"temp_0_c\": %f, \"rh_pct\": %f, \"temp_1_c\": %f, \"baro_mbar\": %f }",
                                      xEnvData.fTemperature0,
                                      xEnvData.fHumidity,
                                      xEnvData.fTemperature1,
