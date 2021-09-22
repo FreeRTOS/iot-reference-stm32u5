@@ -26,6 +26,7 @@
  */
 
 #include "logging_levels.h"
+/* #define LOG_LEVEL LOG_DEBUG */
 #include "logging.h"
 
 #include "FreeRTOS.h"
@@ -77,7 +78,7 @@ static void vPopulateConfig( struct lfs_config * pxCfg, struct LfsPortCtx * pxCt
     BSP_OSPI_NOR_Init_t xNorInit = { 0 };
 
     xNorInit.InterfaceMode = BSP_OSPI_NOR_OPI_MODE;
-    xNorInit.TransferRate = MX25LM51245G_DTR_TRANSFER;
+    xNorInit.TransferRate = MX25LM51245G_STR_TRANSFER;
 
     lError = BSP_OSPI_NOR_Init( 0, &xNorInit );
 
@@ -88,8 +89,8 @@ static void vPopulateConfig( struct lfs_config * pxCfg, struct LfsPortCtx * pxCt
     configASSERT( lError == BSP_ERROR_NONE );
 
     /* Read size is one word */
-    pxCfg->read_size = sizeof( void * );
-    pxCfg->prog_size = sizeof( void * ); //xNorInfo.ProgPageSize;
+    pxCfg->read_size = xNorInfo.ProgPageSize;
+    pxCfg->prog_size = xNorInfo.ProgPageSize;
 
     /* Number of erasable blocks */
     pxCfg->block_count = xNorInfo.EraseSubSectorNumber;
@@ -165,10 +166,13 @@ const struct lfs_config * pxInitializeOSPIFlashFs( TickType_t xBlockTime )
 
     pxCtx->xBlockTime = xBlockTime;
     pxCtx->xMutex = xSemaphoreCreateMutex();
-    (void) xSemaphoreGive( pxCtx->xMutex );
+
     configASSERT( pxCtx->xMutex != NULL );
 
+    (void) xSemaphoreGive( pxCtx->xMutex );
+
     vPopulateConfig( pxCfg, pxCtx );
+
     return pxCfg;
 }
 

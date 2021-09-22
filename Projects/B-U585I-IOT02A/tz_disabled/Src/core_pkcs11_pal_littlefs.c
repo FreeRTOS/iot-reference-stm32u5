@@ -95,6 +95,7 @@ static CK_RV prvReadData( const char * pcFileName,
 
     struct lfs_info xFileInfo = { 0 };
     lfs_file_t xFile = { 0 };
+    BaseType_t xFileOpenedFlag = pdFALSE;
 
     /* Initialize return vars */
     *ppucData = NULL;
@@ -115,6 +116,7 @@ static CK_RV prvReadData( const char * pcFileName,
     else
     {
         lReturn = lfs_file_open( pLfsCtx, &xFile, pcFileName, LFS_O_RDONLY );
+        xFileOpenedFlag = pdTRUE;
     }
 
     if( xReturn == CKR_OK &&
@@ -171,7 +173,8 @@ static CK_RV prvReadData( const char * pcFileName,
         lReturn = 0;
         xReturn = CKR_FUNCTION_FAILED;
     }
-    else /* Successful read */
+
+    if( xFileOpenedFlag )
     {
         ( void ) lfs_file_close( pLfsCtx, &xFile );
     }
@@ -212,6 +215,7 @@ CK_OBJECT_HANDLE PKCS11_PAL_SaveObject( CK_ATTRIBUTE_PTR pxLabel,
 
     if( pcFileName != NULL )
     {
+        ( void ) lfs_remove( pLfsCtx, pcFileName );
         /* Overwrite the file every time it is saved. */
         lResult = lfs_file_open( pLfsCtx, &xFile, pcFileName, LFS_O_WRONLY | LFS_O_CREAT );
 
