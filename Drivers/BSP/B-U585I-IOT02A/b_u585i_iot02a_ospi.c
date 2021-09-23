@@ -883,7 +883,7 @@ int32_t BSP_OSPI_NOR_ConfigFlash(uint32_t Instance, BSP_OSPI_NOR_Interface_t Mod
             if ((ret == BSP_ERROR_NONE) && (Mode == BSP_OSPI_NOR_OPI_MODE))
             {
 
-              if (Ospi_Nor_Ctx[Instance].TransferRate == BSP_OSPI_NOR_STR_TRANSFER)
+              if (Ospi_Nor_Ctx[Instance].TransferRate == BSP_OSPI_NOR_DTR_TRANSFER)
               {
                 /* Enter DTR OPI mode */
                 ret = OSPI_NOR_EnterDOPIMode(Instance);
@@ -1650,7 +1650,7 @@ static int32_t OSPI_NOR_EnterDOPIMode(uint32_t Instance)
   /* Write Configuration register 2 (with new dummy cycles) */
   else if (MX25LM51245G_WriteCfg2Register(&hospi_nor[Instance], Ospi_Nor_Ctx[Instance].InterfaceMode,
                                           Ospi_Nor_Ctx[Instance].TransferRate, MX25LM51245G_CR2_REG3_ADDR,
-                                          MX25LM51245G_CR2_DC_6_CYCLES) != MX25LM51245G_OK)
+                                          MX25LM51245G_CR2_DC_20_CYCLES) != MX25LM51245G_OK)
   {
     ret = BSP_ERROR_COMPONENT_FAILURE;
   }
@@ -1729,7 +1729,7 @@ static int32_t OSPI_NOR_EnterSOPIMode(uint32_t Instance)
   /* Write Configuration register 2 (with new dummy cycles) */
   else if (MX25LM51245G_WriteCfg2Register(&hospi_nor[Instance], Ospi_Nor_Ctx[Instance].InterfaceMode,
                                           Ospi_Nor_Ctx[Instance].TransferRate, MX25LM51245G_CR2_REG3_ADDR,
-                                          MX25LM51245G_CR2_DC_6_CYCLES) != MX25LM51245G_OK)
+                                          MX25LM51245G_CR2_DC_20_CYCLES) != MX25LM51245G_OK)
   {
     ret = BSP_ERROR_COMPONENT_FAILURE;
   }

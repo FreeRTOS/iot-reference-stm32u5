@@ -26,7 +26,7 @@
  */
 
 #include "logging_levels.h"
-/* #define LOG_LEVEL LOG_DEBUG */
+#define LOG_LEVEL LOG_DEBUG
 #include "logging.h"
 
 #include "FreeRTOS.h"
@@ -78,7 +78,7 @@ static void vPopulateConfig( struct lfs_config * pxCfg, struct LfsPortCtx * pxCt
     BSP_OSPI_NOR_Init_t xNorInit = { 0 };
 
     xNorInit.InterfaceMode = BSP_OSPI_NOR_OPI_MODE;
-    xNorInit.TransferRate = MX25LM51245G_STR_TRANSFER;
+    xNorInit.TransferRate = MX25LM51245G_DTR_TRANSFER;
 
     lError = BSP_OSPI_NOR_Init( 0, &xNorInit );
 
@@ -257,7 +257,7 @@ static int lfs_port_erase( const struct lfs_config *pxCfg, lfs_block_t block )
 
 	configASSERT( xSemaphoreGetMutexHolder( pxCtx->xMutex ) == xTaskGetCurrentTaskHandle() );
 
-	lReturnValue = BSP_OSPI_NOR_Erase_Block( 0, block, MX25LM51245G_ERASE_4K );
+	lReturnValue = BSP_OSPI_NOR_Erase_Block( 0, block * pxCfg->block_size, MX25LM51245G_ERASE_4K );
 
 	LogDebug( "Erasing block %lu Return Value: %ld", block, lReturnValue );
 

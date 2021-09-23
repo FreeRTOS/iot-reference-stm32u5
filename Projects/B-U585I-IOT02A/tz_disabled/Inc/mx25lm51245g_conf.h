@@ -35,11 +35,11 @@ extern "C" {
   */
 #define CONF_OSPI_ODS                MX25LM51245G_CR_ODS_24   /* MX25LM51245G Output Driver Strength */
 
-#define DUMMY_CYCLES_READ            8U
-#define DUMMY_CYCLES_READ_OCTAL      6U
-#define DUMMY_CYCLES_READ_OCTAL_DTR  6U
-#define DUMMY_CYCLES_REG_OCTAL       4U
-#define DUMMY_CYCLES_REG_OCTAL_DTR   5U
+#define DUMMY_CYCLES_READ            20U
+#define DUMMY_CYCLES_READ_OCTAL      20U
+#define DUMMY_CYCLES_READ_OCTAL_DTR  20U
+#define DUMMY_CYCLES_REG_OCTAL       20U
+#define DUMMY_CYCLES_REG_OCTAL_DTR   20U
 
 /**
   * @}

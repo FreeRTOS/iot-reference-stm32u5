@@ -648,7 +648,7 @@ typedef void (*pOSPI_CallbackTypeDef)(OSPI_HandleTypeDef *hospi);
 /** @defgroup OSPI_Timeout_definition OSPI Timeout definition
   * @{
   */
-#define HAL_OSPI_TIMEOUT_DEFAULT_VALUE       ((uint32_t)5000U)                                               /* 5 s */
+#define HAL_OSPI_TIMEOUT_DEFAULT_VALUE       ((uint32_t)500000U)                                               /* 5 s */
 /**
   * @}
   */

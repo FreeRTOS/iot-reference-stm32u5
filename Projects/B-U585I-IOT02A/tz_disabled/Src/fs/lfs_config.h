@@ -43,11 +43,11 @@ extern "C"
 
 #include "logging_levels.h"
 
-/*
- * #ifndef LOG_LEVEL
- * #define LOG_LEVEL LOG_DEBUG
- * #endif
- */
+
+#ifndef LOG_LEVEL
+#define LOG_LEVEL LOG_DEBUG
+#endif
+
 
 #include "logging.h"
 
