@@ -28,7 +28,7 @@
 #include "logging_levels.h"
 /* define LOG_LEVEL here if you want to modify the logging level from the default */
 
-#define LOG_LEVEL LOG_DEBUG
+#define LOG_LEVEL LOG_ERROR
 
 #include "logging.h"
 
