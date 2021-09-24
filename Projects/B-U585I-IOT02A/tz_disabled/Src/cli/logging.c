@@ -100,7 +100,7 @@ void vInitLoggingEarly( void )
 
 static void vSendLogMessage( const char * buffer, unsigned int count )
 {
-    if( xTaskGetSchedulerState() != taskSCHEDULER_RUNNING )
+    if( xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED )
     {
         vSendLogMessageEarly( buffer, count );
     }
@@ -133,7 +133,6 @@ static void vSendLogMessage( const char * buffer, unsigned int count )
     else
     {
         configASSERT( xLogMBuf != NULL );
-        taskENTER_CRITICAL();
         size_t xSpaceAvailable = xMessageBufferSpaceAvailable( xLogMBuf ) - sizeof( size_t );
 
         if( xSpaceAvailable < count )
@@ -144,7 +143,6 @@ static void vSendLogMessage( const char * buffer, unsigned int count )
         {
             ( void ) xMessageBufferSend( xLogMBuf, buffer, count, 0 );
         }
-        taskEXIT_CRITICAL();
     }
 }
 
@@ -175,6 +173,9 @@ void vLoggingPrintf( const char * const     pcLogLevel,
     {
         pcTaskName = "None";
     }
+
+    /* Suspend the scheduler to access pcPrintBuff */
+    vTaskSuspendAll();
 
     pcPrintBuff[ 0 ] = '\0';
     lLenPart = snprintf( pcPrintBuff,
@@ -248,6 +249,7 @@ void vLoggingPrintf( const char * const     pcLogLevel,
     }
 
     vSendLogMessage( ( void * ) pcPrintBuff, ulLenTotal );
+    xTaskResumeAll();
 }
 
 /*-----------------------------------------------------------*/

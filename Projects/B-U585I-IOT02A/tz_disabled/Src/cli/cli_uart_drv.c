@@ -32,8 +32,6 @@
 
 #include <string.h>
 
-#include "FreeRTOS_CLI_Console.h"
-
 #define HW_FIFO_LEN 		8
 
 extern volatile StreamBufferHandle_t xLogMBuf;
@@ -410,14 +408,17 @@ static void uart_write( const void * const pvOutputBuffer,
                  	    uint32_t xOutputBufferLen )
 {
     size_t xBytesSent = 0;
+
+    const uint8_t * const pcBuffer = ( uint8_t * const ) pvOutputBuffer;
+
 	if( pvOutputBuffer != NULL &&
 		xOutputBufferLen > 0 )
 	{
 	    while( xBytesSent < xOutputBufferLen )
 	    {
             xBytesSent += xStreamBufferSend( xUartTxStream,
-                                             ( const void * ) pvOutputBuffer,
-                                             xOutputBufferLen,
+                                             ( const void * ) &( pcBuffer[ xBytesSent ] ),
+                                             xOutputBufferLen - xBytesSent,
                                              portMAX_DELAY );
 	    }
 	}
@@ -459,14 +460,10 @@ static int32_t uart_read_timeout( char * const pcInputBuffer,
 
 static void uart_print( const char * const pcString )
 {
-    size_t xLength = strlen( pcString );
-
 	if( pcString != NULL )
 	{
-		( void ) xStreamBufferSend( xUartTxStream,
-								    ( const void * ) pcString,
-								    xLength,
-									portMAX_DELAY );
+	    size_t xLength = strlen( pcString );
+	    uart_write( pcString, xLength );
 	}
 }
 

@@ -49,6 +49,8 @@ static void prvHelpCommand( ConsoleIO_t * const pxConsoleIO,
                             uint32_t ulArgc,
                             char * ppcArgv[] );
 
+
+
 /*
  * Return the number of arguments in the command string ( including the command name ).
  * This is used to build an posix-style "argc" variable.
@@ -70,12 +72,14 @@ static const CLI_Command_Definition_t xHelpCommand =
     prvHelpCommand
 };
 
+
+
 /* The definition of the list of commands.  Commands that are registered are
  * added to this list. */
 static CLI_Definition_List_Item_t xRegisteredCommands =
 {
-    &xHelpCommand, /* The first command in the list is always the help command, defined in this file. */
-    NULL           /* The next pointer is initialized to NULL, as there are no other registered commands yet. */
+    &xHelpCommand,
+    NULL
 };
 
 /*-----------------------------------------------------------*/
@@ -248,6 +252,7 @@ const char * FreeRTOS_CLIGetParameter( const char * pcCommandString,
 
     return pcReturn;
 }
+
 /*-----------------------------------------------------------*/
 
 static void prvHelpCommand( ConsoleIO_t * const pxConsoleIO,
@@ -294,6 +299,8 @@ static void prvHelpCommand( ConsoleIO_t * const pxConsoleIO,
         }
     }
 }
+
+
 /*-----------------------------------------------------------*/
 
 static uint32_t prvGetNumberOfArgs( const char * pcCommandString )

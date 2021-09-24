@@ -65,11 +65,11 @@ static void vSubCommand_CommitConfig( ConsoleIO_t * pxCIO )
 
     if( xResult == pdTRUE )
     {
-        pxCIO->print( "Configuration saved to NVM." );
+        pxCIO->print( "Configuration saved to NVM.\r\n" );
     }
     else
     {
-        pxCIO->print( "Error: Could not save configuration to NVM." );
+        pxCIO->print( "Error: Could not save configuration to NVM.\r\n" );
     }
 }
 
