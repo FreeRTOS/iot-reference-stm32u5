@@ -689,21 +689,17 @@ static void prvIncomingPublishCallback( MQTTAgentContext_t * pMqttAgentContext,
                                                pxPublishInfo );
 
 
-    #if ( democonfigCREATE_CODE_SIGNING_OTA_DEMO == 1 )
-
-        /*
-         * Check if the incoming publish is for OTA agent.
-         */
-        if( xPublishHandled != true )
-        {
-            xPublishHandled = vOTAProcessMessage( pMqttAgentContext->pIncomingCallbackContext, pxPublishInfo );
-        }
-    #endif
 
     /* If there are no callbacks to handle the incoming publishes,
      * handle it as an unsolicited publish. */
     if( xPublishHandled != true )
     {
+    	xPublishHandled = vOTAProcessMessage( pMqttAgentContext->pIncomingCallbackContext, pxPublishInfo );
+    }
+
+    if(  xPublishHandled != true )
+    {
+
         /* Ensure the topic string is terminated for printing.  This will over-
          * write the message ID, which is restored afterwards. */
         pcLocation = ( char * ) &( pxPublishInfo->pTopicName[ pxPublishInfo->topicNameLength ] );

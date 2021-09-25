@@ -28,14 +28,16 @@
 #include <string.h>
 
 #include "FreeRTOS.h"
-#include "FreeRTOS_CLI.h"
 #include "task.h"
 
+#include "ota.h"
 #include "ota_pal.h"
 #include "stm32u5xx.h"
 #include "stm32u5xx_hal_flash.h"
 #include "lfs.h"
 #include "lfs_port.h"
+
+const char OTA_JsonFileSignatureKey[ OTA_FILE_SIG_KEY_STR_MAX_LENGTH ] = "sig-sha256-ecdsa";
 
 
 #define FLASH_START_CURRENT_BANK       ((uint32_t)FLASH_BASE)
@@ -63,6 +65,8 @@ static OtaImageContext_t imageContext;
 
 static BaseType_t prvLoadImageContextFromFlash( OtaImageContext_t *pContext )
 {
+
+#if 0
 	lfs_ssize_t lReturn = LFS_ERR_CORRUPT;
 	BaseType_t status = pdFALSE;
 	lfs_t * pLfsCtx = pxGetDefaultFsCtx();
@@ -92,11 +96,16 @@ static BaseType_t prvLoadImageContextFromFlash( OtaImageContext_t *pContext )
 	}
 
 	return status;
+#else
+	return pdFALSE;
+#endif
 
 }
 
 static BaseType_t prvSaveImageContextToFlash( OtaImageContext_t * pContext )
 {
+
+#if 0
 	lfs_ssize_t lReturn = LFS_ERR_CORRUPT;
 	BaseType_t status = pdFALSE;
 	lfs_t * pLfsCtx = pxGetDefaultFsCtx();
@@ -130,11 +139,15 @@ static BaseType_t prvSaveImageContextToFlash( OtaImageContext_t * pContext )
 	}
 
 	return status;
+#else
+	return pdTRUE;
+#endif
 
 }
 
 static BaseType_t prvRemoveImageContextFromFlash( void )
 {
+#if 0
 	lfs_ssize_t lReturn = LFS_ERR_CORRUPT;
 	BaseType_t status = pdFALSE;
 	lfs_t * pLfsCtx = pxGetDefaultFsCtx();
@@ -156,6 +169,9 @@ static BaseType_t prvRemoveImageContextFromFlash( void )
 	}
 
 	return status;
+#else
+	return pdFALSE;
+#endif
 
 }
 
@@ -163,7 +179,7 @@ static HAL_StatusTypeDef prvFlashSetDualBankMode( void )
 {
 	HAL_StatusTypeDef status = HAL_ERROR;
 
-    /* Allow Access to Flash control registers and user Flash */
+	/* Allow Access to Flash control registers and user Flash */
 	status = HAL_FLASH_Unlock();
 
 	if( status == HAL_OK )
@@ -199,7 +215,7 @@ static HAL_StatusTypeDef prvSwapBankAndBoot( void )
 {
 	HAL_StatusTypeDef status = HAL_ERROR;
 
-    /* Allow Access to Flash control registers and user Flash */
+	/* Allow Access to Flash control registers and user Flash */
 	status = HAL_FLASH_Unlock();
 
 	if( status == HAL_OK )
@@ -268,69 +284,69 @@ static uint32_t prvGetAlternateBank( void )
 
 static HAL_StatusTypeDef prvWriteToFlash(uint32_t destination, uint8_t * pSource, uint32_t length)
 {
-  HAL_StatusTypeDef status = HAL_OK;
-  uint32_t i = 0U;
-  uint32_t quadWord[4] = { 0 };
-  uint32_t numQuadWords = NUM_QUAD_WORDS( length );
-  uint32_t remainingBytes = NUM_REMAINING_BYTES( length );
+	HAL_StatusTypeDef status = HAL_OK;
+	uint32_t i = 0U;
+	uint8_t quadWord[16] = { 0 };
+	uint32_t numQuadWords = NUM_QUAD_WORDS( length );
+	uint32_t remainingBytes = NUM_REMAINING_BYTES( length );
 
-  /* Unlock the Flash to enable the flash control register access *************/
-  HAL_FLASH_Unlock();
+	/* Unlock the Flash to enable the flash control register access *************/
+	HAL_FLASH_Unlock();
 
-  for (i = 0U; i < numQuadWords; i++ )
-  {
-	  /* Device voltage range supposed to be [2.7V to 3.6V], the operation will
+	for (i = 0U; i < numQuadWords; i++ )
+	{
+		/* Device voltage range supposed to be [2.7V to 3.6V], the operation will
        be done by word */
 
-	  memcpy( quadWord, pSource, 16UL );
-	  status = HAL_FLASH_Program( FLASH_TYPEPROGRAM_QUADWORD, destination, ( uint32_t ) quadWord );
-	  if( status == HAL_OK )
-	  {
-		  /* Check the written value */
-		  if( memcmp( ( void * ) destination, quadWord, 16UL ) != 0 )
-		  {
-			  /* Flash content doesn't match SRAM content */
-			  status = HAL_ERROR;
-		  }
-	  }
+		memcpy( quadWord, pSource, 16UL );
+		status = HAL_FLASH_Program( FLASH_TYPEPROGRAM_QUADWORD, destination, ( uint32_t ) quadWord );
+		if( status == HAL_OK )
+		{
+			/* Check the written value */
+			if( memcmp( ( void * ) destination, quadWord, 16UL ) != 0 )
+			{
+				/* Flash content doesn't match SRAM content */
+				status = HAL_ERROR;
+			}
+		}
 
-	  if( status == HAL_OK )
-	  {
-		  /* Increment FLASH destination address and the source address. */
-		  destination += 16UL;
-		  pSource += 16UL;
-	  }
-	  else
-	  {
-		  break;
-	  }
-  }
+		if( status == HAL_OK )
+		{
+			/* Increment FLASH destination address and the source address. */
+			destination += 16UL;
+			pSource += 16UL;
+		}
+		else
+		{
+			break;
+		}
+	}
 
-  if( status == HAL_OK )
-  {
-	  if( remainingBytes > 0 )
-	  {
-		  memcpy( quadWord, pSource, remainingBytes );
-		  memset( ( quadWord + remainingBytes ) , 0xFF, ( 16UL - remainingBytes ) );
+	if( status == HAL_OK )
+	{
+		if( remainingBytes > 0 )
+		{
+			memcpy( quadWord, pSource, remainingBytes );
+			memset( ( quadWord + remainingBytes ) , 0xFF, ( 16UL - remainingBytes ) );
 
-		  status = HAL_FLASH_Program( FLASH_TYPEPROGRAM_QUADWORD, destination, ( uint32_t ) quadWord );
-		  if( status == HAL_OK )
-		  {
-			  /* Check the written value */
-			  if( memcmp( ( void * ) destination, quadWord, 16UL ) != 0 )
-			  {
-				  /* Flash content doesn't match SRAM content */
-				  status = HAL_ERROR;
-			  }
-		  }
-	  }
-  }
+			status = HAL_FLASH_Program( FLASH_TYPEPROGRAM_QUADWORD, destination, ( uint32_t ) quadWord );
+			if( status == HAL_OK )
+			{
+				/* Check the written value */
+				if( memcmp( ( void * ) destination, quadWord, 16UL ) != 0 )
+				{
+					/* Flash content doesn't match SRAM content */
+					status = HAL_ERROR;
+				}
+			}
+		}
+	}
 
-  /* Lock the Flash to disable the flash control register access (recommended
+	/* Lock the Flash to disable the flash control register access (recommended
      to protect the FLASH memory against possible unwanted operation) *********/
-  HAL_FLASH_Lock();
+	HAL_FLASH_Lock();
 
-  return status;
+	return status;
 }
 
 static HAL_StatusTypeDef prvEraseBank( uint32_t bankNumber )
@@ -372,8 +388,8 @@ OtaPalStatus_t xOtaPalCreateImage( OtaFileContext_t * const pFileContext )
 	( void ) prvLoadImageContextFromFlash( &imageContext );
 
 	if( ( pFileContext->pFile == NULL ) &&
-		( pFileContext->fileSize <= FLASH_BANK_SIZE ) &&
-		( imageContext.state != OtaPalImageStatePendingCommit ) )
+			( pFileContext->fileSize <= FLASH_BANK_SIZE ) &&
+			( imageContext.state != OtaPalImageStatePendingCommit ) )
 	{
 		/* Set dual bank mode if not already set. */
 		status = prvFlashSetDualBankMode();
@@ -400,15 +416,15 @@ OtaPalStatus_t xOtaPalCreateImage( OtaFileContext_t * const pFileContext )
 }
 
 int16_t iOtaPalWriteImageBlock ( OtaFileContext_t * const pFileContext,
-                                 uint32_t offset,
-                                 uint8_t * const pData,
-                                 uint32_t blockSize )
+		uint32_t offset,
+		uint8_t * const pData,
+		uint32_t blockSize )
 {
 	int16_t bytesWritten = 0;
 	HAL_StatusTypeDef status = HAL_ERROR;
 
 	if( ( pFileContext->pFile == ( uint8_t *) ( &imageContext ) ) &&
-		( offset + blockSize ) <= imageContext.ulImageSize )
+			( offset + blockSize ) <= imageContext.ulImageSize )
 	{
 		status = prvWriteToFlash( ( imageContext.ulBaseAddress + offset ), pData, blockSize );
 		if( status == HAL_OK )
@@ -442,7 +458,7 @@ OtaPalStatus_t xOtaPalAbortImage( OtaFileContext_t * const pFileContext )
 
 
 	if( ( pFileContext->pFile == ( uint8_t *) ( &imageContext ) ) &&
-		( imageContext.bank == prvGetAlternateBank() ) )
+			( imageContext.bank == prvGetAlternateBank() ) )
 	{
 		status = prvEraseBank( imageContext.bank );
 		if( status == HAL_OK )
@@ -460,8 +476,7 @@ OtaPalStatus_t xOtaPalActivateImage( OtaFileContext_t * const pFileContext )
 	OtaPalStatus_t otaStatus = OtaPalActivateFailed;
 	BaseType_t status = pdFALSE;
 
-	if( ( pFileContext->pFile == ( uint8_t *) ( &imageContext ) ) &&
-		( imageContext.state  == OtaPalImageStatePendingCommit ) &&
+	if( ( imageContext.state  == OtaPalImageStatePendingCommit ) &&
 		( imageContext.bank   == prvGetAlternateBank() ) )
 	{
 		/** Save current image context to flash so as to get the context after boot. */
@@ -482,7 +497,7 @@ OtaPalStatus_t xOtaPalActivateImage( OtaFileContext_t * const pFileContext )
 }
 
 OtaPalStatus_t xOtaPalSetImageState( OtaFileContext_t * const pFileContext,
-                                     OtaImageState_t eState )
+		OtaImageState_t eState )
 {
 	OtaPalStatus_t otaStatus = OtaPalBadImageState;
 	BaseType_t status = pdPASS;
@@ -504,8 +519,9 @@ OtaPalStatus_t xOtaPalSetImageState( OtaFileContext_t * const pFileContext,
 		switch( eState )
 		{
 		case OtaImageStateTesting:
+
 			if( ( imageContext.state == OtaPalImageStatePendingCommit ) &&
-				( imageContext.bank != prvGetAlternateBank() ) )
+					( imageContext.bank != prvGetAlternateBank() ) )
 			{
 				/** New image bank is booted successfully and it's pending for commit. */
 				otaStatus = OtaPalSuccess;
@@ -515,7 +531,7 @@ OtaPalStatus_t xOtaPalSetImageState( OtaFileContext_t * const pFileContext,
 		case OtaImageStateAccepted:
 			alternateBank = prvGetAlternateBank();
 			if( ( imageContext.state == OtaPalImageStatePendingCommit ) &&
-			    ( imageContext.bank != alternateBank ) )
+					( imageContext.bank != alternateBank ) )
 			{
 				/** New image bank is booted successfully and it have passed self test. Make it as accepted
 				 * by removing the image context from flash and setting image state to valid. */
@@ -529,7 +545,7 @@ OtaPalStatus_t xOtaPalSetImageState( OtaFileContext_t * const pFileContext,
 
 		case OtaImageStateRejected:
 			if( ( imageContext.state == OtaPalImageStatePendingCommit ) &&
-			    ( imageContext.bank != prvGetAlternateBank() ) )
+					( imageContext.bank != prvGetAlternateBank() ) )
 			{
 				prvRemoveImageContextFromFlash();
 				( void ) prvSwapBankAndBoot();
@@ -590,85 +606,8 @@ OtaPalImageState_t xOtaPalGetImageState( OtaFileContext_t * const pFileContext )
 }
 
 
-static HAL_StatusTypeDef prvCopyImageToAlternateBank( void )
+OtaPalStatus_t xOtaPalResetDevice( OtaFileContext_t * const pFileContext )
 {
-	HAL_StatusTypeDef status = HAL_ERROR;
-	uint32_t ulAltBank = prvGetAlternateBank();
-
-	if( ulAltBank == FLASH_BANK_2)
-	{
-		LogInfo(("We are in bank 1, reprogramming bank 2..\r\n"));
-
-		status = prvEraseBank( FLASH_BANK_2 );
-		LogInfo(("Erasing bank 2 completed, status = %d\r\n", status ));
-
-	}
-	else if( ulAltBank == FLASH_BANK_1  )
-	{
-		LogInfo(("We are in bank 2, reprogramming bank 1..\r\n"));
-		status = prvEraseBank( FLASH_BANK_1 );
-		LogInfo(("Erasing bank 1 completed, status = %d\r\n", status ));
-	}
-	else
-	{
-		status = HAL_ERROR;
-	}
-
-	if( status == HAL_OK )
-	{
-		LogInfo(("Copying image to alternate bank..\r\n"));
-		//status = prvWriteToFlash( FLASH_START_ALT_BANK, (uint32_t *) FLASH_START_CURRENT_BANK, FLASH_BANK_SIZE );
-	}
-
-	return status;
-
+	/* TODO: Implement this function. */
+	return OtaPalUninitialized;
 }
-
-
-
-void Task_SwitchBank( void * pvParameters )
-{
-
-	HAL_StatusTypeDef status = HAL_ERROR;
-
-	LogInfo(("Setting dual bank mode.\r\n"));
-	status = prvFlashSetDualBankMode();
-
-	while( 1 )
-	{
-		//status = prvLoadFlashConfiguration();
-		if( status == HAL_OK )
-		{
-			LogInfo(("Dual bank mode: %d, swap_bank: %d\r\n",
-					( ( OBInit.USERConfig & OB_DUALBANK_DUAL ) == OB_DUALBANK_DUAL ),
-					( ( OBInit.USERConfig & OB_SWAP_BANK_ENABLE ) == OB_SWAP_BANK_ENABLE ) ));
-		}
-		vTaskDelay( pdMS_TO_TICKS( 1000 ) );
-	}
-
-
-
-	if( status == HAL_OK )
-	{
-		LogInfo(("Programming alternate bank.\r\n"));
-		status = prvCopyImageToAlternateBank();
-	}
-
-	if( status == HAL_OK )
-	{
-		LogInfo(("Swap and boot new bank ..\r\n"));
-		status  = prvSwapBankAndBoot();
-	}
-
-	if( status != HAL_OK )
-	{
-		while( 1 )
-		{
-			LogInfo(( "Failed last step.\r\n" ));
-			vTaskDelay(pdMS_TO_TICKS( 1000 ) );
-		}
-	}
-
-	vTaskDelete(NULL);
-}
-

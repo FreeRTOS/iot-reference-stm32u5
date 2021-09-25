@@ -34,7 +34,8 @@
 #define CLI_UART_TX_WRITE_SZ_5MS    64
 
 #define CLI_UART_RX_STREAM_LEN      512
-#define CLI_UART_TX_STREAM_LEN      1024
+
+#define CLI_UART_TX_STREAM_LEN      1280
 
 char pcCliScratchBuffer[ CLI_OUTPUT_SCRATCH_BUF_LEN ];
 
