@@ -35,8 +35,8 @@
 #include "lfs_util.h"
 #include "lfs.h"
 #include "lfs_port_prv.h"
+#include "ospi_nor_mx25lmxxx45g.h"
 
-#include "b_u585i_iot02a_ospi.h"
 /*
  * LittleFS port for the external NOR flash connected to the STM32U5 octo-spi interface
  */
@@ -49,6 +49,7 @@
 	static struct LfsPortCtx xLfsCtx = { 0 };
 	static StaticSemaphore_t xMutexStatic;
 #endif
+
 
 /* Forward declarations */
 static int lfs_port_read( const struct lfs_config *c,
@@ -69,32 +70,16 @@ static int lfs_port_erase( const struct lfs_config *pxCfg,
 static int lfs_port_sync( const struct lfs_config *c );
 
 
+
 static void vPopulateConfig( struct lfs_config * pxCfg, struct LfsPortCtx * pxCtx )
 {
-    int32_t lError = BSP_ERROR_NONE;
-
-    /* Fetch NOR flash info from BSP */
-    BSP_OSPI_NOR_Info_t xNorInfo = { 0 };
-    BSP_OSPI_NOR_Init_t xNorInit = { 0 };
-
-    xNorInit.InterfaceMode = BSP_OSPI_NOR_OPI_MODE;
-    xNorInit.TransferRate = MX25LM51245G_DTR_TRANSFER;
-
-    lError = BSP_OSPI_NOR_Init( 0, &xNorInit );
-
-    configASSERT( lError == BSP_ERROR_NONE );
-
-    lError = BSP_OSPI_NOR_GetInfo( 0, &xNorInfo );
-
-    configASSERT( lError == BSP_ERROR_NONE );
-
     /* Read size is one word */
-    pxCfg->read_size = xNorInfo.ProgPageSize;
-    pxCfg->prog_size = xNorInfo.ProgPageSize;
+    pxCfg->read_size = MX25LM_PROGRAM_FIFO_LEN;
+    pxCfg->prog_size = MX25LM_PROGRAM_FIFO_LEN;
 
     /* Number of erasable blocks */
-    pxCfg->block_count = xNorInfo.EraseSubSectorNumber;
-    pxCfg->block_size = xNorInfo.EraseSubSectorSize;
+    pxCfg->block_count = MX25LM_NUM_SECTORS;
+    pxCfg->block_size = MX25LM_SECTOR_SZ;
 
     pxCfg->context = pxCtx;
 
@@ -109,7 +94,7 @@ static void vPopulateConfig( struct lfs_config * pxCfg, struct LfsPortCtx * pxCt
 #endif
     /* controls wear leveling */
     pxCfg->block_cycles = 500;
-    pxCfg->cache_size = xNorInfo.EraseSubSectorSize;
+    pxCfg->cache_size = 4096;
     pxCfg->lookahead_size = 256;
 
 #ifdef LFS_NO_MALLOC
@@ -169,9 +154,13 @@ const struct lfs_config * pxInitializeOSPIFlashFs( TickType_t xBlockTime )
 
     configASSERT( pxCtx->xMutex != NULL );
 
-    (void) xSemaphoreGive( pxCtx->xMutex );
 
     vPopulateConfig( pxCfg, pxCtx );
+
+    BaseType_t xSuccess = ospi_Init( &( pxCtx->xOSPIHandle ) );
+    configASSERT( xSuccess == pdTRUE );
+
+    (void) xSemaphoreGive( pxCtx->xMutex );
 
     return pxCfg;
 }
@@ -198,18 +187,21 @@ static int lfs_port_read( const struct lfs_config *c,
     configASSERT( block < c->block_count );
     configASSERT( buffer != NULL );
     configASSERT( size > 0 );
-    configASSERT( xSemaphoreGetMutexHolder( pxCtx->xMutex ) == xTaskGetCurrentTaskHandle() );
 
-    int32_t lReturnValue = BSP_ERROR_NONE;
+    int32_t lReturnValue = 0;
 
-    uint32_t ulReadAddr = ( block * c->block_size ) + off;
+    uint32_t ulReadAddr = OPI_START_ADDRESS + ( block * c->block_size ) + off;
 
-    /* Read while not in memory mapped mode */
-    lReturnValue = BSP_OSPI_NOR_Read( 0, buffer, ulReadAddr, size );
+    if( ospi_ReadAddr( &( pxCtx->xOSPIHandle ),
+                       ulReadAddr,
+                       buffer,
+                       size,
+                       pdMS_TO_TICKS( 10 * 1000 ) ) != pdTRUE )
+    {
+        lReturnValue = -1;
+    }
 
     LogDebug( "Reading address %lu, size: %lu, rv: %ld", ulReadAddr, size, lReturnValue );
-
-    configASSERT( lReturnValue == BSP_ERROR_NONE );
 
 	return lReturnValue;
 }
@@ -228,22 +220,45 @@ static int lfs_port_prog( const struct lfs_config *pxCfg,
     configASSERT( buffer != NULL );
     configASSERT( size > 0 );
 
-    int32_t lReturnValue = BSP_ERROR_NONE;
-    uint32_t ulWriteAddr = ( block * pxCfg->block_size ) + off;
+    struct LfsPortCtx * pxCtx = (struct LfsPortCtx * ) pxCfg->context;
 
-	struct LfsPortCtx * pxCtx = (struct LfsPortCtx * ) pxCfg->context;
+    int32_t lReturnValue = 0;
 
-	configASSERT( xSemaphoreGetMutexHolder( pxCtx->xMutex ) == xTaskGetCurrentTaskHandle() );
+    configASSERT( ( size % MX25LM_PROGRAM_FIFO_LEN ) == 0 );
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
-	lReturnValue = BSP_OSPI_NOR_Write( 0, buffer, ulWriteAddr, size );
-#pragma GCC diagnostic pop
+    /* Determine the 4-byte write address */
+    uint32_t ulWriteAddr = OPI_START_ADDRESS + ( block * pxCfg->block_size ) + off;
 
-	LogDebug( "Programming address %lu, size: %lu, rv: %ld", ulWriteAddr, size, lReturnValue );
+    for( uint32_t i = 0; i < ( size / MX25LM_PROGRAM_FIFO_LEN ); i++ )
+    {
 
-	configASSERT( lReturnValue == BSP_ERROR_NONE );
+        if( ospi_WriteAddr( &( pxCtx->xOSPIHandle ),
+                            ulWriteAddr,
+                            buffer,
+                            MX25LM_PROGRAM_FIFO_LEN,
+                            pdMS_TO_TICKS( MX25LM_WRITE_TIMEOUT_MS ) ) != pdTRUE )
+        {
+            lReturnValue = -1;
+            break;
+        }
+        ulWriteAddr += MX25LM_PROGRAM_FIFO_LEN;
+    }
 
+    /* Check for any program ops that aren't 256 byte aligned */
+    if( lReturnValue == 0 &&
+        ( size % MX25LM_PROGRAM_FIFO_LEN ) != 0 )
+    {
+        if( ospi_WriteAddr( &( pxCtx->xOSPIHandle ),
+                        ulWriteAddr,
+                        buffer,
+                        MX25LM_PROGRAM_FIFO_LEN,
+                        pdMS_TO_TICKS( MX25LM_WRITE_TIMEOUT_MS ) ) != pdTRUE )
+        {
+            lReturnValue = -1;
+        }
+    }
+
+    LogDebug( "Programming address %lu, size: %lu, rv: %ld", ulWriteAddr, size, lReturnValue );
 	return lReturnValue;
 }
 
@@ -252,16 +267,22 @@ static int lfs_port_erase( const struct lfs_config *pxCfg, lfs_block_t block )
     configASSERT( pxCfg != NULL );
     configASSERT( block < pxCfg->block_count );
 
-	int32_t lReturnValue = BSP_ERROR_NONE;
+	int32_t lReturnValue = 0;
 	struct LfsPortCtx * pxCtx = (struct LfsPortCtx * ) pxCfg->context;
 
-	configASSERT( xSemaphoreGetMutexHolder( pxCtx->xMutex ) == xTaskGetCurrentTaskHandle() );
+    /* Determine the 4-byte erase address */
+    uint32_t ulEraseAddr =  OPI_START_ADDRESS + ( block * pxCfg->block_size );
 
-	lReturnValue = BSP_OSPI_NOR_Erase_Block( 0, block * pxCfg->block_size, MX25LM51245G_ERASE_4K );
+    LogDebug( "Starting erase operation addr: %lu ", ulEraseAddr );
 
-	LogDebug( "Erasing block %lu Return Value: %ld", block, lReturnValue );
+    if( ospi_EraseSector( &( pxCtx->xOSPIHandle ),
+                          ulEraseAddr,
+                          pdMS_TO_TICKS( MX25LM_ERASE_TIMEOUT_MS ) ) != pdTRUE )
+    {
+        lReturnValue = -1;
+    }
 
-	configASSERT( lReturnValue == BSP_ERROR_NONE );
+    LogDebug( "Erase operation completed. Address: %lu Return Value: %ld", ulEraseAddr, lReturnValue );
 
 	return lReturnValue;
 }

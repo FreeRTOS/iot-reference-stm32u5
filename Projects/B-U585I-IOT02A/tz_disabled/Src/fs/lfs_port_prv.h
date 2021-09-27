@@ -35,6 +35,7 @@ struct LfsPortCtx
 {
     SemaphoreHandle_t xMutex;
     TickType_t xBlockTime;
+    OSPI_HandleTypeDef xOSPIHandle;
 };
 
 int lfs_port_lock( const struct lfs_config *c );

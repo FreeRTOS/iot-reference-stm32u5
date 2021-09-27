@@ -73,6 +73,11 @@
 			<locationURI>WORKSPACE_LOC/Drivers/stm32u5_mbedtls_accel</locationURI>
 		</link>
 		<link>
+			<name>Libraries/AWS</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
 			<name>Libraries/FreeRTOS</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
@@ -93,9 +98,29 @@
 			<locationURI>WORKSPACE_LOC/Boards</locationURI>
 		</link>
 		<link>
+			<name>Libraries/AWS/IoTDeviceDefender</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Middleware/AWS/IoTDeviceDefender/source</locationURI>
+		</link>
+		<link>
+			<name>Libraries/AWS/IoTDeviceShadow</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Middleware/AWS/IoTDeviceShadow/source</locationURI>
+		</link>
+		<link>
+			<name>Libraries/AWS/IoTJobs</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Middleware/AWS/IoTJobs/source</locationURI>
+		</link>
+		<link>
 			<name>Libraries/FreeRTOS/backoff_algorithm.c</name>
 			<type>1</type>
 			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/backoffAlgorithm/source/backoff_algorithm.c</locationURI>
+		</link>
+		<link>
+			<name>Libraries/FreeRTOS/coreJSON</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/coreJSON/source</locationURI>
 		</link>
 		<link>
 			<name>Libraries/FreeRTOS/coreMQTT</name>
