@@ -54,13 +54,15 @@ lfs_t * pxGetDefaultFsCtx( void )
     return pxLfsCtx;
 }
 
-typedef void( * VectorTable_t)(void);
-#define NUM_CORE_INTERRUPT_VECTORS 	( ( 0 - Reset_IRQn ) + 1 )	/* 16 core ARM vectors (including intial SP) */
-#define NUM_NONCORE_IRQ				( FMAC_IRQn + 1 ) /* MCU specific */
-#define VECTOR_TABLE_SIZE_CM33 		( NUM_CORE_INTERRUPT_VECTORS + NUM_NONCORE_IRQ )
-#define VECTOR_TABLE_ALIGN_CM33		0x100U
+typedef void( * VectorTable_t )(void);
 
-static VectorTable_t ulVectorTableSRAM[ VECTOR_TABLE_SIZE_CM33 ] __attribute__(( aligned (VECTOR_TABLE_ALIGN_CM33) ));
+#define NUM_USER_IRQ				( FMAC_IRQn + 1 ) /* MCU specific */
+#define VECTOR_TABLE_SIZE 		    ( NVIC_USER_IRQ_OFFSET + NUM_USER_IRQ )
+#define VECTOR_TABLE_ALIGN_CM33		0x200U
+
+static VectorTable_t pulVectorTableSRAM[ VECTOR_TABLE_SIZE ] __attribute__(( aligned (VECTOR_TABLE_ALIGN_CM33) ));
+
+DCACHE_HandleTypeDef hDcache;
 
 /* Relocate vector table to ram for runtime interrupt registration */
 static void vRelocateVectorTable( void )
@@ -68,20 +70,31 @@ static void vRelocateVectorTable( void )
     /* Disable interrupts */
     __disable_irq();
 
-    /* Copy vector table to ram */
-    ( void ) memcpy( ulVectorTableSRAM, ( void * ) SCB->VTOR, sizeof( ulVectorTableSRAM ) );
+//    HAL_ICACHE_Disable();
+//    HAL_DCACHE_Disable( &hDcache );
 
-    /* Set VTOR register to point to our new sram table */
-    SCB->VTOR = ( uintptr_t ) ulVectorTableSRAM;
+    /* Copy vector table to ram */
+    ( void ) memcpy( pulVectorTableSRAM, ( uint32_t * ) SCB->VTOR , sizeof( uint32_t) * VECTOR_TABLE_SIZE );
+
+    SCB->VTOR = (uint32_t) pulVectorTableSRAM;
 
     __DSB();
+    __ISB();
+
+//    HAL_DCACHE_Invalidate( &hDcache );
+//    HAL_ICACHE_Invalidate();
+//    HAL_ICACHE_Enable();
+//    HAL_DCACHE_Enable( &hDcache );
+
     __enable_irq();
 }
+
 
 /* Initialize hardware / STM32 HAL library */
 static void hw_init( void )
 {
     __HAL_RCC_SYSCFG_CLK_ENABLE();
+
 
     /*
      * Initializes flash interface and systick timer.
@@ -97,8 +110,18 @@ static void hw_init( void )
     /* Configure the system clock */
     SystemClock_Config();
 
-    /* initialize ICACHE peripheral (makes flash access faster) */
-    MX_ICACHE_Init();
+    /* initialize ICACHE (makes flash access faster) */
+    HAL_ICACHE_ConfigAssociativityMode( ICACHE_1WAY );
+    HAL_ICACHE_Invalidate();
+    HAL_ICACHE_Enable();
+
+    /* Initialize DCACHE */
+
+    hDcache.Instance = DCACHE1;
+    hDcache.Init.ReadBurstType = DCACHE_READ_BURST_WRAP;
+    HAL_DCACHE_Init( &hDcache );
+    HAL_DCACHE_Invalidate( &hDcache );
+    HAL_DCACHE_Enable( &hDcache );
 
     /* Initialize uart for logging before cli is up and running */
     vInitLoggingEarly();
@@ -128,7 +151,7 @@ static int fs_init( void )
     struct lfs_info xDirInfo = { 0 };
 
     /* Block time of up to 1 s for filesystem to initialize */
-    const struct lfs_config * pxCfg = pxInitializeOSPIFlashFs( pdMS_TO_TICKS( 1 * 1000 ) );
+    const struct lfs_config * pxCfg = pxInitializeOSPIFlashFs( pdMS_TO_TICKS( 30 * 1000 ) );
 
     /* mount the filesystem */
     int err = lfs_mount( &xLfsCtx, pxCfg );
@@ -189,51 +212,75 @@ static void vHeartbeatTask( void * pvParameters )
 extern void vStartMQTTAgentDemo( void );
 extern void Task_MotionSensorsPublish( void * );
 extern void vEnvironmentSensorPublishTask( void * );
+extern void vShadowDeviceTask( void * );
+extern void vShadowUpdateTask( void * );
+
+
+void vInitTask( void * pvArgs )
+{
+    BaseType_t xResult;
+
+    xResult = xTaskCreate( Task_CLI, "cli", 4096, NULL, 10, NULL );
+
+    int xMountStatus = fs_init();
+
+    if( xMountStatus == LFS_ERR_OK )
+    {
+        LogInfo( "File System mounted." );
+
+        KVStore_init();
+    }
+    else
+    {
+        LogError( "Failed to mount filesystem." );
+    }
+
+        xResult = xTaskCreate( vHeartbeatTask, "Heartbeat", 1024, NULL, tskIDLE_PRIORITY, NULL );
+
+        configASSERT( xResult == pdTRUE );
+
+        xResult = xTaskCreate( &net_main, "MxNet", 2 * 4096, NULL, 23, NULL );
+
+        configASSERT( xResult == pdTRUE );
+
+        vStartMQTTAgentDemo();
+
+        xResult = xTaskCreate( vEnvironmentSensorPublishTask, "EnvSense", 4096, NULL, 10, NULL );
+        configASSERT( xResult == pdTRUE );
+
+
+        xResult = xTaskCreate( Task_MotionSensorsPublish, "MotionS", 4096, NULL, 11, NULL );
+        configASSERT( xResult == pdTRUE );
+
+    //    xResult = xTaskCreate( vShadowDeviceTask, "ShadowDevice", 1024, NULL, 5, NULL );
+    //    configASSERT( xResult == pdTRUE );
+
+    //    xResult = xTaskCreate( vShadowUpdateTask, "ShadowUpdate", 1024, NULL, 5, NULL );
+    //    configASSERT( xResult == pdTRUE );
+
+    while(1)
+    {
+        vTaskDelay(100);
+    }
+}
 
 int main( void )
 {
-//	vRelocateVectorTable();
 
+//    vRelocateVectorTable();
     hw_init();
+
 
     vLoggingInit();
 
     LogInfo( "HW Init Complete." );
 
-	int xMountStatus = fs_init();
-	KVStore_init();
-
-	configASSERT( xMountStatus == LFS_ERR_OK );
-
-	LogInfo( "File System mounted." );
-
-    BaseType_t xResult;
-
-    /* Initialize threads */
-
-    xResult = xTaskCreate( vHeartbeatTask, "Heartbeat", 1024, NULL, tskIDLE_PRIORITY, NULL );
-
-    configASSERT( xResult == pdTRUE );
-
-    xResult = xTaskCreate( &net_main, "MxNet", 2 * 4096, NULL, 23, NULL );
-
-    configASSERT( xResult == pdTRUE );
-
-    xResult = xTaskCreate( Task_CLI, "cli", 4096, NULL, tskIDLE_PRIORITY + 2, NULL );
-
-    configASSERT( xResult == pdTRUE );
-
-    vStartMQTTAgentDemo();
-
-    xResult = xTaskCreate( vEnvironmentSensorPublishTask, "EnvSense", 4096, NULL, 10, NULL );
-    configASSERT( xResult == pdTRUE );
-
-
-    xResult = xTaskCreate( Task_MotionSensorsPublish, "MotionS", 4096, NULL, 11, NULL );
-    configASSERT( xResult == pdTRUE );
+    xTaskCreate( vInitTask, "Init", 1024, NULL, 8, NULL );
 
     /* Start scheduler */
     vTaskStartScheduler();
+
+    /* Initialize threads */
 
     LogError( "Kernel start returned." );
 
