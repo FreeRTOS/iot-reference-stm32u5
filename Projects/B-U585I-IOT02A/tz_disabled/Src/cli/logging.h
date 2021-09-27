@@ -29,7 +29,6 @@
 
 /* Standard Include. */
 #include <stdio.h>
-#include "iot_uart.h"
 
 /* Include header for logging level macros. */
 #include "logging_levels.h"
@@ -68,7 +67,6 @@ void vLoggingInit( void );
 void vLoggingDeInit( void );
 void vDyingGasp( void );
 void vInitLoggingEarly( void );
-IotUARTHandle_t xLoggingGetIOHandle( void );
 
 /* task.h cannot be included here because this file is included by FreeRTOSConfig.h */
 extern void vTaskSuspendAll( void );
