@@ -220,10 +220,11 @@ static void rxErrorCallback( UART_HandleTypeDef * pxUartHandle )
 {
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-	( void ) xTaskNotifyFromISR( xRxThreadHandle,
-								 ERROR_FLAG,
-								 eSetValueWithOverwrite,
-								 &xHigherPriorityTaskWoken );
+	( void ) xTaskNotifyIndexedFromISR( xRxThreadHandle,
+	                                    1,
+	                                    ERROR_FLAG,
+	                                    eSetValueWithOverwrite,
+	                                    &xHigherPriorityTaskWoken );
 
 	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
@@ -258,10 +259,11 @@ static void rxEventCallback( UART_HandleTypeDef * pxUartHandle, uint16_t usBytes
 			configASSERT( 0 );
 		}
 
-		( void ) xTaskNotifyFromISR( xRxThreadHandle,
-									 ulNotifyValue,
-									 eSetValueWithOverwrite,
-									 &xHigherPriorityTaskWoken );
+		( void ) xTaskNotifyIndexedFromISR( xRxThreadHandle,
+		                                    1,
+		                                    ulNotifyValue,
+		                                    eSetValueWithOverwrite,
+		                                    &xHigherPriorityTaskWoken );
 
 	}
 	else	/* Otherwise IDLE timeout event, continue using the same buffer */
@@ -288,7 +290,7 @@ static void vRxThread( void * pvParameters )
 	{
 		uint32_t ulNotifyValue = 0;
 		/* Wait for completion event */
-		if( xTaskNotifyWait( 0, 0xFFFFFFFF, &ulNotifyValue, pdMS_TO_TICKS( 30 ) ) == pdTRUE )
+		if( xTaskNotifyWaitIndexed( 1, 0, 0xFFFFFFFF, &ulNotifyValue, pdMS_TO_TICKS( 30 ) ) == pdTRUE )
 		{
 			size_t xBytes = ( ulNotifyValue & READ_LEN_MASK );
 			size_t xBytesPushed = 0;
@@ -321,7 +323,7 @@ static void vRxThread( void * pvParameters )
 static void txCompleteCallback( UART_HandleTypeDef * pxUartHandle )
 {
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-	( void ) vTaskNotifyGiveFromISR( xTxThreadHandle, &xHigherPriorityTaskWoken );
+	( void ) vTaskNotifyGiveIndexedFromISR( xTxThreadHandle, 1, &xHigherPriorityTaskWoken );
 
 	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
@@ -395,11 +397,15 @@ static void vTxThread( void * pvParameters )
 		/* Transmit if bytes available to transmit */
 		if( xBytes > 0 )
 		{
+		    ( void ) xTaskNotifyStateClearIndexed( NULL, 1 );
 			xHalStatus = HAL_UART_Transmit_IT( &xConsoleHandle, pucTxBuffer, ( uint16_t ) xBytes );
-			configASSERT( xHalStatus == HAL_OK );
+//			configASSERT( xHalStatus == HAL_OK );
 
-			/* Wait for completion event (should be within 1 or 2 ms) */
-			( void ) ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
+			if( xHalStatus == HAL_OK )
+			{
+                /* Wait for completion event (should be within 1 or 2 ms) */
+                ( void ) ulTaskNotifyTakeIndexed( 1, pdTRUE, portMAX_DELAY );
+			}
 		}
 	}
 }
