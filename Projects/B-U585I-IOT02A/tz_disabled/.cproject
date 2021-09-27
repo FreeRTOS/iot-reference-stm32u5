@@ -68,7 +68,6 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc}/Middleware/ARM/littlefs&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Libraries/LittleFS}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Libraries/FreeRTOS/crypto/pal_utils}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;/Volumes/workplace/testing/iot-reference-stm32u5/Middleware/FreeRTOS/corePKCS11/source/portable/os&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Libraries/AWS/IoTDeviceDefender/include}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Libraries/AWS/IoTDeviceShadow/include}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Libraries/AWS/IoTJobs/include}&quot;"/>
