@@ -35,7 +35,7 @@
 #include "logging_levels.h"
 
 /* Dimensions the arrays into which print messages are created. */
-#define dlMAX_PRINT_STRING_LENGTH       256     /* maximum length of any single log line */
+#define dlMAX_PRINT_STRING_LENGTH       512     /* maximum length of any single log line */
 #define dlLOGGING_STREAM_LENGTH         4096
 #define dlMAX_LOG_LINE_LENGTH           ( dlMAX_PRINT_STRING_LENGTH + CLI_OUTPUT_EOL_LEN )
 
@@ -97,7 +97,7 @@ static inline const char * pcPathToBasename( const char * pcFileName )
 /* Generic logging macros */
 #define SdkLog( level, ... )        do { vLoggingPrintf( level, __NAME_ARG__, __LINE__, __VA_ARGS__ ); } while( 0 )
 
-#define LogAssert( ... )            do { vTaskSuspendAll(); vDyingGasp(); SdkLog( "ASRT", __VA_ARGS__ ); } while( 0 )
+#define LogAssert( ... )            do { SdkLog( "ASRT", __VA_ARGS__ ); } while( 0 )
 
 #define LogSys( ... )               do { vLoggingPrintf( "SYS", __NAME_ARG__, __LINE__, __VA_ARGS__ ); } while( 0 )
 

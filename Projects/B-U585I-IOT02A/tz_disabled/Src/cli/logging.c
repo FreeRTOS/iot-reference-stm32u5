@@ -56,14 +56,15 @@ static char pcPrintBuff[ dlMAX_PRINT_STRING_LENGTH ];
 /* Should only be called during an assert with the scheduler suspended. */
 void vDyingGasp( void )
 {
-    char cOutBuffer[ dlMAX_PRINT_STRING_LENGTH ];
+    char cOutBuffer[ dlMAX_PRINT_STRING_LENGTH + 2 ];
     BaseType_t xNumBytes = 0;
     pxEarlyUart = vInitUartEarly();
 
     do
     {
-        xNumBytes = xStreamBufferReceiveFromISR( xLogMBuf, cOutBuffer, dlMAX_PRINT_STRING_LENGTH, 0 );
+        xNumBytes = xMessageBufferReceiveFromISR( xLogMBuf, cOutBuffer, dlMAX_PRINT_STRING_LENGTH, 0 );
         (void) HAL_UART_Transmit( pxEarlyUart, ( uint8_t * ) cOutBuffer, xNumBytes, 10 * 1000);
+        (void) HAL_UART_Transmit( pxEarlyUart, ( uint8_t * ) "\r\n", 2, 10 * 1000 );
     }
     while( xNumBytes != 0 );
 }
@@ -114,11 +115,12 @@ static void vSendLogMessage( const char * buffer, unsigned int count )
         uxContext = taskENTER_CRITICAL_FROM_ISR();
         size_t xSpaceAvailable = xMessageBufferSpaceAvailable( xLogMBuf ) - sizeof( size_t );
 
-        if( xSpaceAvailable > 0 )
+        if( xSpaceAvailable > sizeof( size_t ) )
         {
-            if( xSpaceAvailable < count )
+            xSpaceAvailable -= sizeof( size_t );
+            if( xSpaceAvailable < ( count + sizeof( size_t ) ) )
             {
-                ( void ) xMessageBufferSendFromISR( xLogMBuf, buffer, xSpaceAvailable, &xHigherPriorityTaskWoken );
+                ( void ) xMessageBufferSendFromISR( xLogMBuf, buffer, xSpaceAvailable - sizeof( size_t ), &xHigherPriorityTaskWoken );
             }
             else
             {
@@ -133,15 +135,20 @@ static void vSendLogMessage( const char * buffer, unsigned int count )
     else
     {
         configASSERT( xLogMBuf != NULL );
-        size_t xSpaceAvailable = xMessageBufferSpaceAvailable( xLogMBuf ) - sizeof( size_t );
+        size_t xSpaceAvailable = xMessageBufferSpaceAvailable( xLogMBuf );
 
-        if( xSpaceAvailable < count )
+        if( xSpaceAvailable > sizeof( size_t ) )
         {
-            ( void ) xMessageBufferSend( xLogMBuf, buffer, xSpaceAvailable, 0 );
-        }
-        else
-        {
-            ( void ) xMessageBufferSend( xLogMBuf, buffer, count, 0 );
+            xSpaceAvailable -= sizeof( size_t );
+
+            if( xSpaceAvailable < count )
+            {
+                ( void ) xMessageBufferSend( xLogMBuf, buffer, xSpaceAvailable, 0 );
+            }
+            else
+            {
+                ( void ) xMessageBufferSend( xLogMBuf, buffer, count, 0 );
+            }
         }
     }
 }
@@ -163,6 +170,7 @@ void vLoggingPrintf( const char * const     pcLogLevel,
     int32_t lLenPart = -1;
     va_list args;
     const char * pcTaskName = NULL;
+    BaseType_t xSchedulerWasSuspended = pdFALSE;
 
     /* Additional info to place at the start of the log line */
     if( xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED )
@@ -174,8 +182,12 @@ void vLoggingPrintf( const char * const     pcLogLevel,
         pcTaskName = "None";
     }
 
-    /* Suspend the scheduler to access pcPrintBuff */
-    vTaskSuspendAll();
+    if( xTaskGetSchedulerState() == taskSCHEDULER_RUNNING )
+    {
+        xSchedulerWasSuspended = pdTRUE;
+        /* Suspend the scheduler to access pcPrintBuff */
+        vTaskSuspendAll();
+    }
 
     pcPrintBuff[ 0 ] = '\0';
     lLenPart = snprintf( pcPrintBuff,
@@ -249,11 +261,13 @@ void vLoggingPrintf( const char * const     pcLogLevel,
     }
 
     vSendLogMessage( ( void * ) pcPrintBuff, ulLenTotal );
-    xTaskResumeAll();
+    if( xSchedulerWasSuspended == pdTRUE )
+    {
+        xTaskResumeAll();
+    }
 }
 
 /*-----------------------------------------------------------*/
-
 void vLoggingDeInit( void )
 {
 

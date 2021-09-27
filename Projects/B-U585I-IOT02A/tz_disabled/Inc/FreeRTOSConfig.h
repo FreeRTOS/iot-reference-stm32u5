@@ -166,7 +166,8 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 
 #define configASSERT( x )  do { \
                                if( ( x ) == 0 ) { \
-                                   LogAssert("Assertion failed."); \
+                                   vDyingGasp(); \
+                                   LogAssert( "Assertion failed." ); \
                                    vDyingGasp(); \
                                    while( 1 ) { \
                                        __NOP(); \
