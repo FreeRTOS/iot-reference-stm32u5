@@ -129,21 +129,24 @@
  * Private key for connection to AWS IoT endpoint.  The corresponding
  * public key should be registered with the AWS IoT endpoint.
  */
-#define pkcs11configLABEL_DEVICE_PRIVATE_KEY_FOR_TLS       "dev_key_priv"
+#define pkcs11_TLS_KEY_PRV_LABEL                           "tls_key_priv"
+#define pkcs11configLABEL_DEVICE_PRIVATE_KEY_FOR_TLS       ( pkcs11_TLS_KEY_PRV_LABEL )
 
 /**
  * @brief The PKCS #11 label for device public key.
  *
  * The public key corresponding to pkcs11configLABEL_DEVICE_PRIVATE_KEY_FOR_TLS.
  */
-#define pkcs11configLABEL_DEVICE_PUBLIC_KEY_FOR_TLS        "dev_key_pub"
+#define pkcs11_TLS_KEY_PUB_LABEL                           "tls_key_pub"
+#define pkcs11configLABEL_DEVICE_PUBLIC_KEY_FOR_TLS        ( pkcs11_TLS_KEY_PUB_LABEL )
 
 /**
  * @brief The PKCS #11 label for the device certificate.
  *
  * Device certificate corresponding to pkcs11configLABEL_DEVICE_PRIVATE_KEY_FOR_TLS.
  */
-#define pkcs11configLABEL_DEVICE_CERTIFICATE_FOR_TLS       "dev_cert"
+#define pkcs11_TLS_CERT_LABEL                              "tls_cert"
+#define pkcs11configLABEL_DEVICE_CERTIFICATE_FOR_TLS       ( pkcs11_TLS_CERT_LABEL )
 
 /**
  * @brief The PKCS #11 label for the object to be used for HMAC operations.
@@ -179,13 +182,14 @@
  * (pkcs11configLABEL_DEVICE_CERTIFICATE_FOR_TLS) when using the JITR or
  * JITP flow.
  */
-#define pkcs11configLABEL_JITP_CERTIFICATE                 "dev_jitp_cert"
+#define pkcs11configLABEL_JITP_CERTIFICATE                 "jitp_cert"
 
 /**
  * @brief The PKCS #11 label for the AWS Trusted Root Certificate.
  *
  * @see aws_default_root_certificates.h
  */
-#define pkcs11configLABEL_ROOT_CERTIFICATE                 "root_ca_cert"
+#define pkcs11_ROOT_CA_CERT_LABEL                          "root_ca_cert"
+#define pkcs11configLABEL_ROOT_CERTIFICATE                 ( pkcs11_ROOT_CA_CERT_LABEL )
 
 #endif /* _CORE_PKCS11_CONFIG_H_ */
