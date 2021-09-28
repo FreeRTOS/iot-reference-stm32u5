@@ -468,17 +468,11 @@ static CK_RV xGenerateKeyPairEC( CK_SESSION_HANDLE xSession,
     CK_BBOOL xTrue = CK_TRUE;
     CK_ATTRIBUTE xPublicKeyTemplate[] =
     {
-        { CKA_KEY_TYPE,  NULL /* &xKeyType */, sizeof( xKeyType )                           },
-        { CKA_VERIFY,    NULL /* &xTrue */,    sizeof( xTrue )                              },
-        { CKA_EC_PARAMS, NULL /* xEcParams */, sizeof( xEcParams )                          },
+        { CKA_KEY_TYPE,  &xKeyType, sizeof( xKeyType )                           },
+        { CKA_VERIFY,    &xTrue,    sizeof( xTrue )                              },
+        { CKA_EC_PARAMS, xEcParams, sizeof( xEcParams )                          },
         { CKA_LABEL,     pucPublicKeyLabel,    strlen( ( const char * ) pucPublicKeyLabel ) }
     };
-
-    /* Aggregate initializers must not use the address of an automatic variable. */
-    /* See MSVC Compiler Warning C4221 */
-    xPublicKeyTemplate[ 0 ].pValue = &xKeyType;
-    xPublicKeyTemplate[ 1 ].pValue = &xTrue;
-    xPublicKeyTemplate[ 2 ].pValue = &xEcParams;
 
     CK_ATTRIBUTE xPrivateKeyTemplate[] =
     {
@@ -489,20 +483,14 @@ static CK_RV xGenerateKeyPairEC( CK_SESSION_HANDLE xSession,
         { CKA_LABEL,    pucPrivateKeyLabel, strlen( ( const char * ) pucPrivateKeyLabel ) }
     };
 
-    /* Aggregate initializers must not use the address of an automatic variable. */
-    /* See MSVC Compiler Warning C4221 */
-    xPrivateKeyTemplate[ 0 ].pValue = &xKeyType;
-    xPrivateKeyTemplate[ 1 ].pValue = &xTrue;
-    xPrivateKeyTemplate[ 2 ].pValue = &xTrue;
-    xPrivateKeyTemplate[ 3 ].pValue = &xTrue;
-
     xResult = C_GetFunctionList( &pxFunctionList );
 
     xResult = pxFunctionList->C_GenerateKeyPair( xSession,
                                                  &xMechanism,
-                                                 xPublicKeyTemplate,
+                                                 &( xPublicKeyTemplate[ 0 ] ),
                                                  sizeof( xPublicKeyTemplate ) / sizeof( CK_ATTRIBUTE ),
-                                                 xPrivateKeyTemplate, sizeof( xPrivateKeyTemplate ) / sizeof( CK_ATTRIBUTE ),
+                                                 &( xPrivateKeyTemplate[ 0 ] ),
+                                                 sizeof( xPrivateKeyTemplate ) / sizeof( CK_ATTRIBUTE ),
                                                  pxPublicKeyHandle,
                                                  pxPrivateKeyHandle );
     return xResult;
@@ -582,6 +570,8 @@ static char * vExportPubKeyPem( CK_SESSION_HANDLE xSession,
 
     const uint8_t pucUnusedKeyTag[] = { 0x04, 0x41 };
 
+    ( void ) pucUnusedKeyTag;
+
     xResult = C_GetFunctionList( &pxFunctionList );
 
     /* Query public key size */
@@ -597,11 +587,11 @@ static char * vExportPubKeyPem( CK_SESSION_HANDLE xSession,
     if( CKR_OK == xResult )
     {
         /* Add space for DER Header */
-        xTemplate.ulValueLen += sizeof( pucEcP256AsnAndOid ) - sizeof( pucUnusedKeyTag );
-        ulDerPublicKeyLength = xTemplate.ulValueLen;
+        ulDerPublicKeyLength = xTemplate.ulValueLen + sizeof( pucEcP256AsnAndOid ) - sizeof( pucUnusedKeyTag ) + 1;
 
         /* Allocate a buffer for the DER form  of the key */
-        pucPubKeyDer = pvPortMalloc( xTemplate.ulValueLen );
+        pucPubKeyDer = pvPortMalloc( ulDerPublicKeyLength );
+
         xResult = CKR_FUNCTION_FAILED;
     }
 
@@ -610,22 +600,24 @@ static char * vExportPubKeyPem( CK_SESSION_HANDLE xSession,
     {
         LogInfo( "Allocated %ld bytes for DER form public key.", ulDerPublicKeyLength );
 
-        /* Copy DER header */
-        ( void ) memcpy( pucPubKeyDer, pucEcP256AsnAndOid, sizeof( pucEcP256AsnAndOid ) );
+        memset( pucPubKeyDer, 0, ulDerPublicKeyLength );
 
+        xTemplate.pValue = &( pucPubKeyDer[ sizeof( pucEcP256AsnAndOid ) - sizeof( pucUnusedKeyTag ) ] );
 
-        xTemplate.pValue = pucPubKeyDer + sizeof( pucEcP256AsnAndOid ) - sizeof( pucUnusedKeyTag );
-
-        xTemplate.ulValueLen -= ( sizeof( pucEcP256AsnAndOid ) - sizeof( pucUnusedKeyTag ) );
+        /* xTemplate.ulValueLen remains the same as in the last call */
 
         xResult = pxFunctionList->C_GetAttributeValue( xSession,
                                                        xPublicKeyHandle,
                                                        &xTemplate,
                                                        1 );
+
+        /* Copy DER header */
+        ( void ) memcpy( pucPubKeyDer, pucEcP256AsnAndOid, sizeof( pucEcP256AsnAndOid ) );
     }
     else
     {
         LogError( "Failed to allocate %ld bytes for DER form public key.", ulDerPublicKeyLength );
+        xResult = CKR_HOST_MEMORY;
     }
 
     /* Convert to PEM */
@@ -719,7 +711,6 @@ static void vSubCommand_GenerateKey( ConsoleIO_t * pxCIO, uint32_t ulArgc, char 
     if( pcPublicKeyPem != NULL )
     {
         vPrintPem( pxCIO, pcPublicKeyPem );
-        pxCIO->print( pcPublicKeyPem );
         /* Free heap allocated memory */
         vPortFree( pcPublicKeyPem );
         pcPublicKeyPem = NULL;
