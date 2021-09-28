@@ -42,9 +42,9 @@
 #define MX25LM_NUM_SECTORS          ( MX25LM_NUM_BLOCKS * MX25LM_SECTORS_PER_BLOCK )
 #define MX25LM_MEM_SZ_BYTES         ( 1024 * MX25LM_BLOCK_SZ )
 
-#define OPI_START_ADDRESS           ( 0 * MX25LM_BLOCK_SZ )
+#define OPI_START_ADDRESS           ( 10 * MX25LM_BLOCK_SZ )
 
-#define MX25LM_NUM_SECTOR_USABLE    ( 1024 - 7 )
+#define MX25LM_NUM_SECTOR_USABLE    ( 1024 - 10 )
 #define MX25LM_MEM_SZ_USABLE        ( MX25LM_NUM_SECTOR_USABLE * MX25LM_SECTOR_SZ )
 
 #define MX25LM_DEFAULT_TIMEOUT_MS   ( 1000 )
@@ -55,6 +55,7 @@
 /* SPI mode command codes */
 #define MX25LM_SPI_WREN             ( 0x06 )
 #define MX25LM_SPI_WRCR2            ( 0x72 )
+#define MX25LM_SPI_RDSR             ( 0x05 )
 
 /* CR2 register definition */
 #define MX25LM_REG_CR2_0_SPI        ( 0x00 )
@@ -72,8 +73,9 @@
 #define MX25LM_PROGRAM_FIFO_LEN     ( 256 )
 #define MX25LM_OPI_SE               ( 0x21DE )  /* Sector Erase */
 
-#define MX25LM_WRITE_TIMEOUT_MS     ( 1000 )
+#define MX25LM_WRITE_TIMEOUT_MS     ( 10 * 1000 )
 #define MX25LM_ERASE_TIMEOUT_MS     ( 10 * 1000 )
+#define MX25LM_READ_TIMEOUT_MS      ( 10 * 1000 )
 
 
 BaseType_t ospi_Init( OSPI_HandleTypeDef * pxOSPI );

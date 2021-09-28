@@ -215,9 +215,8 @@ CK_OBJECT_HANDLE PKCS11_PAL_SaveObject( CK_ATTRIBUTE_PTR pxLabel,
 
     if( pcFileName != NULL )
     {
-        ( void ) lfs_remove( pLfsCtx, pcFileName );
         /* Overwrite the file every time it is saved. */
-        lResult = lfs_file_open( pLfsCtx, &xFile, pcFileName, LFS_O_WRONLY | LFS_O_CREAT );
+        lResult = lfs_file_open( pLfsCtx, &xFile, pcFileName, LFS_O_WRONLY | LFS_O_CREAT | LFS_O_TRUNC );
 
         if( lResult < 0 )
         {

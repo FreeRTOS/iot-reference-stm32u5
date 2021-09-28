@@ -26,7 +26,7 @@
  */
 
 #include "logging_levels.h"
-#define LOG_LEVEL LOG_DEBUG
+#define LOG_LEVEL LOG_ERROR
 #include "logging.h"
 
 #include "FreeRTOS.h"
@@ -74,11 +74,11 @@ static int lfs_port_sync( const struct lfs_config *c );
 static void vPopulateConfig( struct lfs_config * pxCfg, struct LfsPortCtx * pxCtx )
 {
     /* Read size is one word */
-    pxCfg->read_size = MX25LM_PROGRAM_FIFO_LEN;
-    pxCfg->prog_size = MX25LM_PROGRAM_FIFO_LEN;
+    pxCfg->read_size = 1;
+    pxCfg->prog_size = 256;
 
     /* Number of erasable blocks */
-    pxCfg->block_count = MX25LM_NUM_SECTORS;
+    pxCfg->block_count = ( MX25LM_MEM_SZ_USABLE / MX25LM_SECTOR_SZ );
     pxCfg->block_size = MX25LM_SECTOR_SZ;
 
     pxCfg->context = pxCtx;
@@ -196,12 +196,12 @@ static int lfs_port_read( const struct lfs_config *c,
                        ulReadAddr,
                        buffer,
                        size,
-                       pdMS_TO_TICKS( 10 * 1000 ) ) != pdTRUE )
+                       pdMS_TO_TICKS( MX25LM_READ_TIMEOUT_MS ) ) != pdTRUE )
     {
         lReturnValue = -1;
     }
 
-    LogDebug( "Reading address %lu, size: %lu, rv: %ld", ulReadAddr, size, lReturnValue );
+    LogDebug( "Reading address 0x%010lX, size: %lu, rv: %ld", ulReadAddr, size, lReturnValue );
 
 	return lReturnValue;
 }
@@ -216,7 +216,6 @@ static int lfs_port_prog( const struct lfs_config *pxCfg,
     /* validate arguments */
     configASSERT( pxCfg != NULL );
     configASSERT( block < pxCfg->block_count );
-    configASSERT( ( off % pxCfg->prog_size ) == 0 );
     configASSERT( buffer != NULL );
     configASSERT( size > 0 );
 
@@ -227,38 +226,28 @@ static int lfs_port_prog( const struct lfs_config *pxCfg,
     configASSERT( ( size % MX25LM_PROGRAM_FIFO_LEN ) == 0 );
 
     /* Determine the 4-byte write address */
-    uint32_t ulWriteAddr = OPI_START_ADDRESS + ( block * pxCfg->block_size ) + off;
+    uint32_t ulStartAddr = OPI_START_ADDRESS + ( block * pxCfg->block_size ) + off;
 
-    for( uint32_t i = 0; i < ( size / MX25LM_PROGRAM_FIFO_LEN ); i++ )
+    uint32_t ulLastAddr = ulStartAddr + size - MX25LM_PROGRAM_FIFO_LEN;
+
+    LogDebug( "Programming Start Addr: 0x%010lX, End Addr: 0x%010lX, size: %lu, block: %lu, offset: %lu, rv: %ld",
+              ulStartAddr, ulLastAddr, size, block, off, lReturnValue );
+
+    for( uint32_t ulWriteAddr = ulStartAddr; ulWriteAddr <= ulLastAddr; ulWriteAddr += MX25LM_PROGRAM_FIFO_LEN )
     {
-
+        LogDebug( "Writing block at addr: 0x%010lX, len: %lu", ulWriteAddr, MX25LM_PROGRAM_FIFO_LEN );
         if( ospi_WriteAddr( &( pxCtx->xOSPIHandle ),
                             ulWriteAddr,
-                            buffer,
+                            &( buffer[ ulWriteAddr - ulStartAddr] ),
                             MX25LM_PROGRAM_FIFO_LEN,
                             pdMS_TO_TICKS( MX25LM_WRITE_TIMEOUT_MS ) ) != pdTRUE )
         {
             lReturnValue = -1;
             break;
         }
-        ulWriteAddr += MX25LM_PROGRAM_FIFO_LEN;
     }
 
-    /* Check for any program ops that aren't 256 byte aligned */
-    if( lReturnValue == 0 &&
-        ( size % MX25LM_PROGRAM_FIFO_LEN ) != 0 )
-    {
-        if( ospi_WriteAddr( &( pxCtx->xOSPIHandle ),
-                        ulWriteAddr,
-                        buffer,
-                        MX25LM_PROGRAM_FIFO_LEN,
-                        pdMS_TO_TICKS( MX25LM_WRITE_TIMEOUT_MS ) ) != pdTRUE )
-        {
-            lReturnValue = -1;
-        }
-    }
 
-    LogDebug( "Programming address %lu, size: %lu, rv: %ld", ulWriteAddr, size, lReturnValue );
 	return lReturnValue;
 }
 
@@ -273,7 +262,7 @@ static int lfs_port_erase( const struct lfs_config *pxCfg, lfs_block_t block )
     /* Determine the 4-byte erase address */
     uint32_t ulEraseAddr =  OPI_START_ADDRESS + ( block * pxCfg->block_size );
 
-    LogDebug( "Starting erase operation addr: %lu ", ulEraseAddr );
+    LogDebug( "Starting erase operation addr: 0x%010lX ", ulEraseAddr );
 
     if( ospi_EraseSector( &( pxCtx->xOSPIHandle ),
                           ulEraseAddr,
@@ -282,7 +271,7 @@ static int lfs_port_erase( const struct lfs_config *pxCfg, lfs_block_t block )
         lReturnValue = -1;
     }
 
-    LogDebug( "Erase operation completed. Address: %lu Return Value: %ld", ulEraseAddr, lReturnValue );
+    LogDebug( "Erase operation completed. Address: 0x%010lX Return Value: %ld", ulEraseAddr, lReturnValue );
 
 	return lReturnValue;
 }

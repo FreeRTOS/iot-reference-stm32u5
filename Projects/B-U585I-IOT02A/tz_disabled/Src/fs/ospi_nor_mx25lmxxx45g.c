@@ -43,7 +43,7 @@ static inline void ospi_HandleCallback( OSPI_HandleTypeDef * pxOSPI, HAL_OSPI_Ca
     configASSERT( xTaskHandle != NULL );
     BaseType_t xHigherPriorityTaskWoken;
 
-    xTaskNotifyFromISR( xTaskHandle, xCallbackId, eSetValueWithOverwrite, &xHigherPriorityTaskWoken );
+    xTaskNotifyIndexedFromISR( xTaskHandle, 1, xCallbackId, eSetValueWithOverwrite, &xHigherPriorityTaskWoken );
     portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
 
@@ -98,10 +98,11 @@ static BaseType_t ospi_WaitForCallback( HAL_OSPI_CallbackIDTypeDef xCallbackID,
 
     while( ulNotifyValue != xCallbackID )
     {
-        ( void ) xTaskNotifyWait( 0x0, 0xFFFFFFFF, &ulNotifyValue, xRemainingTicks );
+        ( void ) xTaskNotifyWaitIndexed( 1, 0x0, 0xFFFFFFFF, &ulNotifyValue, xRemainingTicks );
 
         if( xTaskCheckForTimeOut( &xTimeOut, &xRemainingTicks ) )
         {
+            ulNotifyValue = 0xFFFFFFFF;
             break;
         }
     }
@@ -114,7 +115,7 @@ void OCTOSPI2_IRQHandler( void )
     HAL_OSPI_IRQHandler( s_pxOSPI );
 }
 
-void ospi_IRQHandler( void )
+static void ospi_IRQHandler( void )
 {
     configASSERT( s_pxOSPI != NULL );
     HAL_OSPI_IRQHandler( s_pxOSPI );
@@ -187,11 +188,7 @@ static void ospi_MspInitCallback( OSPI_HandleTypeDef *pxOSPI )
     HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
     /* Set the vector, requires sram located vector table */
-    __NVIC_SetVector( OCTOSPI2_IRQn, ( uint32_t ) ospi_IRQHandler );
-
-//    uint32_t *vectors = (uint32_t *)SCB->VTOR;
-//    vectors[ OCTOSPI2_IRQn + NVIC_USER_IRQ_OFFSET ] = ( uint32_t ) ( void * ) ospi_IRQHandler;
-//    __DSB();
+    NVIC_SetVector( OCTOSPI2_IRQn, ( uint32_t ) ospi_IRQHandler );
 
     /* OCTOSPI2 interrupt Init */
     HAL_NVIC_SetPriority( OCTOSPI2_IRQn, 5, 0 );
@@ -240,7 +237,7 @@ static BaseType_t ospi_InitDriver( OSPI_HandleTypeDef * pxOSPI )
     pxOSPI->Init.MemoryType = HAL_OSPI_MEMTYPE_MACRONIX;
     pxOSPI->Init.DeviceSize = 26;
     pxOSPI->Init.ChipSelectHighTime = 2;
-    pxOSPI->Init.FreeRunningClock = HAL_OSPI_FREERUNCLK_DISABLE;
+    pxOSPI->Init.FreeRunningClock = HAL_OSPI_FREERUNCLK_ENABLE;
     pxOSPI->Init.ClockMode = HAL_OSPI_CLOCK_MODE_0;
     pxOSPI->Init.WrapSize = HAL_OSPI_WRAP_NOT_SUPPORTED;
     pxOSPI->Init.ClockPrescaler = 4;
@@ -311,6 +308,30 @@ static BaseType_t ospi_InitDriver( OSPI_HandleTypeDef * pxOSPI )
         return pdFALSE;
     }
 
+    __HAL_OSPI_DISABLE( pxOSPI );
+    vTaskDelay(100);
+
+    SET_BIT( pxOSPI->Instance->DCR1, OCTOSPI_DCR1_FRCK );
+    vTaskDelay(100);
+
+    __HAL_OSPI_ENABLE( pxOSPI );
+    vTaskDelay(100);
+
+    DLYB_OCTOSPI2_NS->CR   = 0U;
+    DLYB_OCTOSPI2_NS->CR   = 0x03;
+    DLYB_OCTOSPI2_NS->CFGR = 0x7A02;
+    DLYB_OCTOSPI2_NS->CR   = 0x01;
+    vTaskDelay(100);
+
+    __HAL_OSPI_DISABLE( pxOSPI );
+    vTaskDelay(100);
+
+    CLEAR_BIT( pxOSPI->Instance->DCR1, OCTOSPI_DCR1_FRCK );
+    vTaskDelay(100);
+
+    __HAL_OSPI_ENABLE( pxOSPI );
+    vTaskDelay(100);
+
     return pdTRUE;
 }
 
@@ -324,7 +345,7 @@ static BaseType_t ospi_cmd_OPI_WREN( OSPI_HandleTypeDef * pxOSPI,
                                      TickType_t xTimeout )
 {
     HAL_StatusTypeDef xHalStatus = HAL_OK;
-    BaseType_t xSuccess = pdFALSE;
+    BaseType_t xSuccess = pdTRUE;
 
     OSPI_RegularCmdTypeDef xCmd =
     {
@@ -336,7 +357,6 @@ static BaseType_t ospi_cmd_OPI_WREN( OSPI_HandleTypeDef * pxOSPI,
         .InstructionSize    = HAL_OSPI_INSTRUCTION_16_BITS, /* 2 byte instructions */
         .InstructionDtrMode = HAL_OSPI_INSTRUCTION_DTR_DISABLE,
 
-        .Address            = 0x00000000,                   /* no address for WREN */
         .AddressMode        = HAL_OSPI_ADDRESS_NONE,
 
         .AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_NONE,
@@ -349,7 +369,7 @@ static BaseType_t ospi_cmd_OPI_WREN( OSPI_HandleTypeDef * pxOSPI,
     };
 
     /* Clear notification state */
-    ( void ) xTaskNotifyStateClear( NULL );
+    ( void ) xTaskNotifyStateClearIndexed( NULL, 1 );
 
     /* Send command */
     xHalStatus = HAL_OSPI_Command_IT( pxOSPI, &xCmd );
@@ -402,21 +422,8 @@ static BaseType_t ospi_OPI_WaitForStatus( OSPI_HandleTypeDef * pxOSPI,
         .SIOOMode           = HAL_OSPI_SIOO_INST_EVERY_CMD,
     };
 
-//    /* Clear notification state */
-//    ( void ) xTaskNotifyStateClear( NULL );
-
     /* Send command */
     xHalStatus = HAL_OSPI_Command( pxOSPI, &xCmd, xTimeout );
-
-//    /* Wait for command complete callback */
-//    if( xHalStatus == HAL_OK )
-//    {
-//        xSuccess = ospi_WaitForCallback( HAL_OSPI_CMD_CPLT_CB_ID, xTimeout );
-//    }
-//    else
-//    {
-//        xSuccess = pdFALSE;
-//    }
 
     OSPI_AutoPollingTypeDef xPollingCfg =
     {
@@ -428,9 +435,9 @@ static BaseType_t ospi_OPI_WaitForStatus( OSPI_HandleTypeDef * pxOSPI,
     };
 
     /* Clear notification state */
-    ( void ) xTaskNotifyStateClear( NULL );
+    ( void ) xTaskNotifyStateClearIndexed( NULL, 1 );
 
-    if( xSuccess )
+    if( xHalStatus == HAL_OK )
     {
         /* Start auto-polling */
         xHalStatus = HAL_OSPI_AutoPolling_IT( pxOSPI, &xPollingCfg );
@@ -454,6 +461,79 @@ static BaseType_t ospi_OPI_WaitForStatus( OSPI_HandleTypeDef * pxOSPI,
 
     return xSuccess;
 }
+
+
+static BaseType_t ospi_SPI_WaitForStatus( OSPI_HandleTypeDef * pxOSPI,
+                                          uint32_t ulMask,
+                                          uint32_t ulMatch,
+                                          TickType_t xTimeout )
+{
+    HAL_StatusTypeDef xHalStatus = HAL_OK;
+    BaseType_t xSuccess = pdTRUE;
+
+    /* Setup a read of the status register */
+    OSPI_RegularCmdTypeDef xCmd =
+    {
+        .OperationType      = HAL_OSPI_OPTYPE_COMMON_CFG,
+        .FlashId            = HAL_OSPI_FLASH_ID_1,
+
+        .Instruction        = MX25LM_SPI_RDSR,
+        .InstructionMode    = HAL_OSPI_INSTRUCTION_1_LINE,
+        .InstructionSize    = HAL_OSPI_INSTRUCTION_8_BITS,
+        .InstructionDtrMode = HAL_OSPI_INSTRUCTION_DTR_DISABLE,
+
+        .AddressMode        = HAL_OSPI_ADDRESS_NONE,
+        .AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_NONE,
+
+        .DataMode           = HAL_OSPI_DATA_1_LINE,
+        .DataDtrMode        = HAL_OSPI_DATA_DTR_DISABLE,
+        .NbData             = 1,
+
+        .DummyCycles        = 0,
+        .DQSMode            = HAL_OSPI_DQS_DISABLE,
+        .SIOOMode           = HAL_OSPI_SIOO_INST_EVERY_CMD,
+    };
+
+    /* Send command */
+    xHalStatus = HAL_OSPI_Command( pxOSPI, &xCmd, xTimeout );
+
+    OSPI_AutoPollingTypeDef xPollingCfg =
+    {
+        .MatchMode           = HAL_OSPI_MATCH_MODE_AND,
+        .AutomaticStop       = HAL_OSPI_AUTOMATIC_STOP_ENABLE,
+        .Interval            = 0x10,
+        .Match               = ulMatch,
+        .Mask                = ulMask,
+    };
+
+    /* Clear notification state */
+    ( void ) xTaskNotifyStateClearIndexed( NULL, 1 );
+
+    if( xHalStatus == HAL_OK )
+    {
+        /* Start auto-polling */
+        xHalStatus = HAL_OSPI_AutoPolling_IT( pxOSPI, &xPollingCfg );
+
+        if( xHalStatus != HAL_OK )
+        {
+            xSuccess = pdFALSE;
+        }
+    }
+
+    if( xSuccess == pdTRUE )
+    {
+        xSuccess = ospi_WaitForCallback( HAL_OSPI_STATUS_MATCH_CB_ID, xTimeout );
+    }
+
+    /* Abort the ongoing transaction upon failure */
+    if( xSuccess == pdFALSE )
+    {
+        ( void ) ospi_AbortTransaction( pxOSPI, xTimeout );
+    }
+
+    return xSuccess;
+}
+
 
 /* send Write enable command (WREN) in SPI mode */
 static BaseType_t ospi_cmd_SPI_WREN( OSPI_HandleTypeDef * pxOSPI, TickType_t xTimeout )
@@ -480,7 +560,7 @@ static BaseType_t ospi_cmd_SPI_WREN( OSPI_HandleTypeDef * pxOSPI, TickType_t xTi
         .SIOOMode           = HAL_OSPI_SIOO_INST_EVERY_CMD,
     };
 
-    ( void ) xTaskNotifyStateClear( NULL );
+    ( void ) xTaskNotifyStateClearIndexed( NULL, 1 );
 
     xHalStatus = HAL_OSPI_Command_IT( pxOSPI, &xCmd );
 
@@ -517,10 +597,13 @@ static BaseType_t ospi_cmd_SPI_8BitSTRMode( OSPI_HandleTypeDef * pxOSPI, TickTyp
         .AddressSize        = HAL_OSPI_ADDRESS_32_BITS,
         .AddressDtrMode     = HAL_OSPI_ADDRESS_DTR_DISABLE,
 
-        .AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_NONE,
+        .AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_1_LINE,
+        .AlternateBytesSize = HAL_OSPI_ALTERNATE_BYTES_8_BITS,
+        .AlternateBytes     = MX25LM_REG_CR2_0_SOPI,
+        .AlternateBytesDtrMode = HAL_OSPI_ALTERNATE_BYTES_DTR_DISABLE,
 
-        .DataMode           = HAL_OSPI_DATA_1_LINE,
-        .NbData             = 1,
+        .DataMode           = HAL_OSPI_DATA_NONE,
+        .NbData             = 0,
         .DataDtrMode        = HAL_OSPI_DATA_DTR_DISABLE,
 
         .DummyCycles        = 0,
@@ -528,31 +611,15 @@ static BaseType_t ospi_cmd_SPI_8BitSTRMode( OSPI_HandleTypeDef * pxOSPI, TickTyp
         .SIOOMode           = HAL_OSPI_SIOO_INST_EVERY_CMD
     };
 
-    ( void ) xTaskNotifyStateClear( NULL );
+    ( void ) xTaskNotifyStateClearIndexed( NULL, 1 );
 
-    xHalStatus = HAL_OSPI_Command( pxOSPI, &xCmd, xTimeout );
+    xHalStatus = HAL_OSPI_Command_IT( pxOSPI, &xCmd );
 
-//    if( xHalStatus == HAL_OK )
-//    {
-//        if( ospi_WaitForCallback( HAL_OSPI_CMD_CPLT_CB_ID, xTimeout ) != pdTRUE )
-//        {
-//            xHalStatus = -1;
-//        }
-//    }
-
-    if( xHalStatus == HAL_OK )
+    if( xHalStatus == HAL_OK  &&
+        ospi_WaitForCallback( HAL_OSPI_CMD_CPLT_CB_ID, xTimeout ) != pdTRUE )
     {
-        uint8_t ucEnable8BitDTR = MX25LM_REG_CR2_0_SOPI;
+        xHalStatus = -1;
 
-        ( void ) xTaskNotifyStateClear( NULL );
-
-        xHalStatus = HAL_OSPI_Transmit_IT( pxOSPI, &ucEnable8BitDTR );
-
-        if( xHalStatus == HAL_OK &&
-            ospi_WaitForCallback( HAL_OSPI_TX_CPLT_CB_ID, xTimeout ) != pdTRUE )
-        {
-            xHalStatus = -1;
-        }
     }
     return( xHalStatus == HAL_OK );
 }
@@ -571,21 +638,44 @@ BaseType_t ospi_Init( OSPI_HandleTypeDef * pxOSPI )
     xSuccess = ospi_InitDriver( pxOSPI );
 
 
-
-
-    if( xSuccess == pdTRUE )
+    if( xSuccess != pdTRUE )
+    {
+        LogError( "Failed to initialize ospi driver." );
+    }
+    else
     {
         /* Set Write enable bit */
         xSuccess = ospi_cmd_SPI_WREN( pxOSPI, MX25LM_DEFAULT_TIMEOUT_MS );
     }
 
-    if( xSuccess == pdTRUE )
+
+    if( xSuccess != pdTRUE )
+    {
+        LogError( "Failed to send WREN command." );
+    }
+    else
+    {
+        xSuccess = ospi_SPI_WaitForStatus( pxOSPI,
+                                           MX25LM_REG_SR_WIP | MX25LM_REG_SR_WEL,
+                                           MX25LM_REG_SR_WEL,
+                                           MX25LM_DEFAULT_TIMEOUT_MS );
+    }
+
+    if( xSuccess != pdTRUE )
+    {
+        LogError( "Timed out while waiting for write enable." );
+    }
+    else
     {
         /* Enter 8 bit data mode */
         xSuccess = ospi_cmd_SPI_8BitSTRMode( pxOSPI, MX25LM_DEFAULT_TIMEOUT_MS );
     }
 
-    if( xSuccess == pdTRUE )
+    if( xSuccess != pdTRUE )
+    {
+        LogError( "Failed to set data mode to 8Bit STR." );
+    }
+    else
     {
         /* Wait for WEL and WIP bits to clear */
         xSuccess = ospi_OPI_WaitForStatus( pxOSPI,
@@ -593,6 +683,7 @@ BaseType_t ospi_Init( OSPI_HandleTypeDef * pxOSPI )
                                            0x0,
                                            MX25LM_DEFAULT_TIMEOUT_MS );
     }
+
     return xSuccess;
 }
 
@@ -603,7 +694,7 @@ BaseType_t ospi_ReadAddr( OSPI_HandleTypeDef * pxOSPI,
                           TickType_t xTimeout )
 {
     HAL_StatusTypeDef xHalStatus = HAL_OK;
-    BaseType_t xSuccess = pdFALSE;
+    BaseType_t xSuccess = pdTRUE;
 
     ospi_OpInit( pxOSPI );
 
@@ -674,7 +765,7 @@ BaseType_t ospi_ReadAddr( OSPI_HandleTypeDef * pxOSPI,
         };
 
         /* Clear notification state */
-        ( void ) xTaskNotifyStateClear( NULL );
+        ( void ) xTaskNotifyStateClearIndexed( NULL, 1 );
 
         /* Send command */
         xHalStatus = HAL_OSPI_Command( pxOSPI, &xCmd, MX25LM_DEFAULT_TIMEOUT_MS );
@@ -690,7 +781,7 @@ BaseType_t ospi_ReadAddr( OSPI_HandleTypeDef * pxOSPI,
     if( xSuccess == pdTRUE )
     {
         /* Clear notification state */
-        ( void ) xTaskNotifyStateClear( NULL );
+        ( void ) xTaskNotifyStateClearIndexed( NULL, 1 );
 
         xHalStatus = HAL_OSPI_Receive_IT( pxOSPI, pxBuffer );
 
@@ -754,7 +845,7 @@ BaseType_t ospi_WriteAddr( OSPI_HandleTypeDef * pxOSPI,
     if( xSuccess == pdTRUE )
     {
         xSuccess = ospi_OPI_WaitForStatus( pxOSPI,
-                                           MX25LM_REG_SR_WEL,
+                                           MX25LM_REG_SR_WEL | MX25LM_REG_SR_WIP,
                                            MX25LM_REG_SR_WEL,
                                            xTimeout );
     }
@@ -788,14 +879,21 @@ BaseType_t ospi_WriteAddr( OSPI_HandleTypeDef * pxOSPI,
             .SIOOMode           = HAL_OSPI_SIOO_INST_EVERY_CMD,
         };
 
-        /* Clear notification state */
-        ( void ) xTaskNotifyStateClear( NULL );
-
         /* Send command */
         xHalStatus = HAL_OSPI_Command( pxOSPI, &xCmd, xTimeout );
     }
 
-    xHalStatus = HAL_OSPI_Transmit_IT( pxOSPI, pxBuffer );
+    /* Clear notification state */
+    ( void ) xTaskNotifyStateClearIndexed( NULL, 1 );
+
+    if( xHalStatus != HAL_OK )
+    {
+        xSuccess = pdFALSE;
+    }
+    else
+    {
+        xHalStatus = HAL_OSPI_Transmit_IT( pxOSPI, pxBuffer );
+    }
 
     if( xHalStatus != HAL_OK )
     {
@@ -808,9 +906,11 @@ BaseType_t ospi_WriteAddr( OSPI_HandleTypeDef * pxOSPI,
 
     if( xSuccess == pdTRUE )
     {
+        vTaskDelay( 1 );
+
         /* Wait for idle condition (WIP bit should be 0) */
         xSuccess = ospi_OPI_WaitForStatus( pxOSPI,
-                                           MX25LM_REG_SR_WIP,
+                                           MX25LM_REG_SR_WIP | MX25LM_REG_SR_WEL,
                                            0x0,
                                            xTimeout );
     }
@@ -857,7 +957,7 @@ BaseType_t ospi_EraseSector( OSPI_HandleTypeDef * pxOSPI,
     if( xSuccess == pdTRUE )
     {
         xSuccess = ospi_OPI_WaitForStatus( pxOSPI,
-                                           MX25LM_REG_SR_WEL,
+                                           MX25LM_REG_SR_WEL ,
                                            MX25LM_REG_SR_WEL,
                                            xTimeout );
     }
@@ -892,7 +992,7 @@ BaseType_t ospi_EraseSector( OSPI_HandleTypeDef * pxOSPI,
         };
 
         /* Clear notification state */
-        ( void ) xTaskNotifyStateClear( NULL );
+        ( void ) xTaskNotifyStateClearIndexed( NULL, 1 );
 
         /* Send command */
         xHalStatus = HAL_OSPI_Command_IT( pxOSPI, &xCmd );
@@ -909,9 +1009,10 @@ BaseType_t ospi_EraseSector( OSPI_HandleTypeDef * pxOSPI,
 
     if( xSuccess == pdTRUE )
     {
+        vTaskDelay( 1 );
         /* Wait for idle condition (WIP bit should be 0) */
         xSuccess = ospi_OPI_WaitForStatus( pxOSPI,
-                                           MX25LM_REG_SR_WIP,
+                                           MX25LM_REG_SR_WEL | MX25LM_REG_SR_WIP,
                                            0x0,
                                            xTimeout );
     }
