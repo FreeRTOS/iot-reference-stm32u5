@@ -33,6 +33,10 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define MODE_ARG_IDX    1
+#define KEY_ARG_IDX     2
+#define VALUE_ARG_IDX   3
+
 /* Local static functions */
 static void vSubCommand_CommitConfig( ConsoleIO_t * pxCIO );
 static void vSubCommand_GetConfig( ConsoleIO_t * pxCIO, const char * const pcKey );
@@ -210,13 +214,17 @@ static void vSubCommand_SetConfig( ConsoleIO_t * pxCIO,
 {
     const char * pcKey = ppcArgv[ 2 ];
 
-    const char * pcValue = ppcArgv[ 3 ];
+    const char * pcValue = "";
+
+    if( ulArgc > VALUE_ARG_IDX )
+    {
+        pcValue = ppcArgv[ 3 ];
+    }
 
     BaseType_t xParseResult = pdFALSE;
     int lCharsPrinted = 0;
 
-    if( pcKey != NULL &&
-        pcValue != NULL )
+    if( pcKey != NULL )
     {
         KVStoreKey_t xKey = kvStringToKey( pcKey );
         KVStoreValueType_t xKvType = KVStore_getType( xKey );
@@ -228,7 +236,8 @@ static void vSubCommand_SetConfig( ConsoleIO_t * pxCIO,
         case KV_TYPE_BASE_T:
         {
             BaseType_t xValue = strtol( pcValue, &pcEndPtr, 10 );
-            if( pcEndPtr != pcValue )
+
+            if( pcEndPtr != pcValue || xValue == 0 )
             {
                 ( void ) KVStore_setBase( xKey, xValue );
                 xParseResult = pdTRUE;
@@ -241,7 +250,8 @@ static void vSubCommand_SetConfig( ConsoleIO_t * pxCIO,
         case KV_TYPE_INT32:
         {
             int32_t lValue = strtol( pcValue, & pcEndPtr, 10 );
-            if( pcEndPtr != pcValue )
+
+            if( pcEndPtr != pcValue || lValue == 0 )
             {
                 ( void ) KVStore_setInt32( xKey, lValue );
                 xParseResult = pdTRUE;
@@ -254,7 +264,7 @@ static void vSubCommand_SetConfig( ConsoleIO_t * pxCIO,
         case KV_TYPE_UBASE_T:
         {
             UBaseType_t uxValue = strtoul( pcValue, & pcEndPtr, 10 );
-            if( pcEndPtr != pcValue )
+            if( pcEndPtr != pcValue || uxValue == 0 )
             {
                 ( void ) KVStore_setUBase( xKey, uxValue );
                 xParseResult = pdTRUE;
@@ -267,7 +277,7 @@ static void vSubCommand_SetConfig( ConsoleIO_t * pxCIO,
         case KV_TYPE_UINT32:
         {
             uint32_t ulValue = strtoul( pcValue, & pcEndPtr, 10 );
-            if( pcEndPtr != pcValue )
+            if( pcEndPtr != pcValue || ulValue == 0 )
             {
                 ( void ) KVStore_setUBase( xKey, ulValue );
                 xParseResult = pdTRUE;
@@ -281,7 +291,7 @@ static void vSubCommand_SetConfig( ConsoleIO_t * pxCIO,
         {
             xParseResult = KVStore_setString( xKey, pcValue );
             lCharsPrinted = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN,
-                                      "%s=%s\r\n",
+                                      "%s=\"%s\"\r\n",
                                       pcKey, pcValue );
             break;
         }
@@ -289,7 +299,7 @@ static void vSubCommand_SetConfig( ConsoleIO_t * pxCIO,
         {
             xParseResult = KVStore_setBlob( xKey, strlen( pcValue ), pcValue );
             lCharsPrinted = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN,
-                                      "%s=%s\r\n",
+                                      "%s=\"%s\"\r\n",
                                       pcKey, pcValue );
             break;
         }
@@ -328,9 +338,7 @@ static void vSubCommand_SetConfig( ConsoleIO_t * pxCIO,
     }
 }
 
-#define MODE_ARG_IDX    1
-#define KEY_ARG_IDX     2
-#define VALUE_ARG_IDX   3
+
 
 /*
  * CLI format:
@@ -366,8 +374,7 @@ static void vCommand_Configure( ConsoleIO_t * pxCIO,
             }
             xSuccess = pdTRUE;
         }
-        else if( ulArgc > VALUE_ARG_IDX &&
-                 0 == strcmp( "set", pcMode ) )
+        else if( 0 == strcmp( "set", pcMode ) )
         {
             vSubCommand_SetConfig( pxCIO, ulArgc, ppcArgv );
             xSuccess = pdTRUE;
