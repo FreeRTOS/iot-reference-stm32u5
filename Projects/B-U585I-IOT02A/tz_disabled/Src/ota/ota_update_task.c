@@ -71,11 +71,20 @@
 
 #include "mqtt_agent_task.h"
 
+#include "kvstore.h"
+
 /*------------- Demo configurations -------------------------*/
 
-#ifndef otaconfigTHING_NAME
-    #error "Please define the otaconfigTHING_NAME variable with the thing name for which OTA is performed"
-#endif
+/**
+ * @brief The version for the firmware which is running. OTA agent uses this
+ * version number to perform anti-rollback validation. The firmware version for the
+ * download image should be higher than the current version, otherwise the new image is
+ * rejected in self test phase.1
+ */
+#define APP_VERSION_MAJOR                        0
+#define APP_VERSION_MINOR                        9
+#define APP_VERSION_BUILD                        0
+
 
 /**
  * @brief The maximum size of the file paths used in the demo.
@@ -92,7 +101,7 @@
  * @brief The delay used in the OTA demo task to periodically output the OTA
  * statistics like number of packets received, dropped, processed and queued per connection.
  */
-#define otaexampleTASK_DELAY_MS                          ( 1000U )
+#define otaexampleTASK_DELAY_MS                          ( 5000U )
 
 /**
  * @brief The maximum time for which OTA demo waits for an MQTT operation to be complete.
@@ -169,16 +178,6 @@
  * @brief Maximum stack size of OTA agent task.
  */
 #define otaexampleAGENT_TASK_STACK_SIZE          ( 4096 )
-
-/**
- * @brief The version for the firmware which is running. OTA agent uses this
- * version number to perform anti-rollback validation. The firmware version for the
- * download image should be higher than the current version, otherwise the new image is
- * rejected in self test phase.
- */
-#define APP_VERSION_MAJOR                        0
-#define APP_VERSION_MINOR                        9
-#define APP_VERSION_BUILD                        2
 
 /**
  * @brief Defines the structure to use as the command callback context in this
@@ -438,7 +437,18 @@ const AppVersion32_t appFirmwareVersion =
     .u.x.build = APP_VERSION_BUILD,
 };
 
-/*-----------------------------------------------------------*/
+/**
+ * @brief Pointer which holds the thing name received from key value store.
+ */
+
+static char * pcThingName = NULL;
+
+/**
+ * @brief Variable which holds the length of the thing name.
+ */
+static uint32_t thingNameLength = 0UL;
+
+/*---------------------------------------------------------*/
 
 static void prvOTAEventBufferFree( OtaEventData_t * const pxBuffer )
 {
@@ -721,11 +731,11 @@ bool vOTAProcessMessage( void * pvIncomingPublishCallbackContext,
     if( isMatch == true )
     {
         /* validate thing name */
-
+    	configASSERT( pcThingName != NULL );
         isMatch = prvMatchClientIdentifierInTopic( pxPublishInfo->pTopicName,
                                                    pxPublishInfo->topicNameLength,
-												   otaconfigTHING_NAME,
-                                                   strlen( otaconfigTHING_NAME ) );
+												   pcThingName,
+												   strlen( pcThingName ) );
 
         if( isMatch == true )
         {
@@ -1059,11 +1069,38 @@ static void prvOTAUpdateTask( void * pvParam )
 
     if( xResult == pdPASS )
     {
+    	/* Fetch thing name from key value store. */
+    	thingNameLength = KVStore_getSize( CS_CORE_THING_NAME );
+    	if( thingNameLength > 0 )
+    	{
+    		pcThingName = ( char * ) pvPortMalloc( thingNameLength + 1 );
+    		if( pcThingName != NULL )
+    		{
+    			memset( pcThingName, 0x00, ( thingNameLength + 1 ) );
+    			( void ) KVStore_getString( CS_CORE_THING_NAME,
+    					                    pcThingName,
+											thingNameLength );
+    		}
+    		else
+    		{
+    			xResult = pdFAIL;
+    			LogError( ( "Failed to allocate memory for thing name." ));
+    		}
+    	}
+    	else
+    	{
+    		xResult = pdFAIL;
+    		LogError( ( "Failed to fetch the length of thing name." ));
+    	}
+    }
+
+    if( xResult == pdPASS )
+    {
         memset( eventBuffer, 0x00, sizeof( eventBuffer ) );
 
         if( ( otaRet = OTA_Init( &otaBuffer,
                                  &otaInterfaces,
-                                 ( const uint8_t * ) ( otaconfigTHING_NAME ),
+                                 ( const uint8_t * ) ( pcThingName ),
                                  otaAppCallback ) ) != OtaErrNone )
         {
             LogError( ( "Failed to initialize OTA Agent, exiting = %u.",
@@ -1072,17 +1109,11 @@ static void prvOTAUpdateTask( void * pvParam )
         }
     }
 
-
-
-
     if( xResult == pdPASS )
     {
-
-
         LogInfo( "Waiting until MQTT Agent is ready" );
         vSleepUntilMQTTAgentReady();
         LogInfo( "MQTT Agent is ready. Resuming..." );
-
 
         if( ( xResult = xTaskCreate( prvOTAAgentTask,
                                      "OTAAgentTask",
@@ -1121,11 +1152,17 @@ static void prvOTAUpdateTask( void * pvParam )
 
     LogInfo( ( "OTA agent task stopped. Exiting OTA demo." ) );
 
+    if( pcThingName != NULL )
+    {
+    	vPortFree( pcThingName );
+    	pcThingName = NULL;
+    }
+
     vTaskDelete( NULL );
 }
 
 void vStartOTAUpdateTask( configSTACK_DEPTH_TYPE uxStackSize,
-                           UBaseType_t uxPriority )
+                          UBaseType_t uxPriority )
 {
     BaseType_t xResult;
 

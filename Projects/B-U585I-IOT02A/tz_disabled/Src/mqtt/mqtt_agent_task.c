@@ -24,7 +24,7 @@
  */
 
 #include "logging_levels.h"
-#define LOG_LEVEL LOG_DEBUG
+#define LOG_LEVEL    LOG_DEBUG
 #include "logging.h"
 
 /* Standard includes. */
@@ -101,16 +101,15 @@ extern TransportInterfaceExtended_t xLwipTransportInterface;
  */
 #define mqttexampleTRANSPORT_SEND_RECV_TIMEOUT_MS    ( 2000 )
 
-#define EVENT_BIT_AGENT_READY 0
+#define EVENT_BIT_AGENT_READY                        0
 
 typedef struct
 {
-	char * pcMqttEndpointAddress;
-	uint32_t ulMqttEndpointLen;
-	char * pcMqttClientId;
-	uint32_t ulMqttClientIdLen;
-	uint32_t ulMqttPort;
-
+    char * pcMqttEndpointAddress;
+    uint32_t ulMqttEndpointLen;
+    char * pcMqttClientId;
+    uint32_t ulMqttClientIdLen;
+    uint32_t ulMqttPort;
 } MqttConnectCtx_t;
 
 static MqttConnectCtx_t xConnectCtx = { 0 };
@@ -270,39 +269,39 @@ void vStartMQTTAgentDemo( void )
     /* prvConnectAndCreateDemoTasks() connects to the MQTT broker, creates the
      * tasks that will interact with the broker via the MQTT agent, then turns
      * itself into the MQTT agent task. */
-    xTaskCreate( prvMQTTAgentTask, /* Function that implements the task. */
-                 "MQTTAgent",      /* Text name for the task - only used for debugging. */
-                 4096,             /* Size of stack (in words, not bytes) to allocate for the task. */
-                 NULL,                         /* Optional - task parameter - not used in this case. */
-                 tskIDLE_PRIORITY + 1,         /* Task priority, must be between 0 and configMAX_PRIORITIES - 1. */
-                 NULL );                       /* Optional - used to pass out a handle to the created task. */
+    xTaskCreate( prvMQTTAgentTask,     /* Function that implements the task. */
+                 "MQTTAgent",          /* Text name for the task - only used for debugging. */
+                 4096,                 /* Size of stack (in words, not bytes) to allocate for the task. */
+                 NULL,                 /* Optional - task parameter - not used in this case. */
+                 tskIDLE_PRIORITY + 1, /* Task priority, must be between 0 and configMAX_PRIORITIES - 1. */
+                 NULL );               /* Optional - used to pass out a handle to the created task. */
 }
 
 
 /*-----------------------------------------------------------*/
 void vSleepUntilMQTTAgentReady( void )
 {
-	while( 1 )
-	{
-		if( xAgentEvents == NULL )
-		{
-			/* Agent has not even initialized its event groups yet. Sleep the task while agent initializes */
-			vTaskDelay( pdMS_TO_TICKS( 3*1000 ) );
-		}
-		else
-		{
-			EventBits_t uxEvents = xEventGroupWaitBits( xAgentEvents,
-													    1u << EVENT_BIT_AGENT_READY,
-													    pdFALSE,
-													    pdTRUE,
-													    portMAX_DELAY );
+    while( 1 )
+    {
+        if( xAgentEvents == NULL )
+        {
+            /* Agent has not even initialized its event groups yet. Sleep the task while agent initializes */
+            vTaskDelay( pdMS_TO_TICKS( 3 * 1000 ) );
+        }
+        else
+        {
+            EventBits_t uxEvents = xEventGroupWaitBits( xAgentEvents,
+                                                        1u << EVENT_BIT_AGENT_READY,
+                                                        pdFALSE,
+                                                        pdTRUE,
+                                                        portMAX_DELAY );
 
-			if( uxEvents & ( 1u << EVENT_BIT_AGENT_READY ) )
-			{
-				return;
-			}
-		}
-	}
+            if( uxEvents & ( 1u << EVENT_BIT_AGENT_READY ) )
+            {
+                return;
+            }
+        }
+    }
 }
 
 static BaseType_t xInitializeMqttConnectCtx( MqttConnectCtx_t * pxCtx )
@@ -320,8 +319,8 @@ static BaseType_t xInitializeMqttConnectCtx( MqttConnectCtx_t * pxCtx )
     else
     {
         ( void ) KVStore_getString( CS_CORE_MQTT_ENDPOINT,
-                                 pxCtx->pcMqttEndpointAddress,
-                                 pxCtx->ulMqttEndpointLen );
+                                    pxCtx->pcMqttEndpointAddress,
+                                    pxCtx->ulMqttEndpointLen );
     }
 
     pxCtx->ulMqttClientIdLen = KVStore_getSize( CS_CORE_THING_NAME );
@@ -562,13 +561,14 @@ static BaseType_t prvSocketConnect( void )
     BackoffAlgorithmStatus_t xBackoffAlgStatus = BackoffAlgorithmSuccess;
     BackoffAlgorithmContext_t xReconnectParams = { 0 };
     uint16_t usNextRetryBackOff = 0U;
+    uint32_t receiveTimeoutMS = 250U;
 
     TlsTransportStatus_t xNetworkStatus = TLS_TRANSPORT_CONNECT_FAILURE;
     NetworkCredentials_t xNetworkCredentials = { 0 };
 
     /* ALPN protocols must be a NULL-terminated list of strings. Therefore,
-    * the first entry will contain the actual ALPN protocol string while the
-    * second entry must remain NULL. */
+     * the first entry will contain the actual ALPN protocol string while the
+     * second entry must remain NULL. */
     const char * pcAlpnProtocols[] = { NULL, NULL };
 
     pcAlpnProtocols[ 0 ] = AWS_IOT_MQTT_ALPN;
@@ -605,18 +605,18 @@ static BaseType_t prvSocketConnect( void )
     do
     {
         /* Establish a TCP connection with the MQTT broker. This example connects to
-        * the MQTT broker as specified in democonfigMQTT_BROKER_ENDPOINT and
-        * democonfigMQTT_BROKER_PORT at the top of this file. */
+         * the MQTT broker as specified in democonfigMQTT_BROKER_ENDPOINT and
+         * democonfigMQTT_BROKER_PORT at the top of this file. */
 
 
 
         LogInfo( ( "Creating a TLS connection to %s:%d.",
-        		xConnectCtx.pcMqttEndpointAddress,
-				xConnectCtx.ulMqttPort ) );
+                   xConnectCtx.pcMqttEndpointAddress,
+                   xConnectCtx.ulMqttPort ) );
 
         xNetworkStatus = mbedtls_transport_connect( pxNetworkContext,
-        										    xConnectCtx.pcMqttEndpointAddress,
-                                                    (uint16_t) xConnectCtx.ulMqttPort,
+                                                    xConnectCtx.pcMqttEndpointAddress,
+                                                    ( uint16_t ) xConnectCtx.ulMqttPort,
                                                     &xNetworkCredentials,
                                                     mqttexampleTRANSPORT_SEND_RECV_TIMEOUT_MS,
                                                     mqttexampleTRANSPORT_SEND_RECV_TIMEOUT_MS );
@@ -625,12 +625,16 @@ static BaseType_t prvSocketConnect( void )
 
         if( xConnected == pdPASS )
         {
+            ( void ) mbedtls_transport_setsockopt( pxNetworkContext,
+                                                   SO_RCVTIMEO,
+                                                   &receiveTimeoutMS,
+                                                   sizeof( uint32_t ) );
             /* Set event group to wake tasks waiting for */
-            (void) xEventGroupSetBits( xAgentEvents, ( 1u << EVENT_BIT_AGENT_READY ) );
+            ( void ) xEventGroupSetBits( xAgentEvents, ( 1u << EVENT_BIT_AGENT_READY ) );
         }
         else
         {
-        	(void) xEventGroupClearBits( xAgentEvents, ( 1u << EVENT_BIT_AGENT_READY ) );
+            ( void ) xEventGroupClearBits( xAgentEvents, ( 1u << EVENT_BIT_AGENT_READY ) );
             /* Get back-off value (in milliseconds) for the next connection retry. */
             xBackoffAlgStatus = BackoffAlgorithm_GetNextBackoff( &xReconnectParams, uxRand(), &usNextRetryBackOff );
 
@@ -654,23 +658,23 @@ static BaseType_t prvSocketConnect( void )
 
 /*-----------------------------------------------------------*/
 
-//static void prvMQTTClientSocketWakeupCallback( Socket_t pxSocket )
-//{
-//    MQTTAgentCommandInfo_t xCommandParams = { 0 };
-//
-//    /* Just to avoid compiler warnings.  The socket is not used but the function
-//     * prototype cannot be changed because this is a callback function. */
-//    ( void ) pxSocket;
-//
-//    /* A socket used by the MQTT task may need attention.  Send an event
-//     * to the MQTT task to make sure the task is not blocked on xCommandQueue. */
-//    if( ( uxQueueMessagesWaiting( xCommandQueue.queue ) == 0U ) && ( FreeRTOS_recvcount( pxSocket ) > 0 ) )
-//    {
-//        /* Don't block as this is called from the context of the IP task. */
-//        xCommandParams.blockTimeMs = 0U;
-//        MQTTAgent_ProcessLoop( &xGlobalMqttAgentContext, &xCommandParams );
-//    }
-//}
+/*static void prvMQTTClientSocketWakeupCallback( Socket_t pxSocket ) */
+/*{ */
+/*    MQTTAgentCommandInfo_t xCommandParams = { 0 }; */
+/* */
+/*    / * Just to avoid compiler warnings.  The socket is not used but the function */
+/*     * prototype cannot be changed because this is a callback function. * / */
+/*    ( void ) pxSocket; */
+/* */
+/*    / * A socket used by the MQTT task may need attention.  Send an event */
+/*     * to the MQTT task to make sure the task is not blocked on xCommandQueue. * / */
+/*    if( ( uxQueueMessagesWaiting( xCommandQueue.queue ) == 0U ) && ( FreeRTOS_recvcount( pxSocket ) > 0 ) ) */
+/*    { */
+/*        / * Don't block as this is called from the context of the IP task. * / */
+/*        xCommandParams.blockTimeMs = 0U; */
+/*        MQTTAgent_ProcessLoop( &xGlobalMqttAgentContext, &xCommandParams ); */
+/*    } */
+/*} */
 
 /*-----------------------------------------------------------*/
 
@@ -688,18 +692,15 @@ static void prvIncomingPublishCallback( MQTTAgentContext_t * pMqttAgentContext,
     xPublishHandled = handleIncomingPublishes( ( SubscriptionElement_t * ) pMqttAgentContext->pIncomingCallbackContext,
                                                pxPublishInfo );
 
-
-
     /* If there are no callbacks to handle the incoming publishes,
      * handle it as an unsolicited publish. */
     if( xPublishHandled != true )
     {
-    	xPublishHandled = vOTAProcessMessage( pMqttAgentContext->pIncomingCallbackContext, pxPublishInfo );
+        xPublishHandled = vOTAProcessMessage( pMqttAgentContext->pIncomingCallbackContext, pxPublishInfo );
     }
 
-    if(  xPublishHandled != true )
+    if( xPublishHandled != true )
     {
-
         /* Ensure the topic string is terminated for printing.  This will over-
          * write the message ID, which is restored afterwards. */
         pcLocation = ( char * ) &( pxPublishInfo->pTopicName[ pxPublishInfo->topicNameLength ] );
@@ -714,11 +715,11 @@ static void prvIncomingPublishCallback( MQTTAgentContext_t * pMqttAgentContext,
 
 static void prvMQTTAgentTask( void * pvParameters )
 {
-	xAgentEvents = xEventGroupCreate();
-	configASSERT( xAgentEvents != NULL );
+    xAgentEvents = xEventGroupCreate();
+    configASSERT( xAgentEvents != NULL );
 
-    vTaskDelay(10*1000); //HACK wait for interface
-    // TODO: Replace with event group
+    vTaskDelay( 10 * 1000 ); /*HACK wait for interface */
+    /* TODO: Replace with event group */
 
     /* Miscellaneous initialization. */
     ulGlobalEntryTimeMs = prvGetTimeMs();
@@ -810,7 +811,6 @@ static void prvMQTTAgentTask( void * pvParameters )
             if( xMQTTStatus == MQTTSuccess )
             {
                 /* MQTT Disconnect. Disconnect the socket. */
-
             }
             /* Error. */
             else
@@ -823,7 +823,7 @@ static void prvMQTTAgentTask( void * pvParameters )
 
                 /* Reconnect TCP. */
                 xNetworkResult = prvSocketConnect();
-                // TODO: handle this in a more reasonable way.
+                /* TODO: handle this in a more reasonable way. */
                 configASSERT( xNetworkResult == pdPASS );
                 pMqttContext->connectStatus = MQTTNotConnected;
                 /* MQTT Connect with a persistent session. */

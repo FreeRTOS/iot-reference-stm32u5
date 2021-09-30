@@ -123,6 +123,7 @@ static void hw_init( void )
     HAL_DCACHE_Invalidate( &hDcache );
     HAL_DCACHE_Enable( &hDcache );
 
+
     /* Initialize uart for logging before cli is up and running */
     vInitLoggingEarly();
 
@@ -184,6 +185,17 @@ static int fs_init( void )
         }
     }
 
+    if( lfs_stat( &xLfsCtx, "/ota", &xDirInfo ) == LFS_ERR_NOENT )
+    {
+    	err = lfs_mkdir( &xLfsCtx, "/ota" );
+
+    	if( err != LFS_ERR_OK )
+    	{
+    		LogError( "Failed to create /ota directory." );
+    	}
+    }
+
+
     if( err == 0 )
     {
         /* Export the FS context */
@@ -214,7 +226,7 @@ extern void Task_MotionSensorsPublish( void * );
 extern void vEnvironmentSensorPublishTask( void * );
 extern void vShadowDeviceTask( void * );
 extern void vShadowUpdateTask( void * );
-
+extern void vStartOTAUpdateTask( configSTACK_DEPTH_TYPE uxStackSize, UBaseType_t uxPriority );
 
 void vInitTask( void * pvArgs )
 {
@@ -222,10 +234,17 @@ void vInitTask( void * pvArgs )
 
     xResult = xTaskCreate( Task_CLI, "cli", 4096, NULL, 10, NULL );
 
+    FLASH_WaitForLastOperation(1000);
     int xMountStatus = fs_init();
 
     if( xMountStatus == LFS_ERR_OK )
     {
+    	/*
+    	 * FIXME: Need to debug  the cause of internal flash status register error here.
+    	 * Clearing the flash status register as a workaround.
+    	 */
+        FLASH_WaitForLastOperation(1000);
+
         LogInfo( "File System mounted." );
 
         KVStore_init();
@@ -234,6 +253,8 @@ void vInitTask( void * pvArgs )
     {
         LogError( "Failed to mount filesystem." );
     }
+
+    FLASH_WaitForLastOperation(1000);
 
         xResult = xTaskCreate( vHeartbeatTask, "Heartbeat", 1024, NULL, tskIDLE_PRIORITY, NULL );
 
@@ -245,12 +266,15 @@ void vInitTask( void * pvArgs )
 
         vStartMQTTAgentDemo();
 
+        vStartOTAUpdateTask( 4096, tskIDLE_PRIORITY );
+
         xResult = xTaskCreate( vEnvironmentSensorPublishTask, "EnvSense", 4096, NULL, 10, NULL );
         configASSERT( xResult == pdTRUE );
 
 
         xResult = xTaskCreate( Task_MotionSensorsPublish, "MotionS", 4096, NULL, 11, NULL );
         configASSERT( xResult == pdTRUE );
+
 
     //    xResult = xTaskCreate( vShadowDeviceTask, "ShadowDevice", 1024, NULL, 5, NULL );
     //    configASSERT( xResult == pdTRUE );
@@ -268,7 +292,7 @@ int main( void )
 {
 
 //    vRelocateVectorTable();
-    hw_init();
+	hw_init();
 
 
     vLoggingInit();

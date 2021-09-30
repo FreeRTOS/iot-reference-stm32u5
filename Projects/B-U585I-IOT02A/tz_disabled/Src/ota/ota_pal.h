@@ -123,10 +123,10 @@ OtaPalStatus_t xOtaPalAbortImage( OtaFileContext_t * const pFileContext );
  * @return The number of bytes written on a success, or a negative error code from the platform
  * abstraction layer.
  */
-int16_t iOtaPalWriteImageBlock ( OtaFileContext_t * const pFileContext,
-                                           uint32_t offset,
-                                           uint8_t * const pData,
-                                           uint32_t blockSize );
+int16_t iOtaPalWriteImageBlock( OtaFileContext_t * const pFileContext,
+                                uint32_t offset,
+                                uint8_t * const pData,
+                                uint32_t blockSize );
 
 /**
  * @brief Activate the newest MCU image received via OTA.
