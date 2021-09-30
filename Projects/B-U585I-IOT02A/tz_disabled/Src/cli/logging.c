@@ -113,7 +113,7 @@ static void vSendLogMessage( const char * buffer, unsigned int count )
 
         /* Enter critical section to preserve ordering of log messages */
         uxContext = taskENTER_CRITICAL_FROM_ISR();
-        size_t xSpaceAvailable = xMessageBufferSpaceAvailable( xLogMBuf ) - sizeof( size_t );
+        size_t xSpaceAvailable = xMessageBufferSpaceAvailable( xLogMBuf );
 
         if( xSpaceAvailable > sizeof( size_t ) )
         {

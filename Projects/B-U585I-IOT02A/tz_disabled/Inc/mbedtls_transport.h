@@ -41,7 +41,7 @@
 /*
  * Define MBEDTLS_TRANSPORT_PKCS11_ENABLE if you intend to use a pkcs11 module for TLS.
  */
-#define MBEDTLS_TRANSPORT_PKCS11_ENABLE
+//#define MBEDTLS_TRANSPORT_PKCS11_ENABLE
 
 
 /*
@@ -183,6 +183,21 @@ TlsTransportStatus_t mbedtls_transport_connect( NetworkContext_t * pxNetworkCont
                                                 uint32_t receiveTimeoutMs,
                                                 uint32_t sendTimeoutMs );
 
+/**
+ * @brief Sets the socket option for the underlying socket connection.
+ *
+ * @param[out] pNetworkContext Pointer to a network context that contains the
+ * initialized socket handle.
+ * @param[in] lSockopt Socket option to be set
+ * @param[in] pvSockoptValue Pointer to memory area containing the value of the socket option.
+ * @param[in] ulOptionLen Length of the memory area containing the value of the socket option.
+ *
+ * @return 0 on success, negative error code on failure.
+ */
+int32_t mbedtls_transport_setsockopt( NetworkContext_t * pxNetworkContext,
+		                              int32_t lSockopt,
+		                              const void * pvSockoptValue,
+		                              uint32_t ulOptionLen );
 /**
  * @brief Gracefully disconnect an established TLS connection and free any heap allocated resources.
  *
