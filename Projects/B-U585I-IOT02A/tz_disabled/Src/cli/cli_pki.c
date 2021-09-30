@@ -47,16 +47,22 @@
 #include "mbedtls/x509.h"
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
+#include "mbedtls/pk.h"
 #include "mbedtls/pk_internal.h"
+#include "mbedtls/ecp.h"
 #include "core_pki_utils.h"
 
+#define LABEL_PUB_IDX               3
+#define LABEL_PRV_IDX               4
+#define LABEL_IDX                   LABEL_PUB_IDX
 
-#define LABEL_PRV_IDX             3
-#define LABEL_PUB_IDX             4
 
-
+/* The first three fields of this struct must match mbedtls_ecp_keypair */
 typedef struct
 {
+    mbedtls_ecp_group grp;      /*!<  Elliptic curve and base point     */
+    mbedtls_mpi d;              /*!<  our secret value, Empty for this use case */
+    mbedtls_ecp_point Q;        /*!<  our public value                  */
     CK_FUNCTION_LIST_PTR pxP11FunctionList;
     CK_SESSION_HANDLE xP11Session;
     CK_OBJECT_HANDLE xP11PrivateKey;
@@ -70,6 +76,14 @@ typedef struct
 
 /* Local static functions */
 static void vCommand_PKI( ConsoleIO_t * pxCIO, uint32_t ulArgc, char * ppcArgv[] );
+static CK_RV xExportPubKeyDer( CK_SESSION_HANDLE xSession,
+                                CK_OBJECT_HANDLE xPublicKeyHandle,
+                                uint8_t * * ppucPubKeyDer,
+                                uint32_t * pulPubKeyDerLen );
+
+static char * pcExportPubKeyPem( CK_SESSION_HANDLE xSession,
+                                 CK_OBJECT_HANDLE xPublicKeyHandle );
+
 
 const CLI_Command_Definition_t xCommandDef_pki =
 {
@@ -82,9 +96,9 @@ const CLI_Command_Definition_t xCommandDef_pki =
         "        Valid verbs are { generate, import, export, list }\r\n"
         "        Valid object types are { key, csr, cert }\r\n"
         "        Arguments should be specified in --<arg_name> <value>\r\n\n"
-        "    pki generate key <label_private> <label_public> <algorithm> <algorithm_param>\r\n"
+        "    pki generate key <label_public> <label_private> <algorithm> <algorithm_param>\r\n"
         "        Generates a new private key to be stored in the specified labels\r\n\n"
-        "    pki generate csr <label_private>\r\n"
+        "    pki generate csr <label>\r\n"
         "        Generates a new Certificate Signing Request using the private key\r\n"
         "        with the specified label.\r\n"
         "        If no label is specified, the default tls private key is used.\r\n\n"
@@ -93,14 +107,14 @@ const CLI_Command_Definition_t xCommandDef_pki =
           "        -- Not yet implemented --\r\n\n" */
         "    pki import cert <label>\r\n"
         "        Import a certificate into the given slot. The certificate should be \r\n"
-        "        copied into the terminal in PEM format, ending with two blank lines.\r\n\n",
+        "        copied into the terminal in PEM format, ending with two blank lines.\r\n\n"
 /*        "    pki import key <label>\r\n"
           "        -- Not yet implemented --\r\n\n"
           "    pki export cert <label>\r\n"
-          "        -- Not yet implemented --\r\n\n"
+          "        -- Not yet implemented --\r\n\n" */
           "    pki export key <label>\r\n"
-          "        Export the public portion of the key with the specified label.\r\n\n"
-          "    pki list\r\n"
+          "        Export the public portion of the key with the specified label.\r\n\n",
+/*          "    pki list\r\n"
           "        List objects stored in the pkcs11 keystore.\r\n"
           "        -- Not yet implemented --\r\n\n", */
     .pxCommandInterpreter = vCommand_PKI
@@ -273,7 +287,7 @@ static CK_RV validatePrivateKeyPKCS11( PrivateKeySigningCtx_t * pxCtx,
         /* Get the handle of the device private key. */
         xResult = xFindObjectWithLabelAndClass( pxCtx->xP11Session,
                                                 pcLabel,
-                                                strnlen( pcLabel, pkcs11configMAX_LABEL_LENGTH - 1 ),
+                                                strnlen( pcLabel, pkcs11configMAX_LABEL_LENGTH ),
                                                 CKO_PRIVATE_KEY,
                                                 &pxCtx->xP11PrivateKey );
     }
@@ -315,16 +329,49 @@ static CK_RV validatePrivateKeyPKCS11( PrivateKeySigningCtx_t * pxCtx,
         }
     }
 
-    /* Map the mbedTLS algorithm to its internal metadata. */
+    //TODO: Support RSA keys here.
     if( xResult == CKR_OK )
     {
-        ( void ) memcpy( &pxCtx->xPrivKeyInfo,
-                         mbedtls_pk_info_from_type( xKeyAlgo ),
-                         sizeof( mbedtls_pk_info_t ) );
+        unsigned char * pucPubKeyDer = NULL;
+        uint32_t ulDerPublicKeyLength = 0;
 
+        /* Determine size of key */
+        xResult = xExportPubKeyDer( pxCtx->xP11Session,
+                                    pxCtx->xP11PrivateKey,
+                                    &pucPubKeyDer,
+                                    &ulDerPublicKeyLength );
+
+        if( xResult == CKR_OK )
+        {
+            mbedtls_pk_context xPubPkCtx;
+
+            mbedtls_pk_init( &xPubPkCtx );
+
+            unsigned char * pucPubKeyDerTemp = pucPubKeyDer;
+            int lRslt = mbedtls_pk_parse_subpubkey( &pucPubKeyDerTemp,
+                                                    &( pucPubKeyDer[ ulDerPublicKeyLength - 1 ] ),
+                                                    &xPubPkCtx );
+
+            if( lRslt == 0 )
+            {
+                /* Copy mbedtls_pk_info_t function pointer struct */
+                memcpy( &( pxCtx->xPrivKeyInfo ), xPubPkCtx.pk_info, sizeof( mbedtls_pk_info_t ) );
+                /* Copy contents of mbedtls_ecp_keypair struct allocated by mbedtls_pk_parse_subpubkey */
+                memcpy( pxCtx, xPubPkCtx.pk_ctx, sizeof( mbedtls_ecp_keypair ) );
+            }
+            else
+            {
+                xResult = CKR_PUBLIC_KEY_INVALID;
+            }
+
+            vPortFree( pucPubKeyDer );
+            pucPubKeyDer = NULL;
+        }
+
+        /* Override the signing callback */
         pxCtx->xPrivKeyInfo.sign_func = privateKeySigningCallback;
 
-        pxCtx->xPkeyCtx.pk_info = &pxCtx->xPrivKeyInfo;
+        pxCtx->xPkeyCtx.pk_info = &( pxCtx->xPrivKeyInfo);
         pxCtx->xPkeyCtx.pk_ctx = pxCtx;
     }
 
@@ -346,10 +393,10 @@ static void vSubCommand_GenerateCsr( ConsoleIO_t * pxCIO, uint32_t ulArgc, char 
 
     mbedtls_x509write_csr xCsr;
 
-    if( ulArgc > LABEL_PRV_IDX &&
-        ppcArgv[ LABEL_PRV_IDX ] != NULL )
+    if( ulArgc > LABEL_IDX &&
+        ppcArgv[ LABEL_IDX ] != NULL )
     {
-        pcPrvKeyLabel = ppcArgv[ LABEL_PRV_IDX ];
+        pcPrvKeyLabel = ppcArgv[ LABEL_IDX ];
     }
 
     /* Set the mutex functions for mbed TLS thread safety. */
@@ -376,6 +423,16 @@ static void vSubCommand_GenerateCsr( ConsoleIO_t * pxCIO, uint32_t ulArgc, char 
 
         if( xResult == CKR_OK )
         {
+            xResult = xInitializePkcs11Token();
+        }
+
+        if( xResult == CKR_OK )
+        {
+            xResult = xInitializePkcs11Session( &( xPksCtx.xP11Session ) );
+        }
+
+        if( xResult == CKR_OK )
+        {
             xResult = validatePrivateKeyPKCS11( &xPksCtx, pcPrvKeyLabel );
         }
 
@@ -391,10 +448,9 @@ static void vSubCommand_GenerateCsr( ConsoleIO_t * pxCIO, uint32_t ulArgc, char 
     }
 
     /* Check if struct was fully initialized */
-    if( mbedtlsError == 0 &&
-        xPksCtx.xPkeyCtx.pk_ctx == &xPksCtx )
+    if( mbedtlsError == 0 )
     {
-        static const char * pcSubjectNamePrefix = "CN = ";
+        static const char * pcSubjectNamePrefix = "CN=";
         size_t xSubjectNameLen = KVStore_getSize( CS_CORE_THING_NAME ) + strlen( pcSubjectNamePrefix );
         char * pcSubjectName = pvPortMalloc( xSubjectNameLen );
 
@@ -407,7 +463,6 @@ static void vSubCommand_GenerateCsr( ConsoleIO_t * pxCIO, uint32_t ulArgc, char 
         }
 
         mbedtlsError = mbedtls_x509write_csr_set_subject_name( &xCsr, pcSubjectName );
-
 
         configASSERT( mbedtlsError == 0 );
 
@@ -424,7 +479,6 @@ static void vSubCommand_GenerateCsr( ConsoleIO_t * pxCIO, uint32_t ulArgc, char 
         /* Initialize key */
         mbedtls_x509write_csr_set_key( &xCsr, &( xPksCtx.xPkeyCtx ) );
 
-
         mbedtlsError = mbedtls_x509write_csr_pem( &xCsr,
                                                   ( unsigned char * ) pcCsrBuffer,
                                                   CSR_BUFFER_LEN,
@@ -435,16 +489,20 @@ static void vSubCommand_GenerateCsr( ConsoleIO_t * pxCIO, uint32_t ulArgc, char 
 
         /* Cleanup / free memory */
         mbedtls_x509write_csr_free( &xCsr );
-        mbedtls_pk_free( &( xPksCtx.xPkeyCtx ) );
         mbedtls_ctr_drbg_free( &( xPksCtx.xCtrDrbgCtx ) );
         mbedtls_entropy_free( &( xPksCtx.xEntropyCtx ) );
-        vPortFree( pcSubjectName );
+        if( pcSubjectName != NULL )
+        {
+            vPortFree( pcSubjectName );
+        }
     }
 
     if( mbedtlsError == 0 )
     {
         vPrintPem( pxCIO, pcCsrBuffer );
     }
+
+
 
     vPortFree( pcCsrBuffer );
 
@@ -548,17 +606,19 @@ static char * pcConvertECDerToPem( uint8_t * pcPubKeyDer, uint32_t ulPubKeyDerLe
     return pcPubKeyPem;
 }
 
-
-static char * vExportPubKeyPem( CK_SESSION_HANDLE xSession,
-                                CK_OBJECT_HANDLE xPublicKeyHandle )
+//TODO: implement CKA_PUBLIC_KEY_INFO on the backend to make this compliant with the standard and reduce unnecessary memory allocation / deallocation.
+/* Caller must free the returned buffer */
+static CK_RV xExportPubKeyDer( CK_SESSION_HANDLE xSession,
+                               CK_OBJECT_HANDLE xPublicKeyHandle,
+                               uint8_t * * ppucPubKeyDer,
+                               uint32_t * pulPubKeyDerLen )
 {
     CK_RV xResult;
     /* Query the key size. */
     CK_ATTRIBUTE xTemplate = { 0 };
     CK_FUNCTION_LIST_PTR pxFunctionList;
-    uint8_t * pucPubKeyDer = NULL;
-    char * pcPubKeyPem = NULL;
-    uint32_t ulDerPublicKeyLength;
+    *ppucPubKeyDer = NULL;
+    *pulPubKeyDerLen = 0;
 
     const uint8_t pucEcP256AsnAndOid[] =
     {
@@ -574,35 +634,37 @@ static char * vExportPubKeyPem( CK_SESSION_HANDLE xSession,
 
     xResult = C_GetFunctionList( &pxFunctionList );
 
-    /* Query public key size */
-
-    xTemplate.type = CKA_EC_POINT;
-    xTemplate.ulValueLen = 0;
-    xTemplate.pValue = NULL;
-    xResult = pxFunctionList->C_GetAttributeValue( xSession,
-                                                  xPublicKeyHandle,
-                                                  &xTemplate,
-                                                  1 );
+    if( CKR_OK == xResult )
+    {
+        /* Query public key size */
+        xTemplate.type = CKA_EC_POINT;
+        xTemplate.ulValueLen = 0;
+        xTemplate.pValue = NULL;
+        xResult = pxFunctionList->C_GetAttributeValue( xSession,
+                                                       xPublicKeyHandle,
+                                                       &xTemplate,
+                                                       1 );
+    }
 
     if( CKR_OK == xResult )
     {
         /* Add space for DER Header */
-        ulDerPublicKeyLength = xTemplate.ulValueLen + sizeof( pucEcP256AsnAndOid ) - sizeof( pucUnusedKeyTag ) + 1;
+        *pulPubKeyDerLen = xTemplate.ulValueLen + sizeof( pucEcP256AsnAndOid ) - sizeof( pucUnusedKeyTag ) + 1;
 
         /* Allocate a buffer for the DER form  of the key */
-        pucPubKeyDer = pvPortMalloc( ulDerPublicKeyLength );
+        *ppucPubKeyDer = pvPortMalloc( *pulPubKeyDerLen );
 
         xResult = CKR_FUNCTION_FAILED;
     }
 
     /* Read public key into buffer */
-    if( pucPubKeyDer != NULL )
+    if( *ppucPubKeyDer != NULL )
     {
-        LogInfo( "Allocated %ld bytes for DER form public key.", ulDerPublicKeyLength );
+        LogDebug( "Allocated %ld bytes for public key in DER format.", *pulPubKeyDerLen );
 
-        memset( pucPubKeyDer, 0, ulDerPublicKeyLength );
+        memset( *ppucPubKeyDer, 0, *pulPubKeyDerLen );
 
-        xTemplate.pValue = &( pucPubKeyDer[ sizeof( pucEcP256AsnAndOid ) - sizeof( pucUnusedKeyTag ) ] );
+        xTemplate.pValue = &( ( *ppucPubKeyDer )[ sizeof( pucEcP256AsnAndOid ) - sizeof( pucUnusedKeyTag ) ] );
 
         /* xTemplate.ulValueLen remains the same as in the last call */
 
@@ -612,13 +674,39 @@ static char * vExportPubKeyPem( CK_SESSION_HANDLE xSession,
                                                        1 );
 
         /* Copy DER header */
-        ( void ) memcpy( pucPubKeyDer, pucEcP256AsnAndOid, sizeof( pucEcP256AsnAndOid ) );
+        ( void ) memcpy( *ppucPubKeyDer, pucEcP256AsnAndOid, sizeof( pucEcP256AsnAndOid ) );
     }
     else
     {
-        LogError( "Failed to allocate %ld bytes for DER form public key.", ulDerPublicKeyLength );
+        LogError( "Failed to allocate %ld bytes for public key in DER format.", *pulPubKeyDerLen );
         xResult = CKR_HOST_MEMORY;
     }
+
+    if( xResult != CKR_OK )
+    {
+        if( *ppucPubKeyDer != NULL )
+        {
+            vPortFree( *ppucPubKeyDer );
+            *ppucPubKeyDer = NULL;
+        }
+        *pulPubKeyDerLen = 0;
+    }
+
+    return xResult;
+}
+
+static char * pcExportPubKeyPem( CK_SESSION_HANDLE xSession,
+                                 CK_OBJECT_HANDLE xPublicKeyHandle )
+{
+    CK_RV xResult;
+    uint32_t ulDerPublicKeyLength;
+    uint8_t * pucPubKeyDer = NULL;
+    char * pcPubKeyPem = NULL;
+
+    xResult = xExportPubKeyDer( xSession,
+                                xPublicKeyHandle,
+                                &pucPubKeyDer,
+                                &ulDerPublicKeyLength );
 
     /* Convert to PEM */
     if( CKR_OK == xResult )
@@ -651,7 +739,7 @@ static void vSubCommand_GenerateKey( ConsoleIO_t * pxCIO, uint32_t ulArgc, char 
     char * pcPrvKeyLabel = pkcs11_TLS_KEY_PRV_LABEL;
     char * pcPubKeyLabel = pkcs11_TLS_KEY_PUB_LABEL;
 
-    if( ulArgc > LABEL_PUB_IDX &&
+    if( ulArgc > LABEL_PRV_IDX &&
         ppcArgv[ LABEL_PRV_IDX ] != NULL &&
         ppcArgv[ LABEL_PUB_IDX ] != NULL )
     {
@@ -699,8 +787,8 @@ static void vSubCommand_GenerateKey( ConsoleIO_t * pxCIO, uint32_t ulArgc, char 
         pxCIO->print( pkcs11_TLS_KEY_PUB_LABEL );
         pxCIO->print( "\r\n" );
 
-        pcPublicKeyPem = vExportPubKeyPem( xSession,
-                                           xPubKeyHandle );
+        pcPublicKeyPem = pcExportPubKeyPem( xSession,
+                                            xPubKeyHandle );
     }
     else
     {
@@ -729,6 +817,13 @@ static void vSubCommand_GenerateCertificate( ConsoleIO_t * pxCIO, uint32_t ulArg
 
 static void vSubCommand_ImportCertificate( ConsoleIO_t * pxCIO, uint32_t ulArgc, char * ppcArgv[] )
 {
+    char * pcCertLabel = pkcs11_TLS_CERT_LABEL;
+
+    if( ulArgc > LABEL_IDX &&
+        ppcArgv[ LABEL_IDX ] != NULL )
+    {
+        pcCertLabel = ppcArgv[ LABEL_PUB_IDX ];
+    }
     pxCIO->print("Not Implemented\r\n");
 }
 
@@ -739,12 +834,99 @@ static void vSubCommand_ImportKey( ConsoleIO_t * pxCIO, uint32_t ulArgc, char * 
 
 static void vSubCommand_ExportCertificate( ConsoleIO_t * pxCIO, uint32_t ulArgc, char * ppcArgv[] )
 {
+    char * pcCertLabel = pkcs11_TLS_CERT_LABEL;
+
+    if( ulArgc > LABEL_IDX &&
+        ppcArgv[ LABEL_IDX ] != NULL )
+    {
+        pcCertLabel = ppcArgv[ LABEL_PUB_IDX ];
+    }
     pxCIO->print("Not Implemented\r\n");
 }
 
 static void vSubCommand_ExportKey( ConsoleIO_t * pxCIO, uint32_t ulArgc, char * ppcArgv[] )
 {
-    pxCIO->print("Not Implemented\r\n");
+    CK_RV xResult;
+
+    CK_SESSION_HANDLE xSession = 0;
+
+    CK_FUNCTION_LIST_PTR pxFunctionList;
+
+    CK_OBJECT_HANDLE xPubKeyHandle = 0;
+
+    BaseType_t xSessionInitialized = pdFALSE;
+
+    char * pcPublicKeyPem = NULL;
+    char * pcPubKeyLabel = pkcs11_TLS_KEY_PUB_LABEL;
+    size_t xPubKeyLabelLen;
+
+    if( ulArgc > LABEL_IDX &&
+        ppcArgv[ LABEL_IDX ] != NULL )
+    {
+        pcPubKeyLabel = ppcArgv[ LABEL_PUB_IDX ];
+    }
+
+    xPubKeyLabelLen = strnlen( pcPubKeyLabel, pkcs11configMAX_LABEL_LENGTH );
+
+    /* Set the mutex functions for mbed TLS thread safety. */
+    mbedtls_threading_set_alt( mbedtls_platform_mutex_init,
+                               mbedtls_platform_mutex_free,
+                               mbedtls_platform_mutex_lock,
+                               mbedtls_platform_mutex_unlock );
+
+    xResult = C_GetFunctionList( &pxFunctionList );
+
+    if( xResult == CKR_OK )
+    {
+        xResult = xInitializePkcs11Token();
+    }
+
+    if( xResult == CKR_OK )
+    {
+        xResult = xInitializePkcs11Session( &xSession );
+    }
+
+    if( xResult == CKR_OK )
+    {
+        xSessionInitialized = pdTRUE;
+        xResult = xFindObjectWithLabelAndClass( xSession,
+                                                pcPubKeyLabel,
+                                                xPubKeyLabelLen,
+                                                CKO_PUBLIC_KEY,
+                                                &xPubKeyHandle );
+    }
+
+
+    /* If successful, print public key in PEM form to terminal. */
+    if( xResult == CKR_OK )
+    {
+        pxCIO->print( "Public Key Label: " );
+        pxCIO->print( pkcs11_TLS_KEY_PUB_LABEL );
+        pxCIO->print( "\r\n" );
+
+        pcPublicKeyPem = pcExportPubKeyPem( xSession,
+                                           xPubKeyHandle );
+    }
+    else
+    {
+        pxCIO->print( "ERROR: Failed to locate public key with label: '" );
+        pxCIO->write( pcPubKeyLabel, xPubKeyLabelLen );
+        pxCIO->print( "'\r\n" );
+    }
+
+    /* Print PEM public key */
+    if( pcPublicKeyPem != NULL )
+    {
+        vPrintPem( pxCIO, pcPublicKeyPem );
+        /* Free heap allocated memory */
+        vPortFree( pcPublicKeyPem );
+        pcPublicKeyPem = NULL;
+    }
+
+    if( xSessionInitialized == pdTRUE )
+    {
+        pxFunctionList->C_CloseSession( xSession );
+    }
 }
 
 #define VERB_ARG_INDEX          1
@@ -829,6 +1011,7 @@ static void vCommand_PKI( ConsoleIO_t * pxCIO,
         }
         else if( 0 == strcmp( "export", pcVerb ) )
         {
+            xSuccess = pdFALSE;
             if( ulArgc > OBJECT_TYPE_INDEX )
             {
                 const char * pcObject = ppcArgv[ OBJECT_TYPE_INDEX ];
@@ -850,7 +1033,6 @@ static void vCommand_PKI( ConsoleIO_t * pxCIO,
                     xSuccess = pdFALSE;
                 }
             }
-            xSuccess = pdFALSE;
         }
         else if( 0 == strcmp( "list", pcVerb ) )
         {
