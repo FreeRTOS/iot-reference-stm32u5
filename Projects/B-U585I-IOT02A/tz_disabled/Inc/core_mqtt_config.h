@@ -48,7 +48,7 @@
  * context maintains.
  */
 #define MQTT_STATE_ARRAY_MAX_COUNT                   ( 20U )
-#define MQTT_RECV_POLLING_TIMEOUT_MS                 ( 1000 )
+#define MQTT_RECV_POLLING_TIMEOUT_MS                 ( 250 )
 
 /*_RB_ To document and add to the mqtt config defaults header file. */
 #define MQTT_AGENT_COMMAND_QUEUE_LENGTH              ( 32 )
@@ -79,6 +79,9 @@
  * @note Specified in bytes.  Must be large enough to hold the maximum
  * anticipated MQTT payload.
  */
-#define MQTT_AGENT_NETWORK_BUFFER_SIZE               ( 5 * 1024 )
+#define MQTT_AGENT_NETWORK_BUFFER_SIZE               ( 6 * 1024 )
+
+
+#define MQTT_AGENT_MAX_EVENT_QUEUE_WAIT_TIME         ( 10 )
 
 #endif /* ifndef CORE_MQTT_CONFIG_H */

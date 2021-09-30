@@ -113,6 +113,11 @@
 			<locationURI>WORKSPACE_LOC/Middleware/AWS/IoTJobs/source</locationURI>
 		</link>
 		<link>
+			<name>Libraries/AWS/OTA</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Middleware/AWS/OTA</locationURI>
+		</link>
+		<link>
 			<name>Libraries/FreeRTOS/backoff_algorithm.c</name>
 			<type>1</type>
 			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/backoffAlgorithm/source/backoff_algorithm.c</locationURI>

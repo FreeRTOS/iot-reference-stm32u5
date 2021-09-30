@@ -1307,6 +1307,32 @@ TlsTransportStatus_t mbedtls_transport_connect( NetworkContext_t * pxNetworkCont
 }
 /*-----------------------------------------------------------*/
 
+int32_t mbedtls_transport_setsockopt( NetworkContext_t * pxNetworkContext,
+		                              int32_t lSockopt,
+		                              const void * pvSockoptValue,
+		                              uint32_t ulOptionLen )
+{
+	TLSContext_t * pxTLSContext = ( TLSContext_t * ) pxNetworkContext;
+	int32_t sockError = -EINVAL;
+
+	configASSERT( pxTLSContext != NULL );
+
+	const TransportInterfaceExtended_t * pxSocketInterface = pxTLSContext->pxSocketInterface;
+
+	if( pxSocketInterface != NULL  )
+	{
+		sockError = pxSocketInterface->setsockopt( pxTLSContext->pxSocketContext,
+				                                   lSockopt,
+												   pvSockoptValue,
+												   ulOptionLen );
+	}
+
+	return sockError;
+}
+
+/*-----------------------------------------------------------*/
+
+
 void mbedtls_transport_disconnect( NetworkContext_t * pxNetworkContext )
 {
     BaseType_t tlsStatus = 0;
