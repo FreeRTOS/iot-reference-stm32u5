@@ -81,9 +81,9 @@
  * download image should be higher than the current version, otherwise the new image is
  * rejected in self test phase.1
  */
-#define APP_VERSION_MAJOR                        0
-#define APP_VERSION_MINOR                        9
-#define APP_VERSION_BUILD                        0
+#define APP_VERSION_MAJOR    0
+#define APP_VERSION_MINOR    9
+#define APP_VERSION_BUILD    0
 
 
 /**
@@ -118,19 +118,24 @@
  * filter is used to match incoming packet received and route them to OTA.
  * Thing name is not needed for this matching.
  */
-#define OTA_TOPIC_PREFIX                                 "$aws/things/+/"
+#define OTA_TOPIC_PREFIX                                 "$aws/things"
+
+/**
+ * @brief Length of OTA topics prefix.
+ */
+#define OTA_PREFIX_LENGTH                                ( sizeof( OTA_TOPIC_PREFIX ) - 1UL )
 
 /**
  * @brief Wildcard topic filter for job notification.
  * The filter is used to match the constructed job notify topic filter from OTA agent and register
  * appropriate callback for it.
  */
-#define OTA_JOB_NOTIFY_TOPIC_FILTER                      OTA_TOPIC_PREFIX "jobs/notify-next"
+#define OTA_JOB_NOTIFY_TOPIC_FILTER                      OTA_TOPIC_PREFIX "/+/jobs/notify-next"
 
 /**
  * @brief Length of job notification topic filter.
  */
-#define OTA_JOB_NOTIFY_TOPIC_FILTER_LENGTH               ( ( uint16_t ) ( sizeof( OTA_JOB_NOTIFY_TOPIC_FILTER ) - 1 ) )
+#define OTA_JOB_NOTIFY_TOPIC_FILTER_LENGTH               ( ( uint16_t ) ( sizeof( OTA_JOB_NOTIFY_TOPIC_FILTER ) - 1UL ) )
 
 /**
  * @brief Wildcard topic filter for matching job response messages.
@@ -138,7 +143,7 @@
  * topic filter is a reserved topic which is not subscribed with MQTT broker.
  *
  */
-#define OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER           OTA_TOPIC_PREFIX "jobs/$next/get/accepted"
+#define OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER           OTA_TOPIC_PREFIX "/+/jobs/$next/get/accepted"
 
 /**
  * @brief Length of job accepted response topic filter.
@@ -151,7 +156,7 @@
  *  The filter is used to match the constructed data stream topic filter from OTA agent and register
  * appropriate callback for it.
  */
-#define OTA_DATA_STREAM_TOPIC_FILTER           OTA_TOPIC_PREFIX  "streams/#"
+#define OTA_DATA_STREAM_TOPIC_FILTER           OTA_TOPIC_PREFIX "/+/streams/#"
 
 /**
  * @brief Length of data stream topic filter.
@@ -162,7 +167,7 @@
 /**
  * @brief Starting index of client identifier within OTA topic.
  */
-#define OTA_TOPIC_CLIENT_IDENTIFIER_START_IDX    ( 12U )
+#define OTA_TOPIC_CLIENT_IDENTIFIER_START_IDX    ( OTA_PREFIX_LENGTH + 1 )
 
 /**
  * @brief Used to clear bits in a task's notification value.
@@ -337,28 +342,13 @@ static void prvProcessIncomingJobMessage( void * pxSubscriptionContext,
  * @param[in] topicNameLength length of the topic
  * @param[in] pClientIdentifier Client identifier, should be null terminated.
  * @param[in] clientIdentifierLength Length of the client identifier.
- * @return true if client identifier is found within the topic at the right index.
+ * @return pdTRUE if client identifier is found within the topic at the right index.
  */
-static bool prvMatchClientIdentifierInTopic( const char * pTopic,
-                                             size_t topicNameLength,
-                                             const char * pClientIdentifier,
-                                             size_t clientIdentifierLength );
+static BaseType_t prvMatchClientIdentifierInTopic( const char * pTopic,
+                                                   size_t topicNameLength,
+                                                   const char * pClientIdentifier,
+                                                   size_t clientIdentifierLength );
 
-/**
- * @brief Default callback used to receive default messages for OTA.
- *
- * The callback is not subscribed with MQTT broker, but only with local subscription manager.
- * A wildcard OTA job topic is used for subscription so that all unsolicited messages related to OTA is
- * forwarded to this callback for filtration. Right now the callback is used to filter responses to job requests
- * from the OTA service.
- *
- * @param[in] pvIncomingPublishCallbackContext MQTT context which stores the connection.
- * @param[in] pPublishInfo MQTT packet that stores the information of the file block.
- *
- * @return true if the message is processed by OTA.
- */
-bool vOTAProcessMessage( void * pvIncomingPublishCallbackContext,
-                         MQTTPublishInfo_t * pxPublishInfo );
 
 /**
  * @brief Buffer used to store the firmware image file path.
@@ -616,31 +606,51 @@ static void prvProcessIncomingData( void * pxSubscriptionContext,
                                     MQTTPublishInfo_t * pPublishInfo )
 {
     configASSERT( pPublishInfo != NULL );
-
     ( void ) pxSubscriptionContext;
-
+    BaseType_t isMatch = pdFALSE;
     OtaEventData_t * pData;
     OtaEventMsg_t eventMsg = { 0 };
 
-    LogDebug( ( "Received OTA image block, size %d.\n\n", pPublishInfo->payloadLength ) );
+    isMatch = prvMatchClientIdentifierInTopic( pPublishInfo->pTopicName,
+                                               pPublishInfo->topicNameLength,
+                                               pcThingName,
+                                               strlen( pcThingName ) );
 
-    configASSERT( pPublishInfo->payloadLength <= OTA_DATA_BLOCK_SIZE );
-
-    pData = prvOTAEventBufferGet();
-
-    if( pData != NULL )
+    if( isMatch == pdTRUE )
     {
-        memcpy( pData->data, pPublishInfo->pPayload, pPublishInfo->payloadLength );
-        pData->dataLength = pPublishInfo->payloadLength;
-        eventMsg.eventId = OtaAgentEventReceivedFileBlock;
-        eventMsg.pEventData = pData;
+        if( pPublishInfo->payloadLength <= OTA_DATA_BLOCK_SIZE )
+        {
+            LogDebug( ( "Received OTA image block, size %d.\n\n", pPublishInfo->payloadLength ) );
 
-        /* Send job document received event. */
-        OTA_SignalEvent( &eventMsg );
+            pData = prvOTAEventBufferGet();
+
+            if( pData != NULL )
+            {
+                memcpy( pData->data, pPublishInfo->pPayload, pPublishInfo->payloadLength );
+                pData->dataLength = pPublishInfo->payloadLength;
+                eventMsg.eventId = OtaAgentEventReceivedFileBlock;
+                eventMsg.pEventData = pData;
+
+                /* Send job document received event. */
+                OTA_SignalEvent( &eventMsg );
+            }
+            else
+            {
+                LogError( ( "Error: No OTA data buffers available.\r\n" ) );
+            }
+        }
+        else
+        {
+            LogError( ( "Received OTA data block of size (%d) larger than maximum size(%d) defined. ",
+                        pPublishInfo->payloadLength,
+                        OTA_DATA_BLOCK_SIZE ) );
+        }
     }
     else
     {
-        LogError( ( "Error: No OTA data buffers available.\r\n" ) );
+        LogWarn( ( "Received data block on an unsolicited topic, thing name does not match. topic: %.*s ",
+                   pPublishInfo->topicNameLength,
+                   pPublishInfo->pTopicName ) );
     }
 }
 
@@ -651,42 +661,61 @@ static void prvProcessIncomingJobMessage( void * pxSubscriptionContext,
 {
     OtaEventData_t * pData;
     OtaEventMsg_t eventMsg = { 0 };
+    BaseType_t isMatch = pdFALSE;
 
     ( void ) pxSubscriptionContext;
-
     configASSERT( pPublishInfo != NULL );
+    configASSERT( pcThingName != NULL );
 
-    LogInfo( ( "Received job message callback, size %d.\n\n", pPublishInfo->payloadLength ) );
+    isMatch = prvMatchClientIdentifierInTopic( pPublishInfo->pTopicName,
+                                               pPublishInfo->topicNameLength,
+                                               pcThingName,
+                                               strlen( pcThingName ) );
 
-    configASSERT( pPublishInfo->payloadLength <= OTA_DATA_BLOCK_SIZE );
-
-    pData = prvOTAEventBufferGet();
-
-    if( pData != NULL )
+    if( isMatch == pdTRUE )
     {
-        memcpy( pData->data, pPublishInfo->pPayload, pPublishInfo->payloadLength );
-        pData->dataLength = pPublishInfo->payloadLength;
-        eventMsg.eventId = OtaAgentEventReceivedJobDocument;
-        eventMsg.pEventData = pData;
+        if( pPublishInfo->payloadLength <= OTA_DATA_BLOCK_SIZE )
+        {
+            LogInfo( ( "Received OTA job message, size: %d.\n\n", pPublishInfo->payloadLength ) );
+            pData = prvOTAEventBufferGet();
 
-        /* Send job document received event. */
-        OTA_SignalEvent( &eventMsg );
+            if( pData != NULL )
+            {
+                memcpy( pData->data, pPublishInfo->pPayload, pPublishInfo->payloadLength );
+                pData->dataLength = pPublishInfo->payloadLength;
+                eventMsg.eventId = OtaAgentEventReceivedJobDocument;
+                eventMsg.pEventData = pData;
+
+                /* Send job document received event. */
+                OTA_SignalEvent( &eventMsg );
+            }
+            else
+            {
+                LogError( ( "Error: No OTA data buffers available.\r\n" ) );
+            }
+        }
+        else
+        {
+            LogError( ( "Received OTA job message size (%d) is larger than the OTA maximum size (%d) defined.\n\n", pPublishInfo->payloadLength, OTA_DATA_BLOCK_SIZE ) );
+        }
     }
     else
     {
-        LogError( ( "Error: No OTA data buffers available.\r\n" ) );
+        LogWarn( ( "Received a job message on an unsolicited topic, thing name does not match. topic: %.*s ",
+                   pPublishInfo->topicNameLength,
+                   pPublishInfo->pTopicName ) );
     }
 }
 
 
 /*-----------------------------------------------------------*/
 
-static bool prvMatchClientIdentifierInTopic( const char * pTopic,
-                                             size_t topicNameLength,
-                                             const char * pClientIdentifier,
-                                             size_t clientIdentifierLength )
+static BaseType_t prvMatchClientIdentifierInTopic( const char * pTopic,
+                                                   size_t topicNameLength,
+                                                   const char * pClientIdentifier,
+                                                   size_t clientIdentifierLength )
 {
-    bool isMatch = false;
+    BaseType_t isMatch = pdFALSE;
     size_t idx, matchIdx = 0;
 
     for( idx = OTA_TOPIC_CLIENT_IDENTIFIER_START_IDX; idx < topicNameLength; idx++ )
@@ -695,7 +724,7 @@ static bool prvMatchClientIdentifierInTopic( const char * pTopic,
         {
             if( pTopic[ idx ] == '/' )
             {
-                isMatch = true;
+                isMatch = pdTRUE;
             }
 
             break;
@@ -709,66 +738,6 @@ static bool prvMatchClientIdentifierInTopic( const char * pTopic,
         }
 
         matchIdx++;
-    }
-
-    return isMatch;
-}
-
-
-/*-----------------------------------------------------------*/
-
-bool vOTAProcessMessage( void * pvIncomingPublishCallbackContext,
-                         MQTTPublishInfo_t * pxPublishInfo )
-{
-    bool isMatch = false;
-
-    ( void ) MQTT_MatchTopic( pxPublishInfo->pTopicName,
-                              pxPublishInfo->topicNameLength,
-                              OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER,
-                              OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER_LENGTH,
-                              &isMatch );
-
-    if( isMatch == true )
-    {
-        /* validate thing name */
-    	configASSERT( pcThingName != NULL );
-        isMatch = prvMatchClientIdentifierInTopic( pxPublishInfo->pTopicName,
-                                                   pxPublishInfo->topicNameLength,
-												   pcThingName,
-												   strlen( pcThingName ) );
-
-        if( isMatch == true )
-        {
-            prvProcessIncomingJobMessage( pvIncomingPublishCallbackContext, pxPublishInfo );
-        }
-    }
-
-    if( isMatch == false )
-    {
-        ( void ) MQTT_MatchTopic( pxPublishInfo->pTopicName,
-                                  pxPublishInfo->topicNameLength,
-                                  OTA_JOB_NOTIFY_TOPIC_FILTER,
-                                  OTA_JOB_NOTIFY_TOPIC_FILTER_LENGTH,
-                                  &isMatch );
-
-        if( isMatch == true )
-        {
-            prvProcessIncomingJobMessage( pvIncomingPublishCallbackContext, pxPublishInfo );
-        }
-    }
-
-    if( isMatch == false )
-    {
-        ( void ) MQTT_MatchTopic( pxPublishInfo->pTopicName,
-                                  pxPublishInfo->topicNameLength,
-                                  OTA_DATA_STREAM_TOPIC_FILTER,
-                                  OTA_DATA_STREAM_TOPIC_FILTER_LENGTH,
-                                  &isMatch );
-
-        if( isMatch == true )
-        {
-            prvProcessIncomingData( pvIncomingPublishCallbackContext, pxPublishInfo );
-        }
     }
 
     return isMatch;
@@ -1050,6 +1019,8 @@ static void prvOTAUpdateTask( void * pvParam )
     /* OTA Agent state returned from calling OTA_GetAgentState.*/
     OtaState_t state = OtaAgentStateStopped;
 
+    bool subscriptionsAdded = false;
+
     /* Set OTA Library interfaces.*/
     setOtaInterfaces( &otaInterfaces );
 
@@ -1069,29 +1040,71 @@ static void prvOTAUpdateTask( void * pvParam )
 
     if( xResult == pdPASS )
     {
-    	/* Fetch thing name from key value store. */
-    	thingNameLength = KVStore_getSize( CS_CORE_THING_NAME );
-    	if( thingNameLength > 0 )
-    	{
-    		pcThingName = ( char * ) pvPortMalloc( thingNameLength + 1 );
-    		if( pcThingName != NULL )
-    		{
-    			memset( pcThingName, 0x00, ( thingNameLength + 1 ) );
-    			( void ) KVStore_getString( CS_CORE_THING_NAME,
-    					                    pcThingName,
-											thingNameLength );
-    		}
-    		else
-    		{
-    			xResult = pdFAIL;
-    			LogError( ( "Failed to allocate memory for thing name." ));
-    		}
-    	}
-    	else
-    	{
-    		xResult = pdFAIL;
-    		LogError( ( "Failed to fetch the length of thing name." ));
-    	}
+        /* Fetch thing name from key value store. */
+        thingNameLength = KVStore_getSize( CS_CORE_THING_NAME );
+
+        if( thingNameLength > 0 )
+        {
+            pcThingName = ( char * ) pvPortMalloc( thingNameLength + 1 );
+
+            if( pcThingName != NULL )
+            {
+                memset( pcThingName, 0x00, ( thingNameLength + 1 ) );
+                ( void ) KVStore_getString( CS_CORE_THING_NAME,
+                                            pcThingName,
+                                            thingNameLength );
+            }
+            else
+            {
+                xResult = pdFAIL;
+                LogError( ( "Failed to allocate memory for thing name." ) );
+            }
+        }
+        else
+        {
+            xResult = pdFAIL;
+            LogError( ( "Failed to fetch the length of thing name." ) );
+        }
+    }
+
+    if( xResult == pdPASS )
+    {
+        LogInfo( "Waiting until MQTT Agent is ready" );
+        vSleepUntilMQTTAgentReady();
+        LogInfo( "MQTT Agent is ready. Resuming..." );
+    }
+
+    if( xResult == pdPASS )
+    {
+        /* Add subscriptions for OTA with subscription manger. */
+        subscriptionsAdded = addSubscription( ( SubscriptionElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
+                                              OTA_JOB_NOTIFY_TOPIC_FILTER,
+                                              OTA_JOB_NOTIFY_TOPIC_FILTER_LENGTH,
+                                              prvProcessIncomingJobMessage,
+                                              NULL );
+
+        if( subscriptionsAdded == true )
+        {
+            subscriptionsAdded = addSubscription( ( SubscriptionElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
+                                                  OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER,
+                                                  OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER_LENGTH,
+                                                  prvProcessIncomingJobMessage,
+                                                  NULL );
+        }
+
+        if( subscriptionsAdded == true )
+        {
+            subscriptionsAdded = addSubscription( ( SubscriptionElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
+                                                  OTA_DATA_STREAM_TOPIC_FILTER,
+                                                  OTA_DATA_STREAM_TOPIC_FILTER_LENGTH,
+                                                  prvProcessIncomingData,
+                                                  NULL );
+        }
+
+        if( subscriptionsAdded == false )
+        {
+            xResult = pdFAIL;
+        }
     }
 
     if( xResult == pdPASS )
@@ -1111,10 +1124,6 @@ static void prvOTAUpdateTask( void * pvParam )
 
     if( xResult == pdPASS )
     {
-        LogInfo( "Waiting until MQTT Agent is ready" );
-        vSleepUntilMQTTAgentReady();
-        LogInfo( "MQTT Agent is ready. Resuming..." );
-
         if( ( xResult = xTaskCreate( prvOTAAgentTask,
                                      "OTAAgentTask",
                                      otaexampleAGENT_TASK_STACK_SIZE,
@@ -1152,10 +1161,24 @@ static void prvOTAUpdateTask( void * pvParam )
 
     LogInfo( ( "OTA agent task stopped. Exiting OTA demo." ) );
 
+
+    /* Unconditionally remove the subscriptions. */
+    ( void ) removeSubscription( ( SubscriptionElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
+                                 OTA_JOB_NOTIFY_TOPIC_FILTER,
+                                 OTA_JOB_NOTIFY_TOPIC_FILTER_LENGTH );
+
+    ( void ) removeSubscription( ( SubscriptionElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
+                                 OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER,
+                                 OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER_LENGTH );
+
+    ( void ) removeSubscription( ( SubscriptionElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
+                                 OTA_DATA_STREAM_TOPIC_FILTER,
+                                 OTA_DATA_STREAM_TOPIC_FILTER_LENGTH );
+
     if( pcThingName != NULL )
     {
-    	vPortFree( pcThingName );
-    	pcThingName = NULL;
+        vPortFree( pcThingName );
+        pcThingName = NULL;
     }
 
     vTaskDelete( NULL );
