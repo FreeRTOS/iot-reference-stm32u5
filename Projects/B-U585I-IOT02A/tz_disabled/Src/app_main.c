@@ -234,7 +234,6 @@ void vInitTask( void * pvArgs )
 
     xResult = xTaskCreate( Task_CLI, "cli", 4096, NULL, 10, NULL );
 
-    FLASH_WaitForLastOperation(1000);
     int xMountStatus = fs_init();
 
     if( xMountStatus == LFS_ERR_OK )
@@ -253,8 +252,6 @@ void vInitTask( void * pvArgs )
     {
         LogError( "Failed to mount filesystem." );
     }
-
-    FLASH_WaitForLastOperation(1000);
 
         xResult = xTaskCreate( vHeartbeatTask, "Heartbeat", 1024, NULL, tskIDLE_PRIORITY, NULL );
 

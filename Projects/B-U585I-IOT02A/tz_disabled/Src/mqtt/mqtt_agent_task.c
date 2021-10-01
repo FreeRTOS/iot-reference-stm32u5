@@ -216,8 +216,6 @@ extern void vStartOTACodeSigningDemo( configSTACK_DEPTH_TYPE uxStackSize,
                                       UBaseType_t uxPriority );
 extern void vSuspendOTACodeSigningDemo( void );
 extern void vResumeOTACodeSigningDemo( void );
-extern bool vOTAProcessMessage( void * pvIncomingPublishCallbackContext,
-                                MQTTPublishInfo_t * pxPublishInfo );
 
 extern void vStartDefenderDemo( configSTACK_DEPTH_TYPE uxStackSize,
                                 UBaseType_t uxPriority );
@@ -694,11 +692,6 @@ static void prvIncomingPublishCallback( MQTTAgentContext_t * pMqttAgentContext,
 
     /* If there are no callbacks to handle the incoming publishes,
      * handle it as an unsolicited publish. */
-    if( xPublishHandled != true )
-    {
-        xPublishHandled = vOTAProcessMessage( pMqttAgentContext->pIncomingCallbackContext, pxPublishInfo );
-    }
-
     if( xPublishHandled != true )
     {
         /* Ensure the topic string is terminated for printing.  This will over-
