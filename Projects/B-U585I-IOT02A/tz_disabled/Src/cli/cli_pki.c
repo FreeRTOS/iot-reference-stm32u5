@@ -55,7 +55,15 @@
 #define LABEL_PUB_IDX               3
 #define LABEL_PRV_IDX               4
 #define LABEL_IDX                   LABEL_PUB_IDX
+#define PEM_CERT_MAX_LEN            2048
 
+#define PEM_LINE_ENDING             "\n"
+#define PEM_LINE_ENDING_LEN         1
+
+
+#define PEM_BEGIN           "-----BEGIN "
+#define PEM_END             "-----END "
+#define PEM_META_SUFFIX     "-----"
 
 /* The first three fields of this struct must match mbedtls_ecp_keypair */
 typedef struct
@@ -109,11 +117,12 @@ const CLI_Command_Definition_t xCommandDef_pki =
         "        Import a certificate into the given slot. The certificate should be \r\n"
         "        copied into the terminal in PEM format, ending with two blank lines.\r\n\n"
 /*        "    pki import key <label>\r\n"
-          "        -- Not yet implemented --\r\n\n"
-          "    pki export cert <label>\r\n"
           "        -- Not yet implemented --\r\n\n" */
-          "    pki export key <label>\r\n"
-          "        Export the public portion of the key with the specified label.\r\n\n",
+        "    pki export cert <label>\r\n"
+        "        Export the certificate with the given label in pem format.\r\n"
+        "        When no label is specified, the default certificate is exported.\r\n\n"
+        "    pki export key <label>\r\n"
+        "        Export the public portion of the key with the specified label.\r\n\n",
 /*          "    pki list\r\n"
           "        List objects stored in the pkcs11 keystore.\r\n"
           "        -- Not yet implemented --\r\n\n", */
@@ -388,6 +397,7 @@ static void vSubCommand_GenerateCsr( ConsoleIO_t * pxCIO, uint32_t ulArgc, char 
     const char * pcPrvKeyLabel = pkcs11_TLS_KEY_PRV_LABEL;
     char * pcCsrBuffer = pvPortMalloc( CSR_BUFFER_LEN );
     PrivateKeySigningCtx_t xPksCtx = { 0 };
+    BaseType_t xSessionInitialized = pdFALSE;
 
     int mbedtlsError;
 
@@ -433,6 +443,7 @@ static void vSubCommand_GenerateCsr( ConsoleIO_t * pxCIO, uint32_t ulArgc, char 
 
         if( xResult == CKR_OK )
         {
+            xSessionInitialized = pdTRUE;
             xResult = validatePrivateKeyPKCS11( &xPksCtx, pcPrvKeyLabel );
         }
 
@@ -502,9 +513,12 @@ static void vSubCommand_GenerateCsr( ConsoleIO_t * pxCIO, uint32_t ulArgc, char 
         vPrintPem( pxCIO, pcCsrBuffer );
     }
 
-
-
     vPortFree( pcCsrBuffer );
+
+    if( xSessionInitialized == pdTRUE )
+    {
+        xPksCtx.pxP11FunctionList->C_CloseSession( xPksCtx.xP11Session );
+    }
 
 }
 
@@ -815,16 +829,287 @@ static void vSubCommand_GenerateCertificate( ConsoleIO_t * pxCIO, uint32_t ulArg
     pxCIO->print("Not Implemented\r\n");
 }
 
+static BaseType_t xImportCertificateIntoP11( const char * pcLabel,
+                                             const char * pcCertificate,
+                                             uint32_t ulCertLen )
+{
+    CK_FUNCTION_LIST_PTR pxFunctionList;
+    CK_SESSION_HANDLE xSession = 0;
+    CK_RV xResult;
+    BaseType_t xSessionInitialized = pdFALSE;
+    CK_OBJECT_HANDLE xCertHandle = 0;
+
+    /* Set the mutex functions for mbed TLS thread safety. */
+    mbedtls_threading_set_alt( mbedtls_platform_mutex_init,
+                               mbedtls_platform_mutex_free,
+                               mbedtls_platform_mutex_lock,
+                               mbedtls_platform_mutex_unlock );
+
+    xResult = C_GetFunctionList( &pxFunctionList );
+
+    if( xResult == CKR_OK )
+    {
+        xResult = xInitializePkcs11Token();
+    }
+
+    if( xResult == CKR_OK )
+    {
+        xResult = xInitializePkcs11Session( &xSession );
+    }
+
+    if( xResult == CKR_OK )
+    {
+        xSessionInitialized = pdTRUE;
+
+        /* Look for an existing object that we may need to overwrite */
+        xResult = xFindObjectWithLabelAndClass( xSession,
+                                                pcLabel,
+                                                strnlen( pcLabel, pkcs11configMAX_LABEL_LENGTH ),
+                                                CKO_CERTIFICATE,
+                                                &xCertHandle );
+    }
+
+    if( xResult == CKR_OK  &&
+        xCertHandle != CK_INVALID_HANDLE )
+    {
+        xResult = pxFunctionList->C_DestroyObject( xSession,
+                                                   xCertHandle );
+    }
+
+    if( xResult == CKR_OK )
+    {
+        CK_OBJECT_CLASS xObjClass = CKO_CERTIFICATE;
+        CK_CERTIFICATE_TYPE xCertType = CKC_X_509;
+        CK_BBOOL xPersistCert = CK_TRUE;
+
+
+        CK_ATTRIBUTE pxTemplate[ 5 ] =
+        {
+             {
+                 .type = CKA_CLASS,
+                 .ulValueLen = sizeof( CK_OBJECT_CLASS ),
+                 .pValue = &xObjClass
+             },
+             {
+                 .type = CKA_LABEL,
+                 .ulValueLen = strnlen( pcLabel, pkcs11configMAX_LABEL_LENGTH ),
+                 .pValue = pcLabel
+             },
+             {
+                 .type = CKA_CERTIFICATE_TYPE,
+                 .ulValueLen = sizeof( CK_CERTIFICATE_TYPE ),
+                 .pValue = &xCertType
+             },
+             {
+                 .type = CKA_TOKEN,
+                 .ulValueLen = sizeof( CK_BBOOL ),
+                 .pValue = &xPersistCert
+             },
+             {
+                  .type = CKA_VALUE,
+                  .ulValueLen = ulCertLen,
+                  .pValue = pcCertificate
+              }
+        };
+
+        xResult = pxFunctionList->C_CreateObject( xSession,
+                                                  pxTemplate,
+                                                  5,
+                                                  &xCertHandle );
+    }
+
+    if( xSessionInitialized == pdTRUE )
+    {
+        pxFunctionList->C_CloseSession( xSession );
+    }
+
+    return( xResult == CKR_OK );
+}
+
+static inline size_t xCopyLine( char * const pcDest,
+                                const char * pcSrc,
+                                uint32_t xDestLen )
+{
+    size_t xLen;
+    xLen = strlcpy( pcDest ,
+                    pcSrc,
+                    xDestLen );
+
+    configASSERT( xLen < xDestLen );
+
+    xLen += strlcpy( &( pcDest[ xLen ] ),
+                     PEM_LINE_ENDING,
+                     xDestLen - xLen );
+
+     configASSERT( xLen < xDestLen );
+
+    return xLen;
+}
+
+static size_t xReadPemFromCLI( ConsoleIO_t * pxCIO,
+                               char * const pcBuffer,
+                               const uint32_t xBufferLen )
+{
+    size_t xPemDataLen = 0;
+    BaseType_t xBeginFound = pdFALSE;
+    BaseType_t xEndFound = pdFALSE;
+
+    while( xPemDataLen < xBufferLen &&
+           xEndFound == pdFALSE )
+    {
+        char * pcInputBuffer = NULL;
+        int32_t lDataRead = pxCIO->readline( &pcInputBuffer );
+        BaseType_t xErrorFlag = pdFALSE;
+
+        if( lDataRead > 0 )
+        {
+            if( lDataRead > 64 )
+            {
+                pxCIO->print( "Error: Current line exceeds maximum line length for a PEM file.\r\n" );
+                xErrorFlag = pdTRUE;
+            }
+            /* Check if this line will overflow the buffer given for the pem file */
+            else if( xErrorFlag == pdFALSE &&
+                     lDataRead > 0 &&
+                     ( xPemDataLen + lDataRead + PEM_LINE_ENDING_LEN ) >= xBufferLen )
+            {
+                pxCIO->print( "Error: Out of memory to store the given PEM file.\r\n" );
+                xErrorFlag = pdTRUE;
+            }
+            /* Validate a header header line */
+            else if( xBeginFound == pdFALSE )
+            {
+                if( strncmp( PEM_BEGIN, pcInputBuffer, strlen( PEM_BEGIN ) ) == 0 )
+                {
+                    char * pcLabelEnd = strnstr( &( pcInputBuffer[ strlen( PEM_BEGIN ) ] ),
+                                                 PEM_META_SUFFIX,
+                                                 lDataRead - strlen( PEM_BEGIN ) );
+                    if( pcLabelEnd == NULL )
+                    {
+                        pxCIO->print( "Error: PEM header does not contain the expected ending: '" PEM_META_SUFFIX "'.\r\n" );
+                        xErrorFlag = pdTRUE;
+                    }
+                    else
+                    {
+                        xBeginFound = pdTRUE;
+                    }
+                }
+                else
+                {
+                    pxCIO->print( "Error: PEM header does not contain the expected text: '" PEM_BEGIN "'.\r\n" );
+                    xErrorFlag = pdTRUE;
+                }
+            }
+            else if( xEndFound == pdFALSE )
+            {
+                if( strncmp( PEM_END, pcInputBuffer, strlen( PEM_END ) ) == 0 )
+                {
+                    char * pcLabelEnd = strnstr( &( pcInputBuffer[ strlen( PEM_END ) ] ),
+                                                 PEM_META_SUFFIX,
+                                                 lDataRead - strlen( PEM_END ) );
+                    if( pcLabelEnd == NULL )
+                    {
+                        pxCIO->print( "Error: PEM footer does not contain the expected ending: '" PEM_META_SUFFIX "'.\r\n" );
+                        xErrorFlag = pdTRUE;
+                    }
+                    else
+                    {
+                        xEndFound = pdTRUE;
+                    }
+                }
+            }
+            else
+            {
+                /* Empty */
+            }
+
+            if( xBeginFound == pdTRUE )
+            {
+                xPemDataLen += xCopyLine( &( pcBuffer[ xPemDataLen ] ),
+                                          pcInputBuffer,
+                                          xBufferLen - xPemDataLen );
+
+                configASSERT( xPemDataLen < xBufferLen );
+            }
+        }
+
+
+        if( xErrorFlag == pdTRUE )
+        {
+            xPemDataLen = 0;
+            break;
+        }
+    }
+
+    /* Add NULL terminator */
+    pcBuffer[ xPemDataLen ] = '\0';
+
+    return xPemDataLen;
+}
+
+
 static void vSubCommand_ImportCertificate( ConsoleIO_t * pxCIO, uint32_t ulArgc, char * ppcArgv[] )
 {
+    BaseType_t xResult = pdTRUE;
+
     char * pcCertLabel = pkcs11_TLS_CERT_LABEL;
+    size_t xCertLabelLen = 0;
+
+    char * pcCertData = NULL;
+    size_t xCertDataLen = 0;
+
 
     if( ulArgc > LABEL_IDX &&
         ppcArgv[ LABEL_IDX ] != NULL )
     {
-        pcCertLabel = ppcArgv[ LABEL_PUB_IDX ];
+        pcCertLabel = ppcArgv[ LABEL_IDX ];
     }
-    pxCIO->print("Not Implemented\r\n");
+
+    xCertLabelLen = strlen( pcCertLabel );
+
+    if( xCertLabelLen > pkcs11configMAX_LABEL_LENGTH )
+    {
+        pxCIO->print( "Error: Certificate label: '" );
+        pxCIO->print( pcCertLabel );
+        pxCIO->print( "' is longer than the configured maximum length.\r\n" );
+        xResult = pdFALSE;
+    }
+
+    if( xResult == pdTRUE )
+    {
+        pcCertData = pvPortMalloc( PEM_CERT_MAX_LEN + 1 );
+        ( void ) memset( pcCertData, 0,  PEM_CERT_MAX_LEN + 1 );
+    }
+
+    if( pcCertData == NULL )
+    {
+        pxCIO->print("Error: Failed to allocate #PEM_CERT_MAX_LEN bytes to store the given certificate.\r\n");
+        xResult = pdFALSE;
+    }
+    else
+    {
+        xCertDataLen = xReadPemFromCLI( pxCIO, pcCertData, PEM_CERT_MAX_LEN );
+    }
+
+    //TODO: parse received pem with mbedtls to verify.
+
+    if( xCertDataLen > 0 )
+    {
+
+        xResult = xImportCertificateIntoP11( pcCertLabel, pcCertData, xCertDataLen + 1 );
+    }
+    else
+    {
+        LogDebug("xReadPemFromCLI returned %ld", xCertDataLen );
+        xResult = pdFALSE;
+    }
+
+    if( xResult == pdTRUE )
+    {
+        pxCIO->print( "Success: Certificate loaded to label: '" );
+        pxCIO->print( pcCertLabel );
+        pxCIO->print( "'.\r\n" );
+    }
 }
 
 static void vSubCommand_ImportKey( ConsoleIO_t * pxCIO, uint32_t ulArgc, char * ppcArgv[] )
@@ -834,14 +1119,108 @@ static void vSubCommand_ImportKey( ConsoleIO_t * pxCIO, uint32_t ulArgc, char * 
 
 static void vSubCommand_ExportCertificate( ConsoleIO_t * pxCIO, uint32_t ulArgc, char * ppcArgv[] )
 {
+    CK_RV xResult;
+    CK_SESSION_HANDLE xSession = 0;
+    CK_FUNCTION_LIST_PTR pxFunctionList;
+    CK_OBJECT_HANDLE xCertHandle = 0;
+    BaseType_t xSessionInitialized = pdFALSE;
+
     char * pcCertLabel = pkcs11_TLS_CERT_LABEL;
+    size_t xCertLabelLen;
+
+    char * pcCertPem = NULL;
 
     if( ulArgc > LABEL_IDX &&
         ppcArgv[ LABEL_IDX ] != NULL )
     {
         pcCertLabel = ppcArgv[ LABEL_PUB_IDX ];
     }
-    pxCIO->print("Not Implemented\r\n");
+    xCertLabelLen = strnlen( pcCertLabel, pkcs11configMAX_LABEL_LENGTH );
+
+    /* Set the mutex functions for mbed TLS thread safety. */
+    mbedtls_threading_set_alt( mbedtls_platform_mutex_init,
+                               mbedtls_platform_mutex_free,
+                               mbedtls_platform_mutex_lock,
+                               mbedtls_platform_mutex_unlock );
+
+    xResult = C_GetFunctionList( &pxFunctionList );
+
+    if( xResult == CKR_OK )
+    {
+        xResult = xInitializePkcs11Token();
+    }
+
+    if( xResult == CKR_OK )
+    {
+        xResult = xInitializePkcs11Session( &xSession );
+    }
+
+    if( xResult == CKR_OK )
+    {
+        xSessionInitialized = pdTRUE;
+        xResult = xFindObjectWithLabelAndClass( xSession,
+                                                pcCertLabel,
+                                                xCertLabelLen,
+                                                CKO_CERTIFICATE,
+                                                &xCertHandle );
+    }
+
+
+    if( xResult != CKR_OK ||
+        xCertHandle == CK_INVALID_HANDLE )
+    {
+        pxCIO->print( "ERROR: Failed to locate certificate with label: '" );
+        pxCIO->write( pcCertLabel, xCertLabelLen );
+        pxCIO->print( "'\r\n" );
+    }
+    /* If successful, print public key in PEM form to terminal. */
+    else
+    {
+        pxCIO->print( "Certificate Label: " );
+        pxCIO->print( pkcs11_TLS_KEY_PUB_LABEL );
+        pxCIO->print( "\r\n" );
+
+        CK_ATTRIBUTE xTemplate =
+        {
+            .type = CKA_VALUE,
+            .ulValueLen = 0,
+            .pValue = NULL
+        };
+
+        /* Determine the required buffer length */
+        xResult = pxFunctionList->C_GetAttributeValue( xSession,
+                                                       xCertHandle,
+                                                       &xTemplate,
+                                                       1 );
+
+        pcCertPem = pvPortMalloc( xTemplate.ulValueLen );
+
+        if( pcCertPem != NULL )
+        {
+            xTemplate.pValue = pcCertPem;
+
+            xResult = pxFunctionList->C_GetAttributeValue( xSession,
+                                                           xCertHandle,
+                                                           &xTemplate,
+                                                           1 );
+        }
+    }
+
+    if( pcCertPem != NULL &&
+        xResult == CKR_OK )
+    {
+        vPrintPem( pxCIO, pcCertPem );
+
+        /* Free heap allocated memory */
+        vPortFree( pcCertPem );
+        pcCertPem = NULL;
+    }
+
+    if( xSessionInitialized == pdTRUE )
+    {
+        pxFunctionList->C_CloseSession( xSession );
+    }
+
 }
 
 static void vSubCommand_ExportKey( ConsoleIO_t * pxCIO, uint32_t ulArgc, char * ppcArgv[] )
@@ -901,11 +1280,11 @@ static void vSubCommand_ExportKey( ConsoleIO_t * pxCIO, uint32_t ulArgc, char * 
     if( xResult == CKR_OK )
     {
         pxCIO->print( "Public Key Label: " );
-        pxCIO->print( pkcs11_TLS_KEY_PUB_LABEL );
+        pxCIO->write( pcPubKeyLabel, xPubKeyLabelLen );
         pxCIO->print( "\r\n" );
 
         pcPublicKeyPem = pcExportPubKeyPem( xSession,
-                                           xPubKeyHandle );
+                                            xPubKeyHandle );
     }
     else
     {
@@ -995,9 +1374,10 @@ static void vCommand_PKI( ConsoleIO_t * pxCIO,
                     vSubCommand_ImportKey( pxCIO, ulArgc, ppcArgv );
                     xSuccess = pdTRUE;
                 }
-                else if( 0 == strcmp( "cert", pcVerb ) )
+                else if( 0 == strcmp( "cert", pcObject ) )
                 {
                     vSubCommand_ImportCertificate( pxCIO, ulArgc, ppcArgv );
+                    xSuccess = pdTRUE;
                 }
                 else
                 {
@@ -1007,7 +1387,6 @@ static void vCommand_PKI( ConsoleIO_t * pxCIO,
                     xSuccess = pdFALSE;
                 }
             }
-            xSuccess = pdFALSE;
         }
         else if( 0 == strcmp( "export", pcVerb ) )
         {
@@ -1020,7 +1399,7 @@ static void vCommand_PKI( ConsoleIO_t * pxCIO,
                     vSubCommand_ExportKey( pxCIO, ulArgc, ppcArgv );
                     xSuccess = pdTRUE;
                 }
-                else if( 0 == strcmp( "cert", pcVerb ) )
+                else if( 0 == strcmp( "cert", pcObject ) )
                 {
                     vSubCommand_ExportCertificate( pxCIO, ulArgc, ppcArgv );
                     xSuccess = pdTRUE;
