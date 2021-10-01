@@ -27,6 +27,8 @@
 /* Standard includes. */
 #include <string.h>
 #include <stdint.h>
+#include <stdlib.h>
+
 
 /* FreeRTOS includes. */
 #include "FreeRTOS.h"
@@ -41,6 +43,14 @@ static void prvPSCommand( ConsoleIO_t * const pxConsoleIO,
                           uint32_t ulArgc,
                           char * ppcArgv[] );
 
+static void vKillAllCommand( ConsoleIO_t * const pxCIO,
+                             uint32_t ulArgc,
+                             char * ppcArgv[] );
+
+static void vKillCommand( ConsoleIO_t * const pxCIO,
+                          uint32_t ulArgc,
+                          char * ppcArgv[] );
+
 
 const CLI_Command_Definition_t xCommandDef_ps =
 {
@@ -49,6 +59,28 @@ const CLI_Command_Definition_t xCommandDef_ps =
     "    List the status of all running tasks and related runtime statistics.\r\n\n",
     prvPSCommand
 };
+
+const CLI_Command_Definition_t xCommandDef_kill =
+{
+    "kill",
+    "kill\r\n"
+    "    kill [ -SIGNAME ] <Task ID>\r\n"
+    "    Signal a task with the named signal and the specified task id.\r\n\n"
+    "    kill [ -n ] <Task ID>\r\n"
+    "    Signal a task with the given signal number and the specified task id.\r\n\n",
+    vKillCommand
+};
+
+
+const CLI_Command_Definition_t xCommandDef_killAll =
+{
+    "killall",
+    "    killall [ -SIGNAME ] <Task Name>\r\n"
+    "    killall [ -n ] <Task Name>\r\n"
+    "        Signal a task with a given name with the signal number or name given.\r\n\n",
+    vKillAllCommand
+};
+
 
 
 /*-----------------------------------------------------------*/
@@ -152,12 +184,176 @@ static void prvPSCommand( ConsoleIO_t * const pxCIO,
                       pxTaskStatusArray[ i ].uxCurrentPriority,
                       pxTaskStatusArray[ i ].ulRunTimeCounter / ulTotalRuntime,
                       ulStackSize,
-                      pxTaskStatusArray[ i ].usStackHighWaterMark,
+                      ( uint32_t ) pxTaskStatusArray[ i ].usStackHighWaterMark,
                       ucStackUsagePct ) ;
 
             pxCIO->print( pcCliScratchBuffer );
         }
 
         vPortFree( pxTaskStatusArray );
+    }
+}
+
+typedef enum
+{
+    SIGHUP = 1,
+    SIGINT = 2,
+    SIGQUIT = 3,
+    SIGKILL = 9,
+    SIGTERM = 15,
+    SIGSTOP = 23,
+    SIGSTP = 24,
+    SIGCONT = 25
+} Signal_t;
+
+struct
+{
+    Signal_t xSignal;
+    const char * const pcSignalName;
+}
+pcSignaMap [] =
+{
+    { SIGHUP, "SIGHUP" },
+    { SIGINT, "SIGINT"},
+    { SIGQUIT, "SIGQUIT" },
+    { SIGKILL, "SIGKILL" },
+    { SIGTERM, "SIGTERM" },
+    { SIGSTOP, "SIGSTOP" },
+    { SIGSTP, "SIGSTP" },
+    { SIGCONT, "SIGCONT" }
+};
+
+static void vSignalTask( TaskHandle_t xTask, Signal_t xSignal )
+{
+    switch( xSignal )
+    {
+    case SIGQUIT:
+    case SIGTERM:
+        vTaskSuspend( xTask );
+        vTaskDelete( xTask );
+        break;
+    case SIGSTOP:
+    case SIGSTP:
+        vTaskSuspend( xTask );
+        break;
+    case SIGCONT:
+        vTaskResume( xTask );
+        break;
+    default:
+        break;
+    }
+}
+
+/* This is a really dumb way to do this */
+static TaskHandle_t xGetTaskHandleFromID( UBaseType_t uxTaskID )
+{
+    TaskHandle_t xTaskHandle = NULL;
+    UBaseType_t uxNumTasks = uxTaskGetNumberOfTasks();
+
+    TaskStatus_t * pxTaskStatusArray = ( TaskStatus_t * ) pvPortMalloc( sizeof( TaskStatus_t ) * uxNumTasks );
+
+    if( pxTaskStatusArray != NULL )
+    {
+        unsigned long ulTotalRuntime = 0;
+        uxNumTasks = uxTaskGetSystemState( pxTaskStatusArray,
+                                           uxNumTasks,
+                                           &ulTotalRuntime );
+
+        for( uint32_t i = 0; i < uxNumTasks; i++ )
+        {
+
+            if( pxTaskStatusArray[ i ].xTaskNumber == uxTaskID )
+            {
+                xTaskHandle = pxTaskStatusArray[ i ].xHandle;
+                break;
+            }
+        }
+        vPortFree( pxTaskStatusArray );
+    }
+
+    return xTaskHandle;
+}
+
+static void vKillCommand( ConsoleIO_t * const pxCIO,
+                          uint32_t ulArgc,
+                          char * ppcArgv[] )
+{
+    Signal_t xTargetSignal = SIGTERM;
+    UBaseType_t uxTaskId = 0;
+
+    for( uint32_t i = 0; i < ulArgc; i++ )
+    {
+        /* Arg is a signal number or name */
+        if( ppcArgv[ i ][ 0 ] == '-' )
+        {
+            char * pcArg = &( ppcArgv[ i ][ 1 ] );
+            uint32_t ulSignal = strtoul( pcArg, NULL, 10 );
+            if( ulSignal != 0 )
+            {
+                xTargetSignal = ulSignal;
+            }
+            else
+            {
+                for(uint32_t i = 0; i < ( sizeof( pcSignaMap ) / sizeof( pcSignaMap[ 0 ] ) ); i++ )
+                {
+                    if( strcmp( pcSignaMap[ i ].pcSignalName, pcArg ) == 0 )
+                    {
+                        xTargetSignal = pcSignaMap[ i ].xSignal;
+                        break;
+                    }
+                }
+            }
+        }
+        else /* Arg is a task number */
+        {
+            uxTaskId = strtoul( ppcArgv[ i ], NULL, 10 );
+        }
+
+        if( uxTaskId != 0 )
+        {
+            vSignalTask( xGetTaskHandleFromID( uxTaskId ), xTargetSignal );
+        }
+    }
+}
+
+static void vKillAllCommand( ConsoleIO_t * const pxCIO,
+                             uint32_t ulArgc,
+                             char * ppcArgv[] )
+{
+    Signal_t xTargetSignal = SIGTERM;
+    TaskHandle_t xTaskHandle = NULL;
+
+    for( uint32_t i = 0; i < ulArgc; i++ )
+    {
+        /* Arg is a signal number or name */
+        if( ppcArgv[ i ][ 0 ] == '-' )
+        {
+            char * pcArg = &( ppcArgv[ i ][ 1 ] );
+            uint32_t ulSignal = strtoul( pcArg, NULL, 10 );
+            if( ulSignal != 0 )
+            {
+                xTargetSignal = ulSignal;
+            }
+            else
+            {
+                for(uint32_t i = 0; i < ( sizeof( pcSignaMap ) / sizeof( pcSignaMap[ 0 ] ) ); i++ )
+                {
+                    if( strcmp( pcSignaMap[ i ].pcSignalName, pcArg ) == 0 )
+                    {
+                        xTargetSignal = pcSignaMap[ i ].xSignal;
+                        break;
+                    }
+                }
+            }
+        }
+        else
+        {
+            xTaskHandle = xTaskGetHandle( ppcArgv[ i ] );
+        }
+
+        if( xTaskHandle != NULL )
+        {
+            vSignalTask( xTaskHandle, xTargetSignal );
+        }
     }
 }

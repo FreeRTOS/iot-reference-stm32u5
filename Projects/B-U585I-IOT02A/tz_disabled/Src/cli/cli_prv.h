@@ -32,5 +32,7 @@ UART_HandleTypeDef * vInitUartEarly( void );
 const CLI_Command_Definition_t xCommandDef_conf;
 const CLI_Command_Definition_t xCommandDef_pki;
 const CLI_Command_Definition_t xCommandDef_ps;
+const CLI_Command_Definition_t xCommandDef_kill;
+const CLI_Command_Definition_t xCommandDef_killAll;
 
 #endif /* _CLI_PRIV */
