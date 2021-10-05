@@ -71,14 +71,14 @@ typedef struct
     mbedtls_ecp_group grp;      /*!<  Elliptic curve and base point     */
     mbedtls_mpi d;              /*!<  our secret value, Empty for this use case */
     mbedtls_ecp_point Q;        /*!<  our public value                  */
-    CK_FUNCTION_LIST_PTR pxP11FunctionList;
-    CK_SESSION_HANDLE xP11Session;
-    CK_OBJECT_HANDLE xP11PrivateKey;
-    CK_KEY_TYPE xKeyType;
     mbedtls_entropy_context xEntropyCtx;
     mbedtls_ctr_drbg_context xCtrDrbgCtx;
     mbedtls_pk_context xPkeyCtx;
     mbedtls_pk_info_t xPrivKeyInfo;
+    CK_FUNCTION_LIST_PTR pxP11FunctionList;
+    CK_SESSION_HANDLE xP11Session;
+    CK_OBJECT_HANDLE xP11PrivateKey;
+    CK_KEY_TYPE xKeyType;
 } PrivateKeySigningCtx_t;
 
 
@@ -1033,7 +1033,6 @@ static size_t xReadPemFromCLI( ConsoleIO_t * pxCIO,
             }
         }
 
-
         if( xErrorFlag == pdTRUE )
         {
             xPemDataLen = 0;
@@ -1052,7 +1051,7 @@ static void vSubCommand_ImportCertificate( ConsoleIO_t * pxCIO, uint32_t ulArgc,
 {
     BaseType_t xResult = pdTRUE;
 
-    char * pcCertLabel = pkcs11_TLS_CERT_LABEL;
+    char pcCertLabel[ pkcs11configMAX_LABEL_LENGTH ] = { 0 };
     size_t xCertLabelLen = 0;
 
     char * pcCertData = NULL;
@@ -1062,10 +1061,14 @@ static void vSubCommand_ImportCertificate( ConsoleIO_t * pxCIO, uint32_t ulArgc,
     if( ulArgc > LABEL_IDX &&
         ppcArgv[ LABEL_IDX ] != NULL )
     {
-        pcCertLabel = ppcArgv[ LABEL_IDX ];
+        ( void ) strlcpy( pcCertLabel, ppcArgv[ LABEL_IDX ], pkcs11configMAX_LABEL_LENGTH );
+    }
+    else
+    {
+        ( void ) strlcpy( pcCertLabel, pkcs11_TLS_CERT_LABEL, pkcs11configMAX_LABEL_LENGTH );
     }
 
-    xCertLabelLen = strlen( pcCertLabel );
+    xCertLabelLen = strnlen( pcCertLabel, pkcs11configMAX_LABEL_LENGTH );
 
     if( xCertLabelLen > pkcs11configMAX_LABEL_LENGTH )
     {
@@ -1107,6 +1110,12 @@ static void vSubCommand_ImportCertificate( ConsoleIO_t * pxCIO, uint32_t ulArgc,
     if( xResult == pdTRUE )
     {
         pxCIO->print( "Success: Certificate loaded to label: '" );
+        pxCIO->print( pcCertLabel );
+        pxCIO->print( "'.\r\n" );
+    }
+    else
+    {
+        pxCIO->print( "Error: failed to save certificate to label: '" );
         pxCIO->print( pcCertLabel );
         pxCIO->print( "'.\r\n" );
     }
@@ -1173,11 +1182,11 @@ static void vSubCommand_ExportCertificate( ConsoleIO_t * pxCIO, uint32_t ulArgc,
         pxCIO->write( pcCertLabel, xCertLabelLen );
         pxCIO->print( "'\r\n" );
     }
-    /* If successful, print public key in PEM form to terminal. */
+    /* If successful, print certificate in PEM form to terminal. */
     else
     {
         pxCIO->print( "Certificate Label: " );
-        pxCIO->print( pkcs11_TLS_KEY_PUB_LABEL );
+        pxCIO->print( pcCertLabel );
         pxCIO->print( "\r\n" );
 
         CK_ATTRIBUTE xTemplate =
