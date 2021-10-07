@@ -33,7 +33,7 @@
 
 
 /* Demo config include. */
-#include "demo_config.h"
+#include "mqtt_metrics.h"
 
 /* core MQTT include. */
 #include "core_mqtt.h"
@@ -98,7 +98,7 @@ void submgr_init( void );
  *
  * @return `MQTTSuccess` if subscription added or exists.
  */
-MQTTStatus_t submgr_addSubscription( SubscriptionElement_t * pxSubscriptionList,
+bool submgr_addSubscription( SubscriptionElement_t * pxSubscriptionList,
                              const char * pcTopicFilterString,
                              uint16_t usTopicFilterLength,
                              IncomingPubCallback_t pxIncomingPublishCallback,
@@ -114,7 +114,7 @@ MQTTStatus_t submgr_addSubscription( SubscriptionElement_t * pxSubscriptionList,
  * @param[in] pcTopicFilterString Topic filter of subscription.
  * @param[in] usTopicFilterLength Length of topic filter.
  */
-MQTTStatus_t submgr_removeSubscription( SubscriptionElement_t * pxSubscriptionList,
+bool submgr_removeSubscription( SubscriptionElement_t * pxSubscriptionList,
                                         const char * pcTopicFilterString,
                                         uint16_t usTopicFilterLength );
 
@@ -128,7 +128,7 @@ MQTTStatus_t submgr_removeSubscription( SubscriptionElement_t * pxSubscriptionLi
  * @return `true` if an application callback could be invoked;
  *  `false` otherwise.
  */
-MQTTStatus_t submgr_handleIncomingPublish( SubscriptionElement_t * pxSubscriptionList,
+bool submgr_handleIncomingPublish( SubscriptionElement_t * pxSubscriptionList,
                                            MQTTPublishInfo_t * pxPublishInfo );
 
 #endif /* SUBSCRIPTION_MANAGER_H */

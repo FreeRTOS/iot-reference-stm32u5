@@ -64,7 +64,7 @@ void submgr_init( void )
     xSemaphoreGiveRecursive( xSubMgrMutex );
 }
 
-MQTTStatus_t submgr_addSubscription( SubscriptionElement_t * pxSubscriptionList,
+bool submgr_addSubscription( SubscriptionElement_t * pxSubscriptionList,
                              const char * pcTopicFilterString,
                              uint16_t usTopicFilterLength,
                              IncomingPubCallback_t pxIncomingPublishCallback,
@@ -72,7 +72,7 @@ MQTTStatus_t submgr_addSubscription( SubscriptionElement_t * pxSubscriptionList,
 {
     int32_t lIndex = 0;
     size_t xAvailableIndex = SUBSCRIPTION_MANAGER_MAX_SUBSCRIPTIONS;
-    MQTTStatus_t xStatus = MQTTNoDataAvailable;
+    bool xSuccess = false;
 
     if( ( pxSubscriptionList == NULL ) ||
         ( pcTopicFilterString == NULL ) ||
@@ -85,7 +85,7 @@ MQTTStatus_t submgr_addSubscription( SubscriptionElement_t * pxSubscriptionList,
                     pcTopicFilterString,
                     ( unsigned int ) usTopicFilterLength,
                     pxIncomingPublishCallback ) );
-        xStatus = MQTTBadParameter;
+        xSuccess = false;
     }
     else
     {
@@ -112,7 +112,7 @@ MQTTStatus_t submgr_addSubscription( SubscriptionElement_t * pxSubscriptionList,
                     {
                         LogWarn( ( "Subscription already exists.\n" ) );
                         xAvailableIndex = SUBSCRIPTION_MANAGER_MAX_SUBSCRIPTIONS;
-                        xStatus = MQTTSuccess;
+                        xSuccess = true;
                         break;
                     }
 
@@ -126,23 +126,23 @@ MQTTStatus_t submgr_addSubscription( SubscriptionElement_t * pxSubscriptionList,
                 pxSubscriptionList[ xAvailableIndex ].pxIncomingPublishCallback = pxIncomingPublishCallback;
                 pxSubscriptionList[ xAvailableIndex ].pvIncomingPublishCallbackContext = pvIncomingPublishCallbackContext;
                 pxSubscriptionList[ xAvailableIndex ].xTaskHandle = xTaskGetCurrentTaskHandle();
-                xStatus = MQTTSuccess;
+                xSuccess = true;
             }
             xSemaphoreGiveRecursive( xSubMgrMutex );
         }
     }
 
-    return xStatus;
+    return xSuccess;
 }
 
 /*-----------------------------------------------------------*/
 
-MQTTStatus_t submgr_removeSubscription( SubscriptionElement_t * pxSubscriptionList,
-                                        const char * pcTopicFilterString,
-                                        uint16_t usTopicFilterLength )
+bool submgr_removeSubscription( SubscriptionElement_t * pxSubscriptionList,
+                                const char * pcTopicFilterString,
+                                uint16_t usTopicFilterLength )
 {
     uint32_t ulIndex = 0;
-    MQTTStatus_t xStatus = MQTTNoDataAvailable;
+    bool xSuccess = false;
 
     if( ( pxSubscriptionList == NULL ) ||
         ( pcTopicFilterString == NULL ) ||
@@ -153,7 +153,7 @@ MQTTStatus_t submgr_removeSubscription( SubscriptionElement_t * pxSubscriptionLi
                     pxSubscriptionList,
                     pcTopicFilterString,
                     ( unsigned int ) usTopicFilterLength ) );
-        xStatus = MQTTBadParameter;
+        xSuccess = false;
     }
     else
     {
@@ -161,28 +161,27 @@ MQTTStatus_t submgr_removeSubscription( SubscriptionElement_t * pxSubscriptionLi
         {
             for( ulIndex = 0U; ulIndex < SUBSCRIPTION_MANAGER_MAX_SUBSCRIPTIONS; ulIndex++ )
             {
-                if( pxSubscriptionList[ ulIndex ].usFilterStringLength == usTopicFilterLength )
+                if( pxSubscriptionList[ ulIndex ].usFilterStringLength == usTopicFilterLength &&
+                    strncmp( pxSubscriptionList[ ulIndex ].pcSubscriptionFilterString, pcTopicFilterString, usTopicFilterLength ) == 0 &&
+                    pxSubscriptionList[ ulIndex ].xTaskHandle == xTaskGetCurrentTaskHandle() )
                 {
-                    if( strncmp( pxSubscriptionList[ ulIndex ].pcSubscriptionFilterString, pcTopicFilterString, usTopicFilterLength ) == 0 )
-                    {
-                        memset( &( pxSubscriptionList[ ulIndex ] ), 0x00, sizeof( SubscriptionElement_t ) );
-                        xStatus = MQTTSuccess;
-                    }
+                    memset( &( pxSubscriptionList[ ulIndex ] ), 0x00, sizeof( SubscriptionElement_t ) );
+                    xSuccess = true;
                 }
             }
             xSemaphoreGiveRecursive( xSubMgrMutex );
         }
     }
-    return xStatus;
+    return xSuccess;
 }
 
 /*-----------------------------------------------------------*/
 
-MQTTStatus_t submgr_handleIncomingPublish( SubscriptionElement_t * pxSubscriptionList,
+bool submgr_handleIncomingPublish( SubscriptionElement_t * pxSubscriptionList,
                                            MQTTPublishInfo_t * pxPublishInfo )
 {
     uint32_t ulIndex = 0;
-    MQTTStatus_t xStatus = MQTTNoDataAvailable;
+    bool xSuccess = false;
 
     if( ( pxSubscriptionList == NULL ) ||
         ( pxPublishInfo == NULL ) )
@@ -190,7 +189,7 @@ MQTTStatus_t submgr_handleIncomingPublish( SubscriptionElement_t * pxSubscriptio
         LogError( ( "Invalid parameter. pxSubscriptionList=%p, pxPublishInfo=%p,",
                     pxSubscriptionList,
                     pxPublishInfo ) );
-        xStatus = MQTTBadParameter;
+        xSuccess = false;
     }
     else
     {
@@ -212,7 +211,7 @@ MQTTStatus_t submgr_handleIncomingPublish( SubscriptionElement_t * pxSubscriptio
                     {
                         pxSubscriptionList[ ulIndex ].pxIncomingPublishCallback( pxSubscriptionList[ ulIndex ].pvIncomingPublishCallbackContext,
                                                                                  pxPublishInfo );
-                        xStatus = MQTTSuccess;
+                        xSuccess = true;
                     }
                 }
             }
@@ -220,5 +219,5 @@ MQTTStatus_t submgr_handleIncomingPublish( SubscriptionElement_t * pxSubscriptio
         }
     }
 
-    return xStatus;
+    return xSuccess;
 }
