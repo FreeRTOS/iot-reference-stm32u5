@@ -56,14 +56,13 @@ static char pcPrintBuff[ dlMAX_PRINT_STRING_LENGTH ];
 /* Should only be called during an assert with the scheduler suspended. */
 void vDyingGasp( void )
 {
-    char cOutBuffer[ dlMAX_PRINT_STRING_LENGTH + 2 ];
     BaseType_t xNumBytes = 0;
     pxEarlyUart = vInitUartEarly();
 
     do
     {
-        xNumBytes = xMessageBufferReceiveFromISR( xLogMBuf, cOutBuffer, dlMAX_PRINT_STRING_LENGTH, 0 );
-        (void) HAL_UART_Transmit( pxEarlyUart, ( uint8_t * ) cOutBuffer, xNumBytes, 10 * 1000);
+        xNumBytes = xMessageBufferReceiveFromISR( xLogMBuf, pcPrintBuff, dlMAX_PRINT_STRING_LENGTH, 0 );
+        (void) HAL_UART_Transmit( pxEarlyUart, ( uint8_t * ) pcPrintBuff, xNumBytes, 10 * 1000);
         (void) HAL_UART_Transmit( pxEarlyUart, ( uint8_t * ) "\r\n", 2, 10 * 1000 );
     }
     while( xNumBytes != 0 );
