@@ -43,7 +43,7 @@
 
 static lfs_t * pxLfsCtx = NULL;
 
-EventGroupHandle_t xSystemEvents = NULL;
+volatile EventGroupHandle_t xSystemEvents = NULL;
 
 lfs_t * pxGetDefaultFsCtx( void )
 {
@@ -228,6 +228,9 @@ extern void vMQTTAgentTask( void * );
 extern void Task_MotionSensorsPublish( void * );
 extern void vEnvironmentSensorPublishTask( void * );
 extern void vShadowDeviceTask( void * );
+extern void vOTAUpdateTask( void * pvParam );
+
+
 extern void vShadowUpdateTask( void * );
 extern void vStartOTAUpdateTask( configSTACK_DEPTH_TYPE uxStackSize, UBaseType_t uxPriority );
 
@@ -258,19 +261,23 @@ void vInitTask( void * pvArgs )
         LogError( "Failed to mount filesystem." );
     }
 
-    xResult = xTaskCreate( vHeartbeatTask, "Heartbeat", 1024, NULL, tskIDLE_PRIORITY, NULL );
+//    xResult = xTaskCreate( vHeartbeatTask, "Heartbeat", 1024, NULL, tskIDLE_PRIORITY, NULL );
 
-    configASSERT( xResult == pdTRUE );
+//    configASSERT( xResult == pdTRUE );
 
     xResult = xTaskCreate( &net_main, "MxNet", 1024, NULL, 23, NULL );
 
     configASSERT( xResult == pdTRUE );
 
-    xResult = xTaskCreate( vMQTTAgentTask, "MQTTAgent", 1024, NULL, tskIDLE_PRIORITY + 1, NULL );
+    xResult = xTaskCreate( vMQTTAgentTask, "MQTTAgent", 2048, NULL, tskIDLE_PRIORITY + 1, NULL );
 
     configASSERT( xResult == pdTRUE );
 
-    vStartOTAUpdateTask( 4096, tskIDLE_PRIORITY );
+
+    xResult = xTaskCreate( vOTAUpdateTask, "OTAUpdate", 2048, NULL, tskIDLE_PRIORITY + 1, NULL );
+
+    configASSERT( xResult == pdTRUE );
+
 
     xResult = xTaskCreate( vEnvironmentSensorPublishTask, "EnvSense", 1024, NULL, 10, NULL );
     configASSERT( xResult == pdTRUE );

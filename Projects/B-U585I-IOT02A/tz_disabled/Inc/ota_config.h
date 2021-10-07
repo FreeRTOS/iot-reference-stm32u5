@@ -33,11 +33,8 @@
 
 /* define LOG_LEVEL here if you want to modify the logging level from the default */
 #ifndef LOG_LEVEL
-#define LOG_LEVEL LOG_INFO
+#define LOG_LEVEL LOG_ERROR
 #endif
-
-/* Remove extra C89 style parentheses */
-#define LOGGING_REMOVE_PARENS
 
 #include "logging.h"
 

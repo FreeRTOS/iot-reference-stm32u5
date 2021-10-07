@@ -36,6 +36,6 @@
 #define EVT_MASK_MQTT_INIT          0x08
 #define EVT_MASK_MQTT_CONNECTED     0x10
 
-EventGroupHandle_t xSystemEvents;
+volatile EventGroupHandle_t xSystemEvents;
 
 #endif /* _SYS_EVT_H */
