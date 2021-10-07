@@ -44,11 +44,6 @@
 #define LOG_LEVEL LOG_ERROR
 #endif
 
-/* corePKCS11 uses C89 / C90 style logging calls */
-#ifndef LOGGING_REMOVE_PARENS
-#define LOGGING_REMOVE_PARENS
-#endif
-
 #include "logging.h"
 
 /************ End of logging configuration ****************/

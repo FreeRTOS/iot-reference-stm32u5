@@ -21,7 +21,7 @@
  */
 
 /**
- * @file core_pkcs11_pal.c
+ * @file pkcs11_pal_littlefs.c
  * @brief Littlefs file save and read implementation
  * for PKCS #11 based on mbedTLS with for software keys. This
  * file deviates from the FreeRTOS style standard for some function names and
@@ -29,17 +29,29 @@
  */
 /*-----------------------------------------------------------*/
 
+#include "main.h"
+#include "atomic.h"
+
 /* PKCS 11 includes. */
 #include "core_pkcs11_config.h"
 #include "core_pkcs11_config_defaults.h"
 #include "core_pkcs11.h"
 #include "core_pkcs11_pal_utils.h"
 
-#include "main.h"
+#include "mbedtls/asn1.h"
 
 #include "lfs_util.h"
 #include "lfs.h"
 #include "lfs_port.h"
+
+/*-----------------------------------------------------------*/
+
+typedef struct LabelHandleMap
+{
+    CK_OBJECT_HANDLE xHandle;
+    CK_BBOOL xIsPrivate;
+    char pcLabel[ pkcs11configMAX_LABEL_LENGTH ];
+} LabelHandleMap_t;
 
 /*-----------------------------------------------------------*/
 
@@ -59,9 +71,14 @@ static CK_RV prvFileExists( const char * pcFileName )
     CK_RV xReturn = CKR_OK;
     struct lfs_info xFileInfo = { 0 };
 
-    configASSERT( pcFileName != NULL );
-
-    lReturn = lfs_stat( pLfsCtx,  pcFileName, &xFileInfo );
+    if( pcFileName == NULL )
+    {
+        lReturn = -1;
+    }
+    else
+    {
+        lReturn = lfs_stat( pLfsCtx,  pcFileName, &xFileInfo );
+    }
 
     if( lReturn < 0 ||
         ( xFileInfo.type & LFS_TYPE_REG ) == 0 )
@@ -81,8 +98,8 @@ static CK_RV prvFileExists( const char * pcFileName )
 /**
  * @brief Reads object value from file system.
  *
+ * @param[in] pcFileName         The name of the file to read
  * @param[in] pcLabel            The PKCS #11 label to convert to a file name
- * @param[in] pcFileName        The name of the file to check for existence.
  * @param[out] pHandle           The type of the PKCS #11 object.
  *
  */
