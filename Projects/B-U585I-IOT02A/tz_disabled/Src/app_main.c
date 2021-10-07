@@ -26,8 +26,11 @@
  */
 
 #include "logging_levels.h"
+
 #define LOG_LEVEL LOG_DEBUG
+
 #include "logging.h"
+
 #include "main.h"
 #include "sys_evt.h"
 #include "FreeRTOS.h"

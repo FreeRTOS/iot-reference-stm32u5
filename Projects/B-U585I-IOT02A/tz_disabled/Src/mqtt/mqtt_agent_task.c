@@ -37,9 +37,8 @@
 #include "task.h"
 #include "event_groups.h"
 
-#include <kvstore.h>
-/* Demo Specific configs. */
-//#include "mqtt_metrics.h"
+#include "kvstore.h"
+#include "mqtt_metrics.h"
 
 /* MQTT library includes. */
 #include "core_mqtt.h"
