@@ -1,6 +1,6 @@
 /*
- * FreeRTOS V202012.00
- * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * FreeRTOS STM32 Reference Integration
+ * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -353,6 +353,7 @@ static bool prvSubscribeToShadowUpdateTopics( ShadowDeviceCtx_t * pxCtx )
     /* These must persist until the command is processed. */
     MQTTAgentSubscribeArgs_t xSubscribeArgs = { 0 };
     MQTTSubscribeInfo_t xSubscribeInfo[ 3 ];
+    bool xSubSuccess = false;
 
     /* Subscribe to shadow topic for responses for incoming delta updates. */
     xSubscribeInfo[ 0 ].pTopicFilter = pxCtx->pcTopicUpdateDelta;
@@ -404,53 +405,66 @@ static bool prvSubscribeToShadowUpdateTopics( ShadowDeviceCtx_t * pxCtx )
     {
         LogDebug( "Successfully subscribed to shadow update topics." );
 
-        xStatus = submgr_addSubscription( ( SubscriptionElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
-                                          pxCtx->pcTopicUpdateDelta,
-                                          pxCtx->xTopicUpdateDeltaLen,
-                                          prvIncomingPublishUpdateDeltaCallback,
-                                          pxCtx );
-
+        xSubSuccess = submgr_addSubscription( ( SubscriptionElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
+                                              pxCtx->pcTopicUpdateDelta,
+                                              pxCtx->xTopicUpdateDeltaLen,
+                                              prvIncomingPublishUpdateDeltaCallback,
+                                              pxCtx );
     }
     else
     {
         LogError( "Failed to subscribe to shadow update topics. Please check that the shadow services is enabled for this device." );
     }
 
-    if( xStatus != MQTTSuccess )
+    if(  xStatus == MQTTSuccess &&
+         xSubSuccess == false )
     {
         LogError( "Failed to register an incoming publish callback for topic %s.",
                   pxCtx->pcTopicUpdateDelta );
+        xStatus = MQTTBadResponse;
     }
-    else
+    else if( xSubSuccess )
     {
-        xStatus = submgr_addSubscription( ( SubscriptionElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
+        xSubSuccess = submgr_addSubscription( ( SubscriptionElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
                                     pxCtx->pcTopicUpdateAccepted,
                                     pxCtx->xTopicUpdateAcceptedLen,
                                     prvIncomingPublishUpdateAcceptedCallback,
                                     pxCtx );
     }
+    else
+    {
+        /* Empty */
+    }
 
-    if( xStatus != MQTTSuccess )
+    if( xStatus == MQTTSuccess &&
+        xSubSuccess == false )
     {
         LogError( "Failed to register an incoming publish callback for topic %s.",
                   pxCtx->pcTopicUpdateAccepted );
+        xStatus = MQTTBadResponse;
     }
-    else
+    else if( xSubSuccess )
     {
-        xStatus = submgr_addSubscription( ( SubscriptionElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
+        xSubSuccess = submgr_addSubscription( ( SubscriptionElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
                                     pxCtx->pcTopicUpdateRejected,
                                     pxCtx->xTopicUpdateRejectedLen,
                                     prvIncomingPublishUpdateRejectedCallback,
                                     pxCtx );
+        xStatus = xSubSuccess ? MQTTSuccess : MQTTBadResponse;
+    }
+    else
+    {
+        /* empty */
     }
 
-    if( xStatus != MQTTSuccess )
+    if( xStatus == MQTTSuccess &&
+        xSubSuccess == false )
     {
         LogError( "Failed to register an incoming publish callback for topic %s.",
                   pxCtx->pcTopicUpdateRejected );
     }
 
-    return( ( bool ) ( xStatus == MQTTSuccess ) );
+    return xSubSuccess;
 }
 
 /*-----------------------------------------------------------*/
