@@ -31,6 +31,8 @@
 #include "lwip/netdb.h"
 
 #include "FreeRTOS.h"
+#include "event_groups.h"
+#include "main.h"
 
 #ifndef AF_UNSPEC
 #error "AF_UNSPEC is not defined"
@@ -68,6 +70,13 @@ static NetworkContext_t * transport_allocate( int32_t family,
 
     if( pxSocketContext != NULL )
     {
+        /* Block until the network interface is connected */
+        ( void ) xEventGroupWaitBits( xSystemEvents,
+                                      EVT_MASK_NET_CONNECTED,
+                                      0x00,
+                                      pdTRUE,
+                                      portMAX_DELAY );
+
         pxSocketContext->ulSocket = lwip_socket( family, type, protocol );
         if( pxSocketContext->ulSocket < 0 )
         {
@@ -152,6 +161,13 @@ static int32_t transport_connect( NetworkContext_t * pxNetworkContext,
     }
     else
     {
+        /* Block until the network interface is connected */
+        ( void ) xEventGroupWaitBits( xSystemEvents,
+                                      EVT_MASK_NET_CONNECTED,
+                                      0x00,
+                                      pdTRUE,
+                                      portMAX_DELAY );
+
         lReturnValue = lwip_connect( pxSocketContext->ulSocket, pxSocketAddress, pxSocketAddress->sa_len );
     }
 
@@ -179,6 +195,13 @@ static int32_t transport_connect_name( NetworkContext_t * pxNetworkContext,
     }
     else
     {
+        /* Block until the network interface is connected */
+        ( void ) xEventGroupWaitBits( xSystemEvents,
+                                      EVT_MASK_NET_CONNECTED,
+                                      0x00,
+                                      pdTRUE,
+                                      portMAX_DELAY );
+
         lReturnValue = lwip_getaddrinfo( pcHostName, NULL, &( pxSocketContext->xAddrInfoHint ), &pxAddrInfo );
 
         if( lReturnValue == 0 &&
