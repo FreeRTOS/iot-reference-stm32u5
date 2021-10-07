@@ -32,7 +32,7 @@
 
 #include "FreeRTOS.h"
 #include "event_groups.h"
-#include "main.h"
+#include "sys_evt.h"
 
 #ifndef AF_UNSPEC
 #error "AF_UNSPEC is not defined"

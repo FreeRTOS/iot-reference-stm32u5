@@ -59,7 +59,7 @@
 /* Kernel includes. */
 #include "FreeRTOS.h"
 #include "task.h"
-#include "main.h"
+#include "sys_evt.h"
 
 /* MQTT library includes. */
 #include "core_mqtt_agent.h"

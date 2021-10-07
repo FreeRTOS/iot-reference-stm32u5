@@ -29,6 +29,7 @@
 #define LOG_LEVEL LOG_DEBUG
 #include "logging.h"
 #include "main.h"
+#include "sys_evt.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "net/mxchip/mx_netconn.h"

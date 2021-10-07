@@ -40,6 +40,7 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
+#include "event_groups.h"
 #include "kvstore.h"
 
 /* lwip includes */
@@ -47,6 +48,8 @@
 #include "lwip/netifapi.h"
 #include "lwip/prot/dhcp.h"
 #include "lwip/apps/lwiperf.h"
+
+#include "sys_evt.h"
 
 #include "stm32u5_iot_board.h"
 
@@ -448,6 +451,8 @@ void net_main( void * pvParameters )
 
 	netifapi_netif_set_up( pxNetif );
 
+	( void ) xEventGroupSetBits( xSystemEvents, EVT_MASK_NET_INIT );
+
 	/* If already connected to the AP, bring interface up */
 	if( xCtx.xStatus >= MX_STATUS_STA_UP )
 	{
@@ -492,8 +497,11 @@ void net_main( void * pvParameters )
                 vLogAddress( "IP Address:", pxNetif->ip_addr );
                 vLogAddress( "Gateway:", pxNetif->gw );
                 vLogAddress( "Netmask:", pxNetif->netmask );
+
                 lwiperf_start_tcp_server_default( NULL, NULL );
                 LogSys("Started Iperf server");
+
+                ( void ) xEventGroupSetBits( xSystemEvents, EVT_MASK_NET_CONNECTED );
 	        }
 
 	        if( ulNotificationValue & NET_LWIP_IFUP_BIT )
@@ -517,6 +525,7 @@ void net_main( void * pvParameters )
 
                 vStopDhcp( pxNetif );
                 vClearAddress( pxNetif );
+                ( void ) xEventGroupClearBits( xSystemEvents, EVT_MASK_NET_CONNECTED );
 	        }
 	        else if( ( ulNotificationValue & NET_LWIP_LINK_DOWN_BIT ) &&
 	                 ( ucNetifFlags & NETIF_FLAG_LINK_UP ) == 0 )
@@ -525,11 +534,13 @@ void net_main( void * pvParameters )
                 vStopDhcp( pxNetif );
                 vClearAddress( pxNetif );
                 LogSys("Network Link Down.");
+                ( void ) xEventGroupClearBits( xSystemEvents, EVT_MASK_NET_CONNECTED );
 	        }
 
 	        /* Reconnect requested by configStore or cli process */
 	        if( ulNotificationValue & ASYNC_REQUEST_RECONNECT_BIT )
 	        {
+	            ( void ) xEventGroupClearBits( xSystemEvents, EVT_MASK_NET_CONNECTED );
 	            ( void ) mx_SetBypassMode( pdFALSE, pdMS_TO_TICKS( 1000 ) );
 	            ( void ) mx_Disconnect( pdMS_TO_TICKS( 1000 ) );
 	            xConnectToAP( &xCtx );

@@ -47,6 +47,7 @@
 /* MQTT library includes. */
 #include "core_mqtt.h"
 #include "core_mqtt_agent.h"
+#include "sys_evt.h"
 
 /* Subscription manager header include. */
 #include "subscription_manager.h"
@@ -57,12 +58,12 @@
 /*
  */
 #define MQTT_PUBLISH_MAX_LEN              ( 256 )
-#define MQTT_PUBLISH_FREQUENCY_HZ         ( 1 )
+#define MQTT_PUBLISH_TIME_BETWEEN_MS      ( 10 * 1000 )
 #define MQTT_PUBLISH_TOPIC                "env_sensor_data"
 #define MQTT_PUBLICH_TOPIC_STR_LEN        ( 256 )
-#define MQTT_PUBLISH_BLOCK_TIME_MS        ( 10000 )
+#define MQTT_PUBLISH_BLOCK_TIME_MS        ( 10 * 1000 )
 #define MQTT_NOTIFY_IDX                   ( 1 )
-#define MQTT_PUBLISH_QOS                  ( 0 )
+#define MQTT_PUBLISH_QOS                  ( 1 )
 
 /*-----------------------------------------------------------*/
 
@@ -178,6 +179,17 @@ static BaseType_t prvPublishAndWaitForAck( const char * pcTopic,
     return xResult;
 }
 
+static BaseType_t xIsMqttConnected( void )
+{
+    /* Wait for MQTT to be connected */
+    EventBits_t uxEvents = xEventGroupWaitBits( xSystemEvents,
+                                                EVT_MASK_MQTT_CONNECTED,
+                                                pdFALSE,
+                                                pdTRUE,
+                                                0 );
+    return( ( uxEvents & EVT_MASK_MQTT_CONNECTED ) == EVT_MASK_MQTT_CONNECTED );
+}
+
 /*-----------------------------------------------------------*/
 
 static BaseType_t xInitSensors( void )
@@ -254,21 +266,25 @@ void vEnvironmentSensorPublishTask( void * pvParameters )
         xTopicLen = strlcat( pcTopicString, "/"MQTT_PUBLISH_TOPIC, MQTT_PUBLICH_TOPIC_STR_LEN );
     }
 
-    vSleepUntilMQTTAgentReady();
+
 
     while( xExitFlag == pdFALSE )
     {
-        TickType_t xTicksToWait = pdMS_TO_TICKS( 1000 / MQTT_PUBLISH_FREQUENCY_HZ );
+        TickType_t xTicksToWait = pdMS_TO_TICKS( MQTT_PUBLISH_TIME_BETWEEN_MS );
         TimeOut_t xTimeOut;
+
+        vTaskSetTimeOutState( &xTimeOut );
 
         EnvironmentalSensorData_t xEnvData;
         xResult = xUpdateSensorData( &xEnvData );
 
-        if( xResult == pdTRUE )
+        if( xResult != pdTRUE )
+        {
+            LogError( "Error while reading sensor data." );
+        }
+        else if( xIsMqttConnected() == pdTRUE )
         {
             int bytesWritten = 0;
-
-            vTaskSetTimeOutState( &xTimeOut );
 
             /* Write to */
             bytesWritten = snprintf( payloadBuf,
@@ -294,10 +310,6 @@ void vEnvironmentSensorPublishTask( void * pvParameters )
             {
                 LogDebug( payloadBuf );
             }
-        }
-        else
-        {
-            LogError("Failed to update sensor data.");
         }
 
         /* Adjust remaining tick count */

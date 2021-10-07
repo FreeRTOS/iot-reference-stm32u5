@@ -59,7 +59,7 @@
 #include "subscription_manager.h"
 
 #include "mbedtls_transport.h"
-#include "main.h"
+#include "sys_evt.h"
 
 /*-----------------------------------------------------------*/
 extern TransportInterfaceExtended_t xLwipTransportInterface;
