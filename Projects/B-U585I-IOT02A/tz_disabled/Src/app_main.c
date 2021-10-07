@@ -42,6 +42,8 @@
 
 static lfs_t * pxLfsCtx = NULL;
 
+EventGroupHandle_t xSystemEvents = NULL;
+
 lfs_t * pxGetDefaultFsCtx( void )
 {
     while( pxLfsCtx == NULL )
@@ -58,7 +60,7 @@ typedef void( * VectorTable_t )(void);
 
 #define NUM_USER_IRQ				( FMAC_IRQn + 1 ) /* MCU specific */
 #define VECTOR_TABLE_SIZE 		    ( NVIC_USER_IRQ_OFFSET + NUM_USER_IRQ )
-#define VECTOR_TABLE_ALIGN_CM33		0x200U
+#define VECTOR_TABLE_ALIGN_CM33		0x400U
 
 static VectorTable_t pulVectorTableSRAM[ VECTOR_TABLE_SIZE ] __attribute__(( aligned (VECTOR_TABLE_ALIGN_CM33) ));
 
@@ -70,8 +72,8 @@ static void vRelocateVectorTable( void )
     /* Disable interrupts */
     __disable_irq();
 
-//    HAL_ICACHE_Disable();
-//    HAL_DCACHE_Disable( &hDcache );
+    HAL_ICACHE_Disable();
+    HAL_DCACHE_Disable( &hDcache );
 
     /* Copy vector table to ram */
     ( void ) memcpy( pulVectorTableSRAM, ( uint32_t * ) SCB->VTOR , sizeof( uint32_t) * VECTOR_TABLE_SIZE );
@@ -81,10 +83,10 @@ static void vRelocateVectorTable( void )
     __DSB();
     __ISB();
 
-//    HAL_DCACHE_Invalidate( &hDcache );
-//    HAL_ICACHE_Invalidate();
-//    HAL_ICACHE_Enable();
-//    HAL_DCACHE_Enable( &hDcache );
+    HAL_DCACHE_Invalidate( &hDcache );
+    HAL_ICACHE_Invalidate();
+    HAL_ICACHE_Enable();
+    HAL_DCACHE_Enable( &hDcache );
 
     __enable_irq();
 }
@@ -221,7 +223,7 @@ static void vHeartbeatTask( void * pvParameters )
     }
 }
 
-extern void vStartMQTTAgentDemo( void );
+extern void vMQTTAgentTask( void * );
 extern void Task_MotionSensorsPublish( void * );
 extern void vEnvironmentSensorPublishTask( void * );
 extern void vShadowDeviceTask( void * );
@@ -232,7 +234,7 @@ void vInitTask( void * pvArgs )
 {
     BaseType_t xResult;
 
-    xResult = xTaskCreate( Task_CLI, "cli", 4096, NULL, 10, NULL );
+    xResult = xTaskCreate( Task_CLI, "cli", 1024, NULL, 10, NULL );
 
     int xMountStatus = fs_init();
 
@@ -246,6 +248,8 @@ void vInitTask( void * pvArgs )
 
         LogInfo( "File System mounted." );
 
+        ( void ) xEventGroupSetBits( xSystemEvents, EVT_MASK_FS_READY );
+
         KVStore_init();
     }
     else
@@ -253,48 +257,51 @@ void vInitTask( void * pvArgs )
         LogError( "Failed to mount filesystem." );
     }
 
-        xResult = xTaskCreate( vHeartbeatTask, "Heartbeat", 1024, NULL, tskIDLE_PRIORITY, NULL );
+    xResult = xTaskCreate( vHeartbeatTask, "Heartbeat", 1024, NULL, tskIDLE_PRIORITY, NULL );
 
-        configASSERT( xResult == pdTRUE );
+    configASSERT( xResult == pdTRUE );
 
-        xResult = xTaskCreate( &net_main, "MxNet", 2 * 4096, NULL, 23, NULL );
+    xResult = xTaskCreate( &net_main, "MxNet", 1024, NULL, 23, NULL );
 
-        configASSERT( xResult == pdTRUE );
+    configASSERT( xResult == pdTRUE );
 
-        vStartMQTTAgentDemo();
+    xResult = xTaskCreate( vMQTTAgentTask, "MQTTAgent", 1024, NULL, tskIDLE_PRIORITY + 1, NULL );
 
-        vStartOTAUpdateTask( 4096, tskIDLE_PRIORITY );
+    configASSERT( xResult == pdTRUE );
 
-        xResult = xTaskCreate( vEnvironmentSensorPublishTask, "EnvSense", 4096, NULL, 10, NULL );
-        configASSERT( xResult == pdTRUE );
+    vStartOTAUpdateTask( 4096, tskIDLE_PRIORITY );
 
-
-        xResult = xTaskCreate( Task_MotionSensorsPublish, "MotionS", 4096, NULL, 11, NULL );
-        configASSERT( xResult == pdTRUE );
+    xResult = xTaskCreate( vEnvironmentSensorPublishTask, "EnvSense", 1024, NULL, 10, NULL );
+    configASSERT( xResult == pdTRUE );
 
 
-    //    xResult = xTaskCreate( vShadowDeviceTask, "ShadowDevice", 1024, NULL, 5, NULL );
-    //    configASSERT( xResult == pdTRUE );
+    xResult = xTaskCreate( Task_MotionSensorsPublish, "MotionS", 1024, NULL, 11, NULL );
+    configASSERT( xResult == pdTRUE );
 
-    //    xResult = xTaskCreate( vShadowUpdateTask, "ShadowUpdate", 1024, NULL, 5, NULL );
-    //    configASSERT( xResult == pdTRUE );
+
+    xResult = xTaskCreate( vShadowDeviceTask, "ShadowDevice", 1024, NULL, 5, NULL );
+    configASSERT( xResult == pdTRUE );
+
+//    xResult = xTaskCreate( vShadowUpdateTask, "ShadowUpdate", 1024, NULL, 5, NULL );
+//    configASSERT( xResult == pdTRUE );
 
     while(1)
     {
-        vTaskDelay(100);
+        vTaskSuspend(NULL);
     }
 }
 
 int main( void )
 {
-
-//    vRelocateVectorTable();
 	hw_init();
 
+	vRelocateVectorTable();
 
     vLoggingInit();
 
     LogInfo( "HW Init Complete." );
+
+    xSystemEvents = xEventGroupCreate();
 
     xTaskCreate( vInitTask, "Init", 1024, NULL, 8, NULL );
 

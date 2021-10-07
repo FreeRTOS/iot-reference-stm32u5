@@ -50,6 +50,7 @@
 /* MQTT Agent ports. */
 #include "freertos_agent_message.h"
 #include "freertos_command_pool.h"
+#include "core_pkcs11_config.h"
 
 /* Exponential backoff retry include. */
 #include "backoff_algorithm.h"
@@ -58,6 +59,7 @@
 #include "subscription_manager.h"
 
 #include "mbedtls_transport.h"
+#include "main.h"
 
 /*-----------------------------------------------------------*/
 extern TransportInterfaceExtended_t xLwipTransportInterface;
@@ -71,19 +73,19 @@ extern TransportInterfaceExtended_t xLwipTransportInterface;
 /**
  * @brief The maximum number of retries for network operation with server.
  */
-#define RETRY_MAX_ATTEMPTS                           ( 5U )
+#define RETRY_MAX_ATTEMPTS                           ( 500U )
 
 /**
  * @brief The maximum back-off delay (in milliseconds) for retrying failed operation
  *  with server.
  */
-#define RETRY_MAX_BACKOFF_DELAY_MS                   ( 5000U )
+#define RETRY_MAX_BACKOFF_DELAY_S                    ( 5U * 60U )
 
 /**
  * @brief The base back-off delay (in milliseconds) to use for network operation retry
  * attempts.
  */
-#define RETRY_BACKOFF_BASE_MS                        ( 500U )
+#define RETRY_BACKOFF_BASE_S                         ( 10U )
 
 /**
  * @brief The maximum time interval in seconds which is allowed to elapse
@@ -94,25 +96,28 @@ extern TransportInterfaceExtended_t xLwipTransportInterface;
  *  absence of sending any other Control Packets, the Client MUST send a
  *  PINGREQ Packet.
  */
-#define mqttexampleKEEP_ALIVE_INTERVAL_SECONDS       ( 1200U )
+#define KEEP_ALIVE_INTERVAL_S                       ( 1200U )
 
 /**
  * @brief Socket send and receive timeouts to use.
  */
-#define mqttexampleTRANSPORT_SEND_RECV_TIMEOUT_MS    ( 2000 )
+#define SEND_RECV_TIMEOUT_MS                        ( 2000U )
 
-#define EVENT_BIT_AGENT_READY                        0
+#define AGENT_READY_EVT_MASK                        ( 0b1U )
 
 typedef struct
 {
+    /* OSI Layer 5 parameters */
     char * pcMqttEndpointAddress;
     uint32_t ulMqttEndpointLen;
-    char * pcMqttClientId;
-    uint32_t ulMqttClientIdLen;
     uint32_t ulMqttPort;
-} MqttConnectCtx_t;
 
-static MqttConnectCtx_t xConnectCtx = { 0 };
+    /* OSI Layer 6 parameters */
+    NetworkCredentials_t xNetworkCredentials;
+
+    /* OSI Layer 7 parameters */
+    MQTTConnectInfo_t xCInfo;
+} MqttConnectCtx_t;
 
 /*-----------------------------------------------------------*/
 
@@ -120,29 +125,23 @@ static MqttConnectCtx_t xConnectCtx = { 0 };
  * @brief Initializes an MQTT context, including transport interface and
  * network buffer.
  *
+ * @param[in] pxNetworkContext Pointer to the network context to connect with.
+ *
  * @return `MQTTSuccess` if the initialization succeeds, else `MQTTBadParameter`.
  */
-static MQTTStatus_t prvMQTTInit( void );
+static MQTTStatus_t prvMQTTInit( NetworkContext_t * pxNetworkContext );
 
 /**
  * @brief Sends an MQTT Connect packet over the already connected TCP socket.
  *
- * @param[in] pxMQTTContext MQTT context pointer.
  * @param[in] xCleanSession If a clean session should be established.
+ * @param[in] pxConnectCtx MQTT connect operation context pointer.
  *
  * @return `MQTTSuccess` if connection succeeds, else appropriate error code
  * from MQTT_Connect.
  */
-static MQTTStatus_t prvMQTTConnect( bool xCleanSession );
-
-/**
- * @brief Connect a TCP socket to the MQTT broker.
- *
- * @param[in] pxNetworkContext Network context.
- *
- * @return `pdPASS` if connection succeeds, else `pdFAIL`.
- */
-static BaseType_t prvSocketConnect( void );
+static MQTTStatus_t prvMQTTConnect( bool xCleanSession,
+                                    MqttConnectCtx_t * pxConnectCtx );
 
 /**
  * @brief Fan out the incoming publishes to the callbacks registered by different
@@ -186,21 +185,6 @@ static void prvSubscriptionCommandCallback( MQTTAgentCommandContext_t * pxComman
                                             MQTTAgentReturnInfo_t * pxReturnInfo );
 
 /**
- * @brief Task used to run the MQTT agent.  In this example the first task that
- * is created is responsible for creating all the other demo tasks.  Then,
- * rather than create prvMQTTAgentTask() as a separate task, it simply calls
- * prvMQTTAgentTask() to become the agent task itself.
- *
- * This task calls MQTTAgent_CommandLoop() in a loop, until MQTTAgent_Terminate()
- * is called. If an error occurs in the command loop, then it will reconnect the
- * TCP and MQTT connections.
- *
- * @param[in] pvParameters Parameters as passed at the time of task creation. Not
- * used in this example.
- */
-static void prvMQTTAgentTask( void * pvParameters );
-
-/**
  * @brief The timer query function provided to the MQTT context.
  *
  * @return Time in milliseconds.
@@ -228,7 +212,7 @@ extern void vStartShadowDemo( configSTACK_DEPTH_TYPE uxStackSize,
  * @brief The network context used by the MQTT library transport interface.
  * See https://www.freertos.org/network-interface.html
  */
-static NetworkContext_t * pxNetworkContext = NULL;
+//static NetworkContext_t * pxNetworkContext = NULL;
 
 /**
  * @brief Global entry time into the application to use as a reference timestamp
@@ -255,55 +239,63 @@ static MQTTAgentMessageContext_t xCommandQueue;
  */
 SubscriptionElement_t xGlobalSubscriptionList[ SUBSCRIPTION_MANAGER_MAX_SUBSCRIPTIONS ];
 
-static EventGroupHandle_t xAgentEvents = NULL;
-
-/*-----------------------------------------------------------*/
-
-/*
- * @brief Create the task that demonstrates the MQTT Connection sharing demo.
- */
-void vStartMQTTAgentDemo( void )
-{
-    /* prvConnectAndCreateDemoTasks() connects to the MQTT broker, creates the
-     * tasks that will interact with the broker via the MQTT agent, then turns
-     * itself into the MQTT agent task. */
-    xTaskCreate( prvMQTTAgentTask,     /* Function that implements the task. */
-                 "MQTTAgent",          /* Text name for the task - only used for debugging. */
-                 4096,                 /* Size of stack (in words, not bytes) to allocate for the task. */
-                 NULL,                 /* Optional - task parameter - not used in this case. */
-                 tskIDLE_PRIORITY + 1, /* Task priority, must be between 0 and configMAX_PRIORITIES - 1. */
-                 NULL );               /* Optional - used to pass out a handle to the created task. */
-}
-
-
 /*-----------------------------------------------------------*/
 void vSleepUntilMQTTAgentReady( void )
 {
+    configASSERT( xSystemEvents != NULL );
     while( 1 )
     {
-        if( xAgentEvents == NULL )
-        {
-            /* Agent has not even initialized its event groups yet. Sleep the task while agent initializes */
-            vTaskDelay( pdMS_TO_TICKS( 3 * 1000 ) );
-        }
-        else
-        {
-            EventBits_t uxEvents = xEventGroupWaitBits( xAgentEvents,
-                                                        1u << EVENT_BIT_AGENT_READY,
-                                                        pdFALSE,
-                                                        pdTRUE,
-                                                        portMAX_DELAY );
 
-            if( uxEvents & ( 1u << EVENT_BIT_AGENT_READY ) )
-            {
-                return;
-            }
+        EventBits_t uxEvents = xEventGroupWaitBits( xSystemEvents,
+                                                    EVT_MASK_MQTT_INIT,
+                                                    pdFALSE,
+                                                    pdTRUE,
+                                                    portMAX_DELAY );
+
+        if( uxEvents & EVT_MASK_MQTT_INIT )
+        {
+            break;
         }
     }
 }
 
+/*-----------------------------------------------------------*/
+
+static void vInitNetCredentials( NetworkCredentials_t * pxNetworkCredentials )
+{
+    configASSERT( pxNetworkCredentials != NULL );
+
+    /* ALPN protocols must be a NULL-terminated list of strings. Therefore,
+     * the first entry will contain the actual ALPN protocol string while the
+     * second entry must remain NULL. */
+    static const char * pcAlpnProtocols[] = { AWS_IOT_MQTT_ALPN, NULL };
+
+    pxNetworkCredentials->pAlpnProtos = pcAlpnProtocols;
+
+    pxNetworkCredentials->xSkipCaVerify = KVStore_getBase( CS_TLS_VERIFY_CA, NULL );
+    pxNetworkCredentials->xSkipSNI = KVStore_getBase( CS_TLS_VERIFY_SNI, NULL );
+
+    /* Set the credentials for establishing a TLS connection. */
+    pxNetworkCredentials->xRootCaCertForm = OBJ_FORM_PKCS11_LABEL;
+    pxNetworkCredentials->pvRootCaCert = pkcs11_ROOT_CA_CERT_LABEL;
+    pxNetworkCredentials->rootCaCertSize = sizeof( pkcs11_ROOT_CA_CERT_LABEL );
+
+    pxNetworkCredentials->xClientCertForm = OBJ_FORM_PKCS11_LABEL;
+    pxNetworkCredentials->pvClientCert = pkcs11_TLS_CERT_LABEL;
+    pxNetworkCredentials->clientCertSize = sizeof( pkcs11_TLS_CERT_LABEL );
+
+    pxNetworkCredentials->xPrivateKeyForm = OBJ_FORM_PKCS11_LABEL;
+    pxNetworkCredentials->pvPrivateKey = pkcs11_TLS_KEY_PRV_LABEL;
+    pxNetworkCredentials->privateKeySize = sizeof( pkcs11_TLS_KEY_PRV_LABEL );
+}
+/*-----------------------------------------------------------*/
+
 static BaseType_t xInitializeMqttConnectCtx( MqttConnectCtx_t * pxCtx )
 {
+
+    /* OSI L5 / L6 parameters */
+
+    /* Get endpoint address */
     pxCtx->ulMqttEndpointLen = KVStore_getSize( CS_CORE_MQTT_ENDPOINT );
 
     configASSERT( pxCtx->ulMqttEndpointLen > 0 );
@@ -321,31 +313,81 @@ static BaseType_t xInitializeMqttConnectCtx( MqttConnectCtx_t * pxCtx )
                                     pxCtx->ulMqttEndpointLen );
     }
 
-    pxCtx->ulMqttClientIdLen = KVStore_getSize( CS_CORE_THING_NAME );
+    /* Get port */
+    pxCtx->ulMqttPort = KVStore_getUInt32( CS_CORE_MQTT_PORT, NULL );
 
-    configASSERT( pxCtx->ulMqttClientIdLen > 0 );
 
-    pxCtx->pcMqttClientId = ( char * ) pvPortMalloc( pxCtx->ulMqttClientIdLen );
+    /* OSI L7 parameters */
 
-    if( pxCtx->pcMqttClientId == NULL )
+    /* Zero initialize any unused fields */
+    memset( &( pxCtx->xCInfo ), 0x00, sizeof( MQTTConnectInfo_t ) );
+
+    pxCtx->xCInfo.cleanSession = true;
+
+    /* ??? Set MQTT keep-alive period. It is the responsibility of the application
+     * to ensure that the interval between Control Packets being sent does not
+     * exceed the Keep Alive value. In the absence of sending any other Control
+     * Packets, the Client MUST send a PINGREQ Packet.  This responsibility will
+     * be moved inside the agent. ??? */
+    pxCtx->xCInfo.keepAliveSeconds = KEEP_ALIVE_INTERVAL_S;
+
+    /* Append metrics when connecting to the AWS IoT Core broker. */
+    pxCtx->xCInfo.pUserName = AWS_IOT_METRICS_STRING;
+    pxCtx->xCInfo.userNameLength = AWS_IOT_METRICS_STRING_LENGTH;
+
+    /* Password authentication is not used. */
+    pxCtx->xCInfo.pPassword = NULL;
+    pxCtx->xCInfo.passwordLength = 0U;
+
+
+    /* Store client identifier / thing name */
+    pxCtx->xCInfo.clientIdentifierLength = KVStore_getSize( CS_CORE_THING_NAME );
+
+    configASSERT( pxCtx->xCInfo.clientIdentifierLength > 0 );
+
+    pxCtx->xCInfo.pClientIdentifier = ( char * ) pvPortMalloc( pxCtx->xCInfo.clientIdentifierLength );
+
+    if( pxCtx->xCInfo.pClientIdentifier == NULL )
     {
-        pxCtx->ulMqttClientIdLen = 0;
+        pxCtx->xCInfo.clientIdentifierLength = 0;
     }
     else
     {
         ( void ) KVStore_getString( CS_CORE_THING_NAME,
-                                    pxCtx->pcMqttClientId,
-                                    pxCtx->ulMqttClientIdLen );
+                                    pxCtx->xCInfo.pClientIdentifier,
+                                    pxCtx->xCInfo.clientIdentifierLength );
     }
 
-    pxCtx->ulMqttPort = KVStore_getUInt32( CS_CORE_MQTT_PORT, NULL );
+    vInitNetCredentials( &( pxCtx->xNetworkCredentials ) );
 
     return( pxCtx->pcMqttEndpointAddress != NULL );
 }
 
 /*-----------------------------------------------------------*/
 
-static MQTTStatus_t prvMQTTInit( void )
+static void vDeinitMqttConnectCtx(  MqttConnectCtx_t * pxCtx )
+{
+    if( pxCtx != NULL )
+    {
+        if( pxCtx->pcMqttEndpointAddress != NULL )
+        {
+            vPortFree( pxCtx->pcMqttEndpointAddress );
+            pxCtx->pcMqttEndpointAddress = NULL;
+            pxCtx->ulMqttEndpointLen = 0;
+        }
+
+        if( pxCtx->xCInfo.pClientIdentifier != NULL )
+        {
+            vPortFree( pxCtx->xCInfo.pClientIdentifier );
+            pxCtx->xCInfo.pClientIdentifier = NULL;
+            pxCtx->xCInfo.clientIdentifierLength = 0;
+        }
+    }
+}
+
+/*-----------------------------------------------------------*/
+
+static MQTTStatus_t prvMQTTInit(  NetworkContext_t * pxNetworkContext )
 {
     TransportInterface_t xTransport;
     MQTTStatus_t xReturn;
@@ -393,45 +435,22 @@ static MQTTStatus_t prvMQTTInit( void )
 
 /*-----------------------------------------------------------*/
 
-static MQTTStatus_t prvMQTTConnect( bool xCleanSession )
+static MQTTStatus_t prvMQTTConnect( bool xCleanSession,
+                                    MqttConnectCtx_t * pxConnectCtx )
 {
     MQTTStatus_t xResult;
-    MQTTConnectInfo_t xConnectInfo;
     bool xSessionPresent = false;
-
-    /* Many fields are not used in this demo so start with everything at 0. */
-    memset( &xConnectInfo, 0x00, sizeof( xConnectInfo ) );
 
     /* Start with a clean session i.e. direct the MQTT broker to discard any
      * previous session data. Also, establishing a connection with clean session
      * will ensure that the broker does not store any data when this client
      * gets disconnected. */
-    xConnectInfo.cleanSession = xCleanSession;
-
-    /* The client identifier is used to uniquely identify this MQTT client to
-     * the MQTT broker. In a production device the identifier can be something
-     * unique, such as a device serial number. */
-    xConnectInfo.pClientIdentifier = xConnectCtx.pcMqttClientId;
-    xConnectInfo.clientIdentifierLength = xConnectCtx.ulMqttClientIdLen;
-
-    /* Set MQTT keep-alive period. It is the responsibility of the application
-     * to ensure that the interval between Control Packets being sent does not
-     * exceed the Keep Alive value. In the absence of sending any other Control
-     * Packets, the Client MUST send a PINGREQ Packet.  This responsibility will
-     * be moved inside the agent. */
-    xConnectInfo.keepAliveSeconds = mqttexampleKEEP_ALIVE_INTERVAL_SECONDS;
-
-    /* Append metrics when connecting to the AWS IoT Core broker. */
-    xConnectInfo.pUserName = AWS_IOT_METRICS_STRING;
-    xConnectInfo.userNameLength = AWS_IOT_METRICS_STRING_LENGTH;
-    /* Password for authentication is not used. */
-    xConnectInfo.pPassword = NULL;
-    xConnectInfo.passwordLength = 0U;
+    pxConnectCtx->xCInfo.cleanSession = xCleanSession;
 
     /* Send MQTT CONNECT packet to broker. MQTT's Last Will and Testament feature
      * is not used in this demo, so it is passed as NULL. */
     xResult = MQTT_Connect( &( xGlobalMqttAgentContext.mqttContext ),
-                            &xConnectInfo,
+                            &( pxConnectCtx->xCInfo ),
                             NULL,
                             CONNACK_RECV_TIMEOUT_MS,
                             &xSessionPresent );
@@ -539,7 +558,7 @@ static void prvSubscriptionCommandCallback( MQTTAgentCommandContext_t * pxComman
                             pxSubscribeArgs->pSubscribeInfo[ lIndex ].topicFilterLength,
                             pxSubscribeArgs->pSubscribeInfo[ lIndex ].pTopicFilter ) );
                 /* Remove subscription callback for unsubscribe. */
-                removeSubscription( xGlobalSubscriptionList,
+                submgr_removeSubscription( xGlobalSubscriptionList,
                                     pxSubscribeArgs->pSubscribeInfo[ lIndex ].pTopicFilter,
                                     pxSubscribeArgs->pSubscribeInfo[ lIndex ].topicFilterLength );
             }
@@ -553,146 +572,23 @@ static void prvSubscriptionCommandCallback( MQTTAgentCommandContext_t * pxComman
 
 /*-----------------------------------------------------------*/
 
-static BaseType_t prvSocketConnect( void )
-{
-    BaseType_t xConnected = pdFAIL;
-    BackoffAlgorithmStatus_t xBackoffAlgStatus = BackoffAlgorithmSuccess;
-    BackoffAlgorithmContext_t xReconnectParams = { 0 };
-    uint16_t usNextRetryBackOff = 0U;
-    uint32_t receiveTimeoutMS = 250U;
-
-    TlsTransportStatus_t xNetworkStatus = TLS_TRANSPORT_CONNECT_FAILURE;
-    NetworkCredentials_t xNetworkCredentials = { 0 };
-
-    /* ALPN protocols must be a NULL-terminated list of strings. Therefore,
-     * the first entry will contain the actual ALPN protocol string while the
-     * second entry must remain NULL. */
-    const char * pcAlpnProtocols[] = { NULL, NULL };
-
-    pcAlpnProtocols[ 0 ] = AWS_IOT_MQTT_ALPN;
-    xNetworkCredentials.pAlpnProtos = pcAlpnProtocols;
-
-    /* Set the credentials for establishing a TLS connection. */
-    xNetworkCredentials.xRootCaCertForm = OBJ_FORM_PEM;
-    xNetworkCredentials.pvRootCaCert = democonfigROOT_CA_PEM;
-    xNetworkCredentials.rootCaCertSize = sizeof( democonfigROOT_CA_PEM );
-
-    xNetworkCredentials.xClientCertForm = OBJ_FORM_PEM;
-    xNetworkCredentials.pvClientCert = democonfigCLIENT_CERTIFICATE_PEM;
-    xNetworkCredentials.clientCertSize = sizeof( democonfigCLIENT_CERTIFICATE_PEM );
-
-    xNetworkCredentials.xPrivateKeyForm = OBJ_FORM_PEM;
-    xNetworkCredentials.pvPrivateKey = democonfigCLIENT_PRIVATE_KEY_PEM;
-    xNetworkCredentials.privateKeySize = sizeof( democonfigCLIENT_PRIVATE_KEY_PEM );
-
-    xNetworkCredentials.disableSni = democonfigDISABLE_SNI;
-
-    /* We will use a retry mechanism with an exponential backoff mechanism and
-     * jitter.  That is done to prevent a fleet of IoT devices all trying to
-     * reconnect at exactly the same time should they become disconnected at
-     * the same time. We initialize reconnect attempts and interval here. */
-    BackoffAlgorithm_InitializeParams( &xReconnectParams,
-                                       RETRY_BACKOFF_BASE_MS,
-                                       RETRY_MAX_BACKOFF_DELAY_MS,
-                                       RETRY_MAX_ATTEMPTS );
-
-    /* Attempt to connect to MQTT broker. If connection fails, retry after a
-     * timeout. Timeout value will exponentially increase until the maximum
-     * number of attempts are reached.
-     */
-    do
-    {
-        /* Establish a TCP connection with the MQTT broker. This example connects to
-         * the MQTT broker as specified in democonfigMQTT_BROKER_ENDPOINT and
-         * democonfigMQTT_BROKER_PORT at the top of this file. */
-
-
-
-        LogInfo( ( "Creating a TLS connection to %s:%d.",
-                   xConnectCtx.pcMqttEndpointAddress,
-                   xConnectCtx.ulMqttPort ) );
-
-        xNetworkStatus = mbedtls_transport_connect( pxNetworkContext,
-                                                    xConnectCtx.pcMqttEndpointAddress,
-                                                    ( uint16_t ) xConnectCtx.ulMqttPort,
-                                                    &xNetworkCredentials,
-                                                    mqttexampleTRANSPORT_SEND_RECV_TIMEOUT_MS,
-                                                    mqttexampleTRANSPORT_SEND_RECV_TIMEOUT_MS );
-
-        xConnected = ( xNetworkStatus == TLS_TRANSPORT_SUCCESS ) ? pdPASS : pdFAIL;
-
-        if( xConnected == pdPASS )
-        {
-            ( void ) mbedtls_transport_setsockopt( pxNetworkContext,
-                                                   SO_RCVTIMEO,
-                                                   &receiveTimeoutMS,
-                                                   sizeof( uint32_t ) );
-            /* Set event group to wake tasks waiting for */
-            ( void ) xEventGroupSetBits( xAgentEvents, ( 1u << EVENT_BIT_AGENT_READY ) );
-        }
-        else
-        {
-            ( void ) xEventGroupClearBits( xAgentEvents, ( 1u << EVENT_BIT_AGENT_READY ) );
-            /* Get back-off value (in milliseconds) for the next connection retry. */
-            xBackoffAlgStatus = BackoffAlgorithm_GetNextBackoff( &xReconnectParams, uxRand(), &usNextRetryBackOff );
-
-            if( xBackoffAlgStatus == BackoffAlgorithmSuccess )
-            {
-                LogWarn( ( "Connection to the broker failed. "
-                           "Retrying connection in %hu ms.",
-                           usNextRetryBackOff ) );
-                vTaskDelay( pdMS_TO_TICKS( usNextRetryBackOff ) );
-            }
-        }
-
-        if( xBackoffAlgStatus == BackoffAlgorithmRetriesExhausted )
-        {
-            LogError( ( "Connection to the broker failed, all attempts exhausted." ) );
-        }
-    } while( ( xConnected != pdPASS ) && ( xBackoffAlgStatus == BackoffAlgorithmSuccess ) );
-
-    return xConnected;
-}
-
-/*-----------------------------------------------------------*/
-
-/*static void prvMQTTClientSocketWakeupCallback( Socket_t pxSocket ) */
-/*{ */
-/*    MQTTAgentCommandInfo_t xCommandParams = { 0 }; */
-/* */
-/*    / * Just to avoid compiler warnings.  The socket is not used but the function */
-/*     * prototype cannot be changed because this is a callback function. * / */
-/*    ( void ) pxSocket; */
-/* */
-/*    / * A socket used by the MQTT task may need attention.  Send an event */
-/*     * to the MQTT task to make sure the task is not blocked on xCommandQueue. * / */
-/*    if( ( uxQueueMessagesWaiting( xCommandQueue.queue ) == 0U ) && ( FreeRTOS_recvcount( pxSocket ) > 0 ) ) */
-/*    { */
-/*        / * Don't block as this is called from the context of the IP task. * / */
-/*        xCommandParams.blockTimeMs = 0U; */
-/*        MQTTAgent_ProcessLoop( &xGlobalMqttAgentContext, &xCommandParams ); */
-/*    } */
-/*} */
-
-/*-----------------------------------------------------------*/
-
 static void prvIncomingPublishCallback( MQTTAgentContext_t * pMqttAgentContext,
                                         uint16_t packetId,
                                         MQTTPublishInfo_t * pxPublishInfo )
 {
-    bool xPublishHandled = false;
+    MQTTStatus_t xPublishHandled = MQTTNoDataAvailable;
     char cOriginalChar, * pcLocation;
 
     ( void ) packetId;
 
     /* Fan out the incoming publishes to the callbacks registered using
      * subscription manager. */
-    xPublishHandled = handleIncomingPublishes( ( SubscriptionElement_t * ) pMqttAgentContext->pIncomingCallbackContext,
-                                               pxPublishInfo );
+    xPublishHandled = submgr_handleIncomingPublish( ( SubscriptionElement_t * ) pMqttAgentContext->pIncomingCallbackContext,
+                                                    pxPublishInfo );
 
     /* If there are no callbacks to handle the incoming publishes,
      * handle it as an unsolicited publish. */
-    if( xPublishHandled != true )
+    if( xPublishHandled != MQTTSuccess )
     {
         /* Ensure the topic string is terminated for printing.  This will over-
          * write the message ID, which is restored afterwards. */
@@ -706,24 +602,23 @@ static void prvIncomingPublishCallback( MQTTAgentContext_t * pMqttAgentContext,
 
 /*-----------------------------------------------------------*/
 
-static void prvMQTTAgentTask( void * pvParameters )
+void vMQTTAgentTask( void * pvParameters )
 {
-    xAgentEvents = xEventGroupCreate();
-    configASSERT( xAgentEvents != NULL );
+    ( void ) pvParameters;
 
-    vTaskDelay( 10 * 1000 ); /*HACK wait for interface */
-    /* TODO: Replace with event group */
+    NetworkContext_t * pxNetworkContext = NULL;
+    TlsTransportStatus_t xTlsStatus = TLS_TRANSPORT_CONNECT_FAILURE;
+    MQTTStatus_t xMQTTStatus;
+    MqttConnectCtx_t xConnectCtx = { 0 };
+    BaseType_t xExitFlag = pdFALSE;
 
     /* Miscellaneous initialization. */
     ulGlobalEntryTimeMs = prvGetTimeMs();
 
     xInitializeMqttConnectCtx( &xConnectCtx );
 
-    /* Create the TCP connection to the broker, then the MQTT connection to the
-     * same. */
-
-    BaseType_t xNetworkStatus = pdFAIL;
-    MQTTStatus_t xMQTTStatus;
+    /* Initialize subscription manager */
+    submgr_init();
 
     if( pxNetworkContext == NULL )
     {
@@ -732,63 +627,78 @@ static void prvMQTTAgentTask( void * pvParameters )
 
     configASSERT( pxNetworkContext != NULL );
 
-    /* Connect a socket to the broker. */
-    xNetworkStatus = prvSocketConnect();
-
     /* Initialize the MQTT context with the buffer and transport interface. */
-    xMQTTStatus = prvMQTTInit();
+    xMQTTStatus = prvMQTTInit( pxNetworkContext );
+
     configASSERT( xMQTTStatus == MQTTSuccess );
 
-    /* Form an MQTT connection without a persistent session. */
-    xMQTTStatus = prvMQTTConnect( true );
-    configASSERT( xMQTTStatus == MQTTSuccess );
+    ( void ) xEventGroupSetBits( xSystemEvents, EVT_MASK_MQTT_INIT );
 
-    /* Selectively create demo tasks as per the compile time constant settings. */
-    #if ( democonfigCREATE_LARGE_MESSAGE_SUB_PUB_TASK == 1 )
-        {
-            vStartLargeMessageSubscribePublishTask( democonfigLARGE_MESSAGE_SUB_PUB_TASK_STACK_SIZE,
-                                                    tskIDLE_PRIORITY );
-        }
-    #endif
-
-    #if ( democonfigNUM_SIMPLE_SUB_PUB_TASKS_TO_CREATE > 0 )
-        {
-            vStartSimpleSubscribePublishTask( democonfigNUM_SIMPLE_SUB_PUB_TASKS_TO_CREATE,
-                                              democonfigSIMPLE_SUB_PUB_TASK_STACK_SIZE,
-                                              tskIDLE_PRIORITY + 2 );
-        }
-    #endif
-
-    #if ( democonfigCREATE_CODE_SIGNING_OTA_DEMO == 1 )
-        {
-            vStartOTACodeSigningDemo( democonfigCODE_SIGNING_OTA_TASK_STACK_SIZE,
-                                      tskIDLE_PRIORITY + 1 );
-        }
-    #endif
-
-    #if ( democonfigCREATE_DEFENDER_DEMO == 1 )
-        {
-            vStartDefenderDemo( democonfigDEFENDER_TASK_STACK_SIZE,
-                                tskIDLE_PRIORITY );
-        }
-    #endif
-
-    #if ( democonfigCREATE_SHADOW_DEMO == 1 )
-        {
-            vStartShadowDemo( democonfigSHADOW_TASK_STACK_SIZE,
-                              tskIDLE_PRIORITY );
-        }
-    #endif
-
+    /* Outer Reconnect loop */
+    while( xExitFlag != pdTRUE )
     {
-        BaseType_t xNetworkResult = pdFAIL;
-        MQTTStatus_t xMQTTStatus = MQTTSuccess, xConnectStatus = MQTTSuccess;
-        MQTTContext_t * pMqttContext = &( xGlobalMqttAgentContext.mqttContext );
+        BackoffAlgorithmStatus_t xBackoffAlgStatus = BackoffAlgorithmSuccess;
+        BackoffAlgorithmContext_t xReconnectParams = { 0 };
 
-        ( void ) pvParameters;
+        /* Initialize backoff algorithm with jitter */
+        BackoffAlgorithm_InitializeParams( &xReconnectParams,
+                                           RETRY_BACKOFF_BASE_S,
+                                           RETRY_MAX_BACKOFF_DELAY_S,
+                                           RETRY_MAX_ATTEMPTS );
 
-        do
+        /* Connect a socket to the broker with retries */
+        while( xTlsStatus != TLS_TRANSPORT_SUCCESS &&
+               xBackoffAlgStatus == BackoffAlgorithmSuccess )
         {
+            LogInfo( ( "Creating a TLS connection to %s:%d.",
+                       xConnectCtx.pcMqttEndpointAddress,
+                       xConnectCtx.ulMqttPort ) );
+
+            xTlsStatus = mbedtls_transport_connect( pxNetworkContext,
+                                                    xConnectCtx.pcMqttEndpointAddress,
+                                                    ( uint16_t ) xConnectCtx.ulMqttPort,
+                                                    &( xConnectCtx.xNetworkCredentials ),
+                                                    SEND_RECV_TIMEOUT_MS,
+                                                    SEND_RECV_TIMEOUT_MS );
+
+            if( xTlsStatus != TLS_TRANSPORT_SUCCESS )
+            {
+                uint16_t usNextRetryBackOff = 0U;
+
+                /* Get back-off value (in seconds) for the next connection retry. */
+                xBackoffAlgStatus = BackoffAlgorithm_GetNextBackoff( &xReconnectParams,
+                                                                     uxRand(),
+                                                                     &usNextRetryBackOff );
+
+                if( xBackoffAlgStatus == BackoffAlgorithmSuccess )
+                {
+                    LogWarn( ( "Connection to the broker failed. "
+                               "Retrying connection in %hu seconds.",
+                               usNextRetryBackOff ) );
+                    vTaskDelay( pdMS_TO_TICKS( 1000 * usNextRetryBackOff ) );
+                }
+                else if( xBackoffAlgStatus == BackoffAlgorithmRetriesExhausted )
+                {
+                    LogError( ( "Connection to the broker failed, all attempts exhausted." ) );
+                    xExitFlag = pdTRUE;
+                }
+            }
+        }
+
+        if( xTlsStatus == TLS_TRANSPORT_SUCCESS )
+        {
+            /* Form an MQTT connection without a persistent session. */
+            xMQTTStatus = prvMQTTConnect( true, &xConnectCtx );
+        }
+        else
+        {
+            xMQTTStatus = MQTTKeepAliveTimeout;
+        }
+
+        if( xMQTTStatus == MQTTSuccess )
+        {
+            ( void ) xEventGroupSetBits( xSystemEvents, EVT_MASK_MQTT_CONNECTED );
+
             /* MQTTAgent_CommandLoop() is effectively the agent implementation.  It
              * will manage the MQTT protocol until such time that an error occurs,
              * which could be a disconnect.  If an error occurs the MQTT context on
@@ -796,44 +706,19 @@ static void prvMQTTAgentTask( void * pvParameters )
              * clean up and reconnect however the application writer prefers. */
             xMQTTStatus = MQTTAgent_CommandLoop( &xGlobalMqttAgentContext );
 
+            ( void ) xEventGroupClearBits( xSystemEvents, EVT_MASK_MQTT_CONNECTED );
 
             mbedtls_transport_disconnect( pxNetworkContext );
-
-            /* Success is returned for disconnect or termination. The socket should
-             * be disconnected. */
-            if( xMQTTStatus == MQTTSuccess )
-            {
-                /* MQTT Disconnect. Disconnect the socket. */
-            }
-            /* Error. */
-            else
-            {
-                #if ( democonfigCREATE_CODE_SIGNING_OTA_DEMO == 1 )
-                    {
-                        vSuspendOTACodeSigningDemo();
-                    }
-                #endif
-
-                /* Reconnect TCP. */
-                xNetworkResult = prvSocketConnect();
-                /* TODO: handle this in a more reasonable way. */
-                configASSERT( xNetworkResult == pdPASS );
-                pMqttContext->connectStatus = MQTTNotConnected;
-                /* MQTT Connect with a persistent session. */
-                xConnectStatus = prvMQTTConnect( false );
-                configASSERT( xConnectStatus == MQTTSuccess );
-
-                #if ( democonfigCREATE_CODE_SIGNING_OTA_DEMO == 1 )
-                    {
-                        if( xMQTTStatus == MQTTSuccess )
-                        {
-                            vResumeOTACodeSigningDemo();
-                        }
-                    }
-                #endif
-            }
-        } while( xMQTTStatus != MQTTSuccess );
+        }
     }
+
+    vDeinitMqttConnectCtx( &xConnectCtx );
+
+    ( void ) xEventGroupClearBits( xSystemEvents, EVT_MASK_MQTT_INIT | EVT_MASK_MQTT_CONNECTED );
+
+    LogError( "Terminating MqttAgentTask." );
+
+    vTaskDelete( NULL );
 }
 
 /*-----------------------------------------------------------*/
