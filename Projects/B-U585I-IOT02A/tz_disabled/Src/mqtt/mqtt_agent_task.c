@@ -39,7 +39,7 @@
 
 #include <kvstore.h>
 /* Demo Specific configs. */
-#include "demo_config.h"
+//#include "mqtt_metrics.h"
 
 /* MQTT library includes. */
 #include "core_mqtt.h"
@@ -576,7 +576,7 @@ static void prvIncomingPublishCallback( MQTTAgentContext_t * pMqttAgentContext,
                                         uint16_t packetId,
                                         MQTTPublishInfo_t * pxPublishInfo )
 {
-    MQTTStatus_t xPublishHandled = MQTTNoDataAvailable;
+    bool xPublishHandled = false;
     char cOriginalChar, * pcLocation;
 
     ( void ) packetId;
@@ -588,7 +588,7 @@ static void prvIncomingPublishCallback( MQTTAgentContext_t * pMqttAgentContext,
 
     /* If there are no callbacks to handle the incoming publishes,
      * handle it as an unsolicited publish. */
-    if( xPublishHandled != MQTTSuccess )
+    if( xPublishHandled == false )
     {
         /* Ensure the topic string is terminated for printing.  This will over-
          * write the message ID, which is restored afterwards. */
