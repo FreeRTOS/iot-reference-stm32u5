@@ -72,6 +72,7 @@ typedef struct subscriptionElement
 {
     IncomingPubCallback_t pxIncomingPublishCallback;
     void * pvIncomingPublishCallbackContext;
+    TaskHandle_t xTaskHandle;
     uint16_t usFilterStringLength;
     const char * pcSubscriptionFilterString;
 } SubscriptionElement_t;

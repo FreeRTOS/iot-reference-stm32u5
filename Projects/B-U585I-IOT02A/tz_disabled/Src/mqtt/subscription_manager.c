@@ -95,22 +95,27 @@ MQTTStatus_t submgr_addSubscription( SubscriptionElement_t * pxSubscriptionList,
              * Scans backwards to find duplicates. */
             for( lIndex = ( int32_t ) SUBSCRIPTION_MANAGER_MAX_SUBSCRIPTIONS - 1; lIndex >= 0; lIndex-- )
             {
-                if( pxSubscriptionList[ lIndex ].usFilterStringLength == 0 )
+                SubscriptionElement_t * pxSubElement = &( pxSubscriptionList[ lIndex ] );
+
+                if( pxSubElement->usFilterStringLength == 0 )
                 {
                     xAvailableIndex = lIndex;
                 }
-                else if( ( pxSubscriptionList[ lIndex ].usFilterStringLength == usTopicFilterLength ) &&
-                         ( strncmp( pcTopicFilterString, pxSubscriptionList[ lIndex ].pcSubscriptionFilterString, ( size_t ) usTopicFilterLength ) == 0 ) )
+                else
                 {
-                    /* If a subscription already exists, don't do anything. */
-                    if( ( pxSubscriptionList[ lIndex ].pxIncomingPublishCallback == pxIncomingPublishCallback ) &&
-                        ( pxSubscriptionList[ lIndex ].pvIncomingPublishCallbackContext == pvIncomingPublishCallbackContext ) )
+                    if( ( pxSubElement->usFilterStringLength == usTopicFilterLength ) &&
+
+                         ( strncmp( pcTopicFilterString, pxSubElement->pcSubscriptionFilterString, ( size_t ) usTopicFilterLength ) == 0 ) &&
+                         ( pxSubElement->xTaskHandle == xTaskGetCurrentTaskHandle() ) &&
+                         ( pxSubElement->pxIncomingPublishCallback == pxIncomingPublishCallback ) &&
+                         ( pxSubElement->pvIncomingPublishCallbackContext == pvIncomingPublishCallbackContext ) )
                     {
                         LogWarn( ( "Subscription already exists.\n" ) );
                         xAvailableIndex = SUBSCRIPTION_MANAGER_MAX_SUBSCRIPTIONS;
                         xStatus = MQTTSuccess;
                         break;
                     }
+
                 }
             }
 
@@ -120,6 +125,7 @@ MQTTStatus_t submgr_addSubscription( SubscriptionElement_t * pxSubscriptionList,
                 pxSubscriptionList[ xAvailableIndex ].usFilterStringLength = usTopicFilterLength;
                 pxSubscriptionList[ xAvailableIndex ].pxIncomingPublishCallback = pxIncomingPublishCallback;
                 pxSubscriptionList[ xAvailableIndex ].pvIncomingPublishCallbackContext = pvIncomingPublishCallbackContext;
+                pxSubscriptionList[ xAvailableIndex ].xTaskHandle = xTaskGetCurrentTaskHandle();
                 xStatus = MQTTSuccess;
             }
             xSemaphoreGiveRecursive( xSubMgrMutex );
