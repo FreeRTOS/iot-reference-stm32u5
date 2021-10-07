@@ -41,7 +41,7 @@
 /*
  * Define MBEDTLS_TRANSPORT_PKCS11_ENABLE if you intend to use a pkcs11 module for TLS.
  */
-//#define MBEDTLS_TRANSPORT_PKCS11_ENABLE
+#define MBEDTLS_TRANSPORT_PKCS11_ENABLE
 
 
 /*
@@ -73,9 +73,14 @@ typedef struct NetworkCredentials
     const char ** pAlpnProtos;
 
     /**
-     * @brief Disable server name indication (SNI) for a TLS session.
+     * @brief Disable validation of the received Server Name Indication.
      */
-    BaseType_t disableSni;
+    BaseType_t xSkipSNI;
+
+    /**
+     * @brief Disable validation of the received server certificate against the provided root ca certificate.
+     */
+    BaseType_t xSkipCaVerify;
 
     /**
      * @brief Form of the private key specified in #NetworkCredentials.pvPrivateKey.

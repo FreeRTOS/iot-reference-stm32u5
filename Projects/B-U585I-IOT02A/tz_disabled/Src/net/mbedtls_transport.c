@@ -55,11 +55,31 @@
 #include "pkcs11.h"
 #endif /* MBEDTLS_TRANSPORT_PKCS11_ENABLE */
 
-#define MBEDTLS_DEBUG_THRESHOLD 1
+#define MBEDTLS_DEBUG_THRESHOLD 0
+
+/* The first three fields of this struct must match mbedtls_ecp_keypair */
+typedef struct
+{
+    mbedtls_ecp_group grp;      /*!<  Elliptic curve and base point     */
+    mbedtls_mpi d;              /*!<  our secret value, Empty for this use case */
+    mbedtls_ecp_point Q;        /*!<  our public value                  */
+
+    mbedtls_entropy_context xEntropyCtx;
+    mbedtls_ctr_drbg_context xCtrDrbgCtx;
+    mbedtls_pk_context xPkeyCtx;
+    mbedtls_pk_info_t xPrivKeyInfo;
+#ifdef MBEDTLS_TRANSPORT_PKCS11_ENABLE
+    CK_FUNCTION_LIST_PTR pxP11FunctionList;
+    CK_SESSION_HANDLE xP11Session;
+    CK_OBJECT_HANDLE xP11PrivateKey;
+    CK_KEY_TYPE xKeyType;
+#endif
+} PrivateKeySigningCtx_t;
 
 /**
  * @brief Secured connection context.
  */
+
 typedef struct TLSContext
 {
     /* Lower layer */
@@ -75,20 +95,7 @@ typedef struct TLSContext
     mbedtls_x509_crt xRootCaCert;               /**< @brief Root CA certificate context. */
     mbedtls_x509_crt xClientCert;               /**< @brief Client certificate context. */
 
-    /* Entropy related */
-    mbedtls_entropy_context xEntropyContext;    /**< @brief Entropy context for random number generation. */
-    mbedtls_ctr_drbg_context xCtrDrgbContext;   /**< @brief CTR DRBG context for random number generation. */
-
-    mbedtls_pk_context xPrivKeyCtx;             /**< @brief Client private key context. */
-    mbedtls_pk_info_t xPrivKeyInfo;             /**< @brief Client private key info. */
-
-#ifdef MBEDTLS_TRANSPORT_PKCS11_ENABLE
-    /* PKCS#11 interface */
-    CK_FUNCTION_LIST_PTR pxP11FunctionList;     /**< @brief PKCS#11 module interface */
-    CK_SESSION_HANDLE xP11Session;              /**< @brief PKCS#11 session handle */
-    CK_OBJECT_HANDLE xP11PrivateKey;            /**< @brief PKCS#11 private key handle */
-    CK_KEY_TYPE xKeyType;                       /**< @brief PKCS#11 private key type */
-#endif
+    PrivateKeySigningCtx_t xSigningCtx;
 } TLSContext_t;
 
 
@@ -233,7 +240,7 @@ static TlsTransportStatus_t tlsHandshake( TLSContext_t * pxTLSContext,
  * @return #TLS_TRANSPORT_SUCCESS, or #TLS_TRANSPORT_INTERNAL_ERROR.
  */
 static TlsTransportStatus_t initMbedtls( mbedtls_entropy_context * pExntropyContext,
-                                         mbedtls_ctr_drbg_context * pxCtrDrgbContext );
+                                         mbedtls_ctr_drbg_context * pxCtrDrbgCtx );
 
 #ifdef MBEDTLS_TRANSPORT_PKCS11_ENABLE
 
@@ -266,7 +273,7 @@ static CK_RV readCertificateFromPKCS11( TLSContext_t * pxTLSContext,
  *
  * @return Zero on success.
  */
-static CK_RV validatePrivateKeyPKCS11( TLSContext_t * pxTLSContext,
+static CK_RV validatePrivateKeyPKCS11( PrivateKeySigningCtx_t * pxPkeyCtx,
                                        const char * pcLabel );
 
 #endif /* MBEDTLS_TRANSPORT_PKCS11_ENABLE */
@@ -286,7 +293,7 @@ static void tlsContextInit( TLSContext_t * pxTLSContext )
     mbedtls_x509_crt_init( &( pxTLSContext->xRootCaCert ) );
     mbedtls_x509_crt_init( &( pxTLSContext->xClientCert ) );
     mbedtls_ssl_init( &( pxTLSContext->xSslContext ) );
-    mbedtls_pk_init( &( pxTLSContext->xPrivKeyCtx ) );
+    mbedtls_pk_init( &( pxTLSContext->xSigningCtx.xPkeyCtx ) );
 
 #ifdef MBEDTLS_DEBUG_C
     mbedtls_ssl_conf_dbg( &( pxTLSContext->xSslConfig ), vTLSDebugPrint, NULL );
@@ -294,8 +301,8 @@ static void tlsContextInit( TLSContext_t * pxTLSContext )
 #endif  /* MBEDTLS_DEBUG_C */
 
 #ifdef MBEDTLS_TRANSPORT_PKCS11_ENABLE
-    xInitializePkcs11Session( &( pxTLSContext->xP11Session ) );
-    C_GetFunctionList( &( pxTLSContext->pxP11FunctionList ) );
+    xInitializePkcs11Session( &( pxTLSContext->xSigningCtx.xP11Session ) );
+    C_GetFunctionList( &( pxTLSContext->xSigningCtx.pxP11FunctionList ) );
 #endif  /* MBEDTLS_TRANSPORT_PKCS11_ENABLE */
 
     /* Prevent compiler warnings when LogDebug() is defined away. */
@@ -312,22 +319,20 @@ static void tlsContextFree( TLSContext_t * pxTLSContext )
     mbedtls_x509_crt_free( &( pxTLSContext->xRootCaCert ) );
     mbedtls_x509_crt_free( &( pxTLSContext->xClientCert ) );
     mbedtls_ssl_config_free( &( pxTLSContext->xSslConfig ) );
-    mbedtls_pk_free( &( pxTLSContext->xPrivKeyCtx ) );
 
-
-#ifndef MBEDTLS_TRANSPORT_PKCS11_RANDOM
-    mbedtls_entropy_free( &( pxTLSContext->xEntropyContext ) );
-    mbedtls_ctr_drbg_free( &( pxTLSContext->xCtrDrgbContext ) );
-#else
-
-#endif
+//#ifndef MBEDTLS_TRANSPORT_PKCS11_RANDOM
+    mbedtls_entropy_free( &( pxTLSContext->xSigningCtx.xEntropyCtx ) );
+    mbedtls_ctr_drbg_free( &( pxTLSContext->xSigningCtx.xCtrDrbgCtx ) );
+//#else
+//
+//#endif
 
 #ifdef MBEDTLS_TRANSPORT_PKCS11_ENABLE
-    configASSERT( pxTLSContext->pxP11FunctionList != NULL );
-    configASSERT( pxTLSContext->pxP11FunctionList->C_CloseSession != NULL );
-    configASSERT( pxTLSContext->xP11Session != 0 );
+    configASSERT( pxTLSContext->xSigningCtx.pxP11FunctionList != NULL );
+    configASSERT( pxTLSContext->xSigningCtx.pxP11FunctionList->C_CloseSession != NULL );
+    configASSERT( pxTLSContext->xSigningCtx.xP11Session != 0 );
 
-    pxTLSContext->pxP11FunctionList->C_CloseSession( pxTLSContext->xP11Session );
+    pxTLSContext->xSigningCtx.pxP11FunctionList->C_CloseSession( pxTLSContext->xSigningCtx.xP11Session );
 #endif
 
 
@@ -399,26 +404,55 @@ static int32_t initRootCa( TLSContext_t * pxTLSContext,
 static int32_t initClientCertificate( TLSContext_t * pxTLSContext,
                                       const NetworkCredentials_t * pNetworkCredentials )
 {
-    int32_t mbedtlsError = -1;
+    int32_t lError = -1;
 
     configASSERT( pxTLSContext != NULL );
     configASSERT( pNetworkCredentials != NULL );
+    configASSERT( pNetworkCredentials->clientCertSize > 0 );
+    configASSERT( pNetworkCredentials->pvClientCert != NULL );
 
-
-
-    /* Setup the client certificate. */
-    mbedtlsError = mbedtls_x509_crt_parse( &( pxTLSContext->xClientCert ),
-                                           pNetworkCredentials->pvClientCert,
-                                           pNetworkCredentials->clientCertSize );
-
-    if( mbedtlsError != 0 )
+    switch( pNetworkCredentials->xClientCertForm )
     {
-        LogError( "Failed to parse the client certificate: mbedTLSError= %s : %s.",
-                    mbedtlsHighLevelCodeOrDefault( mbedtlsError ),
-                    mbedtlsLowLevelCodeOrDefault( mbedtlsError ) );
+    case OBJ_FORM_PEM:
+        /* Intentional fall through */
+    case OBJ_FORM_DER:
+    {
+        lError = mbedtls_x509_crt_parse( &( pxTLSContext->xClientCert ),
+                                         pNetworkCredentials->pvClientCert,
+                                         pNetworkCredentials->clientCertSize );
+        if( lError != 0 )
+        {
+            LogError( "Failed to parse client certificate: mbedTLSError= %s : %s.",
+                        mbedtlsHighLevelCodeOrDefault( lError ),
+                        mbedtlsLowLevelCodeOrDefault( lError ) );
+        }
+        break;
+    }
+    case OBJ_FORM_PKCS11_LABEL:
+#ifdef MBEDTLS_TRANSPORT_PKCS11_ENABLE
+    {
+        lError = readCertificateFromPKCS11( pxTLSContext,
+                                            pNetworkCredentials->pvClientCert,
+                                            &( pxTLSContext->xClientCert ) );
+        if( lError != 0 )
+        {
+            LogError( "Failed to read server root CA certificate from PKCS11 module. xResult= %d",
+                      lError );
+        }
+        break;
+    }
+#endif
+    /* Intentional fall through when MBEDTLS_TRANSPORT_PKCS11_ENABLE is not defined */
+    case OBJ_FORM_NONE:
+        /* Intentional fall through */
+    default:
+        LogError( "Invalid client certificate form specified in xClientCertForm." );
+        lError = TLS_TRANSPORT_INVALID_PARAMETER;
+        break;
+
     }
 
-    return mbedtlsError;
+    return lError;
 }
 /*-----------------------------------------------------------*/
 
@@ -441,7 +475,7 @@ static int32_t initPrivateKey( TLSContext_t * pxTLSContext,
         configASSERT( pNetworkCredentials->privateKeySize > 0 );
         configASSERT( pNetworkCredentials->pvPrivateKey != NULL );
 
-        lError = mbedtls_pk_parse_key( &( pxTLSContext->xPrivKeyCtx ),
+        lError = mbedtls_pk_parse_key( &( pxTLSContext->xSigningCtx.xPkeyCtx ),
                                        ( const unsigned char * ) pNetworkCredentials->pvPrivateKey,
                                        pNetworkCredentials->privateKeySize,
                                        NULL,
@@ -459,7 +493,7 @@ static int32_t initPrivateKey( TLSContext_t * pxTLSContext,
     {
         configASSERT( pNetworkCredentials->privateKeySize < pkcs11configMAX_LABEL_LENGTH );
 
-        lError = validatePrivateKeyPKCS11( pxTLSContext,
+        lError = validatePrivateKeyPKCS11( &( pxTLSContext->xSigningCtx ),
                                            ( const char * ) pNetworkCredentials->pvPrivateKey );
     }
 #else
@@ -500,14 +534,19 @@ static int32_t setCredentials( TLSContext_t * pxTLSContext,
 
     mbedtls_ssl_conf_rng( &( pxTLSContext->xSslConfig ),
                           mbedtls_ctr_drbg_random,
-                          &( pxTLSContext->xCtrDrgbContext ) );
+                          &( pxTLSContext->xSigningCtx.xCtrDrbgCtx ) );
 
     mbedtls_ssl_conf_cert_profile( &( pxTLSContext->xSslConfig ),
                                    &( pxTLSContext->xCertProfile ) );
     //TODO Random sourced from pkcs11
 
-    lError = initRootCa( pxTLSContext,
-                         pNetworkCredentials );
+
+    if( pNetworkCredentials->pvRootCaCert != NULL &&
+        pNetworkCredentials->rootCaCertSize > 0 )
+    {
+        lError = initRootCa( pxTLSContext,
+                             pNetworkCredentials );
+    }
 
     if( ( pNetworkCredentials->pvClientCert != NULL ) &&
         ( pNetworkCredentials->clientCertSize > 0 ) &&
@@ -535,7 +574,7 @@ static int32_t setCredentials( TLSContext_t * pxTLSContext,
         {
             lError = mbedtls_ssl_conf_own_cert( &( pxTLSContext->xSslConfig ),
                                                       &( pxTLSContext->xClientCert ),
-                                                      &( pxTLSContext->xPrivKeyCtx ) );
+                                                      &( pxTLSContext->xSigningCtx.xPkeyCtx ) );
             configASSERT( lError == 0 );
         }
     }
@@ -570,8 +609,8 @@ static void setOptionalConfigurations( TLSContext_t * pxTLSContext,
     }
 
     /* Enable SNI if requested. */
-    if( pNetworkCredentials->disableSni == pdFALSE )
-    {
+//    if( pNetworkCredentials->xSkipSNI == pdFALSE )
+//    {
         mbedtlsError = mbedtls_ssl_set_hostname( &( pxTLSContext->xSslContext ),
                                                  pHostName );
 
@@ -581,7 +620,9 @@ static void setOptionalConfigurations( TLSContext_t * pxTLSContext,
                         mbedtlsHighLevelCodeOrDefault( mbedtlsError ),
                         mbedtlsLowLevelCodeOrDefault( mbedtlsError ) );
         }
-    }
+//    }
+
+    //TODO: handle pNetworkCredentials->xSkipCaVerify
 
     /* Set Maximum Fragment Length if enabled. */
     #ifdef MBEDTLS_SSL_MAX_FRAGMENT_LENGTH
@@ -859,8 +900,10 @@ static CK_RV readCertificateFromPKCS11( TLSContext_t * pxTLSContext,
     CK_ATTRIBUTE xTemplate = { 0 };
     CK_OBJECT_HANDLE xCertObj = 0;
 
+    PrivateKeySigningCtx_t * pxSigningCtx = &( pxTLSContext->xSigningCtx );
+
     /* Get the handle of the certificate. */
-    xResult = xFindObjectWithLabelAndClass( pxTLSContext->xP11Session,
+    xResult = xFindObjectWithLabelAndClass( pxSigningCtx->xP11Session,
                                             pcLabel,
                                             strnlen( pcLabel, pkcs11configMAX_LABEL_LENGTH - 1 ),
                                             CKO_CERTIFICATE,
@@ -877,7 +920,7 @@ static CK_RV readCertificateFromPKCS11( TLSContext_t * pxTLSContext,
         xTemplate.type = CKA_VALUE;
         xTemplate.ulValueLen = 0;
         xTemplate.pValue = NULL;
-        xResult = pxTLSContext->pxP11FunctionList->C_GetAttributeValue( pxTLSContext->xP11Session,
+        xResult = pxSigningCtx->pxP11FunctionList->C_GetAttributeValue( pxSigningCtx->xP11Session,
                                                                        xCertObj,
                                                                        &xTemplate,
                                                                        1 );
@@ -897,7 +940,7 @@ static CK_RV readCertificateFromPKCS11( TLSContext_t * pxTLSContext,
     /* Export the certificate. */
     if( CKR_OK == xResult )
     {
-        xResult = pxTLSContext->pxP11FunctionList->C_GetAttributeValue( pxTLSContext->xP11Session,
+        xResult = pxSigningCtx->pxP11FunctionList->C_GetAttributeValue( pxSigningCtx->xP11Session,
                                                                        xCertObj,
                                                                        &xTemplate,
                                                                        1 );
@@ -934,8 +977,10 @@ static int privateKeySigningCallback( void * pvContext,
 {
     CK_RV xResult = CKR_OK;
     int32_t lFinalResult = 0;
-    TLSContext_t * pxTLSContext = ( TLSContext_t * ) pvContext;
+
+    PrivateKeySigningCtx_t * pxPkeyCtx = ( PrivateKeySigningCtx_t * ) pvContext;
     CK_MECHANISM xMech = { 0 };
+
     CK_BYTE xToBeSigned[ 256 ];
     CK_ULONG xToBeSignedLen = sizeof( xToBeSigned );
 
@@ -951,7 +996,7 @@ static int privateKeySigningCallback( void * pvContext,
     }
 
     /* Format the hash data to be signed. */
-    if( CKK_RSA == pxTLSContext->xKeyType )
+    if( CKK_RSA == pxPkeyCtx->xKeyType )
     {
         xMech.mechanism = CKM_RSA_PKCS;
 
@@ -962,7 +1007,7 @@ static int privateKeySigningCallback( void * pvContext,
         xResult = vAppendSHA256AlgorithmIdentifierSequence( ( uint8_t * ) pucHash, xToBeSigned );
         xToBeSignedLen = pkcs11RSA_SIGNATURE_INPUT_LENGTH;
     }
-    else if( CKK_EC == pxTLSContext->xKeyType )
+    else if( CKK_EC == pxPkeyCtx->xKeyType )
     {
         xMech.mechanism = CKM_ECDSA;
         ( void ) memcpy( xToBeSigned, pucHash, xHashLen );
@@ -976,22 +1021,22 @@ static int privateKeySigningCallback( void * pvContext,
     if( CKR_OK == xResult )
     {
         /* Use the PKCS#11 module to sign. */
-        xResult = pxTLSContext->pxP11FunctionList->C_SignInit( pxTLSContext->xP11Session,
-                                                               &xMech,
-                                                               pxTLSContext->xP11PrivateKey );
+        xResult = pxPkeyCtx->pxP11FunctionList->C_SignInit( pxPkeyCtx->xP11Session,
+                                                            &xMech,
+                                                            pxPkeyCtx->xP11PrivateKey );
     }
 
     if( CKR_OK == xResult )
     {
         *pxSigLen = sizeof( xToBeSigned );
-        xResult = pxTLSContext->pxP11FunctionList->C_Sign( ( CK_SESSION_HANDLE ) pxTLSContext->xP11Session,
-                                                           xToBeSigned,
-                                                           xToBeSignedLen,
-                                                           pucSig,
-                                                           ( CK_ULONG_PTR ) pxSigLen );
+        xResult = pxPkeyCtx->pxP11FunctionList->C_Sign( ( CK_SESSION_HANDLE ) pxPkeyCtx->xP11Session,
+                                                        xToBeSigned,
+                                                        xToBeSignedLen,
+                                                        pucSig,
+                                                        ( CK_ULONG_PTR ) pxSigLen );
     }
 
-    if( ( xResult == CKR_OK ) && ( CKK_EC == pxTLSContext->xKeyType ) )
+    if( ( xResult == CKR_OK ) && ( CKK_EC == pxPkeyCtx->xKeyType ) )
     {
         /* PKCS #11 for P256 returns a 64-byte signature with 32 bytes for R and 32 bytes for S.
          * This must be converted to an ASN.1 encoded array. */
@@ -1018,7 +1063,7 @@ static int privateKeySigningCallback( void * pvContext,
 /*-----------------------------------------------------------*/
 
 #ifdef MBEDTLS_TRANSPORT_PKCS11_ENABLE
-static CK_RV validatePrivateKeyPKCS11( TLSContext_t * pxCtx,
+static CK_RV validatePrivateKeyPKCS11( PrivateKeySigningCtx_t * pxCtx,
                                        const char * pcLabel )
 {
     CK_RV xResult = CKR_OK;
@@ -1122,8 +1167,8 @@ static CK_RV validatePrivateKeyPKCS11( TLSContext_t * pxCtx,
 
         pxCtx->xPrivKeyInfo.sign_func = privateKeySigningCallback;
 
-        pxCtx->xPrivKeyCtx.pk_info = &pxCtx->xPrivKeyInfo;
-        pxCtx->xPrivKeyCtx.pk_ctx = pxCtx;
+        pxCtx->xPkeyCtx.pk_info = &( pxCtx->xPrivKeyInfo );
+        pxCtx->xPkeyCtx.pk_ctx = pxCtx;
     }
 
     /* Free memory. */
@@ -1137,7 +1182,7 @@ static CK_RV validatePrivateKeyPKCS11( TLSContext_t * pxCtx,
 
 NetworkContext_t * mbedtls_transport_allocate( const TransportInterfaceExtended_t * pxSocketInterface )
 {
-    TLSContext_t * pxTLSContext;
+    TLSContext_t * pxTLSContext = NULL;
 
     if( pxSocketInterface == NULL )
     {
@@ -1146,14 +1191,15 @@ NetworkContext_t * mbedtls_transport_allocate( const TransportInterfaceExtended_
     else
     {
         pxTLSContext = ( TLSContext_t * ) pvPortMalloc( sizeof( TLSContext_t ) );
+
+        if( pxTLSContext == NULL )
+        {
+            LogError( "Could not allocate memory for TLSContext_t." );
+        }
     }
 
 
-    if( pxTLSContext == NULL )
-    {
-        LogError( "Could not allocate memory for TLSContext_t." );
-    }
-    else
+    if( pxTLSContext != NULL )
     {
         memset( pxTLSContext, 0, sizeof( TLSContext_t ) );
         pxTLSContext->pxSocketInterface = pxSocketInterface;
@@ -1265,8 +1311,8 @@ TlsTransportStatus_t mbedtls_transport_connect( NetworkContext_t * pxNetworkCont
     /* Initialize mbedtls. */
     if( returnStatus == TLS_TRANSPORT_SUCCESS )
     {
-        returnStatus = initMbedtls( &( pxTLSContext->xEntropyContext ),
-                                    &( pxTLSContext->xCtrDrgbContext ) );
+        returnStatus = initMbedtls( &( pxTLSContext->xSigningCtx.xEntropyCtx ),
+                                    &( pxTLSContext->xSigningCtx.xCtrDrbgCtx ) );
     }
 
     /* Initialize TLS contexts and set credentials. */
