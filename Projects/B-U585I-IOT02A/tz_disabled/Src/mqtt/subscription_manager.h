@@ -76,6 +76,12 @@ typedef struct subscriptionElement
     const char * pcSubscriptionFilterString;
 } SubscriptionElement_t;
 
+
+/**
+ * @brief Initialize the subscription manager
+ */
+void submgr_init( void );
+
 /**
  * @brief Add a subscription to the subscription list.
  *
@@ -89,13 +95,13 @@ typedef struct subscriptionElement
  * @param[in] pxIncomingPublishCallback Callback function for the subscription.
  * @param[in] pvIncomingPublishCallbackContext Context for the subscription callback.
  *
- * @return `true` if subscription added or exists, `false` if insufficient memory.
+ * @return `MQTTSuccess` if subscription added or exists.
  */
-bool addSubscription( SubscriptionElement_t * pxSubscriptionList,
-                      const char * pcTopicFilterString,
-                      uint16_t usTopicFilterLength,
-                      IncomingPubCallback_t pxIncomingPublishCallback,
-                      void * pvIncomingPublishCallbackContext );
+MQTTStatus_t submgr_addSubscription( SubscriptionElement_t * pxSubscriptionList,
+                             const char * pcTopicFilterString,
+                             uint16_t usTopicFilterLength,
+                             IncomingPubCallback_t pxIncomingPublishCallback,
+                             void * pvIncomingPublishCallbackContext );
 
 /**
  * @brief Remove a subscription from the subscription list.
@@ -107,9 +113,9 @@ bool addSubscription( SubscriptionElement_t * pxSubscriptionList,
  * @param[in] pcTopicFilterString Topic filter of subscription.
  * @param[in] usTopicFilterLength Length of topic filter.
  */
-void removeSubscription( SubscriptionElement_t * pxSubscriptionList,
-                         const char * pcTopicFilterString,
-                         uint16_t usTopicFilterLength );
+MQTTStatus_t submgr_removeSubscription( SubscriptionElement_t * pxSubscriptionList,
+                                        const char * pcTopicFilterString,
+                                        uint16_t usTopicFilterLength );
 
 /**
  * @brief Handle incoming publishes by invoking the callbacks registered
@@ -121,7 +127,7 @@ void removeSubscription( SubscriptionElement_t * pxSubscriptionList,
  * @return `true` if an application callback could be invoked;
  *  `false` otherwise.
  */
-bool handleIncomingPublishes( SubscriptionElement_t * pxSubscriptionList,
-                              MQTTPublishInfo_t * pxPublishInfo );
+MQTTStatus_t submgr_handleIncomingPublish( SubscriptionElement_t * pxSubscriptionList,
+                                           MQTTPublishInfo_t * pxPublishInfo );
 
 #endif /* SUBSCRIPTION_MANAGER_H */
