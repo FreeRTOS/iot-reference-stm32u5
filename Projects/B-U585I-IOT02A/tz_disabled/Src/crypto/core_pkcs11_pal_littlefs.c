@@ -46,15 +46,6 @@
 
 /*-----------------------------------------------------------*/
 
-typedef struct LabelHandleMap
-{
-    CK_OBJECT_HANDLE xHandle;
-    CK_BBOOL xIsPrivate;
-    char pcLabel[ pkcs11configMAX_LABEL_LENGTH ];
-} LabelHandleMap_t;
-
-/*-----------------------------------------------------------*/
-
 static lfs_t * pLfsCtx = NULL;
 
 /*-----------------------------------------------------------*/
