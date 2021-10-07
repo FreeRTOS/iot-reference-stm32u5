@@ -43,8 +43,8 @@
 #include "task.h"
 #include "queue.h"
 
-/* For I2c mutex */
-#include "main.h"
+#include "sys_evt.h"
+
 
 /* MQTT library includes. */
 #include "core_mqtt.h"
@@ -85,6 +85,17 @@ struct MQTTAgentCommandContext
     TaskHandle_t xTaskToNotify;
     uint32_t ulNotificationValue;
 };
+
+static BaseType_t xIsMqttConnected( void )
+{
+    /* Wait for MQTT to be connected */
+    EventBits_t uxEvents = xEventGroupWaitBits( xSystemEvents,
+                                                EVT_MASK_MQTT_CONNECTED,
+                                                pdFALSE,
+                                                pdTRUE,
+                                                0 );
+    return( ( uxEvents & EVT_MASK_MQTT_CONNECTED ) == EVT_MASK_MQTT_CONNECTED );
+}
 
 
 /*-----------------------------------------------------------*/
@@ -255,7 +266,8 @@ void Task_MotionSensorsPublish( void * pvParameters )
                                      xGyroAxes.x, xGyroAxes.y, xGyroAxes.z,
                                      xMagnetoAxes.x, xMagnetoAxes.y, xMagnetoAxes.z );
 
-            if( bytesWritten < MQTT_PUBLISH_MAX_LEN )
+            if( bytesWritten < MQTT_PUBLISH_MAX_LEN &&
+                xIsMqttConnected() == pdTRUE )
             {
                 xResult = prvPublishAndWaitForAck( MQTT_PUBLISH_TOPIC,
                                                    payloadBuf,
