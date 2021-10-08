@@ -191,27 +191,7 @@ static void prvSubscriptionCommandCallback( MQTTAgentCommandContext_t * pxComman
 static uint32_t prvGetTimeMs( void );
 
 
-/*
- * Functions that start the tasks demonstrated by this project.
- */
-
-extern void vStartOTACodeSigningDemo( configSTACK_DEPTH_TYPE uxStackSize,
-                                      UBaseType_t uxPriority );
-extern void vSuspendOTACodeSigningDemo( void );
-extern void vResumeOTACodeSigningDemo( void );
-
-extern void vStartDefenderDemo( configSTACK_DEPTH_TYPE uxStackSize,
-                                UBaseType_t uxPriority );
-
-extern void vStartShadowDemo( configSTACK_DEPTH_TYPE uxStackSize,
-                              UBaseType_t uxPriority );
 /*-----------------------------------------------------------*/
-
-/**
- * @brief The network context used by the MQTT library transport interface.
- * See https://www.freertos.org/network-interface.html
- */
-//static NetworkContext_t * pxNetworkContext = NULL;
 
 /**
  * @brief Global entry time into the application to use as a reference timestamp
