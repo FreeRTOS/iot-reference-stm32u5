@@ -220,10 +220,8 @@ static void vHeartbeatTask( void * pvParameters )
 
     while(1)
     {
-//        LogSys( "Idle priority heartbeat." );
         vTaskDelay( pdMS_TO_TICKS( 1000 ) );
         HAL_GPIO_TogglePin( LED_GREEN_GPIO_Port, LED_GREEN_Pin );
-        HAL_GPIO_TogglePin( LED_RED_GPIO_Port, LED_RED_Pin );
     }
 }
 
@@ -232,10 +230,6 @@ extern void Task_MotionSensorsPublish( void * );
 extern void vEnvironmentSensorPublishTask( void * );
 extern void vShadowDeviceTask( void * );
 extern void vOTAUpdateTask( void * pvParam );
-
-
-extern void vShadowUpdateTask( void * );
-extern void vStartOTAUpdateTask( configSTACK_DEPTH_TYPE uxStackSize, UBaseType_t uxPriority );
 
 void vInitTask( void * pvArgs )
 {
@@ -264,9 +258,9 @@ void vInitTask( void * pvArgs )
         LogError( "Failed to mount filesystem." );
     }
 
-//    xResult = xTaskCreate( vHeartbeatTask, "Heartbeat", 1024, NULL, tskIDLE_PRIORITY, NULL );
+    xResult = xTaskCreate( vHeartbeatTask, "Heartbeat", 128, NULL, tskIDLE_PRIORITY, NULL );
 
-//    configASSERT( xResult == pdTRUE );
+    configASSERT( xResult == pdTRUE );
 
     xResult = xTaskCreate( &net_main, "MxNet", 1024, NULL, 23, NULL );
 
