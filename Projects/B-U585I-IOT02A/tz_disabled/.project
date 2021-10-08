@@ -183,11 +183,6 @@
 			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/corePKCS11/source/dependency/3rdparty/mbedtls_utils/mbedtls_utils.c</locationURI>
 		</link>
 		<link>
-			<name>Libraries/FreeRTOS/crypto/pal_utils</name>
-			<type>2</type>
-			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/corePKCS11/source/portable/os</locationURI>
-		</link>
-		<link>
 			<name>Libraries/FreeRTOS/kernel/event_groups.c</name>
 			<type>1</type>
 			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/kernel/event_groups.c</locationURI>
