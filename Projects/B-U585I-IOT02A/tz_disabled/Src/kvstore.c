@@ -207,6 +207,39 @@ size_t KVStore_getBlob( KVStoreKey_t key, void * pvBuffer, size_t xMaxLength )
     return xLength;
 }
 
+void * KVStore_getBlobHeap( KVStoreKey_t key, size_t * pxLength )
+{
+    size_t xLen = KVStore_getSize( key );
+    void * pvBuffer = NULL;
+
+    if( xLen > 0 )
+    {
+        pvBuffer = pvPortMalloc( xLen );
+
+        if( pvBuffer != NULL )
+        {
+            if( KVStore_getBlob( key, pvBuffer, xLen ) == 0 )
+            {
+                vPortFree( pvBuffer );
+                pvBuffer = NULL;
+                xLen = 0;
+                configASSERT_CONTINUE( 0 );
+            }
+        }
+        else
+        {
+            LogError( "Failed to allocate %ld bytes.", xLen );
+        }
+    }
+
+    if( pxLength != NULL )
+    {
+        *pxLength = xLen;
+    }
+
+    return pvBuffer;
+}
+
 KVStoreValueType_t KVStore_getType( KVStoreKey_t key )
 {
     KVStoreValueType_t xKvType = KV_TYPE_NONE;
@@ -243,6 +276,39 @@ size_t KVStore_getString( KVStoreKey_t key, char * pcBuffer, size_t xMaxLength )
     }
 
     return xSizeWritten;
+}
+
+char * KVStore_getStringHeap( KVStoreKey_t key, size_t * pxLength )
+{
+    size_t xLen = KVStore_getSize( key );
+    char * pcBuffer = NULL;
+
+    if( xLen > 0 )
+    {
+        pcBuffer = pvPortMalloc( xLen );
+
+        if( pcBuffer != NULL )
+        {
+            if( KVStore_getString( key, pcBuffer, xLen ) == 0 )
+            {
+                vPortFree( pcBuffer );
+                pcBuffer = NULL;
+                xLen = 0;
+                configASSERT_CONTINUE( 0 );
+            }
+        }
+        else
+        {
+            LogError( "Failed to allocate %ld bytes.", xLen );
+        }
+    }
+
+    if( pxLength != NULL )
+    {
+        *pxLength = xLen;
+    }
+
+    return pcBuffer;
 }
 
 uint32_t KVStore_getUInt32( KVStoreKey_t key, BaseType_t * pxSuccess )
