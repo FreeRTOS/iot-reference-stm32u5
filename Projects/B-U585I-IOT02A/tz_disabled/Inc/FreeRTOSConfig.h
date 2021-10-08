@@ -175,6 +175,13 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
                                } \
                            } while(0)
 
+
+#define configASSERT_CONTINUE( x )  do { \
+                                        if( ( x ) == 0 ) { \
+                                            LogAssert( "Non-fatal assertion failed." ); \
+                                        } \
+                                    } while(0)
+
 #include "stack_macros.h"
 
 #define configAPPLICATION_PROVIDES_cOutputBuffer 1
