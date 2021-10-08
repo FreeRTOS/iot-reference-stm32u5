@@ -493,7 +493,7 @@ static void vHeapStatCommand( ConsoleIO_t * const pxCIO,
 
         static const char * pcFormatString = "| %-16s | %-11ld | 0x%-9X | %3lu %%   |\r\n";
 
-        pxCIO->print( "---------------------------------------------------------|\r\n" );
+        pxCIO->print( "+--------------------------------------------------------+\r\n" );
 
         xLen = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN,
                          "| Metric           | Dec %7s | Hex (Bytes) | %% Total |\r\n",
@@ -559,6 +559,6 @@ static void vHeapStatCommand( ConsoleIO_t * const pxCIO,
         }
 
         pxCIO->write( pcCliScratchBuffer, xLen );
-        pxCIO->print( "---------------------------------------------------------|\r\n" );
+        pxCIO->print( "+--------------------------------------------------------+\r\n" );
     }
 }
