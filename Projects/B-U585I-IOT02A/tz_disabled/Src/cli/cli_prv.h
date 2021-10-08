@@ -34,5 +34,6 @@ const CLI_Command_Definition_t xCommandDef_pki;
 const CLI_Command_Definition_t xCommandDef_ps;
 const CLI_Command_Definition_t xCommandDef_kill;
 const CLI_Command_Definition_t xCommandDef_killAll;
+const CLI_Command_Definition_t xCommandDef_heapStat;
 
 #endif /* _CLI_PRIV */

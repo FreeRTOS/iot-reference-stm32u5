@@ -51,6 +51,10 @@ static void vKillCommand( ConsoleIO_t * const pxCIO,
                           uint32_t ulArgc,
                           char * ppcArgv[] );
 
+static void vHeapStatCommand( ConsoleIO_t * const pxCIO,
+                              uint32_t ulArgc,
+                              char * ppcArgv[] );
+
 
 const CLI_Command_Definition_t xCommandDef_ps =
 {
@@ -81,7 +85,21 @@ const CLI_Command_Definition_t xCommandDef_killAll =
     vKillAllCommand
 };
 
-
+const CLI_Command_Definition_t xCommandDef_heapStat =
+{
+    "heapstat",
+    "    heapstat [-b | --byte]\r\n"
+    "        Display heap statistics in bytes.\r\n\n"
+    "    heapstat -h | -k | --kibi\r\n"
+    "        Display heap statistics in Kibibytes (KiB).\r\n\n"
+    "    heapstat -m | --mebi\r\n"
+    "        Display heap statistics in Mebibytes (MiB).\r\n\n"
+    "    heapstat --kilo\r\n"
+    "        Display heap statistics in Kilobytes (KB).\r\n\n"
+    "    heapstat --mega\r\n"
+    "        Display heap statistics in Megabytes (MB).\r\n\n",
+    vHeapStatCommand
+};
 
 /*-----------------------------------------------------------*/
 
@@ -355,5 +373,192 @@ static void vKillAllCommand( ConsoleIO_t * const pxCIO,
         {
             vSignalTask( xTaskHandle, xTargetSignal );
         }
+    }
+}
+
+
+/* only implemented for heap_4.c */
+static void vHeapStatCommand( ConsoleIO_t * const pxCIO,
+                              uint32_t ulArgc,
+                              char * ppcArgv[] )
+{
+    size_t xDivisor = 1;
+    const char * cDivSymbol = NULL;
+
+    for( uint32_t i = 1; i < ulArgc; i++ )
+    {
+        if( ppcArgv[ i ][ 0 ] == '-' )
+        {
+            switch( ppcArgv[ i ][ 1 ] )
+            {
+                case '-':
+                {
+                    if( strcmp( "--kilo", ppcArgv[ i ] ) == 0 )
+                    {
+                        xDivisor = 1000;
+                    }
+                    else if( strcmp( "--mega", ppcArgv[ i ] ) == 0 )
+                    {
+                        xDivisor = 1000 * 1000;
+                    }
+                    else if( strcmp( "--kibi", ppcArgv[ i ] ) == 0 )
+                    {
+                        xDivisor = 1024;
+                    }
+                    else if( strcmp( "--mebi", ppcArgv[ i ] ) == 0 )
+                    {
+                        xDivisor = 1024 * 1024;
+                    }
+                    else if( strcmp( "--byte", ppcArgv[ i ] ) == 0 )
+                    {
+                        xDivisor = 1;
+                    }
+                    else
+                    {
+                        pxCIO->print( "Error: Unrecognized argument: " );
+                        pxCIO->print( ppcArgv[ i ] );
+                        pxCIO->print( "\r\n" );
+                        xDivisor = 0;
+                    }
+                    break;
+                }
+                case 'k':
+                case 'h':
+                    xDivisor = 1024;
+                    break;
+                case 'm':
+                    xDivisor = 1024 * 1024;
+                    break;
+                case 'b':
+                    xDivisor = 1;
+                    break;
+                default:
+                    pxCIO->print( "Error: Unrecognized argument: " );
+                    pxCIO->print( ppcArgv[ i ] );
+                    pxCIO->print( "\r\n" );
+                    xDivisor = 0;
+                    break;
+            }
+        }
+        else
+        {
+            pxCIO->print( "Error: Unrecognized argument: " );
+            pxCIO->print( ppcArgv[ i ] );
+            pxCIO->print( "\r\n" );
+        }
+    }
+
+    if( xDivisor != 0 )
+    {
+        switch( xDivisor )
+        {
+            case 1000:
+                cDivSymbol = "(KB)   ";
+                break;
+            case 1024:
+                cDivSymbol = "(KiB)  ";
+                break;
+            case ( 1000 * 1000 ):
+                cDivSymbol = "(MB)   ";
+                break;
+            case ( 1024 * 1024 ):
+                cDivSymbol = "(MiB)  ";
+                break;
+            case 1:
+            default:
+                cDivSymbol = "(Bytes)";
+                break;
+        }
+
+        configASSERT( cDivSymbol != NULL );
+
+        size_t xHeapSize = configTOTAL_HEAP_SIZE;
+        size_t xHeapFree = xPortGetFreeHeapSize();
+        size_t xMinHeapFree = xPortGetMinimumEverFreeHeapSize();
+        size_t xHeapAlloc = xHeapSize - xHeapFree;
+        size_t xMaxHeapAlloc = xHeapSize - xMinHeapFree;
+
+        size_t xHeapSizeDiv = xHeapSize / xDivisor;
+        size_t xHeapFreeDiv = xHeapFree / xDivisor;
+        size_t xMinHeapFreeDiv = xMinHeapFree / xDivisor;
+        size_t xHeapAllocDiv = xHeapAlloc / xDivisor;
+        size_t xMaxHeapAllocDiv = xMaxHeapAlloc / xDivisor;
+
+        size_t xHeapFreePct = ( 100 * xHeapFree ) / xHeapSize;
+        size_t xMinHeapFreePct = ( 100 * xMinHeapFree ) / xHeapSize;
+        size_t xHeapAllocPct = ( 100 * xHeapAlloc ) / xHeapSize;
+        size_t xMaxHeapAllocPct = ( 100 * xMaxHeapAlloc ) / xHeapSize;
+
+        size_t xLen = 0;
+
+        static const char * pcFormatString = "| %-16s | %-11ld | 0x%-9X | %3lu %%   |\r\n";
+
+        pxCIO->print( "---------------------------------------------------------|\r\n" );
+
+        xLen = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN,
+                         "| Metric           | Dec %7s | Hex (Bytes) | %% Total |\r\n",
+                         cDivSymbol );
+
+        if( xLen >= CLI_OUTPUT_SCRATCH_BUF_LEN )
+        {
+            xLen = CLI_OUTPUT_SCRATCH_BUF_LEN - 1;
+        }
+
+        pxCIO->write( pcCliScratchBuffer, xLen );
+
+        pxCIO->print( "|------------------|-------------|-------------|---------|\r\n" );
+
+
+
+        xLen = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN, pcFormatString,
+                         "Heap Total", xHeapSizeDiv, xHeapSize, 100 );
+
+        if( xLen >= CLI_OUTPUT_SCRATCH_BUF_LEN )
+        {
+            xLen = CLI_OUTPUT_SCRATCH_BUF_LEN - 1;
+        }
+
+        pxCIO->write( pcCliScratchBuffer, xLen );
+
+        xLen = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN, pcFormatString,
+                         "Heap Free", xHeapFreeDiv, xHeapFree, xHeapFreePct );
+
+        if( xLen >= CLI_OUTPUT_SCRATCH_BUF_LEN )
+        {
+            xLen = CLI_OUTPUT_SCRATCH_BUF_LEN - 1;
+        }
+
+        pxCIO->write( pcCliScratchBuffer, xLen );
+
+        xLen = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN, pcFormatString,
+                         "Min. Heap Free", xMinHeapFreeDiv, xMinHeapFree, xMinHeapFreePct );
+
+        if( xLen >= CLI_OUTPUT_SCRATCH_BUF_LEN )
+        {
+            xLen = CLI_OUTPUT_SCRATCH_BUF_LEN - 1;
+        }
+
+        pxCIO->write( pcCliScratchBuffer, xLen );
+
+        xLen = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN, pcFormatString,
+                         "Heap Alloc.", xHeapAllocDiv, xHeapAlloc, xHeapAllocPct );
+
+        if( xLen >= CLI_OUTPUT_SCRATCH_BUF_LEN )
+        {
+            xLen = CLI_OUTPUT_SCRATCH_BUF_LEN - 1;
+        }
+
+        pxCIO->write( pcCliScratchBuffer, xLen );
+
+        xLen = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN, pcFormatString,
+                         "Max. Heap Alloc.", xMaxHeapAllocDiv, xMaxHeapAlloc, xMaxHeapAllocPct );
+
+        if( xLen >= CLI_OUTPUT_SCRATCH_BUF_LEN )
+        {
+            xLen = CLI_OUTPUT_SCRATCH_BUF_LEN - 1;
+        }
+
+        pxCIO->write( pcCliScratchBuffer, xLen );
+        pxCIO->print( "---------------------------------------------------------|\r\n" );
     }
 }
