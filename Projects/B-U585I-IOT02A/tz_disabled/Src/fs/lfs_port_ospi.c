@@ -42,12 +42,12 @@
  */
 
 #ifdef LFS_NO_MALLOC
-	static uint8_t __ALIGN_BEGIN ucReadBuffer[CONFIG_SIZE_CACHE_BUFFER] __ALIGN_END = { 0 };
-	static uint8_t __ALIGN_BEGIN ucProgBuffer[CONFIG_SIZE_CACHE_BUFFER] __ALIGN_END = { 0 };
-	static uint8_t __ALIGN_BEGIN ucLookAheadBuffer[CONFIG_SIZE_LOOKAHEAD_BUFFER] __ALIGN_END = { 0 };
-	static struct lfs_config xLfsCfg = { 0 };
-	static struct LfsPortCtx xLfsCtx = { 0 };
-	static StaticSemaphore_t xMutexStatic;
+    static uint8_t __ALIGN_BEGIN ucReadBuffer[CONFIG_SIZE_CACHE_BUFFER] __ALIGN_END = { 0 };
+    static uint8_t __ALIGN_BEGIN ucProgBuffer[CONFIG_SIZE_CACHE_BUFFER] __ALIGN_END = { 0 };
+    static uint8_t __ALIGN_BEGIN ucLookAheadBuffer[CONFIG_SIZE_LOOKAHEAD_BUFFER] __ALIGN_END = { 0 };
+    static struct lfs_config xLfsCfg = { 0 };
+    static struct LfsPortCtx xLfsCtx = { 0 };
+    static StaticSemaphore_t xMutexStatic;
 #endif
 
 
@@ -55,13 +55,13 @@
 static int lfs_port_read( const struct lfs_config *c,
                           lfs_block_t block,
                           lfs_off_t off,
-                          void *buffer,
+                          void *pvBuffer,
                           lfs_size_t size );
 
 static int lfs_port_prog( const struct lfs_config *pxCfg,
                           lfs_block_t block,
                           lfs_off_t off,
-                          const void *buffer,
+                          const void *pvBuffer,
                           lfs_size_t size );
 
 static int lfs_port_erase( const struct lfs_config *pxCfg,
@@ -177,15 +177,15 @@ const struct lfs_config * pxInitializeOSPIFlashFs( TickType_t xBlockTime )
  */
 static int lfs_port_read( const struct lfs_config *c,
                           lfs_block_t block,
-        			      lfs_off_t off,
-        			      void * buffer,
-        			      lfs_size_t size )
+                          lfs_off_t off,
+                          void * pvBuffer,
+                          lfs_size_t size )
 {
     struct LfsPortCtx * pxCtx = (struct LfsPortCtx * ) c->context;
 
     configASSERT( c != NULL );
     configASSERT( block < c->block_count );
-    configASSERT( buffer != NULL );
+    configASSERT( pvBuffer != NULL );
     configASSERT( size > 0 );
 
     int32_t lReturnValue = 0;
@@ -194,7 +194,7 @@ static int lfs_port_read( const struct lfs_config *c,
 
     if( ospi_ReadAddr( &( pxCtx->xOSPIHandle ),
                        ulReadAddr,
-                       buffer,
+                       pvBuffer,
                        size,
                        pdMS_TO_TICKS( MX25LM_READ_TIMEOUT_MS ) ) != pdTRUE )
     {
@@ -203,20 +203,20 @@ static int lfs_port_read( const struct lfs_config *c,
 
     LogDebug( "Reading address 0x%010lX, size: %lu, rv: %ld", ulReadAddr, size, lReturnValue );
 
-	return lReturnValue;
+    return lReturnValue;
 }
 
 
 static int lfs_port_prog( const struct lfs_config *pxCfg,
                           lfs_block_t block,
-        		     	  lfs_off_t off,
-        		     	  const void *buffer,
-        		     	  lfs_size_t size )
+                           lfs_off_t off,
+                           const void *pvBuffer,
+                           lfs_size_t size )
 {
     /* validate arguments */
     configASSERT( pxCfg != NULL );
     configASSERT( block < pxCfg->block_count );
-    configASSERT( buffer != NULL );
+    configASSERT( pvBuffer != NULL );
     configASSERT( size > 0 );
 
     struct LfsPortCtx * pxCtx = (struct LfsPortCtx * ) pxCfg->context;
@@ -238,7 +238,7 @@ static int lfs_port_prog( const struct lfs_config *pxCfg,
         LogDebug( "Writing block at addr: 0x%010lX, len: %lu", ulWriteAddr, MX25LM_PROGRAM_FIFO_LEN );
         if( ospi_WriteAddr( &( pxCtx->xOSPIHandle ),
                             ulWriteAddr,
-                            &( buffer[ ulWriteAddr - ulStartAddr] ),
+                            &( ( ( uint8_t * ) pvBuffer )[ ulWriteAddr - ulStartAddr] ),
                             MX25LM_PROGRAM_FIFO_LEN,
                             pdMS_TO_TICKS( MX25LM_WRITE_TIMEOUT_MS ) ) != pdTRUE )
         {
@@ -247,8 +247,7 @@ static int lfs_port_prog( const struct lfs_config *pxCfg,
         }
     }
 
-
-	return lReturnValue;
+    return lReturnValue;
 }
 
 static int lfs_port_erase( const struct lfs_config *pxCfg, lfs_block_t block )
@@ -256,8 +255,8 @@ static int lfs_port_erase( const struct lfs_config *pxCfg, lfs_block_t block )
     configASSERT( pxCfg != NULL );
     configASSERT( block < pxCfg->block_count );
 
-	int32_t lReturnValue = 0;
-	struct LfsPortCtx * pxCtx = (struct LfsPortCtx * ) pxCfg->context;
+    int32_t lReturnValue = 0;
+    struct LfsPortCtx * pxCtx = (struct LfsPortCtx * ) pxCfg->context;
 
     /* Determine the 4-byte erase address */
     uint32_t ulEraseAddr =  OPI_START_ADDRESS + ( block * pxCfg->block_size );
@@ -273,10 +272,10 @@ static int lfs_port_erase( const struct lfs_config *pxCfg, lfs_block_t block )
 
     LogDebug( "Erase operation completed. Address: 0x%010lX Return Value: %ld", ulEraseAddr, lReturnValue );
 
-	return lReturnValue;
+    return lReturnValue;
 }
 
 static int lfs_port_sync( const struct lfs_config *c )
 {
-	return 0;
+    return 0;
 }
