@@ -230,6 +230,7 @@ extern void Task_MotionSensorsPublish( void * );
 extern void vEnvironmentSensorPublishTask( void * );
 extern void vShadowDeviceTask( void * );
 extern void vOTAUpdateTask( void * pvParam );
+extern void vDefenderAgentTask( void * );
 
 void vInitTask( void * pvArgs )
 {
@@ -271,7 +272,7 @@ void vInitTask( void * pvArgs )
     configASSERT( xResult == pdTRUE );
 
 
-    xResult = xTaskCreate( vOTAUpdateTask, "OTAUpdate", 2048, NULL, tskIDLE_PRIORITY + 1, NULL );
+    xResult = xTaskCreate( vOTAUpdateTask, "OTAUpdate", 4096, NULL, tskIDLE_PRIORITY + 1, NULL );
 
     configASSERT( xResult == pdTRUE );
 
@@ -287,8 +288,8 @@ void vInitTask( void * pvArgs )
     xResult = xTaskCreate( vShadowDeviceTask, "ShadowDevice", 1024, NULL, 5, NULL );
     configASSERT( xResult == pdTRUE );
 
-//    xResult = xTaskCreate( vShadowUpdateTask, "ShadowUpdate", 1024, NULL, 5, NULL );
-//    configASSERT( xResult == pdTRUE );
+    xResult = xTaskCreate( vDefenderAgentTask, "AWSDefender", 2048, NULL, 5, NULL );
+    configASSERT( xResult == pdTRUE );
 
     while(1)
     {

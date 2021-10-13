@@ -34,17 +34,18 @@
 
 //#define LWIP_IPV6                       1
 //#define LWIP_IPV6_DHCP6                 1
-#define LWIP_DHCP                       1
-#define LWIP_DNS                        1
-#define LWIP_SO_SNDTIMEO                1
-#define LWIP_SO_RCVTIMEO                1
-#define LWIP_SO_SNDRCVTIMEO_NONSTANDARD   1
-#define LWIP_SO_RCVRCVTIMEO_NONSTANDARD   1
-#define LWIP_TCPIP_CORE_LOCKING         1
-#define LWIP_ARP                        1
-#define LWIP_STATS                       0
-#define LWIP_POSIX_SOCKETS_IO_NAMES      0
-#define LWIP_COMPAT_SOCKETS              2
+#define LWIP_DHCP                           1
+#define LWIP_DNS                            1
+#define LWIP_SO_SNDTIMEO                    1
+#define LWIP_SO_RCVTIMEO                    1
+#define LWIP_SO_SNDRCVTIMEO_NONSTANDARD     1
+#define LWIP_SO_RCVRCVTIMEO_NONSTANDARD     1
+#define LWIP_TCPIP_CORE_LOCKING             1
+#define LWIP_ARP                            1
+#define LWIP_STATS                          1
+#define MIB2_STATS                          1
+#define LWIP_POSIX_SOCKETS_IO_NAMES         0
+#define LWIP_COMPAT_SOCKETS                 2
 
  #define LWIP_TCP_KEEPALIVE                  1   /* Keep the TCP link active. Important for MQTT/TLS */
  #define LWIP_RANDOMIZE_INITIAL_LOCAL_PORTS  1   /* Prevent the same port to be used after reset.
