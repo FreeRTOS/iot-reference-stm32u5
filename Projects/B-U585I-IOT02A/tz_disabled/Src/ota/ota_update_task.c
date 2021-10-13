@@ -106,14 +106,14 @@
  * @brief The delay used in the OTA demo task to periodically output the OTA
  * statistics like number of packets received, dropped, processed and queued per connection.
  */
-#define otaexampleTASK_DELAY_MS                          ( 5000U )
+#define otaexampleTASK_DELAY_MS                          ( 30 * 1000U )
 
 /**
  * @brief The maximum time for which OTA demo waits for an MQTT operation to be complete.
  * This involves receiving an acknowledgment for broker for SUBSCRIBE, UNSUBSCRIBE and non
  * QOS0 publishes.
  */
-#define otaexampleMQTT_TIMEOUT_MS                        ( 5000U )
+#define otaexampleMQTT_TIMEOUT_MS                        ( 10 * 1000U )
 
 /**
  * @brief The common prefix for all OTA topics.
