@@ -305,7 +305,7 @@ char * KVStore_getStringHeap( KVStoreKey_t key, size_t * pxLength )
 
     if( pxLength != NULL )
     {
-        *pxLength = xLen;
+        *pxLength = xLen - 1;
     }
 
     return pcBuffer;
