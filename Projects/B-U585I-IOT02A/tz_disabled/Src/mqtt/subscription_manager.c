@@ -47,6 +47,10 @@
 /* Subscription manager header include. */
 #include "subscription_manager.h"
 
+#include "core_mqtt_agent.h"
+
+extern SubscriptionElement_t pxGlobalSubscriptionList[];
+
 static SemaphoreHandle_t xSubMgrMutex = NULL;
 
 void submgr_init( void )
@@ -62,6 +66,104 @@ void submgr_init( void )
     configASSERT( xSubMgrMutex != NULL );
 
     xSemaphoreGiveRecursive( xSubMgrMutex );
+}
+
+bool mrouter_registerCallback( const char * pcTopicFilter,
+                               size_t xTopicFilterLen,
+                               IncomingPubCallback_t pxCallback,
+                               void * pvCtx )
+{
+    bool xResult = false;
+    size_t xAvailableIndex = SUBSCRIPTION_MANAGER_MAX_SUBSCRIPTIONS;
+
+    configASSERT_CONTINUE( pcTopicFilter );
+    configASSERT_CONTINUE( xTopicFilterLen > 0 );
+    configASSERT_CONTINUE( pxCallback );
+    configASSERT_CONTINUE( pvCtx );
+
+
+    if( xSemaphoreTakeRecursive( xSubMgrMutex, portMAX_DELAY ) == pdTRUE )
+    {
+        /* Start at end of array, so that we will insert at the first available index.
+         * Scans backwards to find duplicates. */
+        for( int32_t lIndex = ( uint32_t ) SUBSCRIPTION_MANAGER_MAX_SUBSCRIPTIONS - 1; lIndex >= 0; lIndex-- )
+        {
+            SubscriptionElement_t * pxSubElement = &( pxGlobalSubscriptionList[ lIndex ] );
+
+            if( pxSubElement->usFilterStringLength == 0 )
+            {
+                xAvailableIndex = lIndex;
+            }
+            else
+            {
+                if( pxSubElement->usFilterStringLength == xTopicFilterLen &&
+                    strncmp( pcTopicFilter, pxSubElement->pcSubscriptionFilterString, ( size_t ) xTopicFilterLen ) == 0  &&
+                    pxSubElement->xTaskHandle == xTaskGetCurrentTaskHandle() &&
+                    pxSubElement->pxIncomingPublishCallback == pxCallback &&
+                    pxSubElement->pvIncomingPublishCallbackContext == pvCtx )
+                {
+                    configASSERT_CONTINUE( pdFALSE );
+                    xAvailableIndex = SUBSCRIPTION_MANAGER_MAX_SUBSCRIPTIONS;
+                    xResult = true;
+                    break;
+                }
+            }
+        }
+
+        if( xAvailableIndex < SUBSCRIPTION_MANAGER_MAX_SUBSCRIPTIONS )
+        {
+            pxGlobalSubscriptionList[ xAvailableIndex ].pcSubscriptionFilterString = pcTopicFilter;
+            pxGlobalSubscriptionList[ xAvailableIndex ].usFilterStringLength = xTopicFilterLen;
+            pxGlobalSubscriptionList[ xAvailableIndex ].pxIncomingPublishCallback = pxCallback;
+            pxGlobalSubscriptionList[ xAvailableIndex ].pvIncomingPublishCallbackContext = pvCtx;
+            pxGlobalSubscriptionList[ xAvailableIndex ].xTaskHandle = xTaskGetCurrentTaskHandle();
+            xResult = true;
+        }
+        xSemaphoreGiveRecursive( xSubMgrMutex );
+    }
+
+    return xResult;
+}
+
+bool mrouter_deRegisterCallback( const char * pcTopicFilter,
+                                 size_t xTopicFilterLen,
+                                 IncomingPubCallback_t pxCallback,
+                                 void * pvCtx )
+{
+    bool xSuccess = false;
+
+    configASSERT_CONTINUE( pcTopicFilter );
+    configASSERT_CONTINUE( xTopicFilterLen > 0 );
+    configASSERT_CONTINUE( pxCallback );
+    configASSERT_CONTINUE( pvCtx );
+    configASSERT_CONTINUE( pxGlobalSubscriptionList );
+
+    if( pcTopicFilter == NULL ||
+        xTopicFilterLen == 0U ||
+        pxCallback == NULL ||
+        pvCtx == NULL )
+    {
+        xSuccess = false;
+    }
+    else
+    {
+        if( xSemaphoreTakeRecursive( xSubMgrMutex, portMAX_DELAY ) == pdTRUE )
+        {
+            for( uint32_t ulIndex = 0U; ulIndex < SUBSCRIPTION_MANAGER_MAX_SUBSCRIPTIONS; ulIndex++ )
+            {
+                if( pxGlobalSubscriptionList[ ulIndex ].usFilterStringLength == xTopicFilterLen &&
+                    strncmp( pxGlobalSubscriptionList[ ulIndex ].pcSubscriptionFilterString, pcTopicFilter, xTopicFilterLen ) == 0 &&
+                    pxGlobalSubscriptionList[ ulIndex ].xTaskHandle == xTaskGetCurrentTaskHandle() &&
+                    pxGlobalSubscriptionList[ ulIndex ].pxIncomingPublishCallback == pxCallback )
+                {
+                    memset( &( pxGlobalSubscriptionList[ ulIndex ] ), 0x00, sizeof( SubscriptionElement_t ) );
+                    xSuccess = true;
+                }
+            }
+            xSemaphoreGiveRecursive( xSubMgrMutex );
+        }
+    }
+    return xSuccess;
 }
 
 bool submgr_addSubscription( SubscriptionElement_t * pxSubscriptionList,
@@ -104,7 +206,6 @@ bool submgr_addSubscription( SubscriptionElement_t * pxSubscriptionList,
                 else
                 {
                     if( ( pxSubElement->usFilterStringLength == usTopicFilterLength ) &&
-
                          ( strncmp( pcTopicFilterString, pxSubElement->pcSubscriptionFilterString, ( size_t ) usTopicFilterLength ) == 0 ) &&
                          ( pxSubElement->xTaskHandle == xTaskGetCurrentTaskHandle() ) &&
                          ( pxSubElement->pxIncomingPublishCallback == pxIncomingPublishCallback ) &&
@@ -178,7 +279,7 @@ bool submgr_removeSubscription( SubscriptionElement_t * pxSubscriptionList,
 /*-----------------------------------------------------------*/
 
 bool submgr_handleIncomingPublish( SubscriptionElement_t * pxSubscriptionList,
-                                           MQTTPublishInfo_t * pxPublishInfo )
+                                   MQTTPublishInfo_t * pxPublishInfo )
 {
     uint32_t ulIndex = 0;
     bool xSuccess = false;

@@ -83,6 +83,17 @@ typedef struct subscriptionElement
  */
 void submgr_init( void );
 
+
+bool mrouter_registerCallback( const char * pcTopicFilter,
+                               size_t xTopicFilterLen,
+                               IncomingPubCallback_t pxCallback,
+                               void * pvCtx );
+
+bool mrouter_deRegisterCallback( const char * pcTopicFilter,
+                                 size_t xTopicFilterLen,
+                                 IncomingPubCallback_t pxCallback,
+                                 void * pvCtx );
+
 /**
  * @brief Add a subscription to the subscription list.
  *

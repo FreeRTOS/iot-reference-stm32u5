@@ -1,6 +1,6 @@
 /*
- * Lab-Project-coreMQTT-Agent 201215
- * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * FreeRTOS STM32 Reference Integration
+ * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -19,8 +19,11 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
- * http://www.FreeRTOS.org
- * http://aws.amazon.com/freertos
+ * https://www.FreeRTOS.org
+ * https://github.com/FreeRTOS
+ *
+ * Derived from Lab-Project-coreMQTT-Agent 201215
+ *
  */
 
 #include "logging_levels.h"
@@ -216,7 +219,7 @@ static MQTTAgentMessageContext_t xCommandQueue;
  * storing subscriptions to be initialized to 0. As this is a global array, it
  * will be initialized to 0 by default.
  */
-SubscriptionElement_t xGlobalSubscriptionList[ SUBSCRIPTION_MANAGER_MAX_SUBSCRIPTIONS ];
+SubscriptionElement_t pxGlobalSubscriptionList[ SUBSCRIPTION_MANAGER_MAX_SUBSCRIPTIONS ] = { 0 };
 
 /*-----------------------------------------------------------*/
 void vSleepUntilMQTTAgentReady( void )
@@ -407,7 +410,7 @@ static MQTTStatus_t prvMQTTInit(  NetworkContext_t * pxNetworkContext )
                               prvGetTimeMs,
                               prvIncomingPublishCallback,
                               /* Context to pass into the callback. Passing the pointer to subscription array. */
-                              xGlobalSubscriptionList );
+                              pxGlobalSubscriptionList );
 
     return xReturn;
 }
@@ -470,10 +473,10 @@ static MQTTStatus_t prvHandleResubscribe( void )
     {
         /* Check if there is a subscription in the subscription list. This demo
          * doesn't check for duplicate subscriptions. */
-        if( xGlobalSubscriptionList[ ulIndex ].usFilterStringLength != 0 )
+        if( pxGlobalSubscriptionList[ ulIndex ].usFilterStringLength != 0 )
         {
-            xSubInfo[ usNumSubscriptions ].pTopicFilter = xGlobalSubscriptionList[ ulIndex ].pcSubscriptionFilterString;
-            xSubInfo[ usNumSubscriptions ].topicFilterLength = xGlobalSubscriptionList[ ulIndex ].usFilterStringLength;
+            xSubInfo[ usNumSubscriptions ].pTopicFilter = pxGlobalSubscriptionList[ ulIndex ].pcSubscriptionFilterString;
+            xSubInfo[ usNumSubscriptions ].topicFilterLength = pxGlobalSubscriptionList[ ulIndex ].usFilterStringLength;
 
             /* QoS1 is used for all the subscriptions in this demo. */
             xSubInfo[ usNumSubscriptions ].qos = MQTTQoS1;
@@ -537,7 +540,7 @@ static void prvSubscriptionCommandCallback( MQTTAgentCommandContext_t * pxComman
                             pxSubscribeArgs->pSubscribeInfo[ lIndex ].topicFilterLength,
                             pxSubscribeArgs->pSubscribeInfo[ lIndex ].pTopicFilter ) );
                 /* Remove subscription callback for unsubscribe. */
-                submgr_removeSubscription( xGlobalSubscriptionList,
+                submgr_removeSubscription( pxGlobalSubscriptionList,
                                     pxSubscribeArgs->pSubscribeInfo[ lIndex ].pTopicFilter,
                                     pxSubscribeArgs->pSubscribeInfo[ lIndex ].topicFilterLength );
             }
