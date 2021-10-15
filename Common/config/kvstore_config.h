@@ -81,7 +81,7 @@ typedef enum KvStoreEnum
 	KV_DFLT( KV_TYPE_STRING, WIFI_PASSWORD_DFLT 	), /* CS_WIFI_CREDENTIAL */		\
 	KV_DFLT( KV_TYPE_BASE_T, pdTRUE 				), /* CS_TLS_VERIFY_CA */		\
 	KV_DFLT( KV_TYPE_BASE_T, pdTRUE 				), /* CS_TLS_VERIFY_SNI */		\
-	KV_DFLT( KV_TYPE_INT32,  0 						), /* CS_TIME_HWM_S_1970 */		\
+	KV_DFLT( KV_TYPE_UINT32, 0 						), /* CS_TIME_HWM_S_1970 */		\
 }
 
 #endif /* _KVSTORE_CONFIG_H */

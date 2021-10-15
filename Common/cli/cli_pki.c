@@ -38,7 +38,7 @@
 /* PKCS11 */
 #include "pkcs11.h"
 #include "core_pkcs11_config.h"
-#include "core_pkcs11.h"
+//#include "core_pkcs11.h"
 
 /* Mbedtls */
 #include "mbedtls/pem.h"

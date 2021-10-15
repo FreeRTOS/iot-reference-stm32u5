@@ -26,22 +26,19 @@
  */
 
 #include "main.h"
-#include "stm32u5xx_it.h"
+//#include "stm32u5xx_it.h"
 #include "FreeRTOS.h"
 #include "task.h"
 
-extern DMA_HandleTypeDef handle_GPDMA1_Channel7;
-extern DMA_HandleTypeDef handle_GPDMA1_Channel6;
-extern DMA_HandleTypeDef handle_GPDMA1_Channel5;
-extern DMA_HandleTypeDef handle_GPDMA1_Channel4;
-extern SPI_HandleTypeDef hspi2;
-extern TIM_HandleTypeDef htim6;
+static GPIOInterruptCallback_t volatile xGpioCallbacks[ 16 ] = { NULL };
+static void * volatile xGpioCallbackContext[ 16 ] = { NULL };
 
-void NMI_Handler(void)
+void NMI_Handler( void )
 {
-  while (1)
-  {
-  }
+    while( 1 )
+    {
+    	__NOP();
+    }
 }
 
 __attribute__( ( optimize( "O0" ) ) ) void prvGetRegistersFromStack( uint32_t *pulFaultStackAddress )
@@ -79,7 +76,7 @@ __attribute__( ( optimize( "O0" ) ) ) void prvGetRegistersFromStack( uint32_t *p
 
 void HardFault_Handler( void ) __attribute__( ( naked ) );
 
-void HardFault_Handler(void)
+void HardFault_Handler( void )
 {
     __asm volatile
     (
@@ -94,86 +91,151 @@ void HardFault_Handler(void)
     );
 }
 
-void MemManage_Handler(void)
+void MemManage_Handler( void )
 {
-  while (1)
-  {
-  }
+    while( 1 )
+    {
+    	__NOP();
+    }
 }
 
-void BusFault_Handler(void)
+void BusFault_Handler( void )
 {
-  while (1)
-  {
-  }
+    while( 1 )
+    {
+    	__NOP();
+    }
 }
 
-void UsageFault_Handler(void)
+void UsageFault_Handler( void )
 {
-  while (1)
-  {
-  }
+    while( 1 )
+    {
+    	__NOP();
+    }
+}
+
+void Error_Handler( void )
+{
+	while( 1 )
+	{
+		__NOP();
+	}
 }
 
 /* Note: SVC_Handler and PendSV_Handler are provided by the FreeRTOS Cortex-M33 port */
 
-void DebugMon_Handler(void)
+void DebugMon_Handler( void )
 {
+	__NOP();
 }
 
 /* STM32U5xx Peripheral Interrupt Handlers */
-
-void EXTI14_IRQHandler(void)
+void EXTI14_IRQHandler( void )
 {
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_14);
+    HAL_GPIO_EXTI_IRQHandler( GPIO_PIN_14 );
 }
 
-void EXTI15_IRQHandler(void)
+void EXTI15_IRQHandler( void )
 {
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
+    HAL_GPIO_EXTI_IRQHandler( GPIO_PIN_15 );
 }
 
-void GPDMA1_Channel4_IRQHandler(void)
+void GPDMA1_Channel4_IRQHandler( void )
 {
-  HAL_DMA_IRQHandler(&handle_GPDMA1_Channel4);
+	if( pxHndlGpdmaCh4 != NULL )
+	{
+		HAL_DMA_IRQHandler( pxHndlGpdmaCh4 );
+	}
 }
 
-void GPDMA1_Channel5_IRQHandler(void)
+void GPDMA1_Channel5_IRQHandler( void )
 {
-  HAL_DMA_IRQHandler(&handle_GPDMA1_Channel5);
-}
-
-void GPDMA1_Channel6_IRQHandler(void)
-{
-  HAL_DMA_IRQHandler(&handle_GPDMA1_Channel6);
-}
-
-void GPDMA1_Channel7_IRQHandler(void)
-{
-  HAL_DMA_IRQHandler(&handle_GPDMA1_Channel7);
+	if( pxHndlGpdmaCh5 != NULL )
+	{
+		HAL_DMA_IRQHandler( pxHndlGpdmaCh5 );
+	}
 }
 
 /* Handle TIM6 interrupt for STM32 HAL time base. */
-void TIM6_IRQHandler(void)
+void TIM6_IRQHandler( void )
 {
-  HAL_TIM_IRQHandler(&htim6);
+//    HAL_TIM_IRQHandler(&htim6);
 }
 
-void SPI2_IRQHandler(void)
+void SPI2_IRQHandler( void )
 {
-  HAL_SPI_IRQHandler(&hspi2);
+	if( pxHndlSpi2 )
+	{
+		HAL_SPI_IRQHandler( pxHndlSpi2 );
+	}
 }
 
 extern void SysTick_Handler( void );
 
 void _SysTick_Handler( void )
 {
-    /* Clear overflow flag */
-    SysTick->CTRL;
+	/* Clear overflow flag */
+	SysTick->CTRL;
 
-    if ( xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED )
+	if( xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED )
+	{
+		/* Call the cortex-m33 port systick handler */
+		SysTick_Handler();
+    }
+
+	HAL_IncTick();
+}
+
+void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
+{
+//	if (htim->Instance == TIM6) {
+//		HAL_IncTick();
+//	}
+}
+
+/*
+ * @brief Register a callback function for a given gpio.
+ * @param usGpioPinMask The target gpio pin's bitmask
+ * @param pvCallback Callback function pointer
+ * @param pvContext User provided context pointer
+ */
+void GPIO_EXTI_Register_Callback( uint16_t usGpioPinMask, GPIOInterruptCallback_t pvCallback, void * pvContext )
+{
+    uint32_t ulIndex = POSITION_VAL( usGpioPinMask );
+
+    configASSERT( ulIndex < 16 );
+
+//    LogDebug( "Registering callback addr: %p, ctx: %p, to gpio pin_num: %d, pin_mask: %d.",
+//              pvCallback,
+//              pvContext,
+//              ulIndex,
+//              usGpioPinMask );
+
+    xGpioCallbacks[ ulIndex ] = pvCallback;
+    xGpioCallbackContext[ ulIndex ] = pvContext;
+}
+
+/**
+  * @brief  EXTI line rising detection callback.
+  * @param  GPIO_Pin: Specifies the port pin connected to corresponding EXTI line.
+  * @retval None
+  */
+void HAL_GPIO_EXTI_Falling_Callback( uint16_t usGpioPinMask )
+{
+    ( void ) usGpioPinMask;
+}
+
+/**
+  * @brief  EXTI line rising detection callback.
+  * @param  GPIO_Pin: Specifies the port pin connected to corresponding EXTI line.
+  * @retval None
+  */
+void HAL_GPIO_EXTI_Rising_Callback( uint16_t usGpioPinMask )
+{
+    uint32_t ulIndex = POSITION_VAL( usGpioPinMask );
+    if( xGpioCallbacks[ ulIndex ] != NULL )
     {
-    /* Call the cortex-m33 port systick handler */
-        SysTick_Handler();
+        (*(xGpioCallbacks[ ulIndex ]))( xGpioCallbackContext[ ulIndex ] );
     }
 }
