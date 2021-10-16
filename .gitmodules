@@ -73,3 +73,6 @@
 [submodule "Middleware/ARM/ota-pal-psa"]
 	path = Middleware/ARM/ota-pal-psa
 	url = https://github.com/Linaro/freertos-ota-pal-psa.git
+[submodule "Middleware/ARM/mcuboot"]
+	path = Middleware/ARM/mcuboot
+	url = https://github.com/mcu-tools/mcuboot.git
