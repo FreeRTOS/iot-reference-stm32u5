@@ -236,7 +236,7 @@ void vInitTask( void * pvArgs )
 {
     BaseType_t xResult;
 
-    xResult = xTaskCreate( Task_CLI, "cli", 1024, NULL, 10, NULL );
+    xResult = xTaskCreate( Task_CLI, "cli", 2048, NULL, 10, NULL );
 
     int xMountStatus = fs_init();
 
