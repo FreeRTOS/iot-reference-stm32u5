@@ -67,3 +67,6 @@
 [submodule "Middleware/ARM/littlefs"]
 	path = Middleware/ARM/littlefs
 	url = https://github.com/littlefs-project/littlefs.git
+[submodule "Middleware/tinycbor"]
+	path = Middleware/tinycbor
+	url = https://github.com/intel/tinycbor.git

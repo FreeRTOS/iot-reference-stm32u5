@@ -93,6 +93,11 @@
 			<locationURI>WORKSPACE_LOC/Middleware/lwip/src</locationURI>
 		</link>
 		<link>
+			<name>Libraries/tinycbor</name>
+			<type>2</type>
+			<locationURI>PARENT-3-PROJECT_LOC/Middleware/tinycbor/src</locationURI>
+		</link>
+		<link>
 			<name>Src/Boards</name>
 			<type>2</type>
 			<locationURI>WORKSPACE_LOC/Boards</locationURI>
@@ -228,4 +233,24 @@
 			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/kernel/timers.c</locationURI>
 		</link>
 	</linkedResources>
+	<filteredResources>
+		<filter>
+			<id>1634348195392</id>
+			<name>Libraries/tinycbor</name>
+			<type>5</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-*.c</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1634348195395</id>
+			<name>Libraries/tinycbor</name>
+			<type>5</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-*.h</arguments>
+			</matcher>
+		</filter>
+	</filteredResources>
 </projectDescription>
