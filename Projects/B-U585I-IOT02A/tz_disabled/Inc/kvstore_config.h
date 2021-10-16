@@ -41,11 +41,11 @@ typedef enum KvStoreEnum
 } KVStoreKey_t;
 
 /* Define default values for common attributes */
-#define THING_NAME_DFLT 				"test_stm32u5_01"
-#define MQTT_ENDOPOINT_DFLT 			"a3dwi8g3v1qwwi-ats.iot.us-west-2.amazonaws.com"
+#define THING_NAME_DFLT 				"TEST_DEVICE"
+#define MQTT_ENDOPOINT_DFLT 			"a31zvyed820ljz-ats.iot.us-west-2.amazonaws.com"
 
-#define WIFI_SSID_DFLT 		  "Guest"
-#define WIFI_PASSWORD_DFLT 	  ""
+#define WIFI_SSID_DFLT 		  "HOME-6119-2.4"
+#define WIFI_PASSWORD_DFLT 	  "Treehouse2903"
 
 
 /* Define KV_STORE_CACHE_ENABLE to 1 to enable an in-memory cache of all Key / Value pairs */
