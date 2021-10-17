@@ -511,12 +511,27 @@ CK_RV prvVerifyImageSignatureUsingPKCS11( CK_SESSION_HANDLE session,
     /* Calculate the digest of the image. */
     if( result == CKR_OK )
     {
-    	result = functionList->C_Digest( session,
-    		                             pImageContext->ulBaseAddress,
-										 pImageContext->ulImageSize,
-										 digestResult,
-                                         &digestLength );
+        result = functionList->C_DigestInit( session,
+                                             &xDigestMechanism );
     }
+
+    if( result == CKR_OK )
+    {
+
+        result = functionList->C_DigestUpdate( session,
+                                         pImageContext->ulBaseAddress,
+                                         pImageContext->ulImageSize );
+    }
+
+    if( result == CKR_OK )
+    {
+
+        result = functionList->C_DigestFinal( session,
+                                              digestResult,
+                                              &digestLength );
+    }
+
+
 
     if( result == CKR_OK )
     {
@@ -539,7 +554,7 @@ CK_RV prvVerifyImageSignatureUsingPKCS11( CK_SESSION_HANDLE session,
 
 
 BaseType_t prvValidateImageSignature( OtaImageContext_t * pImageContext,
-		                              const char * pCertificatePath,
+                                      const char * pCertificatePath,
                                       uint8_t * pSignature,
                                       size_t signatureLength )
 {
@@ -571,7 +586,7 @@ BaseType_t prvValidateImageSignature( OtaImageContext_t * pImageContext,
         {
             xPKCS11Status = prvVerifyImageSignatureUsingPKCS11( session,
                                                                 certHandle,
-																pImageContext,
+                                                                pImageContext,
                                                                 pkcs11Signature,
                                                                 pkcs11ECDSA_P256_SIGNATURE_LENGTH );
         }
@@ -655,6 +670,7 @@ int16_t iOtaPalWriteImageBlock( OtaFileContext_t * const pFileContext,
 OtaPalStatus_t xOtaPalFinalizeImage( OtaFileContext_t * const pFileContext )
 {
     OtaPalStatus_t otaStatus = OtaPalCommitFailed;
+    BaseType_t signatureValidationStatus;
     OtaImageContext_t * pContext = prvGetImageContext();
 
     if( ( pFileContext->pFile == ( uint8_t * ) ( pContext ) ) &&
@@ -664,9 +680,22 @@ OtaPalStatus_t xOtaPalFinalizeImage( OtaFileContext_t * const pFileContext )
 
         LogInfo(( "Validating the integrity of OTA image using digital signature.\r\n" ));
 
-        /* TODO: signature validation and confirm image here. */
-        pContext->state = OTA_PAL_IMAGE_STATE_PENDING_COMMIT;
-        otaStatus = OtaPalSuccess;
+        signatureValidationStatus = prvValidateImageSignature( pContext,
+                                                               ( char * ) pFileContext->pCertFilepath,
+                                                               pFileContext->pSignature->data,
+                                                               pFileContext->pSignature->size );
+
+        if( signatureValidationStatus == pdPASS )
+        {
+
+            pContext->state = OTA_PAL_IMAGE_STATE_PENDING_COMMIT;
+            otaStatus = OtaPalSuccess;
+        }
+        else
+        {
+            otaStatus = OTA_PAL_COMBINE_ERR( OtaPalSignatureCheckFailed,  signatureValidationStatus );
+        }
+
     }
 
     return otaStatus;

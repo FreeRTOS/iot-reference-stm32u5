@@ -282,7 +282,7 @@ CK_OBJECT_HANDLE PKCS11_PAL_FindObject( CK_BYTE_PTR pxLabel,
                                          &pcFileName,
                                          &xHandle );
 
-        if( CKR_OK != prvFileExists( pcFileName ) )
+        if( ( pcFileName == NULL ) || ( CKR_OK != prvFileExists( pcFileName ) ) )
         {
             xHandle = ( CK_OBJECT_HANDLE ) eInvalidHandle;
         }

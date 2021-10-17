@@ -81,17 +81,6 @@
 /*------------- Demo configurations -------------------------*/
 
 /**
- * @brief The version for the firmware which is running. OTA agent uses this
- * version number to perform anti-rollback validation. The firmware version for the
- * download image should be higher than the current version, otherwise the new image is
- * rejected in self test phase.1
- */
-#define APP_VERSION_MAJOR    0
-#define APP_VERSION_MINOR    9
-#define APP_VERSION_BUILD    0
-
-
-/**
  * @brief The maximum size of the file paths used in the demo.
  */
 #define otaexampleMAX_FILE_PATH_SIZE                     ( 260 )
@@ -1135,7 +1124,7 @@ void vOTAUpdateTask( void * pvParam )
     if( xResult == pdPASS )
     {
         if( ( xResult = xTaskCreate( prvOTAAgentTask,
-                                     "OTAAgentTask",
+                                     "OTAAgent",
                                      otaexampleAGENT_TASK_STACK_SIZE,
                                      NULL,
                                      otaexampleAGENT_TASK_PRIORITY,
