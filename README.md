@@ -18,7 +18,7 @@ Here is a short walkthrough of how to use the demo to perform over the air updat
 
 * OpenSSL command Line tool (latest version)
 
-#### Provisoning Code Signing credentials
+#### Provison Code Signing credentials
 
 Devices uses digital signatures to verify the authenticity of the firmware updates sent over the air. Images are signed by an authorized source who creats the image, and device can verify the signature of the image, using the corresponding public key of the source. Steps below shows how to setup and provision the code signing credentials so as to enable cloud to digitally sign the image and the device to verify the image signature before boot.
 
@@ -70,11 +70,11 @@ aws acm import-certificate --certificate fileb://ecdsasigner.crt --private-key f
    
    Press `Enter` then paste the contents of the PEM public key file `ecdsasigner-pub-key.pem` into the terminal.
    Press `Enter` again.
-   Devie should successfully provision the public key used to verify the digital signature.
+   Device should successfully provision the public key used to verify the digital signature.
 
 `ota_signer_pub` is the label used to refer to the code signing key during verification of the firmware update.
 
-6. Create a signing profile in AWS to sign the firmware image
+6. Create a signing profile in AWS to sign the firmware image.
 
 ```
 aws signer put-signing-profile --profile-name <your profile name> --signing-material certificateArn=<certificate arn created in step 4> --platform AmazonFreeRTOS-Default --signing-parameters certname=ota_signer_pub
@@ -91,7 +91,7 @@ aws signer put-signing-profile --profile-name <your profile name> --signing-mate
 4. Add a policy for AWS IoT to access the code signing profile: https://docs.aws.amazon.com/freertos/latest/userguide/code-sign-policy.html
 
 
-#### Creating a code signed firmware update job
+#### Create a code signed firmware update job
 
 1. Bump up the version of the new firmware image to be updated. From the demo project, open File `B-U585I-IOT02A/tz_disabled/Inc/ota_config.h` and set `APP_VERSION_MAJOR`  to 1 higher than current version. Build the firmware image using STM32Cube IDE.
 
@@ -154,7 +154,7 @@ aws iot get-ota-update --ota-update-id=<ota update id created above>
 Note down the job ID to check the status of the job later.
 
 
-#### Monitoring and Verification of  firmware update
+#### Monitoring and Verification of firmware update
 
 1. Once the job is created on the terminal logs, you will see that OTA job is accepted and device starts downloading image.
 
