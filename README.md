@@ -1,7 +1,7 @@
 # STM32U5 Golden Reference Integration
 
 
-### Perfroming Firmware Over The Air Update for B-U585I-IOT02A discovery kit
+### Perfroming Over The Air Firmware Update for B-U585I-IOT02A discovery kit
 
 The project shows reference implementation of how to perform firmware over the air update with AWS IoT using both trustzone and non-trustzone hardware capablities. The demo runs FreeRTOS OTA agent library as one of the RTOS tasks in background, which waits for OTA updates from cloud. The non-trustzone version of the demo leverage's board's dual bank flash memory to perform live update on other bank, while the firmare is running on one bank. The total internal flash size of 2MB is split into two banks each of size 1MB, so user should be aware that the total firmware size should not exceed 1MB.
 
