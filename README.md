@@ -117,7 +117,7 @@ aws s3api  list-object-versions --bucket <s3 bucket for image > --prefix <image 
      ],
      "targetSelection": "SNAPSHOT",
      "files": [{
-         "fileName": "tz_disabled.bin",
+         "fileName": "<image binary name>",
          "fileType": 0,
          "fileVersion": "1",
          "fileLocation": {
@@ -152,7 +152,7 @@ The command on success returns the OTA Job ID and status of the Job as `CREATE_P
 ```
 aws iot get-ota-update --ota-update-id=<ota update id created above>
 ```
-Note down the job ID to check the status of the job.
+Note down the job ID to check the status of the job later.
 
 
 #### Monitoring and Verification of  firmware update
@@ -165,13 +165,13 @@ Note down the job ID to check the status of the job.
 <INF>    15294 [OTAAgent] Extracted parameter: [key: value]=[execution.jobDocument.afr_ota.protocols: ["MQTT"]] (ota.c:1642)
 <INF>    15296 [OTAAgent] Extracted parameter: [key: value]=[filepath: tz_disabled.bin] (ota.c:1642)
 <INF>    17784 [OTAAgent] Current State=[WaitingForFileBlock], Event=[RequestFileBlock], New state=[WaitingForFileBlock] (ota.c:2834)
-> [B>    15297 [OTAAgent] Extracted parameter: [key: value]=[fileid: 0] (ota.c:1683)
+<INF>    15297 [OTAAgent] Extracted parameter: [key: value]=[fileid: 0] (ota.c:1683)
 <INF>    15298 [OTAAgent] Extracted parameter: [key: value]=[certfile: ota_signer_pub] (ota.c:1642)
 <INF>    15300 [OTAAgent] Extracted parameter [ sig-sha256-ecdsa: MEUCIGWRkFqcumdPZhoZ93ov5Npvsjj7... ] (ota.c:1573)
 <INF>    15301 [OTAAgent] Extracted parameter: [key: value]=[fileType: 0] (ota.c:1683)
 <INF>    15301 [OTAAgent] Job document was accepted. Attempting to begin the update. (ota.c:2199)
 <INF>    16533 [OTAAgent] Number of blocks remaining: 306 (ota.c:2683)
-> AF>    15450 [OTAAgent] Setting OTA data interface. (ota.c:938)
+<INF>    15450 [OTAAgent] Setting OTA data interface. (ota.c:938)
 <INF>    15450 [OTAAgent] Current State=[Creating
 ```
 
