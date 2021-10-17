@@ -1,5 +1,4 @@
-## STM32U5 Golden Reference Integration
-
+# STM32U5 Golden Reference Integration
 
 
 ### Perfroming Firmware Over The Air Update for B-U585I-IOT02A discovery kit
