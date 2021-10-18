@@ -1,7 +1,8 @@
-# IoT Reference Integration on STM32U5 Arm Cortex-M33 MCU
+# IoT Reference Integration
+# Running on STM32U5 Arm Cortex-M33 MCU
 
 
-### Perfroming Over-the-air (OTA) Firmware Update for B-U585I-IOT02A discovery kit
+### Perfroming Over-the-air (OTA) Firmware Update for [B-U585I-IOT02A discovery kit](https://www.st.com/en/evaluation-tools/b-u585i-iot02a.html)
 
 The project shows an IoT reference implementation of how to integrate FreeRTOS libraries on STM32U5 platform to perform OTA update with AWS IoT using both trustzone and non-trustzone hardware capablities. The demo runs FreeRTOS OTA agent as one of the RTOS tasks in background, which waits for OTA updates from cloud. The non-trustzone version of the demo leverages internal flash memory's dual bank. The total 2MB internal flash is split into two banks of 1MB each. The main firmware is running on one bank, while downloading new firmware image into another bank. Thus, the total firmware image size should not exceed 1MB.
 
@@ -10,9 +11,9 @@ Please follow the below steps to bring up the demo project and perform OTA updat
 #### Pre-requisites
 
 * AWS CLI
-* * The steps below uses AWS CLI commands to perform interactions with cloud,
-* * AWS CLI can be installed using following link: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html
-* * Run `aws configure` and set the access Key ID, secret Key and region for your AWS account
+  * The steps below uses AWS CLI commands to perform interactions with cloud,
+  * AWS CLI can be installed using this [link](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html)
+  * Run `aws configure` and set the access Key ID, secret Key and region for your AWS account
 
 * If not created already, provision a new thing name and have the required certificates and policies attached to connect to AWS IoT broker.
 
