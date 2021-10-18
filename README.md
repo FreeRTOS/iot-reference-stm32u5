@@ -1,13 +1,13 @@
-# STM32U5 Golden Reference Integration
+# IoT Reference Integration on STM32U5 Arm Cortex-M33 MCU
 
 
-### Perfroming Over The Air Firmware Update for B-U585I-IOT02A discovery kit
+### Perfroming Over-the-air (OTA) Firmware Update for B-U585I-IOT02A discovery kit
 
-The project shows reference implementation of how to perform firmware over the air update with AWS IoT using both trustzone and non-trustzone hardware capablities. The demo runs FreeRTOS OTA agent library as one of the RTOS tasks in background, which waits for OTA updates from cloud. The non-trustzone version of the demo leverage's board's dual bank flash memory to perform live update on other bank, while the firmare is running on one bank. The total internal flash size of 2MB is split into two banks each of size 1MB, so user should be aware that the total firmware size should not exceed 1MB.
+The project shows an IoT reference implementation of how to integrate FreeRTOS libraries on STM32U5 platform to perform OTA update with AWS IoT using both trustzone and non-trustzone hardware capablities. The demo runs FreeRTOS OTA agent as one of the RTOS tasks in background, which waits for OTA updates from cloud. The non-trustzone version of the demo leverages internal flash memory's dual bank. The total 2MB internal flash is split into two banks of 1MB each. The main firmware is running on one bank, while downloading new firmware image into another bank. Thus, the total firmware image size should not exceed 1MB.
 
-Here is a short walkthrough of how to use the demo to perform over the air update of a new firmware image.
+Please follow the below steps to bring up the demo project and perform OTA update:
 
-#### Pre requestes
+#### Pre-requisites
 
 * AWS CLI
 * * The steps below uses AWS CLI commands to perform interactions with cloud,
