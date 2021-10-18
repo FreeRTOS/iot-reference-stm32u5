@@ -1,5 +1,4 @@
-# IoT Reference Integration
-# Running on STM32U5 Arm Cortex-M33 MCU
+# IoT Reference Integration on STM32U5 Arm Cortex-M33 MCU
 
 
 ### Perfroming Over-the-air (OTA) Firmware Update for [B-U585I-IOT02A discovery kit](https://www.st.com/en/evaluation-tools/b-u585i-iot02a.html)
