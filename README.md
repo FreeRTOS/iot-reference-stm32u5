@@ -198,6 +198,6 @@ See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more inform
 
 ## License
 
-Project source code under '.\Projects' and libraries under '.\Middleware\AWS' and '.\Middleware\FreeRTOS' are licensed under the MIT-0 License. See the LICENSE file.
-Libraries other than from AWS and FreeRTOS under '.\Middleware' and hardware platform driver source code under '.\Drivers' are under separate license. See source header documentation. 
+Project source code under `.\Projects` and libraries under `.\Middleware\AWS` and `.\Middleware\FreeRTOS` are licensed under the MIT-0 License. See the LICENSE file.
+Libraries other than from AWS and FreeRTOS under `.\Middleware` and hardware platform driver source code under `.\Drivers` are under separate license. See source header documentation. 
 
