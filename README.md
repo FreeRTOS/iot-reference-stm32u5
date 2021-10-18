@@ -58,7 +58,7 @@ openssl req -new -x509 -config cert_config.txt -extensions my_exts -nodes -days 
 
 4. Import the code-signing certificate and private key into AWS Certificate Manager:
 
-** NOTE:  This command displays an ARN for your certificate. You need this ARN when you create an OTA update job later **
+**NOTE:  This command displays an ARN for your certificate. You need this ARN when you create an OTA update job later**
 
 ```
 aws acm import-certificate --certificate fileb://ecdsasigner.crt --private-key fileb://ecdsasigner.key
@@ -143,7 +143,7 @@ aws s3api  list-object-versions --bucket <s3 bucket for image > --prefix <image 
 
 Create a new OTA update job from the configuration file:
 ```
-aws iot create-ota-update --cli-input-json file:///<ota job configuration file path in your filesystem>
+aws iot create-ota-update --cli-input-json file://<ota job configuration file path in your filesystem>
 ```
 
 The command on success returns the OTA Job ID and status of the Job as `CREATE_PENDING`. To get the job ID of the OTA Job, execute the following command and look for `awsIotJobId` field in json document returned. 
