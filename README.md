@@ -101,10 +101,10 @@ aws signer put-signing-profile --profile-name <your profile name> --signing-mate
 ```
 aws s3 cp <image binary path> s3://<s3 bucket for image>/
 ```
-Get the latest s3 file version of the binary image by executing the command below:
+Get the latest s3 file version of the binary image by executing the command below. The command returns an array of json structs containing details of all version. To get the latest version ID, look for `VersionId` field in the json struct where `isLatest` field is `true`.
 
 ```
-aws s3api  list-object-versions --bucket <s3 bucket for image > --prefix <image binary name>
+aws s3api  list-object-versions --bucket <s3 bucket for image> --prefix <image binary name>
 ```
 
 3. Create a new OTA Update job configuration json file (Example: ota-update-job-config.json) in your filesystem as below. Substitue the parameters with the output obtained from steps above.
@@ -112,7 +112,7 @@ aws s3api  list-object-versions --bucket <s3 bucket for image > --prefix <image 
 {
      "otaUpdateId": "<A unique job ID for the OTA job>",
      "targets": [
-         "arn:aws:iot:<region>:<accout id>:thing/<thing name>"
+         "arn:aws:iot:<region>:<account id>:thing/<thing name>"
      ],
      "targetSelection": "SNAPSHOT",
      "files": [{
@@ -146,7 +146,7 @@ Create a new OTA update job from the configuration file:
 aws iot create-ota-update --cli-input-json file://<ota job configuration file path in your filesystem>
 ```
 
-The command on success returns the OTA Job ID and status of the Job as `CREATE_PENDING`. To get the job ID of the OTA Job, execute the following command and look for `awsIotJobId` field in json document returned. 
+The command on success returns the OTA Update identifier and status of the Job as `CREATE_PENDING`. To get the corresponding job ID of the OTA Job, execute the following command and look for `awsIotJobId` field in json document returned. 
 
 ```
 aws iot get-ota-update --ota-update-id=<ota update id created above>
