@@ -25,9 +25,10 @@
 #  https://github.com/FreeRTOS
 #
 #
-
 TFM_BUILD_DIR="${PWD}/tfm_build"
 TFM_INSTALL_DIR="${PWD}/tfm_build/install"
+MCUBOOT_SRC_DIR="${PROJ_DIR}/../../Middleware/ARM/mcuboot"
+
 
 IMG_SIGNING_DIR="${TFM_BUILD_DIR}/install/image_signing"
 IMG_SCRIPTS_DIR="${IMG_SIGNING_DIR}/scripts"
@@ -35,16 +36,18 @@ IMG_SCRIPTS_DIR="${IMG_SIGNING_DIR}/scripts"
 echo
 echo "Project Path:         ${PROJ_DIR}"
 echo "TFM Build Path:       ${TFM_BUILD_DIR}"
-echo "image_signing Path:   ${IMG_SIGNING_DIR}" 
+echo "Mcuboot Source Path:  ${MCUBOOT_SRC_DIR}"
+echo "image_signing Path:   ${IMG_SIGNING_DIR}"
 echo "image scripts Path:   ${IMG_SCRIPTS_DIR}"
 echo "Project name:         ${BIN_NAME}"
+echo "NS Version:           ${NS_VERSION}"
 echo
 
 # Enter python environment previously set up by tfm build script
 source ${WORKSPACE_LOC}/.pyenv/bin/activate || exit -1
 
 # make sure the correct version of imgtool is used
-export PYTHONPATH="${TFM_BUILD_DIR}/lib/ext/mcuboot-src/scripts:${PYTHONPATH}"
+export PYTHONPATH="${MCUBOOT_SRC_DIR}/scripts:${PYTHONPATH}"
 
 for in_file in $( ls ${BIN_NAME}.* )
 do

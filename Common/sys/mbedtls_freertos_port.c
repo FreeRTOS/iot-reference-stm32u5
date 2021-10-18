@@ -27,6 +27,7 @@
 
 /* FreeRTOS includes. */
 #include "FreeRTOS.h"
+#include "semphr.h"
 
 /* mbed TLS includes. */
 #if defined(MBEDTLS_CONFIG_FILE)

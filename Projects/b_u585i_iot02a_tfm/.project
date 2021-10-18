@@ -52,9 +52,34 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
+			<name>Libraries/corePKCS11</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
 			<name>Libraries/freertos_kernel</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>Libraries/mbedtls</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Middleware/ARM/mbedtls</locationURI>
+		</link>
+		<link>
+			<name>Libraries/mcuboot</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Middleware/ARM/mcuboot</locationURI>
+		</link>
+		<link>
+			<name>Libraries/pkcs11-psa</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Middleware/ARM/pkcs11-psa</locationURI>
+		</link>
+		<link>
+			<name>Libraries/trusted-firmware-m</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Middleware/ARM/trusted-firmware-m</locationURI>
 		</link>
 		<link>
 			<name>Libraries/CMSIS/core</name>
@@ -147,6 +172,21 @@
 			<locationURI>PARENT-2-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_uart_ex.c</locationURI>
 		</link>
 		<link>
+			<name>Libraries/corePKCS11/core_pkcs11.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Middleware/FreeRTOS/corePKCS11/source/core_pkcs11.c</locationURI>
+		</link>
+		<link>
+			<name>Libraries/corePKCS11/core_pki_utils.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Middleware/FreeRTOS/corePKCS11/source/core_pki_utils.c</locationURI>
+		</link>
+		<link>
+			<name>Libraries/corePKCS11/include</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Middleware/FreeRTOS/corePKCS11/source/include</locationURI>
+		</link>
+		<link>
 			<name>Libraries/freertos_kernel/event_groups.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/Middleware/FreeRTOS/kernel/event_groups.c</locationURI>
@@ -160,11 +200,6 @@
 			<name>Libraries/freertos_kernel/list.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/Middleware/FreeRTOS/kernel/list.c</locationURI>
-		</link>
-		<link>
-			<name>Libraries/freertos_kernel/os_wrapper_freertos.c</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Middleware/FreeRTOS/kernel/portable/ThirdParty/GCC/ARM_CM33_TFM/os_wrapper_freertos.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/freertos_kernel/port</name>
@@ -193,6 +228,96 @@
 		</link>
 	</linkedResources>
 	<filteredResources>
+		<filter>
+			<id>1634345092043</id>
+			<name>Libraries/mbedtls</name>
+			<type>9</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-include</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1634345092046</id>
+			<name>Libraries/mbedtls</name>
+			<type>9</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-library</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1634345092048</id>
+			<name>Libraries/mbedtls</name>
+			<type>21</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-*.h</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1634345092050</id>
+			<name>Libraries/mbedtls</name>
+			<type>21</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-*.c</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1634347310788</id>
+			<name>Libraries/mcuboot</name>
+			<type>21</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-*.h</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1634340788894</id>
+			<name>Libraries/pkcs11-psa</name>
+			<type>5</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-*.h</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1634340788897</id>
+			<name>Libraries/pkcs11-psa</name>
+			<type>5</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-*.c</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1634426066446</id>
+			<name>Libraries/trusted-firmware-m</name>
+			<type>21</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-*.h</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1634426066448</id>
+			<name>Libraries/trusted-firmware-m</name>
+			<type>9</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-interface</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1634426066452</id>
+			<name>Libraries/trusted-firmware-m</name>
+			<type>21</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-*.c</arguments>
+			</matcher>
+		</filter>
 		<filter>
 			<id>0</id>
 			<name>Libraries/CMSIS/core</name>
@@ -272,6 +397,33 @@
 			<matcher>
 				<id>org.eclipse.ui.ide.multiFilter</id>
 				<arguments>1.0-name-matches-false-false-*.h</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1634445372626</id>
+			<name>Libraries/mbedtls/library</name>
+			<type>6</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-psa_crypto*.c</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1634445372634</id>
+			<name>Libraries/mbedtls/library</name>
+			<type>6</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-psa_crypto*.h</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1634445372636</id>
+			<name>Libraries/mbedtls/library</name>
+			<type>6</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-psa_its*</arguments>
 			</matcher>
 		</filter>
 	</filteredResources>
