@@ -76,3 +76,7 @@
 [submodule "Middleware/ARM/mcuboot"]
 	path = Middleware/ARM/mcuboot
 	url = https://github.com/mcu-tools/mcuboot.git
+[submodule "Middleware/tinycbor"]
+	path = Middleware/tinycbor
+	url = https://github.com/intel/tinycbor.git
+

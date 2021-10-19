@@ -36,6 +36,8 @@
 #include "stm32u5xx_hal_flash.h"
 #include "lfs.h"
 #include "lfs_port.h"
+#include "core_pkcs11.h"
+#include "core_pki_utils.h"
 
 const char OTA_JsonFileSignatureKey[ OTA_FILE_SIG_KEY_STR_MAX_LENGTH ] = "sig-sha256-ecdsa";
 
@@ -401,6 +403,211 @@ static HAL_StatusTypeDef prvEraseBank( uint32_t bankNumber )
 }
 
 
+static CK_RV prvPKCS11GetCertificateHandle( CK_SESSION_HANDLE xSession,
+                                            const char * pcLabelName,
+                                            CK_OBJECT_HANDLE_PTR pxCertHandle )
+{
+    CK_ATTRIBUTE xTemplate;
+    CK_RV xResult = CKR_OK;
+    CK_ULONG ulCount = 0;
+    CK_BBOOL xFindInit = CK_FALSE;
+    CK_FUNCTION_LIST_PTR xFunctionList;
+
+    xResult = C_GetFunctionList( &xFunctionList );
+
+    /* Get the certificate handle. */
+    if( CKR_OK == xResult )
+    {
+        xTemplate.type = CKA_LABEL;
+        xTemplate.ulValueLen = strlen( pcLabelName ) + 1;
+        xTemplate.pValue = ( char * ) pcLabelName;
+        xResult = xFunctionList->C_FindObjectsInit( xSession, &xTemplate, 1 );
+    }
+
+    if( CKR_OK == xResult )
+    {
+        xFindInit = CK_TRUE;
+        xResult = xFunctionList->C_FindObjects( xSession,
+                                                ( CK_OBJECT_HANDLE_PTR ) pxCertHandle,
+                                                1,
+                                                &ulCount );
+    }
+
+    if( ( CK_TRUE == xFindInit ) && ( xResult == 0 ) )
+    {
+        xResult = xFunctionList->C_FindObjectsFinal( xSession );
+    }
+
+    return xResult;
+}
+
+static CK_RV prvOpenPKCS11Session( CK_SESSION_HANDLE_PTR pSession )
+{
+    /* Find the certificate */
+    CK_RV xResult;
+    CK_FUNCTION_LIST_PTR xFunctionList;
+    CK_SLOT_ID xSlotId;
+    CK_ULONG xCount = 1;
+
+    xResult = C_GetFunctionList( &xFunctionList );
+
+    if( CKR_OK == xResult )
+    {
+        xResult = xFunctionList->C_Initialize( NULL );
+    }
+
+    if( ( CKR_OK == xResult ) || ( CKR_CRYPTOKI_ALREADY_INITIALIZED == xResult ) )
+    {
+        xResult = xFunctionList->C_GetSlotList( CK_TRUE, &xSlotId, &xCount );
+    }
+
+    if( CKR_OK == xResult )
+    {
+        xResult = xFunctionList->C_OpenSession( xSlotId, CKF_SERIAL_SESSION, NULL, NULL, pSession );
+    }
+
+    return xResult;
+}
+
+static CK_RV prvClosePKCS11Session( CK_SESSION_HANDLE xSession )
+{
+    CK_RV xResult = CKR_OK;
+    CK_FUNCTION_LIST_PTR xFunctionList;
+
+    xResult = C_GetFunctionList( &xFunctionList );
+
+    if( xResult == CKR_OK )
+    {
+        xResult = xFunctionList->C_CloseSession( xSession );
+    }
+
+    return xResult;
+}
+
+CK_RV prvVerifyImageSignatureUsingPKCS11( CK_SESSION_HANDLE session,
+                                          CK_OBJECT_HANDLE certificateHandle,
+                                          OtaImageContext_t * pImageContext,
+                                          uint8_t * pSignature,
+                                          size_t signatureLength )
+
+{
+    /* The ECDSA mechanism will be used to verify the message digest. */
+    CK_MECHANISM mechanism = { CKM_ECDSA, NULL, 0 };
+
+    /* SHA 256  will be used to calculate the digest. */
+    CK_MECHANISM xDigestMechanism = { CKM_SHA256, NULL, 0 };
+
+    /* The buffer used to hold the calculated SHA25 digest of the image. */
+    CK_BYTE digestResult[ pkcs11SHA256_DIGEST_LENGTH ] = { 0 };
+    CK_ULONG digestLength = pkcs11SHA256_DIGEST_LENGTH;
+
+    CK_RV result = CKR_OK;
+
+    CK_FUNCTION_LIST_PTR functionList;
+
+
+    result = C_GetFunctionList( &functionList );
+
+    /* Calculate the digest of the image. */
+    if( result == CKR_OK )
+    {
+        result = functionList->C_DigestInit( session,
+                                             &xDigestMechanism );
+    }
+
+    if( result == CKR_OK )
+    {
+
+        result = functionList->C_DigestUpdate( session,
+                                         pImageContext->ulBaseAddress,
+                                         pImageContext->ulImageSize );
+    }
+
+    if( result == CKR_OK )
+    {
+
+        result = functionList->C_DigestFinal( session,
+                                              digestResult,
+                                              &digestLength );
+    }
+
+
+
+    if( result == CKR_OK )
+    {
+        result = functionList->C_VerifyInit( session,
+                                             &mechanism,
+                                             certificateHandle );
+    }
+
+    if( result == CKR_OK )
+    {
+        result = functionList->C_Verify( session,
+                                         digestResult,
+                                         pkcs11SHA256_DIGEST_LENGTH,
+                                         pSignature,
+                                         signatureLength );
+    }
+
+    return result;
+}
+
+
+BaseType_t prvValidateImageSignature( OtaImageContext_t * pImageContext,
+                                      const char * pCertificatePath,
+                                      uint8_t * pSignature,
+                                      size_t signatureLength )
+{
+    CK_SESSION_HANDLE session = CKR_SESSION_HANDLE_INVALID;
+    CK_RV xPKCS11Status = CKR_OK;
+    CK_OBJECT_HANDLE certHandle;
+    BaseType_t result = pdTRUE;
+    uint8_t pkcs11Signature[ pkcs11ECDSA_P256_SIGNATURE_LENGTH ] = { 0 };
+
+    if( result == pdTRUE )
+    {
+        if( PKI_mbedTLSSignatureToPkcs11Signature( pkcs11Signature, pSignature ) != 0 )
+        {
+            LogError(( "Cannot convert signature to PKCS11 format.\r\n" ));
+            result = pdFALSE;
+        }
+    }
+
+    if( result == pdTRUE )
+    {
+        xPKCS11Status = prvOpenPKCS11Session( &session );
+
+        if( xPKCS11Status == CKR_OK )
+        {
+            xPKCS11Status = prvPKCS11GetCertificateHandle( session, pCertificatePath, &certHandle );
+        }
+
+        if( xPKCS11Status == CKR_OK )
+        {
+            xPKCS11Status = prvVerifyImageSignatureUsingPKCS11( session,
+                                                                certHandle,
+                                                                pImageContext,
+                                                                pkcs11Signature,
+                                                                pkcs11ECDSA_P256_SIGNATURE_LENGTH );
+        }
+
+        if( xPKCS11Status != CKR_OK )
+        {
+            LogError(( "Image verification failed with PKCS11 status: %d\r\n", xPKCS11Status ));
+            result = pdFALSE;
+        }
+    }
+
+    if( session != CKR_SESSION_HANDLE_INVALID )
+    {
+        ( void ) prvClosePKCS11Session( session );
+    }
+
+    return result;
+}
+
+
+
 OtaPalStatus_t xOtaPalCreateImage( OtaFileContext_t * const pFileContext )
 {
     OtaPalStatus_t otaStatus = OtaPalRxFileCreateFailed;
@@ -463,15 +670,32 @@ int16_t iOtaPalWriteImageBlock( OtaFileContext_t * const pFileContext,
 OtaPalStatus_t xOtaPalFinalizeImage( OtaFileContext_t * const pFileContext )
 {
     OtaPalStatus_t otaStatus = OtaPalCommitFailed;
+    BaseType_t signatureValidationStatus;
     OtaImageContext_t * pContext = prvGetImageContext();
 
     if( ( pFileContext->pFile == ( uint8_t * ) ( pContext ) ) &&
         ( pContext->state == OTA_PAL_IMAGE_STATE_PROGRAMMING ) )
 
     {
-        /* TODO: signature validation and confirm image here. */
-        pContext->state = OTA_PAL_IMAGE_STATE_PENDING_COMMIT;
-        otaStatus = OtaPalSuccess;
+
+        LogInfo(( "Validating the integrity of OTA image using digital signature.\r\n" ));
+
+        signatureValidationStatus = prvValidateImageSignature( pContext,
+                                                               ( char * ) pFileContext->pCertFilepath,
+                                                               pFileContext->pSignature->data,
+                                                               pFileContext->pSignature->size );
+
+        if( signatureValidationStatus == pdPASS )
+        {
+
+            pContext->state = OTA_PAL_IMAGE_STATE_PENDING_COMMIT;
+            otaStatus = OtaPalSuccess;
+        }
+        else
+        {
+            otaStatus = OTA_PAL_COMBINE_ERR( OtaPalSignatureCheckFailed,  signatureValidationStatus );
+        }
+
     }
 
     return otaStatus;

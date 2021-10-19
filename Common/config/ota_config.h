@@ -33,10 +33,23 @@
 
 /* define LOG_LEVEL here if you want to modify the logging level from the default */
 #ifndef LOG_LEVEL
-#define LOG_LEVEL LOG_ERROR
+#define LOG_LEVEL LOG_INFO
 #endif
 
 #include "logging.h"
+
+
+/**
+ *  @brief The version for the firmware which is running. OTA agent uses this
+ * version number to perform anti-rollback validation. The firmware version for the
+ * download image should be higher than the current version, otherwise the new image is
+ * rejected in self test phase.1
+ */
+
+#define APP_VERSION_MAJOR    0
+#define APP_VERSION_MINOR    9
+#define APP_VERSION_BUILD    0
+
 
 /**
  * @brief Log base 2 of the size of the file data block message (excluding the header).
