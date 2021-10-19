@@ -67,16 +67,16 @@ echo
 export PATH="${PROG_BIN_DIR}:${PATH}"
 
 echo "Writing TFM Secure image"
-# ${PROG_BIN} -c port=SWD mode=UR --hardRst -el ${EXT_LOADER_PATH} -d ${TARGET_BIN_DIR}/${ProjName}_s_signed.bin ${slot0} -v
-${PROG_BIN} -c port=SWD mode=UR --hardRst -d ${TARGET_BIN_DIR}/${ProjName}_s_signed.bin ${slot0} -v
+${PROG_BIN} -c port=SWD mode=UR --hardRst -el ${EXT_LOADER_PATH} -d ${TARGET_BIN_DIR}/${ProjName}_s_signed.bin ${slot0} -v
+# ${PROG_BIN} -c port=SWD mode=UR --hardRst -d ${TARGET_BIN_DIR}/${ProjName}_s_signed.bin ${slot0} -v
 
 echo; echo
 echo "Writing Non-Secure image"
-# ${PROG_BIN} -c port=SWD mode=UR --hardRst -el ${EXT_LOADER_PATH} -d ${TARGET_BIN_DIR}/${ProjName}_ns_signed.bin ${slot1} -v
-${PROG_BIN} -c port=SWD mode=UR --hardRst -d ${TARGET_BIN_DIR}/${ProjName}_ns_signed.bin ${slot1} -v
+${PROG_BIN} -c port=SWD mode=UR --hardRst -el ${EXT_LOADER_PATH} -d ${TARGET_BIN_DIR}/${ProjName}_ns_signed.bin ${slot1} -v
+# ${PROG_BIN} -c port=SWD mode=UR --hardRst -d ${TARGET_BIN_DIR}/${ProjName}_ns_signed.bin ${slot1} -v
 
 echo; echo
 echo "Writing BL2 bootloader image"
-# ${PROG_BIN} -c port=SWD mode=UR --hardRst -el ${EXT_LOADER_PATH} -d ${TARGET_BIN_DIR}/${ProjName}_bl2.bin ${boot} -v
-${PROG_BIN} -c port=SWD mode=UR --hardRst -d ${TARGET_BIN_DIR}/${ProjName}_bl2.bin ${boot} -v
+${PROG_BIN} -c port=SWD mode=UR --hardRst -el ${EXT_LOADER_PATH} -d ${TARGET_BIN_DIR}/${ProjName}_bl2.bin ${boot} -v
+# ${PROG_BIN} -c port=SWD mode=UR --hardRst -d ${TARGET_BIN_DIR}/${ProjName}_bl2.bin ${boot} -v
 

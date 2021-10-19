@@ -28,7 +28,10 @@
 TFM_BUILD_DIR="${PWD}/tfm_build"
 TFM_INSTALL_DIR="${PWD}/tfm_build/install"
 MCUBOOT_SRC_DIR="${PROJ_DIR}/../../Middleware/ARM/mcuboot"
+BL2_SRC_DIR="${PROJ_DIR}/../../Middleware/ARM/trusted-firmware-m/bl2"
 
+S_SIGNING_KEY="${BL2_SRC_DIR}/ext/mcuboot/root-RSA-3072.pem"
+NS_SIGNING_KEY="${BL2_SRC_DIR}/ext/mcuboot/root-RSA-3072_1.pem"
 
 IMG_SIGNING_DIR="${TFM_BUILD_DIR}/install/image_signing"
 IMG_SCRIPTS_DIR="${IMG_SIGNING_DIR}/scripts"
@@ -37,6 +40,7 @@ echo
 echo "Project Path:         ${PROJ_DIR}"
 echo "TFM Build Path:       ${TFM_BUILD_DIR}"
 echo "Mcuboot Source Path:  ${MCUBOOT_SRC_DIR}"
+echo "BL2 Source Path:      ${BL2_SRC_DIR}"
 echo "image_signing Path:   ${IMG_SIGNING_DIR}"
 echo "image scripts Path:   ${IMG_SCRIPTS_DIR}"
 echo "Project name:         ${BIN_NAME}"
@@ -85,9 +89,9 @@ echo "Signing ${BIN_NAME}_s.bin -> ${BIN_NAME}_s_signed.bin"
 python3 ${IMG_SCRIPTS_DIR}/wrapper/wrapper.py \
     -v 1.4.0 \
     --layout ${IMG_SIGNING_DIR}/layout_files/signing_layout_s.o \
-    -k ${IMG_SIGNING_DIR}/keys/root-RSA-3072_1.pem \
+    -k ${S_SIGNING_KEY} \
     --public-key-format full \
-    --align 16 --pad --pad-header -H 0x400 -s 1 -d "(1, 0.0.0+0)" \
+    --align 16 --pad --pad-header -H 0x400 -s 1 -d "(1,0.0.0+0)" \
     ${BIN_NAME}_s.bin \
     ${BIN_NAME}_s_signed.bin || exit -1
 
@@ -95,10 +99,10 @@ echo "Signing ${BIN_NAME}_ns.bin -> ${BIN_NAME}_ns_signed.bin"
 python3 ${IMG_SCRIPTS_DIR}/wrapper/wrapper.py \
     -v ${NS_VERSION} \
     --layout ${IMG_SIGNING_DIR}/layout_files/signing_layout_ns.o \
-    -k ${IMG_SIGNING_DIR}/keys/root-RSA-3072_1.pem \
+    -k ${NS_SIGNING_KEY} \
     --public-key-format full \
     --align 1 --pad --pad-header \
-    -H 0x400 -s 1 -d "(0, 0.0.0+0)" \
+    -H 0x400 -s 1 -d "(0,0.0.0+0)" \
     ${BIN_NAME}_ns.bin \
     ${BIN_NAME}_ns_signed.bin || exit -1
 

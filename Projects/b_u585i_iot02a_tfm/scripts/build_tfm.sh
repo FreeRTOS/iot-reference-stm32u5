@@ -76,10 +76,12 @@ pip3 install -r ${TFM_SRC_DIR}/bl2/ext/mcuboot/scripts/requirements.txt || exit 
         -DMCUBOOT_PATH=${MCUBOOT_DIR} \
         -DTFM_PROFILE=profile_large \
         -DTFM_ISOLATION_LEVEL=1 \
-        -DTFM_MBEDCRYPTO_CONFIG_PATH=${TFM_SRC_DIR}/lib/ext/mbedcrypto/mbedcrypto_config/tfm_mbedcrypto_config_profile_large.h \
+        -GNinja \
         -DNS=0 || exit -1
+
+# -DTFM_MBEDCRYPTO_CONFIG_PATH=${TFM_SRC_DIR}/lib/ext/mbedcrypto/mbedcrypto_config/tfm_mbedcrypto_config_profile_large.h
 }
-make -C ${TFM_BUILD_DIR} -j11 install || exit -1
+ninja -C ${TFM_BUILD_DIR} -j11 install || exit -1
 
 # Generate the linker script for CubeIDE NS project
 arm-none-eabi-gcc -E -P -xc -DBL2 -DTFM_PSA_API -I ${TFM_BUILD_DIR} -o stm32u5xx_ns.ld ${PROJ_DIR}/scripts/stm32u5xx_ns.ld.template || exit -1
