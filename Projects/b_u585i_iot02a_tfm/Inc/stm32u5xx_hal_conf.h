@@ -357,6 +357,7 @@
 
 #ifdef HAL_PWR_MODULE_ENABLED
  #include "stm32u5xx_hal_pwr.h"
+ #include "stm32u5xx_hal_pwr_ex.h"
 #endif /* HAL_PWR_MODULE_ENABLED */
 
 #ifdef HAL_OSPI_MODULE_ENABLED

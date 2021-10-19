@@ -124,9 +124,9 @@ void vInitTask( void * pvArgs )
 
     configASSERT( xResult == pdTRUE );
 
-    xResult = xTaskCreate( vOTAUpdateTask, "OTAUpdate", 4096, NULL, tskIDLE_PRIORITY + 1, NULL );
-
-    configASSERT( xResult == pdTRUE );
+//    xResult = xTaskCreate( vOTAUpdateTask, "OTAUpdate", 4096, NULL, tskIDLE_PRIORITY + 1, NULL );
+//
+//    configASSERT( xResult == pdTRUE );
 
 //    xResult = xTaskCreate( vEnvironmentSensorPublishTask, "EnvSense", 1024, NULL, 10, NULL );
 //    configASSERT( xResult == pdTRUE );
@@ -140,8 +140,6 @@ void vInitTask( void * pvArgs )
 
     xResult = xTaskCreate( vDefenderAgentTask, "AWSDefender", 2048, NULL, 5, NULL );
     configASSERT( xResult == pdTRUE );
-
-    xResult = xTaskCreate( vTimeSyncTask, "TimeSync", 1024, NULL, 5, NULL );
 
     while(1)
     {

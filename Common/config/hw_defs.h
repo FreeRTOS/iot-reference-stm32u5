@@ -21,4 +21,11 @@
 #define MXCHIP_RESET_Pin 		GPIO_PIN_15
 #define MXCHIP_RESET_GPIO_Port 	GPIOF
 
+RTC_HandleTypeDef * pxHndlRtc;
+SPI_HandleTypeDef * pxHndlSpi2;
+UART_HandleTypeDef * pxHndlUart1;
+DCACHE_HandleTypeDef * pxHndlDCache;
+DMA_HandleTypeDef * pxHndlGpdmaCh4;
+DMA_HandleTypeDef * pxHndlGpdmaCh5;
+
 #endif /* __HW_DEFS */

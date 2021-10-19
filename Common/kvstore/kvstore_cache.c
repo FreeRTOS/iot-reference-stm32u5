@@ -129,6 +129,7 @@ static inline void vReallocDataBuffer( KVStoreKey_t key, size_t xNewLength )
  */
 void vprvCacheInit( void )
 {
+#if KV_STORE_NVIMPL_ENABLE
 	/* Read from file system into ram */
 	for( uint32_t i = 0; i < CS_NUM_KEYS; i++ )
 	{
@@ -150,6 +151,7 @@ void vprvCacheInit( void )
 			( void ) xprvReadValueFromImplStatic( i, pxType, pxLength, pvGetDataWritePtr( i ), *pxLength );
 		}
 	}
+#endif /* KV_STORE_NVIMPL_ENABLE */
 }
 
 /*
@@ -277,6 +279,7 @@ BaseType_t xprvCopyValueFromCache( KVStoreKey_t xKey,
 BaseType_t KVStore_xCommitChanges( void )
 {
 	BaseType_t xSuccess = pdTRUE;
+#if KV_STORE_NVIMPL_ENABLE
 	for( uint32_t i = 0; i < CS_NUM_KEYS; i++ )
 	{
 		if( kvStoreCache[ i ].xChangePending == pdTRUE )
@@ -287,6 +290,7 @@ BaseType_t KVStore_xCommitChanges( void )
 											  pvGetDataReadPtr( i ) );
 		}
 	}
+#endif
 	return xSuccess;
 }
 

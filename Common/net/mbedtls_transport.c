@@ -479,7 +479,9 @@ static int32_t initPrivateKey( TLSContext_t * pxTLSContext,
                                        ( const unsigned char * ) pNetworkCredentials->pvPrivateKey,
                                        pNetworkCredentials->privateKeySize,
                                        NULL,
-                                       0 );
+                                       0,
+									   mbedtls_ctr_drbg_random,
+									   &( pxTLSContext->xSigningCtx.xCtrDrbgCtx ) );
         if( lError != 0 )
         {
             LogError( "Failed to parse the client key: lError= %s : %s.",

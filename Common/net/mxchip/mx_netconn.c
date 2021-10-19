@@ -33,7 +33,6 @@
 #include <stdint.h>
 #include <limits.h>
 
-
 #include "mx_netconn.h"
 #include "mx_lwip.h"
 #include "mx_prv.h"
@@ -42,6 +41,7 @@
 #include "task.h"
 #include "event_groups.h"
 #include "kvstore.h"
+#include "hw_defs.h"
 
 /* lwip includes */
 #include "lwip/tcpip.h"
@@ -362,9 +362,7 @@ static void vInitializeContexts( MxNetConnectCtx_t * pxCtx )
     xDataPlaneCtx.gpio_nss = &( xGpioMap[ GPIO_MX_NSS ] );
     xDataPlaneCtx.gpio_notify = &( xGpioMap[ GPIO_MX_NOTIFY ] );
 
-    /* Set SPI handle */
-    extern SPI_HandleTypeDef hspi2;
-    xDataPlaneCtx.pxSpiHandle = &hspi2;
+    xDataPlaneCtx.pxSpiHandle = pxHndlSpi2;
 
     /* Initialize waiting packet counters */
     xDataPlaneCtx.ulTxPacketsWaiting = 0;

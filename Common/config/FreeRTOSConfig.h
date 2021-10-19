@@ -27,7 +27,7 @@
 #ifndef FREERTOS_CONFIG_H
 #define FREERTOS_CONFIG_H
 
-//#include "logging.h"
+#include "logging.h"
 #include "stm32u5xx_hal.h"
 
 /*-----------------------------------------------------------
