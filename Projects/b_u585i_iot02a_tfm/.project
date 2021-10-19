@@ -47,9 +47,34 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
+			<name>Libraries/CommonIO</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Drivers/CommonIO</locationURI>
+		</link>
+		<link>
 			<name>Libraries/STM32U5_HAL</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>Libraries/backoffAlgorithm</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Middleware/FreeRTOS/backoffAlgorithm/source</locationURI>
+		</link>
+		<link>
+			<name>Libraries/coreJSON</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Middleware/FreeRTOS/coreJSON/source</locationURI>
+		</link>
+		<link>
+			<name>Libraries/coreMQTT</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Middleware/FreeRTOS/coreMQTT/source</locationURI>
+		</link>
+		<link>
+			<name>Libraries/coreMQTTAgent</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Middleware/FreeRTOS/coreMQTT-Agent/source</locationURI>
 		</link>
 		<link>
 			<name>Libraries/corePKCS11</name>
@@ -57,9 +82,24 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
+			<name>Libraries/deviceDefender</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Middleware/AWS/IoTDeviceDefender/source</locationURI>
+		</link>
+		<link>
+			<name>Libraries/deviceShadow</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Middleware/AWS/IoTDeviceShadow/source</locationURI>
+		</link>
+		<link>
 			<name>Libraries/freertos_kernel</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>Libraries/lwip</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Middleware/lwip/src</locationURI>
 		</link>
 		<link>
 			<name>Libraries/mbedtls</name>
@@ -70,6 +110,11 @@
 			<name>Libraries/mcuboot</name>
 			<type>2</type>
 			<locationURI>PARENT-2-PROJECT_LOC/Middleware/ARM/mcuboot</locationURI>
+		</link>
+		<link>
+			<name>Libraries/ota</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Middleware/AWS/OTA/source</locationURI>
 		</link>
 		<link>
 			<name>Libraries/pkcs11-psa</name>
@@ -229,6 +274,60 @@
 	</linkedResources>
 	<filteredResources>
 		<filter>
+			<id>1634612303185</id>
+			<name>Libraries/CommonIO</name>
+			<type>9</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-gpio</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1634612303187</id>
+			<name>Libraries/CommonIO</name>
+			<type>9</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-include</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1634612303190</id>
+			<name>Libraries/CommonIO</name>
+			<type>21</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-*.h</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1634612650576</id>
+			<name>Libraries/coreMQTTAgent</name>
+			<type>9</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-include</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>0</id>
+			<name>Libraries/lwip</name>
+			<type>21</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-*.h</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>0</id>
+			<name>Libraries/lwip</name>
+			<type>21</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-*.c</arguments>
+			</matcher>
+		</filter>
+		<filter>
 			<id>1634345092043</id>
 			<name>Libraries/mbedtls</name>
 			<type>9</type>
@@ -265,12 +364,39 @@
 			</matcher>
 		</filter>
 		<filter>
-			<id>1634347310788</id>
+			<id>1634612848550</id>
 			<name>Libraries/mcuboot</name>
 			<type>21</type>
 			<matcher>
 				<id>org.eclipse.ui.ide.multiFilter</id>
 				<arguments>1.0-name-matches-false-false-*.h</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1634612848552</id>
+			<name>Libraries/mcuboot</name>
+			<type>22</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-*.c</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1634614100681</id>
+			<name>Libraries/ota</name>
+			<type>9</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-include</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1634614100683</id>
+			<name>Libraries/ota</name>
+			<type>9</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-portable</arguments>
 			</matcher>
 		</filter>
 		<filter>
@@ -400,6 +526,33 @@
 			</matcher>
 		</filter>
 		<filter>
+			<id>0</id>
+			<name>Libraries/lwip/apps</name>
+			<type>9</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-lwiperf</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1634611936551</id>
+			<name>Libraries/lwip/netif</name>
+			<type>21</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-*.c</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1634611936554</id>
+			<name>Libraries/lwip/netif</name>
+			<type>10</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-*</arguments>
+			</matcher>
+		</filter>
+		<filter>
 			<id>1634445372626</id>
 			<name>Libraries/mbedtls/library</name>
 			<type>6</type>
@@ -424,6 +577,15 @@
 			<matcher>
 				<id>org.eclipse.ui.ide.multiFilter</id>
 				<arguments>1.0-name-matches-false-false-psa_its*</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1634614072723</id>
+			<name>Libraries/ota/portable/os</name>
+			<type>5</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-*freertos*</arguments>
 			</matcher>
 		</filter>
 	</filteredResources>

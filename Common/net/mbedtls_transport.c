@@ -39,11 +39,11 @@
 
 /* mbedTLS includes. */
 #include "mbedtls/error.h"
-#include "mbedtls_config.h"
+#include MBEDTLS_CONFIG_FILE
 #include "mbedtls/debug.h"
 #include "mbedtls/net_sockets.h"
 #include "mbedtls/pk.h"
-#include "mbedtls/pk_internal.h"
+#include "pk_wrap.h"
 
 #include "errno.h"
 
@@ -1167,8 +1167,8 @@ static CK_RV validatePrivateKeyPKCS11( PrivateKeySigningCtx_t * pxCtx,
 
         pxCtx->xPrivKeyInfo.sign_func = privateKeySigningCallback;
 
-        pxCtx->xPkeyCtx.pk_info = &( pxCtx->xPrivKeyInfo );
-        pxCtx->xPkeyCtx.pk_ctx = pxCtx;
+        pxCtx->xPkeyCtx.private_pk_info = &( pxCtx->xPrivKeyInfo );
+        pxCtx->xPkeyCtx.private_pk_ctx = pxCtx;
     }
 
     /* Free memory. */

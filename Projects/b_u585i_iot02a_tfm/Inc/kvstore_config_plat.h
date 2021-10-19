@@ -1,6 +1,4 @@
 /*
- * FreeRTOS STM32 Reference Integration
- *
  * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -25,7 +23,18 @@
  *
  */
 
-#include "FreeRTOS.h"
+#ifndef _KVSTORE_CONFIG_PLAT_H
+#define _KVSTORE_CONFIG_PLAT_H
 
-void net_main( void * pvParameters );
-BaseType_t net_request_reconnect( void );
+#include "kvstore_config_plat.h"
+
+/* Define KV_STORE_CACHE_ENABLE to 1 to enable an in-memory cache of all Key / Value pairs */
+#define KV_STORE_CACHE_ENABLE			1
+
+/* Define KV_STORE_NVIMPL_ENABLE to 1 to enable storage of all key / value pairs in non-volatile storage */
+#define KV_STORE_NVIMPL_ENABLE			0
+
+#define KVSTORE_KEY_MAX_LEN		16
+#define KVSTORE_VAL_MAX_LEN		256
+
+#endif /* _KVSTORE_CONFIG_PLAT_H */

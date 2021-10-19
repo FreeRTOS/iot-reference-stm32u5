@@ -24,26 +24,13 @@
  * https://github.com/FreeRTOS
  *
  */
-#ifndef _MAIN_H
-#define _MAIN_H
 
-#include <stdint.h>
-#include "stm32u5xx_hal.h"
+#ifndef MX_NETCONN_H
+#define MX_NETCONN_H
 
-RTC_HandleTypeDef * pxHndlRtc;
-SPI_HandleTypeDef * pxHndlSpi2;
-UART_HandleTypeDef * pxHndlUart1;
-DCACHE_HandleTypeDef * pxHndlDCache;
-DMA_HandleTypeDef * pxHndlGpdmaCh4;
-DMA_HandleTypeDef * pxHndlGpdmaCh5;
+#include "FreeRTOS.h"
 
-typedef void ( * GPIOInterruptCallback_t ) ( void * pvContext );
+void net_main( void * pvParameters );
+BaseType_t net_request_reconnect( void );
 
-
-void GPIO_EXTI_Register_Callback( uint16_t usGpioPinMask,
-                                  GPIOInterruptCallback_t pvCallback,
-                                  void * pvContext );
-
-void hw_init( void );
-
-#endif /* _MAIN_H */
+#endif /* MX_NETCONN_H */

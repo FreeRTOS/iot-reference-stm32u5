@@ -29,13 +29,8 @@
  * @brief Functions for managing MQTT subscriptions.
  */
 
-
 #include "logging_levels.h"
 /* define LOG_LEVEL here if you want to modify the logging level from the default */
-
-/* Remove extra C89 style parentheses */
-#define LOGGING_REMOVE_PARENS
-
 #include "logging.h"
 
 #include "FreeRTOS.h"

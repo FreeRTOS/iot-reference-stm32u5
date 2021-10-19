@@ -1,6 +1,4 @@
 /*
- * FreeRTOS STM32 Reference Integration
- *
  * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -24,26 +22,19 @@
  * https://github.com/FreeRTOS
  *
  */
-#ifndef _MAIN_H
-#define _MAIN_H
 
-#include <stdint.h>
-#include "stm32u5xx_hal.h"
+#ifndef _KVSTORE_CONFIG_PLAT_H
+#define _KVSTORE_CONFIG_PLAT_H
 
-RTC_HandleTypeDef * pxHndlRtc;
-SPI_HandleTypeDef * pxHndlSpi2;
-UART_HandleTypeDef * pxHndlUart1;
-DCACHE_HandleTypeDef * pxHndlDCache;
-DMA_HandleTypeDef * pxHndlGpdmaCh4;
-DMA_HandleTypeDef * pxHndlGpdmaCh5;
+#include "kvstore_config_plat.h"
 
-typedef void ( * GPIOInterruptCallback_t ) ( void * pvContext );
+/* Define KV_STORE_CACHE_ENABLE to 1 to enable an in-memory cache of all Key / Value pairs */
+#define KV_STORE_CACHE_ENABLE			1
 
+/* Define KV_STORE_NVIMPL_ENABLE to 1 to enable storage of all key / value pairs in non-volatile storage */
+#define KV_STORE_NVIMPL_ENABLE			1
 
-void GPIO_EXTI_Register_Callback( uint16_t usGpioPinMask,
-                                  GPIOInterruptCallback_t pvCallback,
-                                  void * pvContext );
+#define KVSTORE_KEY_MAX_LEN		16
+#define KVSTORE_VAL_MAX_LEN		256
 
-void hw_init( void );
-
-#endif /* _MAIN_H */
+#endif /* _KVSTORE_CONFIG_PLAT_H */

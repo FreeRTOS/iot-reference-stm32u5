@@ -26,6 +26,8 @@
 #ifndef _KVSTORE_CONFIG_H
 #define _KVSTORE_CONFIG_H
 
+#include "kvstore_config_plat.h"
+
 typedef enum KvStoreEnum
 {
 	CS_CORE_THING_NAME,
@@ -44,18 +46,8 @@ typedef enum KvStoreEnum
 #define THING_NAME_DFLT 				"test_stm32u5_01"
 #define MQTT_ENDOPOINT_DFLT 			"a3dwi8g3v1qwwi-ats.iot.us-west-2.amazonaws.com"
 
-#define WIFI_SSID_DFLT 		  "Guest"
-#define WIFI_PASSWORD_DFLT 	  ""
-
-
-/* Define KV_STORE_CACHE_ENABLE to 1 to enable an in-memory cache of all Key / Value pairs */
-#define KV_STORE_CACHE_ENABLE			1
-
-/* Define KV_STORE_NVIMPL_ENABLE to 1 to enable storage of all key / value pairs in non-volatile storage */
-#define KV_STORE_NVIMPL_ENABLE			1
-
-#define KVSTORE_KEY_MAX_LEN		16
-#define KVSTORE_VAL_MAX_LEN		256
+#define WIFI_SSID_DFLT 		  			"Guest"
+#define WIFI_PASSWORD_DFLT 	  			""
 
 /* Array to map between strings and KVStoreKey_t IDs */
 #define KV_STORE_STRINGS 	\

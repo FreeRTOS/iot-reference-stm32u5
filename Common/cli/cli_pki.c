@@ -20,11 +20,15 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#define MBEDTLS_ALLOW_PRIVATE_ACCESS
+
+
 /* FreeRTOS */
 #include "FreeRTOS.h"
 #include "FreeRTOS_CLI.h"
 #include "message_buffer.h"
 #include "task.h"
+
 
 /* Project Specific */
 #include "cli.h"
@@ -38,7 +42,7 @@
 /* PKCS11 */
 #include "pkcs11.h"
 #include "core_pkcs11_config.h"
-//#include "core_pkcs11.h"
+#include "core_pkcs11.h"
 
 /* Mbedtls */
 #include "mbedtls/pem.h"
@@ -48,7 +52,7 @@
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/pk.h"
-#include "mbedtls/pk_internal.h"
+#include "pk_wrap.h"
 #include "mbedtls/ecp.h"
 #include "core_pki_utils.h"
 

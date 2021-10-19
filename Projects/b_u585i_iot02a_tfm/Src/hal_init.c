@@ -67,7 +67,7 @@ void hw_init( void )
 	hw_cache_init();
 
 	/* Initialize uart for logging before cli is up and running */
-//	vInitLoggingEarly();
+	vInitLoggingEarly();
 
 	/* Initialize GPIO */
 	hw_gpio_init();
