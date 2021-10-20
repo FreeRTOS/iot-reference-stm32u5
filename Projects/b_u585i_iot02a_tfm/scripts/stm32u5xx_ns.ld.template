@@ -24,8 +24,9 @@
 
 MEMORY
 {
-  FLASH (rx)  : ORIGIN = NS_CODE_START, LENGTH = NS_CODE_SIZE
-  RAM   (rwx) : ORIGIN = NS_DATA_START, LENGTH = NS_DATA_SIZE
+  FLASH (rx)  : ORIGIN = NS_CODE_START, 	LENGTH = NS_CODE_SIZE
+  SRAM1 (rwx) : ORIGIN = NS_DATA_START, 	LENGTH = NS_DATA_SIZE
+  SRAM3 (rwx) : ORIGIN = _SRAM3_BASE_NS,	LENGTH = _SRAM3_SIZE_MAX	/* 512 K */
 }
 
 __heap_size__  = NS_HEAP_SIZE;
@@ -113,7 +114,7 @@ SECTIONS
     .testprotection NS_DATA_START :
     {
          *(.bss.NoInit);
-    } > RAM
+    } > SRAM3
 
     .data (NS_DATA_START+NS_NO_INIT_DATA_SIZE) : AT (__etext)
     {
@@ -147,7 +148,7 @@ SECTIONS
         /* All data end */
         __data_end__ = .;
 
-    } > RAM
+    } > SRAM1
 
     .bss :
     {
@@ -157,21 +158,21 @@ SECTIONS
         *(COMMON)
         . = ALIGN(4);
         __bss_end__ = .;
-    } > RAM
+    } > SRAM3
 
     bss_size = __bss_end__ - __bss_start__;
 
     .msp_stack : ALIGN(32)
     {
         . += __msp_stack_size__;
-    } > RAM
+    } > SRAM3
     Image$$ARM_LIB_STACK_MSP$$ZI$$Base = ADDR(.msp_stack);
     Image$$ARM_LIB_STACK_MSP$$ZI$$Limit = ADDR(.msp_stack) + SIZEOF(.msp_stack);
 
     .psp_stack : ALIGN(32)
     {
         . += __psp_stack_size__;
-    } > RAM
+    } > SRAM3
     Image$$ARM_LIB_STACK$$ZI$$Base = ADDR(.psp_stack);
     Image$$ARM_LIB_STACK$$ZI$$Limit = ADDR(.psp_stack) + SIZEOF(.psp_stack);
 
@@ -183,7 +184,7 @@ SECTIONS
         . += __heap_size__;
         __HeapLimit = .;
         __heap_limit = .; 
-    } > RAM */ /* Add for _sbrk */
+    } > SRAM3 */ /* Add for _sbrk */
 
     PROVIDE(__stack = Image$$ARM_LIB_STACK_MSP$$ZI$$Limit);
     PROVIDE(__StackTop = Image$$ARM_LIB_STACK_MSP$$ZI$$Limit);
