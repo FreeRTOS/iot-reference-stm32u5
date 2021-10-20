@@ -26,11 +26,11 @@
 #
 #
 
-PROG_DIR=`find ${CUBEIDE_DIR%?} -name 'com.st.stm32cube.ide.mcu.externaltools.cubeprogrammer*' -type d`
+PROG_DIR=`find ${CUBEIDE_DIR} -name 'com.st.stm32cube.ide.mcu.externaltools.cubeprogrammer*' -type d`
 PROG_BIN_DIR="${PROG_DIR}/tools/bin"
 PROG_BIN=`find ${PROG_BIN_DIR} -name 'STM32_Programmer_CLI*' -type f`
 PROG_BIN=$( basename ${PROG_BIN} )
-TARGET_BIN_DIR=${CWD}
+TARGET_BIN_DIR=${PWD}
 
 
 [ -e "${PROG_BIN_DIR}/${PROG_BIN}" ] || {
@@ -69,17 +69,14 @@ ${PROG_BIN} -c port=SWD mode=HotPlug -ob RDP=0xAA TZEN=1
 
 echo; echo
 echo "Erasing Bank 1"
-#${PROG_BIN} -c port=SWD mode=UR --hardRst -ob SECWM1_PSTRT=127 SECWM1_PEND=0 WRP1A_PSTRT=127 WRP1A_PEND=0 WRP1B_PSTRT=127 WRP1B_PEND=0 -e all
 ${PROG_BIN} -c port=SWD mode=UR --hardRst -ob SECWM1_PSTRT=127 SECWM1_PEND=0 WRP1A_PSTRT=127 WRP1A_PEND=0 WRP1B_PSTRT=127 WRP1B_PEND=0 -e all
 
 echo; echo
 echo "Erasing Bank 2"
-# ${PROG_BIN} -c port=SWD mode=UR --hardRst -ob SECWM2_PSTRT=127 SECWM2_PEND=0 WRP#2A_PSTRT=127 WRP2A_PEND=0 WRP2B_PSTRT=127 WRP2B_PEND=0 -e all
 ${PROG_BIN} -c port=SWD mode=UR --hardRst -ob SECWM2_PSTRT=127 SECWM2_PEND=0 WRP2A_PSTRT=127 WRP2A_PEND=0 WRP2B_PSTRT=127 WRP2B_PEND=0 -e all
 
 echo; echo
 echo "Disable HDP protection"
-# ${PROG_BIN} -c port=SWD mode=HotPlug -ob HDP1_PEND=0 HDP1EN=0 HDP2_PEND=0 HDP2EN=0
 ${PROG_BIN} -c port=SWD mode=HotPlug -ob HDP1_PEND=0 HDP1EN=0 HDP2_PEND=0 HDP2EN=0
 
 echo

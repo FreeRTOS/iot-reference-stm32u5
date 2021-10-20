@@ -75,11 +75,9 @@ pip3 install -r ${TFM_SRC_DIR}/bl2/ext/mcuboot/scripts/requirements.txt || exit 
         -DMBEDCRYPTO_PATH=${MBEDTLS_DIR} \
         -DMCUBOOT_PATH=${MCUBOOT_DIR} \
         -DTFM_PROFILE=profile_large \
-        -DTFM_ISOLATION_LEVEL=1 \
+        -DTFM_ISOLATION_LEVEL=2 \
         -GNinja \
         -DNS=0 || exit -1
-
-# -DTFM_MBEDCRYPTO_CONFIG_PATH=${TFM_SRC_DIR}/lib/ext/mbedcrypto/mbedcrypto_config/tfm_mbedcrypto_config_profile_large.h
 }
 ninja -C ${TFM_BUILD_DIR} -j11 install || exit -1
 
