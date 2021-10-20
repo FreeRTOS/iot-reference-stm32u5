@@ -80,3 +80,6 @@
 	path = Middleware/tinycbor
 	url = https://github.com/intel/tinycbor.git
 
+[submodule "Drivers/STM32U5xx_HAL"]
+	path = Drivers/STM32U5xx_HAL
+	url = https://github.com/STMicroelectronics/stm32u5xx_hal_driver.git
