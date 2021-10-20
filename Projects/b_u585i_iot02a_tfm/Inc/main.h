@@ -46,4 +46,6 @@ void GPIO_EXTI_Register_Callback( uint16_t usGpioPinMask,
 
 void hw_init( void );
 
+int32_t ns_interface_lock_init( void );
+
 #endif /* _MAIN_H */

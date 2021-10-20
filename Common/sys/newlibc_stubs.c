@@ -127,3 +127,9 @@ void * memalign( size_t xAlignment, size_t xLen )
 {
     return NULL;
 }
+
+/* Not supported */
+void * _sbrk ( intptr_t xIncrement )
+{
+	return NULL;
+}

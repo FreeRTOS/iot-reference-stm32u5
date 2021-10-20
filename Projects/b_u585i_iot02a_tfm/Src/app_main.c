@@ -38,6 +38,7 @@
 #include "stm32u5xx.h"
 #include "kvstore.h"
 #include "hw_defs.h"
+#include "psa/crypto.h"
 
 #include "cli/cli.h"
 
@@ -45,13 +46,11 @@ volatile EventGroupHandle_t xSystemEvents = NULL;
 
 typedef void( * VectorTable_t )(void);
 
-#define NUM_USER_IRQ				( FMAC_IRQn + 1 ) /* MCU specific */
-#define VECTOR_TABLE_SIZE 		    ( NVIC_USER_IRQ_OFFSET + NUM_USER_IRQ )
-#define VECTOR_TABLE_ALIGN_CM33		0x400U
+#define NUM_USER_IRQ                    ( FMAC_IRQn + 1 ) /* MCU specific */
+#define VECTOR_TABLE_SIZE               ( NVIC_USER_IRQ_OFFSET + NUM_USER_IRQ )
+#define VECTOR_TABLE_ALIGN_CM33         0x400U
 
 static VectorTable_t pulVectorTableSRAM[ VECTOR_TABLE_SIZE ] __attribute__(( aligned (VECTOR_TABLE_ALIGN_CM33) ));
-
-DCACHE_HandleTypeDef hDcache;
 
 /* Relocate vector table to ram for runtime interrupt registration */
 static void vRelocateVectorTable( void )
@@ -60,7 +59,7 @@ static void vRelocateVectorTable( void )
     __disable_irq();
 
     HAL_ICACHE_Disable();
-    HAL_DCACHE_Disable( &hDcache );
+    HAL_DCACHE_Disable( pxHndlDCache );
 
     /* Copy vector table to ram */
     ( void ) memcpy( pulVectorTableSRAM, ( uint32_t * ) SCB->VTOR , sizeof( uint32_t) * VECTOR_TABLE_SIZE );
@@ -70,10 +69,10 @@ static void vRelocateVectorTable( void )
     __DSB();
     __ISB();
 
-    HAL_DCACHE_Invalidate( &hDcache );
+    HAL_DCACHE_Invalidate( pxHndlDCache );
     HAL_ICACHE_Invalidate();
     HAL_ICACHE_Enable();
-    HAL_DCACHE_Enable( &hDcache );
+    HAL_DCACHE_Enable( pxHndlDCache );
 
     __enable_irq();
 }
@@ -106,11 +105,14 @@ void vInitTask( void * pvArgs )
 {
     BaseType_t xResult;
 
+    /* Initialize PSA crypto api */
+    psa_crypto_init();
+
     xResult = xTaskCreate( Task_CLI, "cli", 1024, NULL, 10, NULL );
 
-	( void ) xEventGroupSetBits( xSystemEvents, EVT_MASK_FS_READY );
+    ( void ) xEventGroupSetBits( xSystemEvents, EVT_MASK_FS_READY );
 
-	KVStore_init();
+    KVStore_init();
 
     xResult = xTaskCreate( vHeartbeatTask, "Heartbeat", 128, NULL, tskIDLE_PRIORITY, NULL );
 
@@ -149,13 +151,18 @@ void vInitTask( void * pvArgs )
 
 int main( void )
 {
-	hw_init();
+    hw_init();
 
-	vRelocateVectorTable();
+    vRelocateVectorTable();
 
     vLoggingInit();
 
     LogInfo( "HW Init Complete." );
+
+    if( ns_interface_lock_init() != 0 )
+    {
+        configASSERT(0);
+    }
 
     xSystemEvents = xEventGroupCreate();
 
@@ -177,9 +184,13 @@ int main( void )
 
 UBaseType_t uxRand( void )
 {
-    //return LL_RNG_ReadRandData32( RNG_NS );
-	configASSERT_CONTINUE(0);
-	return 0;
+    UBaseType_t uxRandVal = 0;
+
+    if( psa_generate_random( ( uint8_t * ) ( &uxRandVal ), sizeof( UBaseType_t ) ) != PSA_SUCCESS )
+    {
+        configASSERT_CONTINUE(0);
+    }
+    return uxRandVal;
 }
 
 /*-----------------------------------------------------------*/

@@ -1,4 +1,3 @@
 Debug
 Release
-deploy_bl2_s_ns.cfg
-deploy_s_ns.cfg
+*.cfg

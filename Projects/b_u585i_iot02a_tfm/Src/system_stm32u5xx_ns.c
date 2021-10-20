@@ -54,6 +54,7 @@
 
 #include "stm32u5xx.h"
 
+#include <math.h>
 
 /**
   * @}
@@ -140,6 +141,7 @@ void SystemInit(void)
   /* Non-secure main application shall call SystemCoreClockUpdate() to update */
   /* the SystemCoreClock variable to insure non-secure application relies on  */
   /* the initial clock reference set by secure application.                   */
+	SystemCoreClockUpdate();
 }
 
 /**
@@ -191,8 +193,81 @@ void SystemInit(void)
   */
 void SystemCoreClockUpdate(void)
 {
-  /* Get the SystemCoreClock value from the secure domain */
-  SystemCoreClock = SECURE_SystemCoreClockUpdate();
+	uint32_t pllr, pllsource, pllm , tmp, pllfracen, msirange;
+	float_t fracn1, pllvco;
+
+	/* Get MSI Range frequency--------------------------------------------------*/
+	if(READ_BIT(RCC->ICSCR1, RCC_ICSCR1_MSIRGSEL) == 0U)
+	{
+	  /* MSISRANGE from RCC_CSR applies */
+	  msirange = (RCC->CSR & RCC_CSR_MSISSRANGE) >> RCC_CSR_MSISSRANGE_Pos;
+	}
+	else
+	{
+	  /* MSIRANGE from RCC_CR applies */
+	  msirange = (RCC->ICSCR1 & RCC_ICSCR1_MSISRANGE) >> RCC_ICSCR1_MSISRANGE_Pos;
+	}
+
+	/*MSI frequency range in HZ*/
+	msirange = MSIRangeTable[msirange];
+
+	/* Get SYSCLK source -------------------------------------------------------*/
+	switch (RCC->CFGR1 & RCC_CFGR1_SWS)
+	{
+	case 0x00:  /* MSI used as system clock source */
+	  SystemCoreClock = msirange;
+	  break;
+
+	case 0x04:  /* HSI used as system clock source */
+	  SystemCoreClock = HSI_VALUE;
+	  break;
+
+	case 0x08:  /* HSE used as system clock source */
+	  SystemCoreClock = HSE_VALUE;
+	  break;
+
+	case 0x0C:  /* PLL used as system clock source */
+	  /* PLL_VCO = (HSE_VALUE or HSI_VALUE or MSI_VALUE/ PLLM) * PLLN
+	  SYSCLK = PLL_VCO / PLLR
+	  */
+	  pllsource = (RCC->PLL1CFGR & RCC_PLL1CFGR_PLL1SRC);
+	  pllm = ((RCC->PLL1CFGR & RCC_PLL1CFGR_PLL1M)>> RCC_PLL1CFGR_PLL1M_Pos) + 1U;
+	  pllfracen = ((RCC->PLL1CFGR & RCC_PLL1CFGR_PLL1FRACEN)>>RCC_PLL1CFGR_PLL1FRACEN_Pos);
+	  fracn1 = (float_t)(uint32_t)(pllfracen* ((RCC->PLL1FRACR & RCC_PLL1FRACR_PLL1FRACN)>> RCC_PLL1FRACR_PLL1FRACN_Pos));
+
+		switch (pllsource)
+		{
+		case 0x00:  /* No clock sent to PLL*/
+		  pllvco = (float_t)0U;
+		  break;
+
+		case 0x02:  /* HSI used as PLL clock source */
+		  pllvco = ((float_t)HSI_VALUE / (float_t)pllm);
+		  break;
+
+		case 0x03:  /* HSE used as PLL clock source */
+		  pllvco = ((float_t)HSE_VALUE / (float_t)pllm);
+		  break;
+
+		default:    /* MSI used as PLL clock source */
+		  pllvco = ((float_t)msirange / (float_t)pllm);
+		  break;
+		}
+
+		pllvco = pllvco * ((float_t)(uint32_t)(RCC->PLL1DIVR & RCC_PLL1DIVR_PLL1N) + (fracn1/(float_t)0x2000) + (float_t)1U);
+		pllr = (((RCC->PLL1DIVR & RCC_PLL1DIVR_PLL1R) >> RCC_PLL1DIVR_PLL1R_Pos) + 1U );
+		SystemCoreClock = (uint32_t)((uint32_t)pllvco/pllr);
+		break;
+
+	default:
+	  SystemCoreClock = msirange;
+	  break;
+	}
+	/* Compute HCLK clock frequency --------------------------------------------*/
+	/* Get HCLK prescaler */
+	tmp = AHBPrescTable[((RCC->CFGR2 & RCC_CFGR2_HPRE) >> RCC_CFGR2_HPRE_Pos)];
+	/* HCLK clock frequency */
+	SystemCoreClock >>= tmp;
 }
 
 
