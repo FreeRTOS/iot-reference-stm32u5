@@ -1,0 +1,5 @@
+boto3
+requests
+pyserial
+cryptography
+black

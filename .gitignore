@@ -1,3 +1,6 @@
+# Cache directory
+.cache
+
 # Prerequisites
 *.d
 
