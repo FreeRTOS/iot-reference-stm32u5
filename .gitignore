@@ -1,6 +1,9 @@
 # Cache directory
 .cache
 
+# Python virtualenv
+.pyenv
+
 # Prerequisites
 *.d
 
