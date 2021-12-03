@@ -7,3 +7,5 @@
 
 source ${PWD}/.pyenv/bin/activate
 
+pip3 install -r $(dirname "$0")/requirements.txt
+
