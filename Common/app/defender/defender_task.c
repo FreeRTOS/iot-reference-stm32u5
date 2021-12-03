@@ -89,7 +89,7 @@
 #define REPORT_MAJOR_VERSION                1
 #define REPORT_MINOR_VERSION                0
 
-#define MS_BETWEEN_REPORTS                  ( 30 * 1000U )     /* 5 Minute reporting interval */
+#define MS_BETWEEN_REPORTS                  ( 5 * 60 * 1000U )     /* 5 Minute reporting interval */
 #define RESPONSE_TIMEOUT_MS                 ( 30 * 1000U )
 #define MQTT_BLOCK_TIME_MS                  ( 10 * 1000U )
 
