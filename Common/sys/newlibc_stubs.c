@@ -41,6 +41,18 @@ void * malloc( size_t xLen )
     return pvPortMalloc( xLen );
 }
 
+void * calloc( size_t xNum, size_t xLen )
+{
+	void * pvBuffer = pvPortMalloc( xNum * xLen );
+
+	if( pvBuffer != NULL )
+	{
+		( void ) memset( pvBuffer, 0, xNum * xLen );
+	}
+
+    return pvBuffer;
+}
+
 #define SIZE_MASK  ( ~( 0b1 << 31 ) )
 static const uintptr_t xHeapStructSize = ( sizeof( BlockLink_t ) + ( ( size_t ) ( portBYTE_ALIGNMENT - 1 ) ) ) & ~( ( size_t ) portBYTE_ALIGNMENT_MASK );
 
