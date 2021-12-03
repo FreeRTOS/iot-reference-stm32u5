@@ -372,12 +372,12 @@ class AwsHelper:
 
         policyFound = False
         for policy in policies["policies"]:
-            print(policy)
+            logger.debug("Found Policy: {}".format(policy["policyName"]))
             if policy["policyName"] == "AllowAllDev":
                 policyFound = True
 
         if policyFound:
-            logger.info('Found existing "AllowAllDev" IoT core policy.')
+            logger.debug('Found existing "AllowAllDev" IoT core policy.')
         else:
             logger.info('Existing policy "AllowAllDev" was not found. Creating it...')
 
@@ -415,6 +415,11 @@ class AwsHelper:
         ):
             logging.error("Error: Certificate creation failed.")
         else:
+            print(
+                "Attaching thing: {} to principal: {}".format(
+                    self.thing["thingName"], self.thing["certificateArn"]
+                )
+            )
             cli.attach_thing_principal(
                 thingName=self.thing["thingName"],
                 principal=self.thing["certificateArn"],
@@ -424,11 +429,11 @@ class AwsHelper:
         self.create_policy()
 
         # Attach the policy to the principal.
+        print('Attaching the "AllowAllDev" policy to the device certificate.')
         self.iot_client.attach_policy(
             policyName="AllowAllDev", target=self.thing["certificateArn"]
         )
 
-        # Attach an example policy
         self.thing["certificatePem"] = bytes(
             self.thing["certificatePem"].replace("\\n", "\n"), "ascii"
         )
@@ -753,6 +758,6 @@ def main():
 if __name__ == "__main__":
     logging.basicConfig(
         level=logging.INFO,
-        format="%(asctime)s | %(levelname)s | %(funcName)s | %(message)s",
+        format="[ %(levelname)s ] %(message)s (%(filename)s:%(funcName)s)",
     )
     main()
