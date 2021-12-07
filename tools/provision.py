@@ -675,7 +675,7 @@ def main():
     if "device" in args:
         devpath = args.device
 
-    if len(devpath) == 0:
+    if not devpath or len(devpath) == 0:
         logging.error(
             'Target device path could not be determined. Please call this script with the "device" argument'
         )
