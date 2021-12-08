@@ -42,7 +42,7 @@ class TargetDevice:
     """Connect to a target device"""
 
     def __init__(self, device, baud):
-        self.ser = serial.Serial(device, baud, timeout=0.1)
+        self.ser = serial.Serial(device, baud, timeout=0.1, rtscts=False)
         self.ser.reset_input_buffer()
         self.ser.reset_output_buffer()
 
