@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 #
 #  FreeRTOS STM32 Reference Integration
 #
@@ -87,22 +87,27 @@ python3 ${IMG_SCRIPTS_DIR}/assemble.py \
 echo "Signing ${BIN_NAME}_s.bin -> ${BIN_NAME}_s_signed.bin"
 
 python3 ${IMG_SCRIPTS_DIR}/wrapper/wrapper.py \
-    -v 1.4.0 \
+    --version "1.5.0" \
     --layout ${IMG_SIGNING_DIR}/layout_files/signing_layout_s.o \
-    -k ${S_SIGNING_KEY} \
+    --key ${S_SIGNING_KEY} \
     --public-key-format full \
-    --align 16 --pad --pad-header -H 0x400 -s 1 -d "(1,0.0.0+0)" \
+    --align 8 --pad --pad-header \
+    --header-size 0x400 \
+    --security-counter 1 \
+    --dependencies "(1,0.0.0+0)" \
     ${BIN_NAME}_s.bin \
     ${BIN_NAME}_s_signed.bin || exit -1
 
 echo "Signing ${BIN_NAME}_ns.bin -> ${BIN_NAME}_ns_signed.bin"
 python3 ${IMG_SCRIPTS_DIR}/wrapper/wrapper.py \
-    -v ${NS_VERSION} \
+    --version ${NS_VERSION} \
     --layout ${IMG_SIGNING_DIR}/layout_files/signing_layout_ns.o \
-    -k ${NS_SIGNING_KEY} \
+    --key ${NS_SIGNING_KEY} \
     --public-key-format full \
     --align 1 --pad --pad-header \
-    -H 0x400 -s 1 -d "(0,0.0.0+0)" \
+    --header-size 0x400 \
+    --security-counter 1 \
+    --dependencies "(0,0.0.0+0)" \
     ${BIN_NAME}_ns.bin \
     ${BIN_NAME}_ns_signed.bin || exit -1
 

@@ -24,9 +24,8 @@
 
 MEMORY
 {
-  FLASH (rx)  : ORIGIN = NS_CODE_START, 	LENGTH = NS_CODE_SIZE
-  SRAM1 (rwx) : ORIGIN = NS_DATA_START, 	LENGTH = NS_DATA_SIZE
-  SRAM3 (rwx) : ORIGIN = _SRAM3_BASE_NS,	LENGTH = _SRAM3_SIZE_MAX	/* 512 K */
+  FLASH (rx)  : ORIGIN = NS_CODE_START, LENGTH = NS_CODE_SIZE
+  RAM   (rwx) : ORIGIN = NS_DATA_START, LENGTH = NS_DATA_SIZE
 }
 
 __heap_size__  = NS_HEAP_SIZE;
@@ -86,26 +85,33 @@ SECTIONS
 
     /* To copy multiple ROM to RAM sections,
      * define etext2/data2_start/data2_end and
-     * define __STARTUP_COPY_MULTIPLE  */
+     * define __STARTUP_COPY_MULTIPLE in startup_stm32l5562xx_ns.S or
+     * startup_stm32l552xx_ns.S */
     .copy.table :
     {
         . = ALIGN(4);
         __copy_table_start__ = .;
         LONG (__etext)
         LONG (__data_start__)
-        LONG ((__data_end__ - __data_start__)/4)
+        LONG (__data_end__ - __data_start__)
+        LONG (DEFINED(__etext2) ? __etext2 : 0)
+        LONG (DEFINED(__data2_start__) ? __data2_start__ : 0)
+        LONG (DEFINED(__data2_start__) ? __data2_end__ - __data2_start__ : 0)
         __copy_table_end__ = .;
     } > FLASH
 
     /* To clear multiple BSS sections,
      * uncomment .zero.table section and,
-     * define __STARTUP_CLEAR_BSS_MULTIPLE */
+     * define __STARTUP_CLEAR_BSS_MULTIPLE in startup_stm32l5562xx_ns.S or
+     * startup_stm32l552xx_ns.S */
     .zero.table :
     {
         . = ALIGN(4);
         __zero_table_start__ = .;
         LONG (__bss_start__)
-        LONG ((__bss_end__ - __bss_start__)/4)
+        LONG (__bss_end__ - __bss_start__)
+        LONG (DEFINED(__bss2_start__) ? __bss2_start__ : 0)
+        LONG (DEFINED(__bss2_start__) ? __bss2_end__ - __bss2_start__ : 0)
         __zero_table_end__ = .;
     } > FLASH
 
@@ -114,7 +120,7 @@ SECTIONS
     .testprotection NS_DATA_START :
     {
          *(.bss.NoInit);
-    } > SRAM3
+    } > RAM
 
     .data (NS_DATA_START+NS_NO_INIT_DATA_SIZE) : AT (__etext)
     {
@@ -148,7 +154,7 @@ SECTIONS
         /* All data end */
         __data_end__ = .;
 
-    } > SRAM1
+    } > RAM
 
     .bss :
     {
@@ -158,35 +164,35 @@ SECTIONS
         *(COMMON)
         . = ALIGN(4);
         __bss_end__ = .;
-    } > SRAM3
+    } > RAM
 
     bss_size = __bss_end__ - __bss_start__;
 
     .msp_stack : ALIGN(32)
     {
         . += __msp_stack_size__;
-    } > SRAM3
+    } > RAM
     Image$$ARM_LIB_STACK_MSP$$ZI$$Base = ADDR(.msp_stack);
     Image$$ARM_LIB_STACK_MSP$$ZI$$Limit = ADDR(.msp_stack) + SIZEOF(.msp_stack);
 
     .psp_stack : ALIGN(32)
     {
         . += __psp_stack_size__;
-    } > SRAM3
+    } > RAM
     Image$$ARM_LIB_STACK$$ZI$$Base = ADDR(.psp_stack);
     Image$$ARM_LIB_STACK$$ZI$$Limit = ADDR(.psp_stack) + SIZEOF(.psp_stack);
 
-/*    .heap : ALIGN(8)
+    .heap : ALIGN(8)
     {
         __end__ = .;
         PROVIDE(end = .);
         __HeapBase = .;
         . += __heap_size__;
         __HeapLimit = .;
-        __heap_limit = .; 
-    } > SRAM3 */ /* Add for _sbrk */
+        __heap_limit = .; /* Add for _sbrk */
+    } > RAM
 
-    PROVIDE(__stack = Image$$ARM_LIB_STACK_MSP$$ZI$$Limit);
+    PROVIDE(__stack = Image$$ARM_LIB_STACK$$ZI$$Limit);
     PROVIDE(__StackTop = Image$$ARM_LIB_STACK_MSP$$ZI$$Limit);
-    PROVIDE(__StackLimit = Image$$ARM_LIB_STACK_MSP$$ZI$$Base);
+	PROVIDE(__StackLimit = Image$$ARM_LIB_STACK_MSP$$ZI$$Base);
 }

@@ -267,6 +267,11 @@
 			<locationURI>PARENT-2-PROJECT_LOC/Middleware/FreeRTOS/corePKCS11/source/include</locationURI>
 		</link>
 		<link>
+			<name>Libraries/corePKCS11/mbedtls_utils</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Middleware/FreeRTOS/corePKCS11/source/dependency/3rdparty/mbedtls_utils</locationURI>
+		</link>
+		<link>
 			<name>Libraries/freertos_kernel/event_groups.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/Middleware/FreeRTOS/kernel/event_groups.c</locationURI>

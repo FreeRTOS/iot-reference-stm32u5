@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 #
 #  FreeRTOS STM32 Reference Integration
 #
@@ -82,10 +82,10 @@ pip3 install -r ${TFM_SRC_DIR}/bl2/ext/mcuboot/scripts/requirements.txt || exit 
 ninja -C ${TFM_BUILD_DIR} -j11 install || exit -1
 
 # Generate the linker script for CubeIDE NS project
-arm-none-eabi-gcc -E -P -xc -DBL2 -DTFM_PSA_API -I ${TFM_BUILD_DIR} -o stm32u5xx_ns.ld ${PROJ_DIR}/scripts/stm32u5xx_ns.ld.template || exit -1
+arm-none-eabi-gcc -E -P -xc -DBL2 -DTFM_PSA_API -I ${TFM_BUILD_DIR} -include ${TFM_BUILD_DIR}/tfm_config_export.h -o stm32u5xx_ns.ld ${PROJ_DIR}/scripts/stm32u5xx_ns.ld.template || exit -1
 
 # Preprocess image_macros_to_preprocess_bl2.c > image_macros_preprocessed_bl2.c
-arm-none-eabi-gcc -E -P -xc -DBL2 -DTFM_PSA_API -I ${TFM_BUILD_DIR} -o ${TFM_BUILD_DIR}/image_macros_preprocessed_bl2.c ${TFM_BUILD_DIR}/image_macros_to_preprocess_bl2.c || exit -1
+arm-none-eabi-gcc -E -P -xc -DTFM_PSA_API -I ${TFM_BUILD_DIR} -include ${TFM_BUILD_DIR}/tfm_config_export.h -o ${TFM_BUILD_DIR}/image_macros_preprocessed_bl2.c ${TFM_BUILD_DIR}/image_macros_to_preprocess_bl2.c || exit -1
 
 # Copy template to build directory
 cp ${PROJ_DIR}/scripts/image_defs.sh.template image_defs.sh
@@ -97,7 +97,7 @@ python3 ${TFM_BUILD_DIR}/scripts/stm_tool.py flash \
 
 python3 ${TFM_BUILD_DIR}/scripts/stm_tool.py flash \
     --layout ${TFM_BUILD_DIR}/image_macros_preprocessed_bl2.c \
-    -b boot -m  RE_BL2_PERSO_ADDRESS -s 0 image_defs.sh
+    -b boot -m  RE_BL2_BIN_ADDRESS -s 0 image_defs.sh
 
 python3 ${TFM_BUILD_DIR}/scripts/stm_tool.py flash \
     --layout ${TFM_BUILD_DIR}/image_macros_preprocessed_bl2.c \
@@ -134,10 +134,6 @@ python3 ${TFM_BUILD_DIR}/scripts/stm_tool.py flash \
 python3 ${TFM_BUILD_DIR}/scripts/stm_tool.py flash \
     --layout ${TFM_BUILD_DIR}/image_macros_preprocessed_bl2.c \
     -b unused -m  RE_IMAGE_FLASH_UNUSED -s 0 image_defs.sh
-
-python3 ${TFM_BUILD_DIR}/scripts/stm_tool.py flash \
-    --layout ${TFM_BUILD_DIR}/image_macros_preprocessed_bl2.c \
-    -b boot -m  RE_BL2_PERSO_ADDRESS -s 0 image_defs.sh
 
 rm -rf ${PROJ_DIR}/tfm/generated
 
