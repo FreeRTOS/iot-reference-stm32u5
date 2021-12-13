@@ -2,7 +2,7 @@
 .cache
 
 # Python virtualenv
-.pyenv
+.venv
 
 # Prerequisites
 *.d

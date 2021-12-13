@@ -1,4 +1,4 @@
-#!python3
+#!python
 #
 #  FreeRTOS STM32 Reference Integration
 #
