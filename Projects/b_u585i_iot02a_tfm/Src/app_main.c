@@ -39,6 +39,7 @@
 #include "kvstore.h"
 #include "hw_defs.h"
 #include "psa/crypto.h"
+#include <string.h>
 
 #include "cli/cli.h"
 
@@ -97,9 +98,9 @@ extern void vMQTTAgentTask( void * );
 //extern void Task_MotionSensorsPublish( void * );
 //extern void vEnvironmentSensorPublishTask( void * );
 extern void vShadowDeviceTask( void * );
-extern void vOTAUpdateTask( void * pvParam );
+//extern void vOTAUpdateTask( void * pvParam );
 extern void vDefenderAgentTask( void * );
-extern void vTimeSyncTask( void * );
+//extern void vTimeSyncTask( void * );
 
 void vInitTask( void * pvArgs )
 {
@@ -108,23 +109,21 @@ void vInitTask( void * pvArgs )
     /* Initialize PSA crypto api */
     psa_crypto_init();
 
-    xResult = xTaskCreate( Task_CLI, "cli", 1024, NULL, 10, NULL );
+    xResult = xTaskCreate( Task_CLI, "cli", 2048, NULL, 10, NULL );
 
     ( void ) xEventGroupSetBits( xSystemEvents, EVT_MASK_FS_READY );
 
     KVStore_init();
 
     xResult = xTaskCreate( vHeartbeatTask, "Heartbeat", 128, NULL, tskIDLE_PRIORITY, NULL );
-
     configASSERT( xResult == pdTRUE );
 
     xResult = xTaskCreate( &net_main, "MxNet", 1024, NULL, 23, NULL );
-
     configASSERT( xResult == pdTRUE );
 
-    xResult = xTaskCreate( vMQTTAgentTask, "MQTTAgent", 2048, NULL, tskIDLE_PRIORITY + 1, NULL );
-
-    configASSERT( xResult == pdTRUE );
+//    xResult = xTaskCreate( vMQTTAgentTask, "MQTTAgent", 2048, NULL, tskIDLE_PRIORITY + 1, NULL );
+//
+//    configASSERT( xResult == pdTRUE );
 
 //    xResult = xTaskCreate( vOTAUpdateTask, "OTAUpdate", 4096, NULL, tskIDLE_PRIORITY + 1, NULL );
 //
