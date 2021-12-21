@@ -103,6 +103,5 @@ local.properties
 # CDT- autotools
 .autotools
 
-# pyenv directory
-.pyenv
+__pycache__
 

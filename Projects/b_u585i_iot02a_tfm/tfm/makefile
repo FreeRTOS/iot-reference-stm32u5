@@ -59,9 +59,10 @@ NUM_PROCESSORS = 8
 		spe_build_reqs spe_bin spe_clean spe_distclean \
 		nspe_build_reqs nspe_build_reqs_clean \
 		spe_signed nspe_signed factory factory_signed \
-		tfm_interface_files tfm_layout_files tfm_scripts
+		tfm_interface_files tfm_layout_files tfm_scripts \
+		bl2
 
-all: info spe_patch_libs spe_build_reqs nspe_build_reqs spe_signed nspe_signed factory factory_signed
+all: info spe_patch_libs spe_build_reqs nspe_build_reqs spe_signed nspe_signed factory factory_signed bl2
 clean: spe_clean spe_patch_libs_clean nspe_build_reqs_clean
 distclean : clean tfm_distclean spe_patch_libs_distclean
 
@@ -164,7 +165,6 @@ TFM_BIN_ARTIFACTS := bin/tfm_s.axf \
                      bin/tfm_s.bin \
                      bin/tfm_s.hex \
                      bin/tfm_s.map \
-                     bin/tfm_s_signed.bin \
                      bin/bl2.map \
                      bin/bl2.axf \
                      bin/bl2.elf \
@@ -276,6 +276,12 @@ ${BUILD_PATH}/${PROJECT_NAME}_% : ${TFM_BUILD_PATH}/bin/tfm_%
 	cp $< $@
 
 ###############################################################################
+# Copy bl2 artifact to the main build directory and rename based on project
+###############################################################################
+${BUILD_PATH}/${PROJECT_NAME}_bl2.bin : ${TFM_BUILD_PATH}/bin/bl2.bin
+	cp $< $@
+
+###############################################################################
 # Define phony targets for signed images
 ###############################################################################
 spe_signed : ${BUILD_PATH}/${PROJECT_NAME}_s_signed.bin
@@ -283,11 +289,16 @@ spe_signed : ${BUILD_PATH}/${PROJECT_NAME}_s_signed.bin
 nspe_signed : ${BUILD_PATH}/${PROJECT_NAME}_ns_signed.bin
 
 ###############################################################################
+# Define phony target for BL2 image
+###############################################################################
+bl2 : ${BUILD_PATH}/${PROJECT_NAME}_bl2.bin
+
+###############################################################################
 # Define phony targets for combined "factory" images
 ###############################################################################
-factory : ${BUILD_PATH}/${PROJECT_NAME}_s_ns.bin
+factory : ${BUILD_PATH}/${PROJECT_NAME}_s_ns.bin bl2
 
-factory_signed : ${BUILD_PATH}/${PROJECT_NAME}_s_ns_signed.bin
+factory_signed : ${BUILD_PATH}/${PROJECT_NAME}_s_ns_signed.bin bl2
 
 ###############################################################################
 # Rule to generate combined s and ns "factory" images
