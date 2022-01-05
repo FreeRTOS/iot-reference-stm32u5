@@ -26,14 +26,14 @@
 #
 #
 
-# CUBEIDE_DIR must be provided by the caller as environment variables
+# CUBEIDE_PATH must be provided by the caller as environment variables
 
-[ -z ${CUBEIDE_DIR} ] && {
-    echo "Error: CUBEIDE_DIR must be defined to continue."
+[ -z ${CUBEIDE_PATH} ] && {
+    echo "Error: CUBEIDE_PATH must be defined to continue."
     exit 1
 }
 
-PROG_DIR=`find ${CUBEIDE_DIR} -name 'com.st.stm32cube.ide.mcu.externaltools.cubeprogrammer*' -type d`
+PROG_DIR=`find ${CUBEIDE_PATH} -name 'com.st.stm32cube.ide.mcu.externaltools.cubeprogrammer*' -type d`
 PROG_BIN_DIR="${PROG_DIR}/tools/bin"
 PROG_BIN=`find ${PROG_BIN_DIR} -name 'STM32_Programmer_CLI*' -type f`
 PROG_BIN=$( basename ${PROG_BIN} )
@@ -43,7 +43,7 @@ PROG_BIN=$( basename ${PROG_BIN} )
     exit 1
 }
 
-echo "STM32CubeIDE directory:               ${CUBEIDE_DIR%?}"
+echo "STM32CubeIDE directory:               ${CUBEIDE_PATH%?}"
 echo "STM32CubeProgrammer Path:             ${PROG_BIN_DIR}"
 echo "STM32CubeProgrammer Bin Name:         ${PROG_BIN}"
 echo; echo
