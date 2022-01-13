@@ -24,17 +24,10 @@
 #  https://www.FreeRTOS.org
 #  https://github.com/FreeRTOS
 #
-#
-if [ -n "${BASH_SOURCE[0]}" ]; then
-	TOOLS_PATH=$( realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" || return; pwd )" )
-else
-	TOOLS_PATH=$( realpath "$(cd "$(dirname "${0}")" || return; pwd )" )
-fi
 
-(return 0 2>/dev/null) || {
-	echo "WARNING: To work properly, this script should be sourced rather than run as a command."
-	DEBUG=1
-}
+[ -n "${WORKSPACE_PATH}" ] || echo "WORKSPACE_PATH env variable was not defined."
+
+TOOLS_PATH=$WORKSPACE_PATH/tools
 
 [ -n "${DEBUG}" ] && echo "TOOLS_PATH:         ${TOOLS_PATH}"
 
