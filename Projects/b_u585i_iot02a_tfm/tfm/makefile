@@ -1,5 +1,3 @@
-#!/bin/bash
-#
 #  FreeRTOS STM32 Reference Integration
 #
 #  Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
@@ -30,16 +28,22 @@
 # This can be done either as an agrument to make or in the enviornment.
 # Other vars may be overridden as needed.
 
+MAKEFLAGS += --no-builtin-rules
+
+# Normalize Paths
+BUILD_PATH := $(realpath $(BUILD_PATH))
+WORKSPACE_PATH := $(realpath $(WORKSPACE_PATH))
+
 ###############################################################################
 # Path Definitions
 ###############################################################################
-TOOLS_PATH = $(shell realpath ${WORKSPACE_PATH}/tools)
-MIDDLEWARE_PATH = $(shell realpath ${WORKSPACE_PATH}/Middleware)
-TFM_SRC_PATH = $(shell realpath ${MIDDLEWARE_PATH}/ARM/trusted-firmware-m)
-MBEDTLS_SRC_PATH = $(shell realpath ${MIDDLEWARE_PATH}/ARM/mbedtls)
-MCUBOOT_SRC_PATH = $(shell realpath ${MIDDLEWARE_PATH}/ARM/mcuboot)
-PROJECT_PATH = $(shell realpath ${BUILD_PATH}/..)
-TFM_BUILD_PATH = $(shell realpath ${BUILD_PATH})/tfm_build
+TOOLS_PATH = ${WORKSPACE_PATH}/tools
+MIDDLEWARE_PATH = $(realpath ${WORKSPACE_PATH}/Middleware)
+TFM_SRC_PATH = $(realpath ${MIDDLEWARE_PATH}/ARM/trusted-firmware-m)
+MBEDTLS_SRC_PATH = $(realpath ${MIDDLEWARE_PATH}/ARM/mbedtls)
+MCUBOOT_SRC_PATH = $(realpath ${MIDDLEWARE_PATH}/ARM/mcuboot)
+PROJECT_PATH = $(realpath ${BUILD_PATH}/..)
+TFM_BUILD_PATH = $(BUILD_PATH)/tfm_build
 S_REGION_SIGNING_KEY = ${TFM_SRC_PATH}/bl2/ext/mcuboot/root-RSA-3072.pem
 NS_REGION_SIGNING_KEY = ${TFM_SRC_PATH}/bl2/ext/mcuboot/root-RSA-3072_1.pem
 
@@ -49,6 +53,7 @@ NS_REGION_SIGNING_KEY = ${TFM_SRC_PATH}/bl2/ext/mcuboot/root-RSA-3072_1.pem
 SPE_VERSION = "1.5.0"
 NSPE_VERSION = "1.0.0"
 NUM_PROCESSORS = 8
+
 
 ###############################################################################
 # Default / phony targets
@@ -69,6 +74,7 @@ distclean : clean tfm_distclean spe_patch_libs_distclean
 ###############################################################################
 # Write Paths to stdout
 ###############################################################################
+.ONESHELL:
 info:
 	@echo "PROJECT_NAME:     ${PROJECT_NAME}"
 	@echo "WORKSPACE_PATH:   ${WORKSPACE_PATH}"
@@ -80,23 +86,24 @@ info:
 	@echo "TFM_SRC_PATH:     ${TFM_SRC_PATH}"
 	@echo "MBEDTLS_SRC_PATH: ${MBEDTLS_SRC_PATH}"
 	@echo "MCUBOOT_SRC_PATH: ${MCUBOOT_SRC_PATH}"
+	@echo "SHELLFLAGS:       ${.SHELLFLAGS}"
 
 ###############################################################################
 # Python Environment: Setup and sourcing
 ###############################################################################
-define SOURCE_PYTHON_ENV
-source ${TOOLS_PATH}/env_setup.sh
-endef
 
 ${WORKSPACE_PATH}/.venv/.initialized : ${TOOLS_PATH}/env_setup.sh ${TOOLS_PATH}/requirements.txt
-	${TOOLS_PATH}/env_setup.sh
+	source ${TOOLS_PATH}/env_setup.sh
+	touch "$@"
 
 ###############################################################################
 # Rules to apply TF-M patches to mcuboot and mbedtls
 ###############################################################################
-MBEDTLS_PATCHES = $(shell find ${TFM_SRC_PATH}/lib/ext/mbedcrypto -name \*.patch -type f)
+# MBEDTLS_PATCHES = $(shell sh -c "find ${TFM_SRC_PATH}/lib/ext/mbedcrypto -name \*.patch -type f")
+MBEDTLS_PATCHES := $(wildcard ${TFM_SRC_PATH}/lib/ext/mbedcrypt/*.patch)
 MBEDTLS_PATCH_FLAGS = $(foreach file,$(notdir ${MBEDTLS_PATCHES}),${MBEDTLS_SRC_PATH}/$(basename ${file}).patched)
-MBEDTLS_PATCHES_APPLIED = $(shell find ${MBEDTLS_SRC_PATH} -name \*.patched -type f)
+# MBEDTLS_PATCHES_APPLIED = $(shell sh -c "find ${MBEDTLS_SRC_PATH} -name \*.patched -type f")
+MBEDTLS_PATCHES_APPLIED = ${wildcard ${MBEDTLS_SRC_PATH}/*.patched}
 
 # Apply each mbedtls patch
 ${MBEDTLS_SRC_PATH}/%.patched : ${TFM_SRC_PATH}/lib/ext/mbedcrypto/%.patch
@@ -104,9 +111,11 @@ ${MBEDTLS_SRC_PATH}/%.patched : ${TFM_SRC_PATH}/lib/ext/mbedcrypto/%.patch
 	git -C ${MBEDTLS_SRC_PATH} apply $<
 	cp $< $@
 
-MCUBOOT_PATCHES = $(shell find ${TFM_SRC_PATH}/lib/ext/mcuboot -name \*.patch -type f)
+# MCUBOOT_PATCHES = $(shell sh -c "find ${TFM_SRC_PATH}/lib/ext/mcuboot -name \*.patch -type f")
+MCUBOOT_PATCHES := $(wildcard ${TFM_SRC_PATH}/lib/ext/mcuboot/*.patch)
 MCUBOOT_PATCH_FLAGS = $(foreach file,$(notdir ${MCUBOOT_PATCHES}),${MCUBOOT_SRC_PATH}/$(basename ${file}).patched)
-MCUBOOT_PATCHES_APPLIED = $(shell find ${MCUBOOT_SRC_PATH} -name \*.patched -type f)
+# MCUBOOT_PATCHES_APPLIED = $(shell sh -c "find ${MCUBOOT_SRC_PATH} -name \*.patched -type f)
+MCUBOOT_PATCHES_APPLIED = ${wildcard ${MCUBOOT_SRC_PATH}/*.patched}
 
 # Apply each mcuboot patch
 ${MCUBOOT_SRC_PATH}/%.patched : ${TFM_SRC_PATH}/lib/ext/mcuboot/%.patch
@@ -121,7 +130,7 @@ spe_patch_libs_clean :
 ifneq ($(MBEDTLS_PATCHES_APPLIED),)
 	@echo Removing applied mbedtls patches
 	git -C ${MBEDTLS_SRC_PATH} apply --reverse ${MBEDTLS_PATCHES_APPLIED}
-	-rm -f ${MBEDTLS_PATCHES_APPLIED}
+	rm -f ${MBEDTLS_PATCHES_APPLIED}
 endif
 
 ifneq ($(MCUBOOT_PATCHES_APPLIED),)
@@ -139,28 +148,30 @@ spe_patch_libs_distclean :
 ###############################################################################
 # Generate the build system for TF-M "SPE" image
 ###############################################################################
-spe_build_reqs : ${TFM_BUILD_PATH}/build.ninja
+spe_build_reqs : ${TFM_BUILD_PATH}/Makefile
 
-# Use cmake to generate the build.ninja file
-${TFM_BUILD_PATH}/build.ninja : ${MBEDTLS_PATCH_FLAGS} ${MCUBOOT_PATCH_FLAGS} ${WORKSPACE_PATH}/.venv/.initialized
+# Use cmake to generate the Makefile file
+${TFM_BUILD_PATH}/Makefile : ${MBEDTLS_PATCH_FLAGS} ${MCUBOOT_PATCH_FLAGS} ${WORKSPACE_PATH}/.venv/.initialized
 	mkdir -p ${TFM_BUILD_PATH}
 	rm -f ${TFM_BUILD_PATH}/CMakeCache.txt
 
-	$(SOURCE_PYTHON_ENV) && \
-    cmake -S ${TFM_SRC_PATH} -B ${TFM_BUILD_PATH} \
-        -DTFM_PLATFORM=stm/b_u585i_iot02a \
-        -DTFM_TOOLCHAIN_FILE=${TFM_SRC_PATH}/toolchain_GNUARM.cmake \
-        -DCMAKE_BUILD_TYPE=Relwithdebinfo \
-        -DMBEDCRYPTO_PATH=${MBEDTLS_SRC_PATH} \
-        -DMCUBOOT_PATH=${MCUBOOT_SRC_PATH} \
-        -DTFM_PROFILE=profile_large \
-        -DTFM_ISOLATION_LEVEL=2 \
-        -GNinja \
-        -DNS=0
+	source ${TOOLS_PATH}/env_setup.sh
+	cmake -S ${TFM_SRC_PATH} -B ${TFM_BUILD_PATH} \
+		-DTFM_PLATFORM=stm/b_u585i_iot02a \
+		-DTFM_TOOLCHAIN_FILE=${TFM_SRC_PATH}/toolchain_GNUARM.cmake \
+		-DCMAKE_BUILD_TYPE=Relwithdebinfo \
+		-DMBEDCRYPTO_PATH=${MBEDTLS_SRC_PATH} \
+		-DMCUBOOT_PATH=${MCUBOOT_SRC_PATH} \
+		-DTFM_PROFILE=profile_large \
+		-DTFM_ISOLATION_LEVEL=2 \
+		-DPython_FIND_VIRTUALENV=FIRST \
+		-G"Unix Makefiles"\
+		-DNS=0
+		touch ${TFM_BUILD_PATH}/Makefile
 
 ###############################################################################
 # Artifacts generated by a TF-M build
-###############################################################################
+################################################################	###############
 TFM_BIN_ARTIFACTS := tfm_s.axf \
                      tfm_s.elf \
                      tfm_s.bin \
@@ -178,18 +189,20 @@ BL2_BIN_ARTIFACTS := bl2.axf \
 ###############################################################################
 TFM_ARTIFACTS := ${addprefix bin/,${TFM_BIN_ARTIFACTS}} \
 				 ${addprefix bin/,${BL2_BIN_ARTIFACTS}} \
-			     image_macros_to_preprocess_bl2.c \
-                 image_macros_preprocessed_bl2.c \
-                 tfm_config_export.h \
-                 region_defs.h
+				 image_macros_to_preprocess_bl2.c \
+				 tfm_config_export.h \
+				 region_defs.h \
+				 install/interface/lib/s_veneers.o
+
 
 TFM_ARTIFACT_PATHS := ${addprefix ${TFM_BUILD_PATH}/,${TFM_ARTIFACTS}}
 
 ###############################################################################
 # Build TF-M Artifacts / SPE image
 ###############################################################################
-${TFM_ARTIFACT_PATHS} : ${TFM_BUILD_PATH}/build.ninja
-	ninja -C ${TFM_BUILD_PATH} install
+${TFM_ARTIFACT_PATHS} &: ${TFM_BUILD_PATH}/Makefile
+	make -C ${TFM_BUILD_PATH} -j
+	make -C ${TFM_BUILD_PATH} install -j1
 
 ###############################################################################
 # Copy TF-M artifacts to the main build directory and rename
@@ -197,12 +210,12 @@ ${TFM_ARTIFACT_PATHS} : ${TFM_BUILD_PATH}/build.ninja
 TFM_BIN_COPY = ${subst tfm_,${BUILD_PATH}/${PROJECT_NAME}_,${TFM_BIN_ARTIFACTS}}
 
 ${BUILD_PATH}/${PROJECT_NAME}_% : ${TFM_BUILD_PATH}/bin/tfm_%
-	cp $< $@
+	cp "$<" "$@"
 
 BL2_BIN_COPY = ${addprefix ${BUILD_PATH}/${PROJECT_NAME}_,${BL2_BIN_ARTIFACTS}}
 
 ${BUILD_PATH}/${PROJECT_NAME}_bl2% : ${TFM_BUILD_PATH}/bin/bl2%
-	cp $< $@
+	cp "$<" "$@"
 
 spe_bin : ${BL2_BIN_COPY} ${TFM_BIN_COPY}
 
@@ -210,20 +223,25 @@ spe_bin : ${BL2_BIN_COPY} ${TFM_BIN_COPY}
 # Clean TF-M / SPE build directory
 ###############################################################################
 spe_clean :
-	if [ -d ${TFM_BUILD_PATH} ]; then ninja -C ${TFM_BUILD_PATH} clean; fi
-	-rm -f ${TFM_BIN_COPY} ${BL2_BIN_COPY}
+	if [ -d ${TFM_BUILD_PATH} ]; then make -C ${TFM_BUILD_PATH} clean; fi
+	rm -f ${TFM_BIN_COPY} ${BL2_BIN_COPY}
 
 spe_distclean : spe_clean clean
 	@echo Removing tfm build directory
-	-rm -rf ${TFM_BUILD_PATH}
+	rm -rf ${TFM_BUILD_PATH}
 
 ###############################################################################
 # List files to be copied into project build directory with SPE and BL2 bins
 ###############################################################################
 s_veneers_lib : ${PROJECT_PATH}/tfm/generated/lib/libs_veneers.a
-tfm_interface_files : $(subst ${TFM_BUILD_PATH}/install/interface/,${PROJECT_PATH}/tfm/generated/,$(shell find ${TFM_BUILD_PATH}/install/interface -type f))
-tfm_layout_files : $(subst ${TFM_BUILD_PATH}/install/image_signing/layout_files/,${PROJECT_PATH}/tfm/layout_files/,$(shell find ${TFM_BUILD_PATH}/install/image_signing/layout_files -type f))
-tfm_scripts : $(subst ${TFM_BUILD_PATH}/install/image_signing/scripts/,${PROJECT_PATH}/tfm/scripts/,$(shell find ${TFM_BUILD_PATH}/install/image_signing/scripts -type f -name '*.py'))
+
+TFM_INTERFACE_FILES := ${shell sh -c 'find ${TFM_BUILD_PATH}/install/interface -type f'}
+
+tfm_interface_files : $(subst ${TFM_BUILD_PATH}/install/interface/,${PROJECT_PATH}/tfm/generated/,${TFM_INTERFACE_FILES})
+
+tfm_layout_files : $(subst ${TFM_BUILD_PATH}/install/image_signing/layout_files/,${PROJECT_PATH}/tfm/layout_files/,$(shell sh -c "find ${TFM_BUILD_PATH}/install/image_signing/layout_files -type f"))
+
+tfm_scripts : $(subst ${TFM_BUILD_PATH}/install/image_signing/scripts/,${PROJECT_PATH}/tfm/scripts/,$(shell sh -c "find ${TFM_BUILD_PATH}/install/image_signing/scripts -type f -name '*.py'"))
 
 nspe_build_reqs : spe_bin \
 				  s_veneers_lib \
@@ -261,29 +279,29 @@ ${BUILD_PATH}/image_macros_preprocessed_bl2.c : ${TFM_BUILD_PATH}/image_macros_t
 # Export the macros from image_macros_to_preprocess_bl2.c into a shell script
 ###############################################################################
 ${BUILD_PATH}/image_defs.sh : ${BUILD_PATH}/image_macros_preprocessed_bl2.c
-	$(SOURCE_PYTHON_ENV) && \
-	python3 ${TOOLS_PATH}/macro_to_kvfile.py ${BUILD_PATH}/image_defs.sh ${BUILD_PATH}/image_macros_preprocessed_bl2.c
+	source ${TOOLS_PATH}/env_setup.sh
+	python ${TOOLS_PATH}/macro_to_kvfile.py ${BUILD_PATH}/image_defs.sh ${BUILD_PATH}/image_macros_preprocessed_bl2.c
 
 ###############################################################################
 # Copy generated files and scripts needed by the NSPE build.
 ###############################################################################
 ${PROJECT_PATH}/tfm/generated/% : ${TFM_BUILD_PATH}/install/interface/%
-	mkdir -p $(dir $@)
-	cp $< $@
+	mkdir -p "$(dir $@)"
+	cp "$<" "$@"
 
 ${PROJECT_PATH}/tfm/scripts/%.py : ${TFM_BUILD_PATH}/install/image_signing/scripts/%.py
-	mkdir -p $(dir $@)
-	cp $< $@
+	mkdir -p "$(dir $@)"
+	cp "$<" "$@""
 
 ${PROJECT_PATH}/tfm/layout_files/%.o : ${TFM_BUILD_PATH}/install/image_signing/layout_files/%.o
 	mkdir -p $(dir $@)
-	cp $< $@
+	cp "$<" "$@"
 
 nspe_build_reqs_clean:
-	-rm -f ${BUILD_PATH}/image_macros_preprocessed_bl2.c
-	-rm -f ${BUILD_PATH}/stm32u5xx_ns.ld
-	-rm -f ${BUILD_PATH}/image_defs.sh
-	-rm -rf ${PROJECT_PATH}/tfm/generated/
+	rm -f ${BUILD_PATH}/image_macros_preprocessed_bl2.c
+	rm -f ${BUILD_PATH}/stm32u5xx_ns.ld
+	rm -f ${BUILD_PATH}/image_defs.sh
+	rm -rf ${PROJECT_PATH}/tfm/generated/
 
 ###############################################################################
 # Define phony targets for signed images
@@ -308,43 +326,43 @@ factory_signed : ${BUILD_PATH}/${PROJECT_NAME}_s_ns_signed.bin bl2
 # Rule to generate combined s and ns "factory" images
 ###############################################################################
 ${BUILD_PATH}/${PROJECT_NAME}_s_ns% : ${BUILD_PATH}/${PROJECT_NAME}_s% ${BUILD_PATH}/${PROJECT_NAME}_ns%
-	$(SOURCE_PYTHON_ENV) && \
-	python3 ${PROJECT_PATH}/tfm/scripts/assemble.py \
-	    --layout ${PROJECT_PATH}/tfm/layout_files/signing_layout_s.o \
-	    -s ${BUILD_PATH}/${PROJECT_NAME}_s$* \
-	    -n ${BUILD_PATH}/${PROJECT_NAME}_ns$* \
-	    -o $@
+	source ${TOOLS_PATH}/env_setup.sh
+	python ${PROJECT_PATH}/tfm/scripts/assemble.py \
+		--layout ${PROJECT_PATH}/tfm/layout_files/signing_layout_s.o \
+		-s ${BUILD_PATH}/${PROJECT_NAME}_s$* \
+		-n ${BUILD_PATH}/${PROJECT_NAME}_ns$* \
+		-o $@
 
 ###############################################################################
 # Rule to sign SPE / secure / tf-m images
 ###############################################################################
 ${BUILD_PATH}/${PROJECT_NAME}_s_signed.bin : ${BUILD_PATH}/${PROJECT_NAME}_s.bin
-	$(SOURCE_PYTHON_ENV) && \
-	python3 ${PROJECT_PATH}/tfm/scripts/wrapper/wrapper.py \
-	    --version ${SPE_VERSION} \
-	    --layout ${PROJECT_PATH}/tfm/layout_files/signing_layout_s.o \
-	    --key ${S_REGION_SIGNING_KEY} \
-	    --public-key-format full \
-	    --align 8 --pad --pad-header \
-	    --header-size 0x400 \
-	    --security-counter 1 \
-	    --dependencies "(1,0.0.0+0)" \
-	    $< \
-	    $@
+	source ${TOOLS_PATH}/env_setup.sh
+	python ${PROJECT_PATH}/tfm/scripts/wrapper/wrapper.py \
+		--version ${SPE_VERSION} \
+		--layout ${PROJECT_PATH}/tfm/layout_files/signing_layout_s.o \
+		--key ${S_REGION_SIGNING_KEY} \
+		--public-key-format full \
+		--align 8 --pad --pad-header \
+		--header-size 0x400 \
+		--security-counter 1 \
+		--dependencies "(1,0.0.0+0)" \
+		$< \
+		$@
 
 ###############################################################################
 # Rule to sign NSPE / non-secure envronment images
 ###############################################################################
 ${BUILD_PATH}/${PROJECT_NAME}_ns_signed.bin : ${BUILD_PATH}/${PROJECT_NAME}_ns.bin
-	$(SOURCE_PYTHON_ENV) && \
-	python3 ${PROJECT_PATH}/tfm/scripts/wrapper/wrapper.py \
-	    --version ${NSPE_VERSION} \
-	    --layout ${PROJECT_PATH}/tfm/layout_files/signing_layout_ns.o \
-	    --key ${NS_REGION_SIGNING_KEY} \
-	    --public-key-format full \
-	    --align 1 --pad --pad-header \
-	    --header-size 0x400 \
-	    --security-counter 1 \
-	    --dependencies "(0,${SPE_VERSION}+0)" \
-	    $< \
-	    $@
+	source ${TOOLS_PATH}/env_setup.sh
+	python ${PROJECT_PATH}/tfm/scripts/wrapper/wrapper.py \
+		--version ${NSPE_VERSION} \
+		--layout ${PROJECT_PATH}/tfm/layout_files/signing_layout_ns.o \
+		--key ${NS_REGION_SIGNING_KEY} \
+		--public-key-format full \
+		--align 1 --pad --pad-header \
+		--header-size 0x400 \
+		--security-counter 1 \
+		--dependencies "(0,${SPE_VERSION}+0)" \
+		$< \
+		$@

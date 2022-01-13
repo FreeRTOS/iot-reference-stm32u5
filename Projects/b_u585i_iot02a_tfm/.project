@@ -294,7 +294,7 @@
 		<link>
 			<name>Libraries/freertos_kernel/port</name>
 			<type>2</type>
-			<location>/Volumes/workplace/check/IoT-Reference-STM32U5/Middleware/FreeRTOS/kernel/portable/GCC/ARM_CM33_NTZ/non_secure</location>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/kernel/portable/GCC/ARM_CM33_NTZ/non_secure</locationURI>
 		</link>
 		<link>
 			<name>Libraries/freertos_kernel/queue.c</name>
