@@ -43,9 +43,10 @@ TFM_SCRIPT_PATHS = ${subst ${TFM_BUILD_PATH}/install/image_signing/scripts/,${PR
 
 .PHONY: clean all
 
-all: ${PROJECT_PATH}/tfm/interface/.generated ${PROJECT_PATH}/tfm/interface/libtfm_interface.a
+all: ${BUILD_PATH}/tfm/.generated ${PROJECT_PATH}/tfm/interface/libtfm_interface.a
 
 ${BUILD_PATH}/tfm/.generated : $(TFM_LAYOUT_PATHS) $(TFM_INTERFACE_HEADER_PATHS) $(TFM_SCRIPT_PATHS)
+	mkdir -p "$(dir $@)"
 	sh -c "touch ${BUILD_PATH}/tfm/.generated"
 
 ${PROJECT_PATH}/tfm/interface/% : ${TFM_BUILD_PATH}/install/interface/%
