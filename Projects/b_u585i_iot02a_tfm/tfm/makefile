@@ -33,7 +33,7 @@
 .NOTPARALLEL:
 .ONESHELL:
 .DEFAULT_GOAL = all
-MAKEFLAGS += --no-builtin-rules
+# MAKEFLAGS += --no-builtin-rules
 
 # Normalize Paths
 BUILD_PATH := $(realpath $(BUILD_PATH))
@@ -63,17 +63,14 @@ NUM_PROCESSORS = 8
 # Default / phony targets
 ###############################################################################
 .PHONY: info clean distclean \
-		spe_patch_libs spe_patch_libs_clean spe_patch_libs_distclean \
+		spe_patch_libs_clean spe_patch_libs_distclean \
 		spe_build_reqs spe_build spe_bin \
 		spe_clean spe_distclean \
+		tfm_generated_files \
 		nspe_build_reqs nspe_build_reqs_clean \
 		spe_signed nspe_signed factory factory_signed \
-		tfm_interface_files tfm_layout_files tfm_scripts \
-		bl2
-
-all: info spe_patch_libs spe_build_reqs nspe_build_reqs spe_signed nspe_signed factory factory_signed bl2
-clean: spe_clean spe_patch_libs_clean nspe_build_reqs_clean
-distclean : clean tfm_distclean spe_patch_libs_distclean
+		tfm_scripts \
+		all
 
 ###############################################################################
 # Write Paths to stdout
@@ -90,14 +87,8 @@ info:
 	@echo "MBEDTLS_SRC_PATH: ${MBEDTLS_SRC_PATH}"
 	@echo "MCUBOOT_SRC_PATH: ${MCUBOOT_SRC_PATH}"
 	@echo "SHELLFLAGS:       ${.SHELLFLAGS}"
-
-###############################################################################
-# Python Environment: Setup and sourcing
-###############################################################################
-
-${WORKSPACE_PATH}/.venv/.initialized : ${TOOLS_PATH}/env_setup.sh ${TOOLS_PATH}/requirements.txt
-	source ${TOOLS_PATH}/env_setup.sh
-	touch "$@"
+	@echo "CFLAGS:			 ${CFLAGS}"
+	@echo "LDFLAGS:			 ${LDFLAGS}"
 
 ###############################################################################
 # Rules to apply TF-M patches to mcuboot and mbedtls
@@ -111,6 +102,7 @@ ${MBEDTLS_SRC_PATH}/%.patched : ${TFM_SRC_PATH}/lib/ext/mbedcrypto/%.patch
 	@echo Applying mbedtls patch: $(notdir $<)
 	git -C ${MBEDTLS_SRC_PATH} apply $<
 	cp $< $@
+	touch $@
 
 MCUBOOT_PATCHES := $(wildcard ${TFM_SRC_PATH}/lib/ext/mcuboot/*.patch)
 MCUBOOT_PATCH_FLAGS = $(foreach file,$(notdir ${MCUBOOT_PATCHES}),${MCUBOOT_SRC_PATH}/$(basename ${file}).patched)
@@ -121,8 +113,7 @@ ${MCUBOOT_SRC_PATH}/%.patched : ${TFM_SRC_PATH}/lib/ext/mcuboot/%.patch
 	@echo Applying mcuboot patch: $(notdir $<)
 	git -C ${MCUBOOT_SRC_PATH} apply $<
 	cp $< $@
-
-spe_patch_libs : ${MBEDTLS_PATCH_FLAGS} ${MCUBOOT_PATCH_FLAGS}
+	touch $@
 
 # Remove any applied mcuboot and mbetls patches
 spe_patch_libs_clean :
@@ -143,16 +134,13 @@ spe_patch_libs_distclean :
 	git -C ${MBEDTLS_SRC_PATH} clean -f
 	git -C ${MCUBOOT_PATCHES} clean -f
 
-
 ###############################################################################
 # Generate the build system for TF-M "SPE" image
 ###############################################################################
-spe_build_reqs : ${TFM_BUILD_PATH}/Makefile
 
 # Use cmake to generate the Makefile file
-${TFM_BUILD_PATH}/Makefile : spe_patch_libs ${WORKSPACE_PATH}/.venv/.initialized
+${TFM_BUILD_PATH}/Makefile : ${MBEDTLS_PATCH_FLAGS} ${MCUBOOT_PATCH_FLAGS}
 	mkdir -p ${TFM_BUILD_PATH}
-	rm -f ${TFM_BUILD_PATH}/CMakeCache.txt
 
 	source ${TOOLS_PATH}/env_setup.sh
 	cmake -S ${TFM_SRC_PATH} -B ${TFM_BUILD_PATH} \
@@ -191,42 +179,38 @@ TFM_ARTIFACTS := ${addprefix bin/,${TFM_BIN_ARTIFACTS}} \
 				 ${addprefix bin/,${BL2_BIN_ARTIFACTS}} \
 				 image_macros_to_preprocess_bl2.c \
 				 tfm_config_export.h \
-				 region_defs.h \
-				 install/interface/lib/s_veneers.o
-
+				 region_defs.h 
 
 TFM_ARTIFACT_PATHS := ${addprefix ${TFM_BUILD_PATH}/,${TFM_ARTIFACTS}}
 
 ###############################################################################
 # Build TF-M Artifacts / SPE image
 ###############################################################################
-${TFM_ARTIFACT_PATHS} : spe_build
-
-spe_build : ${TFM_BUILD_PATH}/Makefile
-	make -C ${TFM_BUILD_PATH}
-	make -C ${TFM_BUILD_PATH} install
+${TFM_ARTIFACT_PATHS} &: ${TFM_BUILD_PATH}/Makefile
+	$(MAKE) -C ${TFM_BUILD_PATH} all install
+	$(MAKE) -f generated.mk PROJECT_PATH=${PROJECT_PATH} TFM_BUILD_PATH=${TFM_BUILD_PATH} all
 
 ###############################################################################
 # Copy TF-M artifacts to the main build directory and rename
 ###############################################################################
-TFM_BIN_COPY = ${subst tfm_,${BUILD_PATH}/${PROJECT_NAME}_,${TFM_BIN_ARTIFACTS}}
+TFM_BIN = ${subst tfm_,${BUILD_PATH}/${PROJECT_NAME}_,${TFM_BIN_ARTIFACTS}}
 
 ${BUILD_PATH}/${PROJECT_NAME}_% : ${TFM_BUILD_PATH}/bin/tfm_%
 	cp "$<" "$@"
 
-BL2_BIN_COPY = ${addprefix ${BUILD_PATH}/${PROJECT_NAME}_,${BL2_BIN_ARTIFACTS}}
+BL2_BIN = ${addprefix ${BUILD_PATH}/${PROJECT_NAME}_,${BL2_BIN_ARTIFACTS}}
 
 ${BUILD_PATH}/${PROJECT_NAME}_bl2% : ${TFM_BUILD_PATH}/bin/bl2%
 	cp "$<" "$@"
 
-spe_bin : ${BL2_BIN_COPY} ${TFM_BIN_COPY}
+spe_bin : ${BL2_BIN} ${TFM_BIN}
 
 ###############################################################################
 # Clean TF-M / SPE build directory
 ###############################################################################
 spe_clean :
 	if [ -d ${TFM_BUILD_PATH} ]; then make -C ${TFM_BUILD_PATH} clean; fi
-	rm -f ${TFM_BIN_COPY} ${BL2_BIN_COPY}
+	rm -f ${TFM_BIN} ${BL2_BIN}
 
 spe_distclean : spe_clean clean
 	@echo Removing tfm build directory
@@ -235,29 +219,13 @@ spe_distclean : spe_clean clean
 ###############################################################################
 # List files to be copied into project build directory with SPE and BL2 bins
 ###############################################################################
-s_veneers_lib : ${PROJECT_PATH}/tfm/generated/lib/libs_veneers.a
-
-TFM_INTERFACE_FILES := ${shell sh -c 'find ${TFM_BUILD_PATH}/install/interface -type f'}
-
-tfm_interface_files : $(subst ${TFM_BUILD_PATH}/install/interface/,${PROJECT_PATH}/tfm/generated/,${TFM_INTERFACE_FILES})
-
-tfm_layout_files : $(subst ${TFM_BUILD_PATH}/install/image_signing/layout_files/,${PROJECT_PATH}/tfm/layout_files/,$(shell sh -c "find ${TFM_BUILD_PATH}/install/image_signing/layout_files -type f"))
-
-tfm_scripts : $(subst ${TFM_BUILD_PATH}/install/image_signing/scripts/,${PROJECT_PATH}/tfm/scripts/,$(shell sh -c "find ${TFM_BUILD_PATH}/install/image_signing/scripts -type f -name '*.py'"))
-
-nspe_build_reqs : spe_bin \
-				  s_veneers_lib \
-				  ${BUILD_PATH}/stm32u5xx_ns.ld \
-				  ${BUILD_PATH}/image_defs.sh \
-				  tfm_interface_files \
-				  tfm_layout_files \
-				  tfm_scripts
+TFM_INTF_LIB = ${PROJECT_PATH}/tfm/interface/libtfm_interface.a
 
 ###############################################################################
-# Archive any needed .o files as static libraries for linking in STM32CubeIDE
+# Build tfm interface library.
 ###############################################################################
-${PROJECT_PATH}/tfm/generated/lib/lib%.a : ${PROJECT_PATH}/tfm/generated/lib/%.o
-	arm-none-eabi-ar cr $@ $<
+$(TFM_INTF_LIB) : 
+	$(MAKE) -f generated.mk PROJECT_PATH=${PROJECT_PATH} TFM_BUILD_PATH=${TFM_BUILD_PATH} all
 
 ###############################################################################
 # Generate the linker script for the NSPE partition based on the template
@@ -284,26 +252,11 @@ ${BUILD_PATH}/image_defs.sh : ${BUILD_PATH}/image_macros_preprocessed_bl2.c
 	source ${TOOLS_PATH}/env_setup.sh
 	python ${TOOLS_PATH}/macro_to_kvfile.py ${BUILD_PATH}/image_defs.sh ${BUILD_PATH}/image_macros_preprocessed_bl2.c
 
-###############################################################################
-# Copy generated files and scripts needed by the NSPE build.
-###############################################################################
-${PROJECT_PATH}/tfm/generated/% : ${TFM_BUILD_PATH}/install/interface/%
-	mkdir -p "$(dir $@)"
-	cp "$<" "$@"
-
-${PROJECT_PATH}/tfm/scripts/%.py : ${TFM_BUILD_PATH}/install/image_signing/scripts/%.py
-	mkdir -p "$(dir $@)"
-	cp "$<" "$@""
-
-${PROJECT_PATH}/tfm/layout_files/%.o : ${TFM_BUILD_PATH}/install/image_signing/layout_files/%.o
-	mkdir -p $(dir $@)
-	cp "$<" "$@"
-
 nspe_build_reqs_clean:
 	rm -f ${BUILD_PATH}/image_macros_preprocessed_bl2.c
 	rm -f ${BUILD_PATH}/stm32u5xx_ns.ld
 	rm -f ${BUILD_PATH}/image_defs.sh
-	rm -rf ${PROJECT_PATH}/tfm/generated/
+	$(MAKE) -f generated.mk clean
 
 ###############################################################################
 # Define phony targets for signed images
@@ -363,3 +316,16 @@ ${BUILD_PATH}/${PROJECT_NAME}_ns_signed.bin : ${BUILD_PATH}/${PROJECT_NAME}_ns.b
 		--dependencies "(0,${SPE_VERSION}+0)" \
 		$< \
 		$@
+
+spe_build_reqs : ${TFM_BUILD_PATH}/Makefile
+spe_bin : ${BL2_BIN} ${TFM_BIN}
+
+nspe_build_reqs : ${BL2_BIN} \
+				  ${TFM_BIN} \
+				  ${TFM_INTF_LIB} \
+				  ${BUILD_PATH}/stm32u5xx_ns.ld \
+				  ${BUILD_PATH}/image_defs.sh
+
+all: info spe_build_reqs nspe_build_reqs spe_signed nspe_signed factory factory_signed
+clean: spe_clean spe_patch_libs_clean nspe_build_reqs_clean
+distclean : clean tfm_distclean spe_patch_libs_distclean
