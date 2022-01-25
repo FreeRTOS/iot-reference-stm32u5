@@ -25,7 +25,10 @@
 #  https://github.com/FreeRTOS
 #
 
-[ -n "${WORKSPACE_PATH}" ] || echo "WORKSPACE_PATH env variable was not defined."
+[ -n "${WORKSPACE_PATH}" ] || {
+	echo "WORKSPACE_PATH env variable was not defined. Defaulting to PWD."
+	WORKSPACE_PATH="${PWD}"
+}
 
 TOOLS_PATH=$WORKSPACE_PATH/tools
 
