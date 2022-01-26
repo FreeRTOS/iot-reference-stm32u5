@@ -1,0 +1,4 @@
+auto_unlock : True
+chip_erase : chip
+connect_mode : attach
+user_script : tools/pyocd/pyocd_user.py
