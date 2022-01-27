@@ -68,7 +68,7 @@ NUM_PROCESSORS = 8
 		spe_clean spe_distclean \
 		tfm_generated_files \
 		nspe_build_reqs nspe_build_reqs_clean \
-		spe_signed nspe_signed factory factory_signed \
+		spe_signed nspe_signed update factory_signed \
 		tfm_scripts \
 		all
 
@@ -179,7 +179,7 @@ TFM_ARTIFACTS := ${addprefix bin/,${TFM_BIN_ARTIFACTS}} \
 				 ${addprefix bin/,${BL2_BIN_ARTIFACTS}} \
 				 image_macros_to_preprocess_bl2.c \
 				 tfm_config_export.h \
-				 region_defs.h 
+				 region_defs.h
 
 TFM_ARTIFACT_PATHS := ${addprefix ${TFM_BUILD_PATH}/,${TFM_ARTIFACTS}}
 
@@ -224,7 +224,7 @@ TFM_INTF_LIB = ${PROJECT_PATH}/tfm/interface/libtfm_interface.a
 ###############################################################################
 # Build tfm interface library.
 ###############################################################################
-$(TFM_INTF_LIB) : 
+$(TFM_INTF_LIB) :
 	$(MAKE) -f generated.mk PROJECT_PATH=${PROJECT_PATH} TFM_BUILD_PATH=${TFM_BUILD_PATH} all
 
 ###############################################################################
@@ -266,11 +266,19 @@ spe_signed : ${BUILD_PATH}/${PROJECT_NAME}_s_signed.bin
 nspe_signed : ${BUILD_PATH}/${PROJECT_NAME}_ns_signed.bin
 
 ###############################################################################
-# Define phony targets for combined "factory" images
+# Define phony targets for factory and update images
 ###############################################################################
-factory : ${BUILD_PATH}/${PROJECT_NAME}_s_ns.bin ${BUILD_PATH}/${PROJECT_NAME}_bl2.bin
+update : ${BUILD_PATH}/${PROJECT_NAME}_s_update.hex \
+	     ${BUILD_PATH}/${PROJECT_NAME}_ns_update.hex \
+		 ${BUILD_PATH}/${PROJECT_NAME}_s_ns_update.hex
 
-factory_signed : ${BUILD_PATH}/${PROJECT_NAME}_s_ns_signed.bin ${BUILD_PATH}/${PROJECT_NAME}_bl2.bin
+factory : ${BUILD_PATH}/${PROJECT_NAME}_s_signed.hex \
+	      ${BUILD_PATH}/${PROJECT_NAME}_ns_signed.hex \
+		  ${BUILD_PATH}/${PROJECT_NAME}_s_ns_signed.hex \
+		  ${BUILD_PATH}/${PROJECT_NAME}_s_ns_signed.bin \
+		  ${BUILD_PATH}/${PROJECT_NAME}_bl2.bin \
+	      ${BUILD_PATH}/${PROJECT_NAME}_bl2.hex \
+		  ${BUILD_PATH}/${PROJECT_NAME}_bl2_s_ns_factory.hex
 
 ###############################################################################
 # Rule to generate combined s and ns "factory" images
@@ -317,6 +325,41 @@ ${BUILD_PATH}/${PROJECT_NAME}_ns_signed.bin : ${BUILD_PATH}/${PROJECT_NAME}_ns.b
 		$< \
 		$@
 
+###############################################################################
+# Convert signed images from bin to hex format
+###############################################################################
+${BUILD_PATH}/${PROJECT_NAME}_s_update.hex : ${BUILD_PATH}/${PROJECT_NAME}_s_signed.bin ${BUILD_PATH}/image_defs.sh
+	source ${BUILD_PATH}/image_defs.sh
+	source ${TOOLS_PATH}/env_setup.sh
+	bin2hex.py --offset $$RE_IMAGE_FLASH_SECURE_UPDATE $< $@
+
+${BUILD_PATH}/${PROJECT_NAME}_ns_update.hex : ${BUILD_PATH}/${PROJECT_NAME}_ns_signed.bin ${BUILD_PATH}/image_defs.sh
+	source ${BUILD_PATH}/image_defs.sh
+	source ${TOOLS_PATH}/env_setup.sh
+	bin2hex.py --offset $$RE_IMAGE_FLASH_NON_SECURE_UPDATE $< $@
+
+${BUILD_PATH}/${PROJECT_NAME}_s_signed.hex : ${BUILD_PATH}/${PROJECT_NAME}_s_signed.bin ${BUILD_PATH}/image_defs.sh
+	source ${BUILD_PATH}/image_defs.sh
+	source ${TOOLS_PATH}/env_setup.sh
+	bin2hex.py --offset $$RE_IMAGE_FLASH_ADDRESS_SECURE $< $@
+
+${BUILD_PATH}/${PROJECT_NAME}_ns_signed.hex : ${BUILD_PATH}/${PROJECT_NAME}_ns_signed.bin ${BUILD_PATH}/image_defs.sh
+	source ${BUILD_PATH}/image_defs.sh
+	source ${TOOLS_PATH}/env_setup.sh
+	bin2hex.py --offset $$RE_IMAGE_FLASH_ADDRESS_NON_SECURE $< $@
+
+${BUILD_PATH}/${PROJECT_NAME}_s_ns_signed.hex : ${BUILD_PATH}/${PROJECT_NAME}_s_signed.hex ${BUILD_PATH}/${PROJECT_NAME}_ns_signed.hex
+	source ${TOOLS_PATH}/env_setup.sh
+	hexmerge.py $^ -o $@
+
+${BUILD_PATH}/${PROJECT_NAME}_s_ns_update.hex : ${BUILD_PATH}/${PROJECT_NAME}_s_update.hex ${BUILD_PATH}/${PROJECT_NAME}_ns_update.hex
+	source ${TOOLS_PATH}/env_setup.sh
+	hexmerge.py $^ -o $@
+
+${BUILD_PATH}/${PROJECT_NAME}_bl2_s_ns_factory.hex : ${BUILD_PATH}/${PROJECT_NAME}_s_signed.hex ${BUILD_PATH}/${PROJECT_NAME}_ns_signed.hex ${BUILD_PATH}/${PROJECT_NAME}_bl2.hex
+	source ${TOOLS_PATH}/env_setup.sh
+	hexmerge.py $^ -o $@
+
 spe_build_reqs : ${TFM_BUILD_PATH}/Makefile
 spe_bin : ${BL2_BIN} ${TFM_BIN}
 
@@ -326,6 +369,6 @@ nspe_build_reqs : ${BL2_BIN} \
 				  ${BUILD_PATH}/stm32u5xx_ns.ld \
 				  ${BUILD_PATH}/image_defs.sh
 
-all: info spe_build_reqs nspe_build_reqs spe_signed nspe_signed factory factory_signed
+all: info spe_build_reqs nspe_build_reqs spe_signed nspe_signed update factory_signed
 clean: spe_clean spe_patch_libs_clean nspe_build_reqs_clean
 distclean : clean tfm_distclean spe_patch_libs_distclean
