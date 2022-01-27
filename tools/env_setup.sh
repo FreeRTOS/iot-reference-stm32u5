@@ -78,20 +78,23 @@ if [[ ! -e "${VENV_PATH}"/.initialized ]] || \
 	}
 
 	SITE_PACKAGES_PATH=$(find ${VENV_PATH} -name site-packages -type d)
-	[ -n "${DEBUG}" ] && echo "SITE_PACKAGES_PATH: ${SITE_PACKAGES_PATH}"
+	echo "SITE_PACKAGES_PATH: ${SITE_PACKAGES_PATH}"
+
+	echo "Adding workspace directory to package path."
+	echo ${WORKSPACE_PATH} > ${SITE_PACKAGES_PATH}/workspace.pth
 
 	echo "Adding tools directory to package path."
-	[ -n "${DEBUG}" ] && echo ${TOOLS_PATH} > ${SITE_PACKAGES_PATH}/tools.pth
+	echo ${TOOLS_PATH} > ${SITE_PACKAGES_PATH}/tools.pth
 
 	echo "Adding mcuboot scripts directory to package path."
-	[ -n "${DEBUG}" ] && echo ${MCUBOOT_PATH}/scripts > ${SITE_PACKAGES_PATH}/mcuboot.pth
+	echo ${MCUBOOT_PATH}/scripts > ${SITE_PACKAGES_PATH}/mcuboot.pth
 
 	touch "${VENV_PATH}"/.initialized
 fi
 
 SITE_PACKAGES_PATH=$(find "${VENV_PATH}" -name site-packages -type d)
 
-# Setup PATH and PYTHONPATH as a workaround for cmake (which doesn't appear to respect virtual environments fully)
+# Setup PATH and PYTHONPATH for cmake
 [ -n "${DEBUG}" ] && echo "Adding tools and site packages to PATH."
 export PATH="${TOOLS_PATH}:${SITE_PACKAGES_PATH}:${PATH}"
 
