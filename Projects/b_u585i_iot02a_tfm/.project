@@ -134,7 +134,7 @@
 		<link>
 			<name>Libraries/CMSIS/core</name>
 			<type>2</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Drivers/CMSIS/Core/Include</locationURI>
+			<locationURI>WORKSPACE_LOC/Drivers/CMSIS/Core/Include</locationURI>
 		</link>
 		<link>
 			<name>Libraries/CMSIS/stm32u5xx</name>
@@ -505,60 +505,6 @@
 			<matcher>
 				<id>org.eclipse.ui.ide.multiFilter</id>
 				<arguments>1.0-name-matches-false-false-*.c</arguments>
-			</matcher>
-		</filter>
-		<filter>
-			<id>0</id>
-			<name>Libraries/CMSIS/core</name>
-			<type>5</type>
-			<matcher>
-				<id>org.eclipse.ui.ide.multiFilter</id>
-				<arguments>1.0-name-matches-false-false-*gcc*.h</arguments>
-			</matcher>
-		</filter>
-		<filter>
-			<id>0</id>
-			<name>Libraries/CMSIS/core</name>
-			<type>5</type>
-			<matcher>
-				<id>org.eclipse.ui.ide.multiFilter</id>
-				<arguments>1.0-name-matches-false-false-*cm33*.h</arguments>
-			</matcher>
-		</filter>
-		<filter>
-			<id>0</id>
-			<name>Libraries/CMSIS/core</name>
-			<type>5</type>
-			<matcher>
-				<id>org.eclipse.ui.ide.multiFilter</id>
-				<arguments>1.0-name-matches-false-false-cmsis_compiler.h</arguments>
-			</matcher>
-		</filter>
-		<filter>
-			<id>0</id>
-			<name>Libraries/CMSIS/core</name>
-			<type>5</type>
-			<matcher>
-				<id>org.eclipse.ui.ide.multiFilter</id>
-				<arguments>1.0-name-matches-false-false-cmsis_version.h</arguments>
-			</matcher>
-		</filter>
-		<filter>
-			<id>0</id>
-			<name>Libraries/CMSIS/core</name>
-			<type>5</type>
-			<matcher>
-				<id>org.eclipse.ui.ide.multiFilter</id>
-				<arguments>1.0-name-matches-false-false-*armv8*.h</arguments>
-			</matcher>
-		</filter>
-		<filter>
-			<id>0</id>
-			<name>Libraries/CMSIS/core</name>
-			<type>5</type>
-			<matcher>
-				<id>org.eclipse.ui.ide.multiFilter</id>
-				<arguments>1.0-name-matches-false-false-tz_context.h</arguments>
 			</matcher>
 		</filter>
 		<filter>
