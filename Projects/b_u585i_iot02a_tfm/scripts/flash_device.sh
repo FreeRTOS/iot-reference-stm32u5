@@ -92,25 +92,26 @@ echo "Setting TZEN bit and regressing the RDP level to 0."
 ${PROG_BIN} -c port=SWD mode=HotPlug -ob RDP=0xAA TZEN=1 || exit
 
 echo "Erasing Internal NOR Flash Bank 1"
-${PROG_BIN} -c port=SWD mode=HotPlug --hardRst -ob SECWM1_PSTRT=127 SECWM1_PEND=0 WRP1A_PSTRT=127 WRP1A_PEND=0 WRP1B_PSTRT=127 WRP1B_PEND=0 -e all || exit
+${PROG_BIN} -q -c port=SWD mode=HotPlug --hardRst -ob SECWM1_PSTRT=127 SECWM1_PEND=0 WRP1A_PSTRT=127 WRP1A_PEND=0 WRP1B_PSTRT=127 WRP1B_PEND=0 -e all || exit
 
 echo "Erasing Internal NOR Flash Bank 2"
-${PROG_BIN} -c port=SWD mode=HotPlug -ob SECWM2_PSTRT=127 SECWM2_PEND=0 WRP2A_PSTRT=127 WRP2A_PEND=0 WRP2B_PSTRT=127 WRP2B_PEND=0 -e all || exit
+${PROG_BIN} -q -c port=SWD mode=HotPlug -ob SECWM2_PSTRT=127 SECWM2_PEND=0 WRP2A_PSTRT=127 WRP2A_PEND=0 WRP2B_PSTRT=127 WRP2B_PEND=0 -e all || exit
 
 echo "Disabling Internal NOR flash protection (HDP)"
-${PROG_BIN} -c port=SWD mode=HotPlug -ob HDP1_PEND=0 HDP1EN=0 HDP2_PEND=0 HDP2EN=0 || exit
+${PROG_BIN} -q -c port=SWD mode=HotPlug -ob HDP1_PEND=0 HDP1EN=0 HDP2_PEND=0 HDP2EN=0 || exit
 
 echo "Setting SECBOOTADD0 option bytes"
-${PROG_BIN} -c port=SWD mode=HotPlug -ob SECBOOTADD0=${SECBOOTADD0} || exit
+${PROG_BIN} -q -c port=SWD mode=HotPlug -ob SECBOOTADD0=${SECBOOTADD0} || exit
 
 echo "Writing Secure Image: ${PROJECT_NAME}_s_signed.bin to Address: ${RE_IMAGE_FLASH_ADDRESS_SECURE}"
-${PROG_BIN} -c port=SWD mode=HotPlug -el ${EXT_LOADER_PATH} -d ${BUILD_PATH}/${PROJECT_NAME}_s_signed.bin ${RE_IMAGE_FLASH_ADDRESS_SECURE} -v || exit
+${PROG_BIN} -q -c port=SWD Fast mode=HotPlug -el ${EXT_LOADER_PATH} -d ${BUILD_PATH}/${PROJECT_NAME}_s_signed.bin ${RE_IMAGE_FLASH_ADDRESS_SECURE} -v || exit
 
 echo; echo
 echo "Writing Non-Secure Image: ${PROJECT_NAME}_ns_signed.bin to Address: ${RE_IMAGE_FLASH_ADDRESS_NON_SECURE}"
-${PROG_BIN} -c port=SWD mode=HotPlug -el ${EXT_LOADER_PATH} -d ${BUILD_PATH}/${PROJECT_NAME}_ns_signed.bin ${RE_IMAGE_FLASH_ADDRESS_NON_SECURE} -v || exit
+${PROG_BIN} -q -c port=SWD Fast mode=HotPlug -el ${EXT_LOADER_PATH} -d ${BUILD_PATH}/${PROJECT_NAME}_ns_signed.bin ${RE_IMAGE_FLASH_ADDRESS_NON_SECURE} -v || exit
 
 echo; echo
 echo "Writing BL2 Image: ${PROJECT_NAME}_bl2.bin to Address: ${RE_BL2_BIN_ADDRESS}"
-${PROG_BIN} -c port=SWD mode=HotPlug -el ${EXT_LOADER_PATH} -d ${BUILD_PATH}/${PROJECT_NAME}_bl2.bin ${RE_BL2_BIN_ADDRESS} -v || exit
+${PROG_BIN} -q -c port=SWD Fast mode=HotPlug -el ${EXT_LOADER_PATH} -d ${BUILD_PATH}/${PROJECT_NAME}_bl2.bin ${RE_BL2_BIN_ADDRESS} -v || exit
 
+${PROG_BIN} -c port=SWD Fast mode=HotPlug --hardRst -ob SECWM1_PSTRT=0 SECWM1_PEND=127 -v || exit
