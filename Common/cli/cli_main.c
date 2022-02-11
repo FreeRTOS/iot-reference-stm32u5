@@ -42,6 +42,7 @@ void Task_CLI( void * pvParameters )
     FreeRTOS_CLIRegisterCommand( &xCommandDef_kill );
     FreeRTOS_CLIRegisterCommand( &xCommandDef_killAll );
     FreeRTOS_CLIRegisterCommand( &xCommandDef_heapStat );
+    FreeRTOS_CLIRegisterCommand( &xCommandDef_reset );
 
     char * pcCommandBuffer = NULL;
 

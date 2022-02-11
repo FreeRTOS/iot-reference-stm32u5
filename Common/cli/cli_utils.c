@@ -39,6 +39,8 @@
 
 #include "cli.h"
 
+#include "core_cm33.h"
+
 static void prvPSCommand( ConsoleIO_t * const pxConsoleIO,
                           uint32_t ulArgc,
                           char * ppcArgv[] );
@@ -55,6 +57,10 @@ static void vHeapStatCommand( ConsoleIO_t * const pxCIO,
                               uint32_t ulArgc,
                               char * ppcArgv[] );
 
+static void vResetCommand( ConsoleIO_t * const pxCIO,
+                           uint32_t ulArgc,
+                           char * ppcArgv[] );
+
 
 const CLI_Command_Definition_t xCommandDef_ps =
 {
@@ -69,9 +75,9 @@ const CLI_Command_Definition_t xCommandDef_kill =
     "kill",
     "kill\r\n"
     "    kill [ -SIGNAME ] <Task ID>\r\n"
-    "    Signal a task with the named signal and the specified task id.\r\n\n"
+    "        Signal a task with the named signal and the specified task id.\r\n\n"
     "    kill [ -n ] <Task ID>\r\n"
-    "    Signal a task with the given signal number and the specified task id.\r\n\n",
+    "        Signal a task with the given signal number and the specified task id.\r\n\n",
     vKillCommand
 };
 
@@ -99,6 +105,14 @@ const CLI_Command_Definition_t xCommandDef_heapStat =
     "    heapstat --mega\r\n"
     "        Display heap statistics in Megabytes (MB).\r\n\n",
     vHeapStatCommand
+};
+
+const CLI_Command_Definition_t xCommandDef_reset =
+{
+	"reset",
+	"    reset\r\n"
+	"        Reset (reboot) the system.\r\n\n",
+	vResetCommand
 };
 
 /*-----------------------------------------------------------*/
@@ -561,4 +575,11 @@ static void vHeapStatCommand( ConsoleIO_t * const pxCIO,
         pxCIO->write( pcCliScratchBuffer, xLen );
         pxCIO->print( "+--------------------------------------------------------+\r\n" );
     }
+}
+
+static void vResetCommand( ConsoleIO_t * const pxCIO,
+                           uint32_t ulArgc,
+                           char * ppcArgv[] )
+{
+	NVIC_SystemReset();
 }

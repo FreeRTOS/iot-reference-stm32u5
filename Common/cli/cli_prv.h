@@ -35,5 +35,6 @@ const CLI_Command_Definition_t xCommandDef_ps;
 const CLI_Command_Definition_t xCommandDef_kill;
 const CLI_Command_Definition_t xCommandDef_killAll;
 const CLI_Command_Definition_t xCommandDef_heapStat;
+const CLI_Command_Definition_t xCommandDef_reset;
 
 #endif /* _CLI_PRIV */
