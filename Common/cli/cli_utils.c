@@ -61,6 +61,10 @@ static void vResetCommand( ConsoleIO_t * const pxCIO,
                            uint32_t ulArgc,
                            char * ppcArgv[] );
 
+static void vUptimeCommand( ConsoleIO_t * const pxCIO,
+                            uint32_t ulArgc,
+                            char * ppcArgv[] );
+
 
 const CLI_Command_Definition_t xCommandDef_ps =
 {
@@ -85,15 +89,17 @@ const CLI_Command_Definition_t xCommandDef_kill =
 const CLI_Command_Definition_t xCommandDef_killAll =
 {
     "killall",
+	"killall\r\n"
     "    killall [ -SIGNAME ] <Task Name>\r\n"
     "    killall [ -n ] <Task Name>\r\n"
-    "        Signal a task with a given name with the signal number or name given.\r\n\n",
+    "        Signal a task with a given name with the signal number or signal name given.\r\n\n",
     vKillAllCommand
 };
 
 const CLI_Command_Definition_t xCommandDef_heapStat =
 {
     "heapstat",
+	"heapstat\r\n"
     "    heapstat [-b | --byte]\r\n"
     "        Display heap statistics in bytes.\r\n\n"
     "    heapstat -h | -k | --kibi\r\n"
@@ -110,9 +116,17 @@ const CLI_Command_Definition_t xCommandDef_heapStat =
 const CLI_Command_Definition_t xCommandDef_reset =
 {
 	"reset",
-	"    reset\r\n"
-	"        Reset (reboot) the system.\r\n\n",
+	"reset\r\n"
+	"    Reset (reboot) the system.\r\n\n",
 	vResetCommand
+};
+
+const CLI_Command_Definition_t xCommandDef_uptime =
+{
+	"uptime",
+	"uptime\r\n"
+	"    Display system uptime.\r\n\n",
+	vUptimeCommand
 };
 
 /*-----------------------------------------------------------*/
@@ -582,4 +596,29 @@ static void vResetCommand( ConsoleIO_t * const pxCIO,
                            char * ppcArgv[] )
 {
 	NVIC_SystemReset();
+}
+
+static void vUptimeCommand( ConsoleIO_t * const pxCIO,
+                            uint32_t ulArgc,
+                            char * ppcArgv[] )
+{
+	size_t xLen = 0;
+
+	const unsigned int MS_PER_SECOND = 1000;
+	const unsigned int MS_PER_MINUTE = 60 * MS_PER_SECOND;
+	const unsigned int MS_PER_HOUR = 60 * MS_PER_MINUTE;
+	const unsigned int MS_PER_DAY = 24 * MS_PER_HOUR;
+
+	unsigned long ulMsCount = ( xTaskGetTickCount() / portTICK_PERIOD_MS );
+
+	xLen = snprintf( pcCliScratchBuffer,
+				     CLI_OUTPUT_SCRATCH_BUF_LEN,
+                     "up %lu day(s) %02lu:%02lu:%02lu.%03lu\r\n",
+					 ulMsCount / MS_PER_DAY,
+					 ( ulMsCount % MS_PER_DAY ) / MS_PER_HOUR,
+					 ( ulMsCount % MS_PER_HOUR ) / MS_PER_MINUTE,
+					 ( ulMsCount % MS_PER_MINUTE ) / MS_PER_SECOND,
+					 ulMsCount % MS_PER_SECOND );
+
+	pxCIO->write( pcCliScratchBuffer, xLen );
 }
