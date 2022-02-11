@@ -156,8 +156,10 @@ ${TFM_BUILD_PATH}/Makefile : ${MBEDTLS_PATCH_FLAGS} ${MCUBOOT_PATCH_FLAGS}
 		-DPython_FIND_VIRTUALENV=FIRST \
 		-DCMAKE_MAKE_PROGRAM=${MAKE} \
 		-DCMAKE_OBJECT_PATH_MAX=1024 \
+		-DTFM_PARTITION_FIRMWARE_UPDATE=ON \
+		-DMCUBOOT_DATA_SHARING=ON \
 		-G"Unix Makefiles" \
-		-DNS=0
+		-DNS=1
 	sleep 1
 
 
@@ -186,6 +188,8 @@ TFM_ARTIFACTS := ${addprefix bin/,${TFM_BIN_ARTIFACTS}} \
 				 region_defs.h
 
 TFM_ARTIFACT_PATHS := ${addprefix ${TFM_BUILD_PATH}/,${TFM_ARTIFACTS}}
+
+tfm_bin : ${TFM_ARTIFACT_PATHS}
 
 ###############################################################################
 # Build TF-M Artifacts / SPE image
@@ -228,14 +232,34 @@ TFM_INTF_LIB = ${PROJECT_PATH}/tfm/interface/libtfm_interface.a
 ###############################################################################
 # Build tfm interface library.
 ###############################################################################
-$(TFM_INTF_LIB) :
-	$(MAKE) -f generated.mk PROJECT_PATH=${PROJECT_PATH} TFM_BUILD_PATH=${TFM_BUILD_PATH} all
+$(TFM_INTF_LIB) : ${TFM_BUILD_PATH}/app/libtfm_api_ns.a
+	cp $^ $@
+#	$(MAKE) -f generated.mk PROJECT_PATH=${PROJECT_PATH} TFM_BUILD_PATH=${TFM_BUILD_PATH} all
+
+${PROJECT_PATH}/tfm/interface/libtfm_s_veneers.a : ${TFM_BUILD_PATH}/secure_fw/libtfm_s_veneers.a
+	cp $^ $@
 
 ###############################################################################
 # Generate the linker script for the NSPE partition based on the template
 ###############################################################################
 ${BUILD_PATH}/stm32u5xx_ns.ld : ${TFM_SRC_PATH}/platform/ext/target/stm/common/hal/template/gcc/appli_ns.ld ${TFM_BUILD_PATH}/tfm_config_export.h
-	arm-none-eabi-gcc -E -P -xc -DBL2 -DTFM_PSA_API \
+	arm-none-eabi-gcc -E -P -xc \
+		-DBL2 \
+		-DBL2_HEADER_SIZE=0x400 \
+		-DBL2_TRAILER_SIZE=0x2000 \
+		-DDAUTH_CHIP_DEFAULT \
+		-DMCUBOOT_IMAGE_NUMBER=2 \
+		-DMCUBOOT_SIGN_RSA \
+		-DMCUBOOT_SIGN_RSA_LEN=3072 \
+		-DSTM32U585xx \
+		-DTFM_PARTITION_CRYPTO \
+		-DTFM_PARTITION_INTERNAL_TRUSTED_STORAGE \
+		-DTFM_PARTITION_LOG_LEVEL=TFM_PARTITION_LOG_LEVEL_INFO \
+		-DTFM_PARTITION_PLATFORM \
+		-DTFM_PARTITION_PROTECTED_STORAGE \
+		-DTFM_PSA_API \
+		-DTFM_SP_LOG_RAW_ENABLED \
+		-DUSE_HAL_DRIVER  \
 		-I ${TFM_BUILD_PATH} -include ${TFM_BUILD_PATH}/tfm_config_export.h \
 		-o $@ $<
 
@@ -245,6 +269,22 @@ ${BUILD_PATH}/stm32u5xx_ns.ld : ${TFM_SRC_PATH}/platform/ext/target/stm/common/h
 ${BUILD_PATH}/image_macros_preprocessed_bl2.c : ${TFM_BUILD_PATH}/image_macros_to_preprocess_bl2.c
 	arm-none-eabi-gcc -E -P -xc -DTFM_PSA_API \
 		-I ${TFM_BUILD_PATH} \
+		-DBL2 \
+		-DBL2_HEADER_SIZE=0x400 \
+		-DBL2_TRAILER_SIZE=0x2000 \
+		-DDAUTH_CHIP_DEFAULT \
+		-DMCUBOOT_IMAGE_NUMBER=2 \
+		-DMCUBOOT_SIGN_RSA \
+		-DMCUBOOT_SIGN_RSA_LEN=3072 \
+		-DSTM32U585xx \
+		-DTFM_PARTITION_CRYPTO \
+		-DTFM_PARTITION_INTERNAL_TRUSTED_STORAGE \
+		-DTFM_PARTITION_LOG_LEVEL=TFM_PARTITION_LOG_LEVEL_INFO \
+		-DTFM_PARTITION_PLATFORM \
+		-DTFM_PARTITION_PROTECTED_STORAGE \
+		-DTFM_PSA_API \
+		-DTFM_SP_LOG_RAW_ENABLED \
+		-DUSE_HAL_DRIVER \
 		-include ${TFM_BUILD_PATH}/tfm_config_export.h \
 		-o $@ \
 		${TFM_BUILD_PATH}/image_macros_to_preprocess_bl2.c
@@ -370,6 +410,7 @@ spe_bin : ${BL2_BIN} ${TFM_BIN}
 nspe_build_reqs : ${BL2_BIN} \
 				  ${TFM_BIN} \
 				  ${TFM_INTF_LIB} \
+				  ${PROJECT_PATH}/tfm/interface/libtfm_s_veneers.a \
 				  ${BUILD_PATH}/stm32u5xx_ns.ld \
 				  ${BUILD_PATH}/image_defs.sh
 

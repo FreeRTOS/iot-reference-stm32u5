@@ -7,6 +7,7 @@
 					<stringMacro name="NSPE_VERSION" type="VALUE_TEXT" value="0.0.1"/>
 					<stringMacro name="SPE_VERSION" type="VALUE_TEXT" value="1.5.0"/>
 					<stringMacro name="PROJECT_PATH" type="VALUE_TEXT" value="${ProjDirPath}"/>
+					<stringMacro name="PROJECT_NAME" type="VALUE_TEXT" value="${ProjName}"/>
 				</macros>
 				<externalSettings/>
 				<extensions>
@@ -19,7 +20,7 @@
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration artifactExtension="elf" artifactName="${ProjName}_ns" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug" cleanCommand="rm -rf" description="" errorParsers="org.eclipse.cdt.core.GASErrorParser;org.eclipse.cdt.core.GmakeErrorParser;org.eclipse.cdt.core.GLDErrorParser;org.eclipse.cdt.core.CWDLocator;org.eclipse.cdt.core.GCCErrorParser" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.402628481" name="Debug" parent="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug" postbuildStep="make -C ${ProjDirPath}/tfm update factory" prebuildStep="make -C ${ProjDirPath}/tfm info nspe_build_reqs">
+				<configuration artifactExtension="elf" artifactName="${ProjName}_ns" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug" cleanCommand="rm -rf" description="" errorParsers="org.eclipse.cdt.core.GASErrorParser;org.eclipse.cdt.core.GmakeErrorParser;org.eclipse.cdt.core.GLDErrorParser;org.eclipse.cdt.core.CWDLocator;org.eclipse.cdt.core.GCCErrorParser" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.402628481" name="Debug" parent="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug" postbuildStep="make -C ${ProjDirPath}/tfm update factory" prebuildStep="make -C ${ProjDirPath}/tfm info spe_bin nspe_build_reqs">
 					<folderInfo id="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.402628481." name="/" resourcePath="">
 						<toolChain id="com.st.stm32cube.ide.mcu.gnu.managedbuild.toolchain.exe.debug.1043946617" name="MCU ARM GCC" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.toolchain.exe.debug">
 							<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.target_mcu.995835186" name="MCU" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.option.target_mcu" useByScannerDiscovery="true" value="STM32U585AIIxQ" valueType="string"/>
@@ -45,6 +46,22 @@
 								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.optimization.level.1241271817" name="Optimization level" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.optimization.level" useByScannerDiscovery="false" value="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.optimization.level.value.o1" valueType="enumerated"/>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.definedsymbols.599807111" name="Define symbols (-D)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.definedsymbols" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="TFM_PSA_API"/>
+									<listOptionValue builtIn="false" value="BL2"/>
+									<listOptionValue builtIn="false" value="BL2_HEADER_SIZE=0x400"/>
+									<listOptionValue builtIn="false" value="BL2_TRAILER_SIZE=0x2000"/>
+									<listOptionValue builtIn="false" value="DAUTH_CHIP_DEFAULT"/>
+									<listOptionValue builtIn="false" value="MCUBOOT_IMAGE_NUMBER=2"/>
+									<listOptionValue builtIn="false" value="MCUBOOT_SIGN_RSA"/>
+									<listOptionValue builtIn="false" value="MCUBOOT_SIGN_RSA_LEN=3072"/>
+									<listOptionValue builtIn="false" value="TFM_PARTITION_CRYPTO"/>
+									<listOptionValue builtIn="false" value="TFM_PARTITION_INTERNAL_TRUSTED_STORAGE"/>
+									<listOptionValue builtIn="false" value="TFM_PARTITION_LOG_LEVEL=TFM_PARTITION_LOG_LEVEL_INFO"/>
+									<listOptionValue builtIn="false" value="TFM_PARTITION_PLATFORM"/>
+									<listOptionValue builtIn="false" value="TFM_PARTITION_PROTECTED_STORAGE"/>
+									<listOptionValue builtIn="false" value="TFM_PSA_API"/>
+									<listOptionValue builtIn="false" value="TFM_SP_LOG_RAW_ENABLED"/>
+									<listOptionValue builtIn="false" value="USE_HAL_DRIVER"/>
+									<listOptionValue builtIn="false" value="AUTH_CHIP_DEFAULT"/>
 									<listOptionValue builtIn="false" value="PS_ENCRYPTION"/>
 									<listOptionValue builtIn="false" value="TFM_PARTITION_PROTECTED_STORAGE&#10;"/>
 									<listOptionValue builtIn="false" value="TFM_PARTITION_INTERNAL_TRUSTED_STORAGE"/>
@@ -104,6 +121,7 @@
 							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker.1881350553" name="MCU GCC Linker" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker">
 								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker.option.script.952109575" name="Linker Script (-T)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker.option.script" useByScannerDiscovery="false" value="stm32u5xx_ns.ld" valueType="string"/>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker.option.libraries.84821351" name="Libraries (-l)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker.option.libraries" useByScannerDiscovery="false" valueType="libs">
+									<listOptionValue builtIn="false" value="tfm_s_veneers"/>
 									<listOptionValue builtIn="false" value="tfm_interface"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker.option.directories.127743483" name="Library search path (-L)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker.option.directories" useByScannerDiscovery="false" valueType="libPaths">
@@ -178,7 +196,7 @@
 					</folderInfo>
 					<sourceEntries>
 						<entry excluding="Common|Inc|Src|Libraries" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
-						<entry excluding="cli/cli_pki.c|app/motion_sensors_publish.c|app/env_sensor_publish.c|kvstore/kvstore_nv_littlefs.c|net/time_agent.c|mcuboot/**|net/strptime.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Common"/>
+						<entry excluding="net/mbedtls_transport.c|net/mbedtls_transport_pkcs11.c|cli/cli_pki.c|app/motion_sensors_publish.c|app/env_sensor_publish.c|kvstore/kvstore_nv_littlefs.c|net/time_agent.c|mcuboot/**|net/strptime.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Common"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Inc"/>
 						<entry excluding="pkcs11-psa|mbedtls/library/psa_crypto_client.c|mbedtls/library/psa_crypto.c|mbedtls/library/psa_crypto_slot_management.c|tinycbor/open_memstream.c|trusted-firmware-m/interface/src|mbedtls/library/psa_crypto_driver_wrappers.c|mbedtls/library/psa_its_file.c|mbedtls/library/psa_crypto_ecp.c|mbedtls/library/psa_crypto_aead.c|mbedtls/library/psa_crypto_se.c|mbedtls/library/psa_crypto_rsa.c|mbedtls/library/psa_crypto_storage.c|ota/ota_http.c|mbedtls/library/psa_crypto_mac.c|mbedtls/library/psa_crypto_hash.c|mbedtls/library/psa_crypto_cipher.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Libraries"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Src"/>
