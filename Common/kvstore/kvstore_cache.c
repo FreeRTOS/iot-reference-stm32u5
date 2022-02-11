@@ -148,7 +148,7 @@ void vprvCacheInit( void )
 			KVStoreValueType_t * pxType = &( kvStoreCache[ i ].type );
 			size_t * pxLength = &( kvStoreCache[ i ].length );
 
-			( void ) xprvReadValueFromImplStatic( i, pxType, pxLength, pvGetDataWritePtr( i ), *pxLength );
+			( void ) xprvReadValueFromImpl( i, pxType, pxLength, pvGetDataWritePtr( i ), *pxLength );
 		}
 	}
 #endif /* KV_STORE_NVIMPL_ENABLE */

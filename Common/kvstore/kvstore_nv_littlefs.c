@@ -94,11 +94,11 @@ size_t xprvGetValueLengthFromImpl( KVStoreKey_t xKey )
 	return xLength;
 }
 
-BaseType_t xprvReadValueFromImplStatic( KVStoreKey_t xKey,
-								        KVStoreValueType_t * pxType,
-								        size_t * pxLength,
-										void * pvBuffer,
-										size_t xBufferSize )
+BaseType_t xprvReadValueFromImpl( KVStoreKey_t xKey,
+								  KVStoreValueType_t * pxType,
+								  size_t * pxLength,
+								  void * pvBuffer,
+								  size_t xBufferSize )
 {
 	char pcFileName[ KVSTORE_MAX_FNANME ] = { 0 };
 

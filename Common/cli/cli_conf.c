@@ -249,7 +249,7 @@ static void vSubCommand_SetConfig( ConsoleIO_t * pxCIO,
         }
         case KV_TYPE_INT32:
         {
-            int32_t lValue = strtol( pcValue, & pcEndPtr, 10 );
+            int32_t lValue = strtol( pcValue, &pcEndPtr, 10 );
 
             if( pcEndPtr != pcValue || lValue == 0 )
             {
@@ -263,7 +263,7 @@ static void vSubCommand_SetConfig( ConsoleIO_t * pxCIO,
         }
         case KV_TYPE_UBASE_T:
         {
-            UBaseType_t uxValue = strtoul( pcValue, & pcEndPtr, 10 );
+            UBaseType_t uxValue = strtoul( pcValue, &pcEndPtr, 10 );
             if( pcEndPtr != pcValue || uxValue == 0 )
             {
                 ( void ) KVStore_setUBase( xKey, uxValue );
@@ -276,10 +276,10 @@ static void vSubCommand_SetConfig( ConsoleIO_t * pxCIO,
         }
         case KV_TYPE_UINT32:
         {
-            uint32_t ulValue = strtoul( pcValue, & pcEndPtr, 10 );
+            uint32_t ulValue = strtoul( pcValue, &pcEndPtr, 10 );
             if( pcEndPtr != pcValue || ulValue == 0 )
             {
-                ( void ) KVStore_setUBase( xKey, ulValue );
+                ( void ) KVStore_setUInt32( xKey, ulValue );
                 xParseResult = pdTRUE;
                 lCharsPrinted = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN,
                                           "%s=%lu\r\n",
