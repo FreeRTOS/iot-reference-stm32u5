@@ -252,6 +252,10 @@ void vEnvironmentSensorPublishTask( void * pvParameters )
         vTaskDelete( NULL );
     }
     
+    LogInfo( "Waiting until MQTT Agent is ready" );
+    vSleepUntilMQTTAgentReady();
+    LogInfo( "MQTT Agent is ready. Resuming..." );
+
     /* Build the topic string */
     char pcTopicString[ MQTT_PUBLICH_TOPIC_STR_LEN ] = { 0 };
     size_t xTopicLen = 0;
