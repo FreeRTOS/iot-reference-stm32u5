@@ -43,6 +43,8 @@
 #include "task.h"
 #include "queue.h"
 
+#include "kvstore.h"
+
 #include "sys_evt.h"
 
 
@@ -65,7 +67,8 @@
  */
 #define MQTT_PUBLISH_MAX_LEN              ( 200 )
 #define MQTT_PUBLISH_PERIOD_MS            ( 1000 )
-#define MQTT_PUBLISH_TOPIC                "/stm32u5/motion_sensor_data"
+#define MQTT_PUBLISH_TOPIC                "motion_sensor_data"
+#define MQTT_PUBLICH_TOPIC_STR_LEN        ( 256 )
 #define MQTT_PUBLISH_BLOCK_TIME_MS        ( 50 )
 #define MQTT_PUBLISH_NOTIFICATION_WAIT_MS ( 10*1000 )
 #define MQTT_NOTIFY_IDX                   ( 1 )
@@ -228,6 +231,19 @@ void Task_MotionSensorsPublish( void * pvParameters )
     LogInfo( "MQTT Agent is ready. Resuming..." );
 
 
+    /* Build the topic string */
+    char pcTopicString[ MQTT_PUBLICH_TOPIC_STR_LEN ] = { 0 };
+    size_t xTopicLen = 0;
+
+    xTopicLen = strlcat( pcTopicString, "/", MQTT_PUBLICH_TOPIC_STR_LEN );
+
+    if( xTopicLen + 1 < MQTT_PUBLICH_TOPIC_STR_LEN )
+    {
+        ( void ) KVStore_getString( CS_CORE_THING_NAME, &( pcTopicString[ xTopicLen ] ), MQTT_PUBLICH_TOPIC_STR_LEN - xTopicLen );
+
+        xTopicLen = strlcat( pcTopicString, "/"MQTT_PUBLISH_TOPIC, MQTT_PUBLICH_TOPIC_STR_LEN );
+    }
+
     while( xExitFlag == pdFALSE )
     {
         /* Interpret sensor data */
@@ -269,7 +285,7 @@ void Task_MotionSensorsPublish( void * pvParameters )
             if( bytesWritten < MQTT_PUBLISH_MAX_LEN &&
                 xIsMqttConnected() == pdTRUE )
             {
-                xResult = prvPublishAndWaitForAck( MQTT_PUBLISH_TOPIC,
+                xResult = prvPublishAndWaitForAck( pcTopicString,
                                                    payloadBuf,
                                                    bytesWritten );
                 if( xResult != pdPASS )
