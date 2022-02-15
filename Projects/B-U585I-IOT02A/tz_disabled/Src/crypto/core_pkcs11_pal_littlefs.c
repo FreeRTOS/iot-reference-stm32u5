@@ -80,7 +80,7 @@ static CK_RV prvFileExists( const char * pcFileName )
     else
     {
         xReturn = CKR_OK;
-        LogDebug( ( "Found file %s with size: %d", pcFileName, xLfsInfo.size ) );
+        LogDebug( ( "Found file %s with size: %d", pcFileName, xFileInfo.size ) );
     }
 
     return xReturn;
@@ -244,7 +244,7 @@ CK_OBJECT_HANDLE PKCS11_PAL_SaveObject( CK_ATTRIBUTE_PTR pxLabel,
             }
             else
             {
-                LogDebug( ( "Successfully wrote %lu to %s", ulBytesWritten, pcFileName ) );
+                LogDebug( ( "Successfully wrote %lu to %s", lBytesWritten, pcFileName ) );
             }
 
             lResult = lfs_file_sync( pLfsCtx, &xFile );
