@@ -24,7 +24,7 @@
   ******************************************************************************
   */
 
-#include "mbedtls/entropy_poll.h"
+#include "entropy_poll.h"
 #include "mbedtls/platform.h"
 
 #ifdef MBEDTLS_ENTROPY_HARDWARE_ALT

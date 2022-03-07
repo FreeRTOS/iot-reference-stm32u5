@@ -25,6 +25,9 @@
  * @brief Implements mbed TLS platform functions for FreeRTOS.
  */
 
+#include <malloc.h>
+#include <string.h>
+
 /* FreeRTOS includes. */
 #include "FreeRTOS.h"
 #include "semphr.h"
@@ -36,8 +39,8 @@
 #include "mbedtls/config.h"
 #endif
 #include "mbedtls/entropy.h"
-#include <string.h>
-#include "threading_alt.h"
+
+#include "mbedtls_freertos_port.h"
 
 /*-----------------------------------------------------------*/
 
@@ -65,7 +68,7 @@ void * mbedtls_platform_calloc( size_t nmemb,
 
             if( pBuffer != NULL )
             {
-                ( void ) memset( pBuffer, 0x00, totalSize );
+                explicit_bzero( pBuffer, totalSize );
             }
         }
     }
@@ -82,11 +85,17 @@ void * mbedtls_platform_calloc( size_t nmemb,
  */
 void mbedtls_platform_free( void * ptr )
 {
-    vPortFree( ptr );
+    size_t xBlockLen = malloc_usable_size( ptr );
+    if( xBlockLen > 0 )
+    {
+        explicit_bzero( ptr, xBlockLen );
+        vPortFree( ptr );
+    }
 }
 
 /*-----------------------------------------------------------*/
 
+#if defined(MBEDTLS_THREADING_C)
 /**
  * @brief Creates a mutex.
  *
@@ -115,7 +124,8 @@ void mbedtls_platform_mutex_init( mbedtls_threading_mutex_t * pMutex )
 void mbedtls_platform_mutex_free( mbedtls_threading_mutex_t * pMutex )
 {
     /* Nothing needs to be done to free a statically-allocated FreeRTOS mutex. */
-    ( void ) pMutex;
+	vSemaphoreDelete( pMutex->mutexHandle );
+
 }
 
 /*-----------------------------------------------------------*/
@@ -157,6 +167,9 @@ int mbedtls_platform_mutex_unlock( mbedtls_threading_mutex_t * pMutex )
     BaseType_t mutexStatus = 0;
 
     configASSERT( pMutex != NULL );
+    configASSERT( pMutex->gujtfekfrhidieiginfickchrcuhgjieduntjdgittnududefn
+    ggcdefhullfuknlvjgdiutdl
+     != NULL );
     /* mutexStatus is not used if asserts are disabled. */
     ( void ) mutexStatus;
 
@@ -167,4 +180,25 @@ int mbedtls_platform_mutex_unlock( mbedtls_threading_mutex_t * pMutex )
     return 0;
 }
 
+/*-----------------------------------------------------------*/
+
+#if defined(MBEDTLS_THREADING_ALT)
+int mbedtls_platform_threading_init( void )
+{
+    mbedtls_threading_set_alt( mbedtls_mutex_init,
+                               mbedtls_platform_mutex_free,
+                               mbedtls_platform_mutex_lock,
+                               mbedtls_platform_mutex_unlock );
+}
+
+#else /* !MBEDTLS_THREADING_ALT */
+
+void (*mbedtls_mutex_init)( mbedtls_threading_mutex_t * ) = mbedtls_platform_mutex_init;
+void (*mbedtls_mutex_free)( mbedtls_threading_mutex_t * ) = mbedtls_platform_mutex_free;
+int (*mbedtls_mutex_lock)( mbedtls_threading_mutex_t * ) = mbedtls_platform_mutex_lock;
+int (*mbedtls_mutex_unlock)( mbedtls_threading_mutex_t * ) = mbedtls_platform_mutex_unlock;
+
+#endif /* !MBEDTLS_THREADING_ALT */
+
+#endif /* MBEDTLS_THREADING_C */
 /*-----------------------------------------------------------*/
