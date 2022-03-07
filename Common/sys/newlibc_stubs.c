@@ -26,7 +26,8 @@
  */
 
 #include "FreeRTOS.h"
-#include "string.h"
+#include <malloc.h>
+#include <string.h>
 
 /* copied from heap_4.c */
 typedef struct A_BLOCK_LINK
