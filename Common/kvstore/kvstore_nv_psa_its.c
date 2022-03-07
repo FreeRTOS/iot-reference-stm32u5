@@ -23,10 +23,13 @@
  *
  */
 
+
 #include "logging_levels.h"
 #include "logging.h"
 #include "kvstore_prv.h"
 #include <string.h>
+
+#if KV_STORE_NVIMPL_ARM_PSA
 #include "psa/internal_trusted_storage.h"
 
 #define KVSTORE_UID_OFFSET	0x1234
@@ -216,3 +219,4 @@ void vprvNvImplInit( void )
 //	tfm_its_init();
 }
 
+#endif /* KV_STORE_NVIMPL_ARM_PSA */

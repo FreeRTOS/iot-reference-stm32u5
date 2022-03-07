@@ -134,7 +134,7 @@ void vprvCacheInit( void )
 	for( uint32_t i = 0; i < CS_NUM_KEYS; i++ )
 	{
 		/* pvData pointer should be NULL on startup */
-		configASSERT( kvStoreCache[ i ].pvData == NULL );
+		configASSERT_CONTINUE( kvStoreCache[ i ].pvData == NULL );
 
 
 		kvStoreCache[ i ].xChangePending = pdFALSE;

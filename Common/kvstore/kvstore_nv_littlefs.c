@@ -23,11 +23,14 @@
  *
  */
 
+
 #include "logging_levels.h"
 #include "logging.h"
 #include "kvstore_prv.h"
 #include <string.h>
 #include "semphr.h"
+
+#ifdef KV_STORE_NVIMPL_LITTLEFS
 #include "lfs.h"
 #include "fs/lfs_port.h"
 
@@ -260,4 +263,4 @@ void vprvNvImplInit( void )
 {
     //TODO: Wait for filesystem initialization
 }
-
+#endif /* KV_STORE_NVIMPL_LITTLEFS */

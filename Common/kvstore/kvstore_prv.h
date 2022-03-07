@@ -26,6 +26,7 @@
 #ifndef _KVSTORE_PRV_H
 #define _KVSTORE_PRV_H
 
+#include "kvstore_config_plat.h"
 #include "kvstore.h"
 
 /* Private Types */
@@ -56,6 +57,12 @@ BaseType_t xprvReadValueFromImplStatic( KVStoreKey_t xKey,
 								        size_t * pxLength,
 										void * pvBuffer,
 										size_t xBufferSize );
+
+BaseType_t xprvReadValueFromImpl( KVStoreKey_t xKey,
+								  KVStoreValueType_t * pxType,
+								  size_t * pxLength,
+								  void * pvBuffer,
+								  size_t xBufferSize );
 
 BaseType_t xprvWriteValueToImpl( KVStoreKey_t xKey,
 								 KVStoreValueType_t xType,
