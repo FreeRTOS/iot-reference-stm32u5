@@ -21,7 +21,7 @@
  */
 
 /**
- * @file tls_freertos.h
+ * @file mbedtls_transport.h
  * @brief TLS transport interface header.
  */
 
@@ -31,17 +31,28 @@
 /* socket definitions  */
 #include "transport_interface_ext.h"
 
+#include "lwip/netdb.h"
+
 /* mbed TLS includes. */
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/entropy.h"
 #include "mbedtls/ssl.h"
 #include "mbedtls/threading.h"
 #include "mbedtls/x509.h"
+#include "pk_wrap.h"
+#include "tls_transport_config.h"
 
-/*
- * Define MBEDTLS_TRANSPORT_PKCS11_ENABLE if you intend to use a pkcs11 module for TLS.
- */
-#define MBEDTLS_TRANSPORT_PKCS11_ENABLE
+#ifdef MBEDTLS_TRANSPORT_PKCS11
+#include "core_pkcs11_config.h"
+#include "core_pkcs11.h"
+#endif /* MBEDTLS_TRANSPORT_PKCS11 */
+
+
+#ifdef MBEDTLS_TRANSPORT_PSA
+#include "psa/crypto.h"
+#include "psa/internal_trusted_storage.h"
+#include "psa/protected_storage.h"
+#endif /* MBEDTLS_TRANSPORT_PSA */
 
 
 /*
@@ -49,113 +60,108 @@
  */
 /* #define MBEDTLS_DEBUG_C */
 
+typedef enum
+{
+	STATE_UNKNOWN = 0,
+	STATE_ALLOCATED = 1,
+	STATE_CONFIGURED = 2,
+	STATE_CONNECTED = 3,
+} ConnectionState_t;
+
 typedef enum PkiObjectForm
 {
     OBJ_FORM_NONE,
     OBJ_FORM_PEM,
     OBJ_FORM_DER,
-    OBJ_FORM_PKCS11_LABEL
+#ifdef MBEDTLS_TRANSPORT_PKCS11
+    OBJ_FORM_PKCS11_LABEL,
+#endif
+#ifdef MBEDTLS_TRANSPORT_PSA
+	OBJ_FORM_PSA_CRYPTO,
+	OBJ_FORM_PSA_ITS,
+	OBJ_FORM_PSA_PS,
+#endif
 } PkiObjectForm_t;
 
-/**
- * @brief Contains the credentials necessary for tls connection setup.
- */
-typedef struct NetworkCredentials
+typedef struct PkiObject
 {
-    /**
-     * @brief To use ALPN, set this to a NULL-terminated list of supported
-     * protocols in decreasing order of preference.
-     *
-     * See [this link]
-     * (https://aws.amazon.com/blogs/iot/mqtt-with-tls-client-authentication-on-port-443-why-it-is-useful-and-how-it-works/)
-     * for more information.
-     */
-    const char ** pAlpnProtos;
+	PkiObjectForm_t xForm;
+	size_t uxLen;
+	union
+	{
+		const unsigned char * pucBuffer;
+		char * pcPkcs11Label;
+#ifdef MBEDTLS_TRANSPORT_PSA
+		psa_key_id_t xPsaCryptoId;
+		psa_storage_uid_t xPsaStorageId;
+#endif /* MBEDTLS_TRANSPORT_PSA */
+	};
+} PkiObject_t;
 
-    /**
-     * @brief Disable validation of the received Server Name Indication.
-     */
-    BaseType_t xSkipSNI;
+/* Convenience initializers */
+#define PKI_OBJ_PEM( buffer, len ) 		{ .xForm = OBJ_FORM_PEM, 			.uxLen = len, 					.pucBuffer = buffer }
+#define PKI_OBJ_DER( buffer, len ) 		{ .xForm = OBJ_FORM_DER, 			.uxLen = len, 					.pucBuffer = buffer }
+#define PKI_OBJ_PKCS11( label ) 		{ .xForm = OBJ_FORM_PKCS11_LABEL, 	.uxLen = strlen( label ), 		.pcPkcs11Label = label }
+#define PKI_OBJ_PSA_CRYPTO( key_id ) 	{ .xForm = OBJ_FORM_PSA_CRYPTO, 	.xPsaCryptoId = key_id }
+#define PKI_OBJ_PSA_ITS( storage_id ) 	{ .xForm = OBJ_FORM_PSA_ITS, 		.xPsaStorageId = storage_id }
+#define PKI_OBJ_PSA_PS( storage_id ) 	{ .xForm = OBJ_FORM_PSA_PS, 		.xPsaStorageId = storage_id }
 
-    /**
-     * @brief Disable validation of the received server certificate against the provided root ca certificate.
-     */
-    BaseType_t xSkipCaVerify;
+#define sock_socket 	lwip_socket
+#define sock_connect 	lwip_connect
+#define sock_send 		lwip_send
+#define sock_recv 		lwip_recv
+#define sock_close 		lwip_close
+#define sock_setsockopt lwip_setsockopt
+#define sock_fcntl		lwip_fcntl
 
-    /**
-     * @brief Form of the private key specified in #NetworkCredentials.pvPrivateKey.
-     */
-    PkiObjectForm_t xPrivateKeyForm;
+#define dns_getaddrinfo lwip_getaddrinfo
+#define dns_freeaddrinfo lwip_freeaddrinfo
 
-    /**
-     * @brief Pointer to a buffer containing the private key or private key PKCS#11 label.
-     */
-    const void * pvPrivateKey;
+typedef int SockHandle_t;
 
-    /**
-     * @brief Size of the private key or private key PKCS#11 label specified in
-     * #NetworkCredentials.pvPrivateKey.
-     */
-    size_t privateKeySize;
-
-    /**
-     * @brief Form of the certificate specified in #NetworkCredentials.pvClientCert.
-     */
-    PkiObjectForm_t xClientCertForm;
-
-    /**
-     * @brief Pointer to a buffer containing the client certificate or PKCS#11 label.
-     */
-    const void * pvClientCert;
-
-    /**
-     * @brief Size of the certificate or PKCS#11 label specified in
-     * #NetworkCredentials.pvClientCert.
-     */
-    size_t clientCertSize;
-
-    /**
-     * @brief Form of the certificate specified in #NetworkCredentials.pvRootCaCert.
-     */
-    PkiObjectForm_t xRootCaCertForm;
-
-    /**
-     * @brief Pointer to a buffer containing the CA certificate or PKCS#11 label.
-     */
-    const void * pvRootCaCert;
-
-    /**
-     * @brief Size of the certificate or PKCS#11 label specified in
-     * #NetworkCredentials.pvRootCaCert.
-     */
-    size_t rootCaCertSize;
-
-} NetworkCredentials_t;
+//typedef union PkiObject
+//{
+//	struct
+//	{
+//		size_t uxLen;
+//		const unsigned char * pucBuffer;
+//	} xBuffer;
+//
+//	char * pcPkcs11Label;
+//	psa_key_id_t xPsaCryptoId;
+//	psa_storage_uid_t xPsaStorageId;
+//} PkiObject_t;
 
 /**
  * @brief TLS Connect / Disconnect return status.
  */
 typedef enum TlsTransportStatus
 {
-    TLS_TRANSPORT_SUCCESS = 0,         /**< Function successfully completed. */
-    TLS_TRANSPORT_INVALID_PARAMETER,   /**< At least one parameter was invalid. */
-    TLS_TRANSPORT_INSUFFICIENT_MEMORY, /**< Insufficient memory required to establish connection. */
-    TLS_TRANSPORT_INVALID_CREDENTIALS, /**< Provided credentials were invalid. */
-    TLS_TRANSPORT_HANDSHAKE_FAILED,    /**< Performing TLS handshake with server failed. */
-    TLS_TRANSPORT_INTERNAL_ERROR,      /**< A call to a system API resulted in an internal error. */
-    TLS_TRANSPORT_CONNECT_FAILURE      /**< Initial connection to the server failed. */
+    TLS_TRANSPORT_SUCCESS 				= 0,
+	TLS_TRANSPORT_UNKNOWN_ERROR			= -1,
+    TLS_TRANSPORT_INVALID_PARAMETER 	= -2,
+    TLS_TRANSPORT_INSUFFICIENT_MEMORY 	= -3,
+    TLS_TRANSPORT_INVALID_CREDENTIALS 	= -4,
+    TLS_TRANSPORT_HANDSHAKE_FAILED 		= -5,
+    TLS_TRANSPORT_INTERNAL_ERROR 		= -6,
+    TLS_TRANSPORT_CONNECT_FAILURE  		= -7,
+	TLS_TRANSPORT_PKI_OBJECT_NOT_FOUND 	= -8,
+	TLS_TRANSPORT_PKI_OBJECT_PARSE_FAIL = -9,
+	TLS_TRANSPORT_DNS_FAILED			= -10,
+	TLS_TRANSPORT_INSUFFICIENT_SOCKETS  = -11,
+	TLS_TRANSPORT_INVALID_HOSTNAME      = -12,
+	TLS_TRANSPORT_CLIENT_CERT_INVALID   = -13,
+	TLS_TRANSPORT_NO_VALID_CA_CERT      = -14,
+	TLS_TRANSPORT_CLIENT_KEY_INVALID    = -15,
 } TlsTransportStatus_t;
 
 
 /**
  * @brief Allocate a TLS Network Context
  *
- * @param[in] pxSocketInterface Pointer to a TransportInterfaceExtended_t for the desired lower
- *                              layer networking interface / TCP stack.
- *
  * @return pointer to a NetworkContext_t used by the TLS stack.
  */
-NetworkContext_t * mbedtls_transport_allocate( const TransportInterfaceExtended_t * pxSocketInterface );
+NetworkContext_t * mbedtls_transport_allocate( void );
 
 
 /**
@@ -167,6 +173,15 @@ NetworkContext_t * mbedtls_transport_allocate( const TransportInterfaceExtended_
 void mbedtls_transport_free( NetworkContext_t * pxNetworkContext );
 
 
+
+TlsTransportStatus_t mbedtls_transport_configure( NetworkContext_t * pxNetworkContext,
+												  const char ** ppcAlpnProtos,
+												  const PkiObject_t * pxPrivateKey,
+												  const PkiObject_t * pxClientCert,
+												  const PkiObject_t * pxRootCaCerts,
+												  const size_t uxNumRootCA );
+
+
 /**
  * @brief Create a TLS connection
  *
@@ -174,7 +189,6 @@ void mbedtls_transport_free( NetworkContext_t * pxNetworkContext );
  * initialized socket handle.
  * @param[in] pHostName The hostname of the remote endpoint.
  * @param[in] port The destination port.
- * @param[in] pNetworkCredentials Credentials for the TLS connection.
  * @param[in] receiveTimeoutMs Receive socket timeout.
  * @param[in] sendTimeoutMs Send socket timeout.
  *
@@ -182,27 +196,27 @@ void mbedtls_transport_free( NetworkContext_t * pxNetworkContext );
  * #TLS_TRANSPORT_HANDSHAKE_FAILED, #TLS_TRANSPORT_INTERNAL_ERROR, or #TLS_TRANSPORT_CONNECT_FAILURE.
  */
 TlsTransportStatus_t mbedtls_transport_connect( NetworkContext_t * pxNetworkContext,
-                                                const char * pHostName,
-                                                uint16_t port,
-                                                const NetworkCredentials_t * pNetworkCredentials,
-                                                uint32_t receiveTimeoutMs,
-                                                uint32_t sendTimeoutMs );
+											    const char * pcHostName,
+												uint16_t usPort,
+                                                uint32_t ulRecvTimeoutMs,
+                                                uint32_t ulSendTimeoutMs );
 
 /**
- * @brief Sets the socket option for the underlying socket connection.
- *
- * @param[out] pNetworkContext Pointer to a network context that contains the
- * initialized socket handle.
- * @param[in] lSockopt Socket option to be set
- * @param[in] pvSockoptValue Pointer to memory area containing the value of the socket option.
- * @param[in] ulOptionLen Length of the memory area containing the value of the socket option.
- *
- * @return 0 on success, negative error code on failure.
- */
+* @brief Sets the socket option for the underlying socket connection.
+*
+* @param[out] pNetworkContext Pointer to a network context that contains the
+* initialized socket handle.
+* @param[in] lSockopt Socket option to be set
+* @param[in] pvSockoptValue Pointer to memory area containing the value of the socket option.
+* @param[in] ulOptionLen Length of the memory area containing the value of the socket option.
+*
+* @return 0 on success, negative error code on failure.
+*/
 int32_t mbedtls_transport_setsockopt( NetworkContext_t * pxNetworkContext,
 		                              int32_t lSockopt,
 		                              const void * pvSockoptValue,
 		                              uint32_t ulOptionLen );
+
 /**
  * @brief Gracefully disconnect an established TLS connection and free any heap allocated resources.
  *
@@ -236,7 +250,7 @@ int32_t mbedtls_transport_recv( NetworkContext_t * pxNetworkContext,
  *
  * @param[in] pNetworkContext The network context.
  * @param[in] pBuffer Buffer containing the bytes to send.
- * @param[in] bytesToSend Number of bytes to send from the buffer.
+ * @param[in] uxBytesToSend Number of bytes to send from the buffer.
  *
  * @return Number of bytes (> 0) sent on success;
  * 0 if the socket times out without sending any bytes;
@@ -244,6 +258,50 @@ int32_t mbedtls_transport_recv( NetworkContext_t * pxNetworkContext,
  */
 int32_t mbedtls_transport_send( NetworkContext_t * pxNetworkContext,
                                 const void * pBuffer,
-                                size_t bytesToSend );
+                                size_t uxBytesToSend );
+
+
+#ifdef MBEDTLS_TRANSPORT_PKCS11
+mbedtls_pk_info_t mbedtls_pkcs11_pk_ecdsa;
+mbedtls_pk_info_t mbedtls_pkcs11_pk_rsa;
+
+int32_t lReadCertificateFromPKCS11( mbedtls_x509_crt * pxCertificateContext,
+									CK_SESSION_HANDLE xP11SessionHandle,
+                                    const char * pcCertificateLabel,
+									size_t xLabelLen );
+
+int32_t lPKCS11_initMbedtlsPkContext( mbedtls_pk_context * pxMbedtlsPkCtx,
+									  CK_SESSION_HANDLE xSessionHandle,
+									  CK_OBJECT_HANDLE xPkHandle );
+
+const char * pcPKCS11StrError( CK_RV xError );
+
+int lPKCS11RandomCallback( void * pvCtx, unsigned char * pucOutput,
+							 size_t uxLen, size_t * puxLenWritten );
+#endif /* MBEDTLS_TRANSPORT_PKCS11 */
+
+#ifdef MBEDTLS_TRANSPORT_PSA
+
+int32_t lReadCertificateFromPSACrypto( mbedtls_x509_crt * pxCertificateContext,
+									   psa_key_id_t xCertId );
+
+int32_t lLoadObjectFromPsaPs( uint8_t ** ppucData,
+							  size_t * puxDataLen,
+							  psa_storage_uid_t xObjectUid );
+
+int32_t lLoadObjectFromPsaIts( uint8_t ** ppucData,
+							   size_t * puxDataLen,
+							   psa_storage_uid_t xObjectUid );
+
+int32_t lReadCertificateFromPsaIts( mbedtls_x509_crt * pxCertificateContext,
+									psa_storage_uid_t xCertUid );
+
+int32_t lReadCertificateFromPsaPS( mbedtls_x509_crt * pxCertificateContext,
+								   psa_storage_uid_t xCertUid );
+
+int lPSARandomCallback( void * pvCtx, unsigned char * pucOutput,
+						size_t uxLen );
+
+#endif /* MBEDTLS_TRANSPORT_PSA */
 
 #endif /* MBEDTLS_TRANSPORT */

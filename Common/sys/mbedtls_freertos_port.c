@@ -167,9 +167,7 @@ int mbedtls_platform_mutex_unlock( mbedtls_threading_mutex_t * pMutex )
     BaseType_t mutexStatus = 0;
 
     configASSERT( pMutex != NULL );
-    configASSERT( pMutex->gujtfekfrhidieiginfickchrcuhgjieduntjdgittnududefn
-    ggcdefhullfuknlvjgdiutdl
-     != NULL );
+    configASSERT( pMutex->mutexHandle != NULL );
     /* mutexStatus is not used if asserts are disabled. */
     ( void ) mutexStatus;
 

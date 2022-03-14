@@ -777,7 +777,7 @@ def main():
     ca_certs = get_amazon_rootca_certs()
     if ca_certs:
         for cert in ca_certs:
-            if cert["label"] == "AmazonRootCA3":
+            if cert["label"] == "AmazonRootCA1":
                 print('Importing root ca certificate: "{}"'.format(cert["CN"]))
                 target.write_cert(cert["pem"], label="root_ca_cert")
 

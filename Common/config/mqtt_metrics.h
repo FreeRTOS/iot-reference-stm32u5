@@ -61,7 +61,7 @@
 /**
  * @brief ALPN (Application-Layer Protocol Negotiation) protocol name for AWS IoT MQTT.
  */
-#define AWS_IOT_MQTT_ALPN                   "\x0ex-amzn-mqtt-ca"
+#define AWS_IOT_MQTT_ALPN                   "x-amzn-mqtt-ca"
 
 /**
  * @brief The MQTT metrics string expected by AWS IoT.

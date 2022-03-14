@@ -154,98 +154,100 @@ static void vPrintPem( ConsoleIO_t * pxCIO, const char * pcPem )
 }
 
 
-static int privateKeySigningCallback( void * pvContext,
-                                      mbedtls_md_type_t xMdAlg,
-                                      const unsigned char * pucHash,
-                                      size_t xHashLen,
-                                      unsigned char * pucSig,
-                                      size_t * pxSigLen,
-                                      int ( * piRng )( void *,
-                                                       unsigned char *,
-                                                       size_t ),
-                                      void * pvRng )
-{
-    CK_RV xResult = CKR_OK;
-    int32_t lFinalResult = 0;
-    PrivateKeySigningCtx_t * pxCtx = ( PrivateKeySigningCtx_t * ) pvContext;
-    CK_MECHANISM xMech = { 0 };
-    CK_BYTE xToBeSigned[ 256 ];
-    CK_ULONG xToBeSignedLen = sizeof( xToBeSigned );
 
-    /* Unreferenced parameters. */
-    ( void ) ( piRng );
-    ( void ) ( pvRng );
-    ( void ) ( xMdAlg );
+ static int privateKeySigningCallback( void * pvContext,
+                                       mbedtls_md_type_t xMdAlg,
+                                       const unsigned char * pucHash,
+                                       size_t xHashLen,
+                                       unsigned char * pucSig,
+									   size_t xSigBufferLen,
+                                       size_t * pxSigLen,
+                                       int ( * piRng )( void *,
+                                                        unsigned char *,
+                                                        size_t ),
+                                       void * pvRng )
+ {
+     CK_RV xResult = CKR_OK;
+     int32_t lFinalResult = 0;
+     PrivateKeySigningCtx_t * pxCtx = ( PrivateKeySigningCtx_t * ) pvContext;
+     CK_MECHANISM xMech = { 0 };
+     CK_BYTE xToBeSigned[ 256 ];
+     CK_ULONG xToBeSignedLen = sizeof( xToBeSigned );
 
-    /* Sanity check buffer length. */
-    if( xHashLen > sizeof( xToBeSigned ) )
-    {
-        xResult = CKR_ARGUMENTS_BAD;
-    }
+     /* Unreferenced parameters. */
+     ( void ) ( piRng );
+     ( void ) ( pvRng );
+     ( void ) ( xMdAlg );
 
-    /* Format the hash data to be signed. */
-    if( CKK_RSA == pxCtx->xKeyType )
-    {
-        xMech.mechanism = CKM_RSA_PKCS;
+     /* Sanity check buffer length. */
+     if( xHashLen > sizeof( xToBeSigned ) )
+     {
+         xResult = CKR_ARGUMENTS_BAD;
+     }
 
-        /* mbedTLS expects hashed data without padding, but PKCS #11 C_Sign function performs a hash
-         * & sign if hash algorithm is specified.  This helper function applies padding
-         * indicating data was hashed with SHA-256 while still allowing pre-hashed data to
-         * be provided. */
-        xResult = vAppendSHA256AlgorithmIdentifierSequence( ( uint8_t * ) pucHash, xToBeSigned );
-        xToBeSignedLen = pkcs11RSA_SIGNATURE_INPUT_LENGTH;
-    }
-    else if( CKK_EC == pxCtx->xKeyType )
-    {
-        xMech.mechanism = CKM_ECDSA;
-        ( void ) memcpy( xToBeSigned, pucHash, xHashLen );
-        xToBeSignedLen = xHashLen;
-    }
-    else
-    {
-        xResult = CKR_ARGUMENTS_BAD;
-    }
+     /* Format the hash data to be signed. */
+     if( CKK_RSA == pxCtx->xKeyType )
+     {
+         xMech.mechanism = CKM_RSA_PKCS;
 
-    if( CKR_OK == xResult )
-    {
-        /* Use the PKCS#11 module to sign. */
-        xResult = pxCtx->pxP11FunctionList->C_SignInit( pxCtx->xP11Session,
-                                                        &xMech,
-                                                        pxCtx->xP11PrivateKey );
-    }
+         /* mbedTLS expects hashed data without padding, but PKCS #11 C_Sign function performs a hash
+          * & sign if hash algorithm is specified.  This helper function applies padding
+          * indicating data was hashed with SHA-256 while still allowing pre-hashed data to
+          * be provided. */
+         xResult = vAppendSHA256AlgorithmIdentifierSequence( ( uint8_t * ) pucHash, xToBeSigned );
+         xToBeSignedLen = pkcs11RSA_SIGNATURE_INPUT_LENGTH;
+     }
+     else if( CKK_EC == pxCtx->xKeyType )
+     {
+         xMech.mechanism = CKM_ECDSA;
+         ( void ) memcpy( xToBeSigned, pucHash, xHashLen );
+         xToBeSignedLen = xHashLen;
+     }
+     else
+     {
+         xResult = CKR_ARGUMENTS_BAD;
+     }
 
-    if( CKR_OK == xResult )
-    {
-        *pxSigLen = sizeof( xToBeSigned );
-        xResult = pxCtx->pxP11FunctionList->C_Sign( ( CK_SESSION_HANDLE ) pxCtx->xP11Session,
-                                                     xToBeSigned,
-                                                     xToBeSignedLen,
-                                                     pucSig,
-                                                     ( CK_ULONG_PTR ) pxSigLen );
-    }
+     if( CKR_OK == xResult )
+     {
+         /* Use the PKCS#11 module to sign. */
+         xResult = pxCtx->pxP11FunctionList->C_SignInit( pxCtx->xP11Session,
+                                                         &xMech,
+                                                         pxCtx->xP11PrivateKey );
+     }
 
-    if( ( xResult == CKR_OK ) && ( CKK_EC == pxCtx->xKeyType ) )
-    {
-        /* PKCS #11 for P256 returns a 64-byte signature with 32 bytes for R and 32 bytes for S.
-         * This must be converted to an ASN.1 encoded array. */
-        if( *pxSigLen != pkcs11ECDSA_P256_SIGNATURE_LENGTH )
-        {
-            xResult = CKR_FUNCTION_FAILED;
-        }
+     if( CKR_OK == xResult )
+     {
+         *pxSigLen = sizeof( xToBeSigned );
+         xResult = pxCtx->pxP11FunctionList->C_Sign( ( CK_SESSION_HANDLE ) pxCtx->xP11Session,
+                                                      xToBeSigned,
+                                                      xToBeSignedLen,
+                                                      pucSig,
+                                                      ( CK_ULONG_PTR ) pxSigLen );
+     }
 
-        if( xResult == CKR_OK )
-        {
-            xResult = PKI_pkcs11SignatureTombedTLSSignature( pucSig, pxSigLen );
-        }
-    }
+     if( ( xResult == CKR_OK ) && ( CKK_EC == pxCtx->xKeyType ) )
+     {
+         /* PKCS #11 for P256 returns a 64-byte signature with 32 bytes for R and 32 bytes for S.
+          * This must be converted to an ASN.1 encoded array. */
+         if( *pxSigLen != pkcs11ECDSA_P256_SIGNATURE_LENGTH )
+         {
+             xResult = CKR_FUNCTION_FAILED;
+         }
 
-    if( xResult != CKR_OK )
-    {
-        LogError( "Failed to sign message using PKCS #11 with error code %02X.", xResult );
-    }
+         if( xResult == CKR_OK )
+         {
+             xResult = PKI_pkcs11SignatureTombedTLSSignature( pucSig, pxSigLen );
+         }
+     }
 
-    return lFinalResult;
-}
+     if( xResult != CKR_OK )
+     {
+         LogError( "Failed to sign message using PKCS #11 with error code %02X.", xResult );
+     }
+
+     return lFinalResult;
+ }
 
 static CK_RV validatePrivateKeyPKCS11( PrivateKeySigningCtx_t * pxCtx,
                                        const char * pcLabel )
@@ -414,10 +416,10 @@ static void vSubCommand_GenerateCsr( ConsoleIO_t * pxCIO, uint32_t ulArgc, char 
     }
 
     /* Set the mutex functions for mbed TLS thread safety. */
-    mbedtls_threading_set_alt( mbedtls_platform_mutex_init,
-                               mbedtls_platform_mutex_free,
-                               mbedtls_platform_mutex_lock,
-                               mbedtls_platform_mutex_unlock );
+//    mbedtls_threading_set_alt( mbedtls_platform_mutex_init,
+//                               mbedtls_platform_mutex_free,
+//                               mbedtls_platform_mutex_lock,
+//                               mbedtls_platform_mutex_unlock );
 
     mbedtls_x509write_csr_init( &xCsr );
     mbedtls_pk_init( &( xPksCtx.xPkeyCtx ) );
@@ -766,10 +768,10 @@ static void vSubCommand_GenerateKey( ConsoleIO_t * pxCIO, uint32_t ulArgc, char 
     }
 
     /* Set the mutex functions for mbed TLS thread safety. */
-    mbedtls_threading_set_alt( mbedtls_platform_mutex_init,
-                               mbedtls_platform_mutex_free,
-                               mbedtls_platform_mutex_lock,
-                               mbedtls_platform_mutex_unlock );
+    // mbedtls_threading_set_alt( mbedtls_platform_mutex_init,
+    //                            mbedtls_platform_mutex_free,
+    //                            mbedtls_platform_mutex_lock,
+    //                            mbedtls_platform_mutex_unlock );
 
     xResult = C_GetFunctionList( &pxFunctionList );
 
@@ -844,10 +846,10 @@ static BaseType_t xImportCertificateIntoP11( const char * pcLabel,
     CK_OBJECT_HANDLE xCertHandle = 0;
 
     /* Set the mutex functions for mbed TLS thread safety. */
-    mbedtls_threading_set_alt( mbedtls_platform_mutex_init,
-                               mbedtls_platform_mutex_free,
-                               mbedtls_platform_mutex_lock,
-                               mbedtls_platform_mutex_unlock );
+    // mbedtls_threading_set_alt( mbedtls_platform_mutex_init,
+    //                            mbedtls_platform_mutex_free,
+    //                            mbedtls_platform_mutex_lock,
+    //                            mbedtls_platform_mutex_unlock );
 
     xResult = C_GetFunctionList( &pxFunctionList );
 
@@ -1151,10 +1153,10 @@ static void vSubCommand_ExportCertificate( ConsoleIO_t * pxCIO, uint32_t ulArgc,
     xCertLabelLen = strnlen( pcCertLabel, pkcs11configMAX_LABEL_LENGTH );
 
     /* Set the mutex functions for mbed TLS thread safety. */
-    mbedtls_threading_set_alt( mbedtls_platform_mutex_init,
-                               mbedtls_platform_mutex_free,
-                               mbedtls_platform_mutex_lock,
-                               mbedtls_platform_mutex_unlock );
+    // mbedtls_threading_set_alt( mbedtls_platform_mutex_init,
+    //                            mbedtls_platform_mutex_free,
+    //                            mbedtls_platform_mutex_lock,
+    //                            mbedtls_platform_mutex_unlock );
 
     xResult = C_GetFunctionList( &pxFunctionList );
 
@@ -1261,10 +1263,10 @@ static void vSubCommand_ExportKey( ConsoleIO_t * pxCIO, uint32_t ulArgc, char * 
     xPubKeyLabelLen = strnlen( pcPubKeyLabel, pkcs11configMAX_LABEL_LENGTH );
 
     /* Set the mutex functions for mbed TLS thread safety. */
-    mbedtls_threading_set_alt( mbedtls_platform_mutex_init,
-                               mbedtls_platform_mutex_free,
-                               mbedtls_platform_mutex_lock,
-                               mbedtls_platform_mutex_unlock );
+    // mbedtls_threading_set_alt( mbedtls_platform_mutex_init,
+    //                            mbedtls_platform_mutex_free,
+    //                            mbedtls_platform_mutex_lock,
+    //                            mbedtls_platform_mutex_unlock );
 
     xResult = C_GetFunctionList( &pxFunctionList );
 
