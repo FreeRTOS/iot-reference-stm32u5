@@ -35,7 +35,7 @@
 #include "stm32u5xx.h"
 #include "stm32u5xx_hal_flash.h"
 #include "lfs.h"
-#include "lfs_port.h"
+#include "fs/lfs_port.h"
 #include "core_pkcs11.h"
 #include "core_pki_utils.h"
 

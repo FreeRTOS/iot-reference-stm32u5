@@ -35,14 +35,18 @@
 #include "sys_evt.h"
 #include "FreeRTOS.h"
 #include "task.h"
-#include "net/mxchip/mx_netconn.h"
-#include "stm32u5xx_ll_rng.h"
 #include "stm32u5xx.h"
 #include "kvstore.h"
+#include "hw_defs.h"
+//#include "psa/crypto.h"
+#include <string.h>
 
-#include "cli/cli.h"
 #include "lfs.h"
 #include "fs/lfs_port.h"
+#include "stm32u5xx_ll_rng.h"
+
+
+#include "cli/cli.h"
 
 static lfs_t * pxLfsCtx = NULL;
 
@@ -58,97 +62,6 @@ lfs_t * pxGetDefaultFsCtx( void )
         //TODO block on an event group bit instead
     }
     return pxLfsCtx;
-}
-
-typedef void( * VectorTable_t )(void);
-
-#define NUM_USER_IRQ				( FMAC_IRQn + 1 ) /* MCU specific */
-#define VECTOR_TABLE_SIZE 		    ( NVIC_USER_IRQ_OFFSET + NUM_USER_IRQ )
-#define VECTOR_TABLE_ALIGN_CM33		0x400U
-
-static VectorTable_t pulVectorTableSRAM[ VECTOR_TABLE_SIZE ] __attribute__(( aligned (VECTOR_TABLE_ALIGN_CM33) ));
-
-DCACHE_HandleTypeDef hDcache;
-
-/* Relocate vector table to ram for runtime interrupt registration */
-static void vRelocateVectorTable( void )
-{
-    /* Disable interrupts */
-    __disable_irq();
-
-    HAL_ICACHE_Disable();
-    HAL_DCACHE_Disable( &hDcache );
-
-    /* Copy vector table to ram */
-    ( void ) memcpy( pulVectorTableSRAM, ( uint32_t * ) SCB->VTOR , sizeof( uint32_t) * VECTOR_TABLE_SIZE );
-
-    SCB->VTOR = (uint32_t) pulVectorTableSRAM;
-
-    __DSB();
-    __ISB();
-
-    HAL_DCACHE_Invalidate( &hDcache );
-    HAL_ICACHE_Invalidate();
-    HAL_ICACHE_Enable();
-    HAL_DCACHE_Enable( &hDcache );
-
-    __enable_irq();
-}
-
-
-/* Initialize hardware / STM32 HAL library */
-static void hw_init( void )
-{
-    __HAL_RCC_SYSCFG_CLK_ENABLE();
-
-
-    /*
-     * Initializes flash interface and systick timer.
-     * Note: HAL_Init calls HAL_MspInit.
-     */
-    HAL_Init();
-    HAL_PWREx_EnableVddIO2();
-
-    /* System interrupt init*/
-    /* PendSV_IRQn interrupt configuration */
-    HAL_NVIC_SetPriority(PendSV_IRQn, 7, 0);
-
-    /* Configure the system clock */
-    SystemClock_Config();
-
-    /* initialize ICACHE (makes flash access faster) */
-    HAL_ICACHE_ConfigAssociativityMode( ICACHE_1WAY );
-    HAL_ICACHE_Invalidate();
-    HAL_ICACHE_Enable();
-
-    /* Initialize DCACHE */
-
-    hDcache.Instance = DCACHE1;
-    hDcache.Init.ReadBurstType = DCACHE_READ_BURST_WRAP;
-    HAL_DCACHE_Init( &hDcache );
-    HAL_DCACHE_Invalidate( &hDcache );
-    HAL_DCACHE_Enable( &hDcache );
-
-
-    /* Initialize uart for logging before cli is up and running */
-    vInitLoggingEarly();
-
-    /* Initialize GPIO */
-    MX_GPIO_Init();
-
-    MX_RTC_Init();
-
-    extern SPI_HandleTypeDef hspi2;
-
-    HAL_SPI_RegisterCallback( &hspi2, HAL_SPI_MSPINIT_CB_ID, &HAL_SPI_MspInit );
-
-    MX_GPDMA1_Init();
-    MX_SPI2_Init();
-
-    /* Initialize crypto accelerators */
-    MX_HASH_Init();
-    MX_RNG_Init();
-    MX_PKA_Init();
 }
 
 static int fs_init( void )
@@ -211,6 +124,40 @@ static int fs_init( void )
     return err;
 }
 
+typedef void( * VectorTable_t )(void);
+
+#define NUM_USER_IRQ                    ( FMAC_IRQn + 1 ) /* MCU specific */
+#define VECTOR_TABLE_SIZE               ( NVIC_USER_IRQ_OFFSET + NUM_USER_IRQ )
+#define VECTOR_TABLE_ALIGN_CM33         0x400U
+
+static VectorTable_t pulVectorTableSRAM[ VECTOR_TABLE_SIZE ] __attribute__(( aligned (VECTOR_TABLE_ALIGN_CM33) ));
+
+/* Relocate vector table to ram for runtime interrupt registration */
+static void vRelocateVectorTable( void )
+{
+    /* Disable interrupts */
+    __disable_irq();
+
+    HAL_ICACHE_Disable();
+    HAL_DCACHE_Disable( pxHndlDCache );
+
+    /* Copy vector table to ram */
+    ( void ) memcpy( pulVectorTableSRAM, ( uint32_t * ) SCB->VTOR , sizeof( uint32_t) * VECTOR_TABLE_SIZE );
+
+    SCB->VTOR = (uint32_t) pulVectorTableSRAM;
+
+    __DSB();
+    __ISB();
+
+    HAL_DCACHE_Invalidate( pxHndlDCache );
+    HAL_ICACHE_Invalidate();
+    HAL_ICACHE_Enable();
+    HAL_DCACHE_Enable( pxHndlDCache );
+
+    __enable_irq();
+}
+
+
 static void vHeartbeatTask( void * pvParameters )
 {
     ( void ) pvParameters;
@@ -225,21 +172,29 @@ static void vHeartbeatTask( void * pvParameters )
     }
 }
 
+extern void net_main( void * pvParameters );
 extern void vMQTTAgentTask( void * );
-extern void Task_MotionSensorsPublish( void * );
-extern void vEnvironmentSensorPublishTask( void * );
+//extern void Task_MotionSensorsPublish( void * );
+//extern void vEnvironmentSensorPublishTask( void * );
 extern void vShadowDeviceTask( void * );
-extern void vOTAUpdateTask( void * pvParam );
+//extern void vOTAUpdateTask( void * pvParam );
 extern void vDefenderAgentTask( void * );
+//extern void vTimeSyncTask( void * );
 
 void vInitTask( void * pvArgs )
 {
     BaseType_t xResult;
+    int xMountStatus;
+
+    /* Initialize PSA crypto api */
+//    psa_crypto_init();
+
+    /* Initialize threading_alt implementation */
+//    mbedtls_platform_threading_init();
 
     xResult = xTaskCreate( Task_CLI, "cli", 2048, NULL, 10, NULL );
 
-    int xMountStatus = fs_init();
-
+    xMountStatus = fs_init();
     if( xMountStatus == LFS_ERR_OK )
     {
     	/*
@@ -259,34 +214,31 @@ void vInitTask( void * pvArgs )
         LogError( "Failed to mount filesystem." );
     }
 
-    xResult = xTaskCreate( vHeartbeatTask, "Heartbeat", 128, NULL, tskIDLE_PRIORITY, NULL );
+    ( void ) xEventGroupSetBits( xSystemEvents, EVT_MASK_FS_READY );
 
+    xResult = xTaskCreate( vHeartbeatTask, "Heartbeat", 128, NULL, tskIDLE_PRIORITY, NULL );
     configASSERT( xResult == pdTRUE );
 
     xResult = xTaskCreate( &net_main, "MxNet", 1024, NULL, 23, NULL );
-
     configASSERT( xResult == pdTRUE );
 
     xResult = xTaskCreate( vMQTTAgentTask, "MQTTAgent", 2048, NULL, tskIDLE_PRIORITY + 1, NULL );
 
     configASSERT( xResult == pdTRUE );
 
+//    xResult = xTaskCreate( vOTAUpdateTask, "OTAUpdate", 4096, NULL, tskIDLE_PRIORITY + 1, NULL );
+//
+//    configASSERT( xResult == pdTRUE );
 
-    xResult = xTaskCreate( vOTAUpdateTask, "OTAUpdate", 4096, NULL, tskIDLE_PRIORITY + 1, NULL );
+//    xResult = xTaskCreate( vEnvironmentSensorPublishTask, "EnvSense", 1024, NULL, 10, NULL );
+//    configASSERT( xResult == pdTRUE );
+//
+//
+//    xResult = xTaskCreate( Task_MotionSensorsPublish, "MotionS", 1024, NULL, 11, NULL );
+//    configASSERT( xResult == pdTRUE );
 
-    configASSERT( xResult == pdTRUE );
-
-
-    xResult = xTaskCreate( vEnvironmentSensorPublishTask, "EnvSense", 1024, NULL, 10, NULL );
-    configASSERT( xResult == pdTRUE );
-
-
-    xResult = xTaskCreate( Task_MotionSensorsPublish, "MotionS", 1024, NULL, 11, NULL );
-    configASSERT( xResult == pdTRUE );
-
-
-    xResult = xTaskCreate( vShadowDeviceTask, "ShadowDevice", 1024, NULL, 5, NULL );
-    configASSERT( xResult == pdTRUE );
+//    xResult = xTaskCreate( vShadowDeviceTask, "ShadowDevice", 1024, NULL, 5, NULL );
+//    configASSERT( xResult == pdTRUE );
 
     xResult = xTaskCreate( vDefenderAgentTask, "AWSDefender", 2048, NULL, 5, NULL );
     configASSERT( xResult == pdTRUE );
@@ -299,13 +251,18 @@ void vInitTask( void * pvArgs )
 
 int main( void )
 {
-	hw_init();
+    hw_init();
 
-	vRelocateVectorTable();
+    vRelocateVectorTable();
 
     vLoggingInit();
 
     LogInfo( "HW Init Complete." );
+
+//    if( ns_interface_lock_init() != 0 )
+//    {
+//        configASSERT(0);
+//    }
 
     xSystemEvents = xEventGroupCreate();
 
@@ -391,6 +348,10 @@ void vApplicationGetTimerTaskMemory( StaticTask_t ** ppxTimerTaskTCBBuffer,
 void vApplicationMallocFailedHook( void )
 {
     LogError( "Malloc failed" );
+    while(1)
+    {
+    	__NOP();
+    }
 }
 /*-----------------------------------------------------------*/
 
