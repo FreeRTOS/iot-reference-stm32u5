@@ -29,7 +29,7 @@
  */
 /*-----------------------------------------------------------*/
 
-#include "main.h"
+#include "FreeRTOS.h"
 #include "atomic.h"
 
 /* PKCS 11 includes. */

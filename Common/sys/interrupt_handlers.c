@@ -25,10 +25,9 @@
  *
  */
 
-#include "main.h"
-//#include "stm32u5xx_it.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "hw_defs.h"
 
 static GPIOInterruptCallback_t volatile xGpioCallbacks[ 16 ] = { NULL };
 static void * volatile xGpioCallbackContext[ 16 ] = { NULL };

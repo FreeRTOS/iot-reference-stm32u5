@@ -28,7 +28,7 @@
 
 #include "logging.h"
 
-#include "main.h"
+#include "hw_defs.h"
 #include "FreeRTOS.h"
 #include "semphr.h"
 #include "event_groups.h"

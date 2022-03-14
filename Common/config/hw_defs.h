@@ -1,6 +1,8 @@
 #ifndef __HW_DEFS
 #define __HW_DEFS
 
+#include "stm32u5xx_hal.h"
+
 #define LED_RED_Pin 			GPIO_PIN_6
 #define LED_RED_GPIO_Port 		GPIOH
 
@@ -27,5 +29,10 @@ UART_HandleTypeDef * pxHndlUart1;
 DCACHE_HandleTypeDef * pxHndlDCache;
 DMA_HandleTypeDef * pxHndlGpdmaCh4;
 DMA_HandleTypeDef * pxHndlGpdmaCh5;
+
+typedef void ( * GPIOInterruptCallback_t ) ( void * pvContext );
+
+void GPIO_EXTI_Register_Callback( uint16_t usGpioPinMask, GPIOInterruptCallback_t pvCallback, void * pvContext );
+
 
 #endif /* __HW_DEFS */
