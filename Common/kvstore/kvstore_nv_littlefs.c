@@ -45,8 +45,6 @@ typedef struct
 
 static inline void vLfsSSizeToErr( lfs_ssize_t * pxReturnValue, size_t xExpectedLength )
 {
-    LogDebug("xReturnValue: %ld, xExpectedLength: %lu", *pxReturnValue, xExpectedLength );
-
 	if( *pxReturnValue == xExpectedLength )
 	{
 		*pxReturnValue = LFS_ERR_OK;
