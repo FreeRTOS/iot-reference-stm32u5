@@ -660,6 +660,7 @@ static int mbedtls_ssl_recv( void * pvCtx,
 
     if( lError < 0 )
     {
+    	lError = *__errno();
         /* force use of newlibc errno */
         switch( *__errno() )
         {
@@ -931,7 +932,12 @@ static int lValidateCertByProfile( TLSContext_t * pxTLSCtx, mbedtls_x509_crt * p
 	return lFlags;
 }
 
-static const int plCipherSuites = { MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256 , 0 };
+//static const int plCipherSuites[ 3 ] =
+//{
+//	MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, /* ECDHE-ECDSA-AES128-GCM-SHA256 	*/
+//	MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, /* ECDHE-ECDSA-AES256-GCM-SHA384   */
+//	0
+//};
 
 /*-----------------------------------------------------------*/
 TlsTransportStatus_t mbedtls_transport_configure( NetworkContext_t * pxNetworkContext,
@@ -1064,7 +1070,7 @@ TlsTransportStatus_t mbedtls_transport_configure( NetworkContext_t * pxNetworkCo
 			/* Set minimum ssl / tls version */
 			mbedtls_ssl_conf_min_version( &( pxTLSCtx->xSslConfig ),
 										  MBEDTLS_SSL_MAJOR_VERSION_3,
-			                              MBEDTLS_SSL_MINOR_VERSION_3 );
+										  MBEDTLS_SSL_MINOR_VERSION_3 );
 
 			mbedtls_ssl_conf_cert_profile( &( pxTLSCtx->xSslConfig ),
 			                               &mbedtls_x509_crt_profile_default );
@@ -1072,7 +1078,8 @@ TlsTransportStatus_t mbedtls_transport_configure( NetworkContext_t * pxNetworkCo
 			mbedtls_ssl_conf_authmode( &( pxTLSCtx->xSslConfig ),
 			                           MBEDTLS_SSL_VERIFY_REQUIRED );
 
-//			mbedtls_ssl_conf_ciphersuites( &( pxTLSCtx->xSslConfig ), plCipherSuites );
+//			mbedtls_ssl_conf_ciphersuites( &( pxTLSCtx->xSslConfig ),
+//													   &( plCipherSuites[ 0 ] ) );
 		}
 	}
 
@@ -1381,13 +1388,6 @@ TlsTransportStatus_t mbedtls_transport_configure( NetworkContext_t * pxNetworkCo
 
 			pxTLSCtx->xConnectionState = STATE_CONFIGURED;
 		}
-
-    	if( lError == 0 )
-    	{
-			mbedtls_ssl_set_hs_ca_chain( &( pxTLSCtx->xSslCtx ),
-										 &( pxTLSCtx->xRootCaChain ),
-										 NULL );
-    	}
     }
 
 	return xStatus;

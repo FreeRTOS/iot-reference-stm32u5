@@ -36,7 +36,7 @@ void NMI_Handler( void )
 {
     while( 1 )
     {
-    	__NOP();
+        __NOP();
     }
 }
 
@@ -70,7 +70,10 @@ __attribute__( ( optimize( "O0" ) ) ) void prvGetRegistersFromStack( uint32_t *p
 #pragma GCC diagnostic pop
 
     /* When the following line is hit, the variables contain the register values. */
-    for( ;; );
+    for( ;; )
+    {
+    	__NOP();
+    }
 }
 
 void HardFault_Handler( void ) __attribute__( ( naked ) );

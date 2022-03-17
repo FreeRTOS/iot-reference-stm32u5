@@ -277,7 +277,7 @@ int32_t lPKCS11_initMbedtlsPkContext( mbedtls_pk_context * pxMbedtlsPkCtx,
 const char * pcPKCS11StrError( CK_RV xError );
 
 int lPKCS11RandomCallback( void * pvCtx, unsigned char * pucOutput,
-							 size_t uxLen, size_t * puxLenWritten );
+						   size_t uxLen );
 #endif /* MBEDTLS_TRANSPORT_PKCS11 */
 
 #ifdef MBEDTLS_TRANSPORT_PSA

@@ -56,7 +56,7 @@
 
 /*
  */
-#define MQTT_PUBLISH_MAX_LEN              ( 256 )
+#define MQTT_PUBLISH_MAX_LEN              ( 512 )
 #define MQTT_PUBLISH_TIME_BETWEEN_MS      ( 10 * 1000 )
 #define MQTT_PUBLISH_TOPIC                "env_sensor_data"
 #define MQTT_PUBLICH_TOPIC_STR_LEN        ( 256 )
@@ -86,10 +86,6 @@ typedef struct
 
 /*-----------------------------------------------------------*/
 
-extern MQTTAgentContext_t xGlobalMqttAgentContext;
-
-/*-----------------------------------------------------------*/
-
 static void prvPublishCommandCallback( MQTTAgentCommandContext_t * pxCommandContext,
                                        MQTTAgentReturnInfo_t * pxReturnInfo )
 {
@@ -110,7 +106,8 @@ static void prvPublishCommandCallback( MQTTAgentCommandContext_t * pxCommandCont
 
 /*-----------------------------------------------------------*/
 
-static BaseType_t prvPublishAndWaitForAck( const char * pcTopic,
+static BaseType_t prvPublishAndWaitForAck( MQTTAgentHandle_t xAgentHandle,
+										   const char * pcTopic,
                                            const void * pvPublishData,
                                            size_t xPublishDataLen )
 {
@@ -142,11 +139,14 @@ static BaseType_t prvPublishAndWaitForAck( const char * pcTopic,
     {
         .blockTimeMs = MQTT_PUBLISH_BLOCK_TIME_MS,
         .cmdCompleteCallback = prvPublishCommandCallback,
-        .pCmdCompleteCallbackContext =  &xCommandContext
+        .pCmdCompleteCallbackContext =  &xCommandContext,
     };
 
     /* Clear the notification index */
-    xStatus = MQTTAgent_Publish( &xGlobalMqttAgentContext,
+    xTaskNotifyStateClearIndexed( NULL, MQTT_NOTIFY_IDX );
+
+
+    xStatus = MQTTAgent_Publish( xAgentHandle,
                                  &xPublishInfo,
                                  &xCommandParams );
 
@@ -239,10 +239,13 @@ extern UBaseType_t uxRand( void );
 
 void vEnvironmentSensorPublishTask( void * pvParameters )
 {
-    (void) pvParameters;
     BaseType_t xResult = pdFALSE;
     BaseType_t xExitFlag = pdFALSE;
     char payloadBuf[ MQTT_PUBLISH_MAX_LEN ];
+    MQTTAgentHandle_t xAgentHandle = NULL;
+
+    (void) pvParameters;
+
 
     xResult = xInitSensors();
 
@@ -266,6 +269,7 @@ void vEnvironmentSensorPublishTask( void * pvParameters )
     }
 
 
+    xAgentHandle = xGetMqttAgentHandle();
 
     while( xExitFlag == pdFALSE )
     {
@@ -296,13 +300,18 @@ void vEnvironmentSensorPublishTask( void * pvParameters )
 
             if( bytesWritten < MQTT_PUBLISH_MAX_LEN )
             {
-                xResult = prvPublishAndWaitForAck( pcTopicString,
+                xResult = prvPublishAndWaitForAck( xAgentHandle,
+                								   pcTopicString,
                                                    payloadBuf,
                                                    bytesWritten );
             }
+            else if( bytesWritten > 0 )
+            {
+                LogError( "Not enough buffer space." );
+            }
             else
             {
-                LogError("Not enough buffer space.");
+            	LogError( "Printf call failed." );
             }
 
             if( xResult == pdTRUE )

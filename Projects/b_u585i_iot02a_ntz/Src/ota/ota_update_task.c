@@ -1076,7 +1076,7 @@ void vOTAUpdateTask( void * pvParam )
     if( xResult == pdPASS )
     {
         /* Add subscriptions for OTA with subscription manger. */
-        subscriptionsAdded = submgr_addSubscription( ( SubscriptionElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
+        subscriptionsAdded = submgr_addSubscription( ( SubCallbackElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
                                               OTA_JOB_NOTIFY_TOPIC_FILTER,
                                               OTA_JOB_NOTIFY_TOPIC_FILTER_LENGTH,
                                               prvProcessIncomingJobMessage,
@@ -1084,7 +1084,7 @@ void vOTAUpdateTask( void * pvParam )
 
         if( subscriptionsAdded == true )
         {
-            subscriptionsAdded = submgr_addSubscription( ( SubscriptionElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
+            subscriptionsAdded = submgr_addSubscription( ( SubCallbackElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
                                                   OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER,
                                                   OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER_LENGTH,
                                                   prvProcessIncomingJobMessage,
@@ -1093,7 +1093,7 @@ void vOTAUpdateTask( void * pvParam )
 
         if( subscriptionsAdded == true )
         {
-            subscriptionsAdded = submgr_addSubscription( ( SubscriptionElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
+            subscriptionsAdded = submgr_addSubscription( ( SubCallbackElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
                                                   OTA_DATA_STREAM_TOPIC_FILTER,
                                                   OTA_DATA_STREAM_TOPIC_FILTER_LENGTH,
                                                   prvProcessIncomingData,
@@ -1162,15 +1162,15 @@ void vOTAUpdateTask( void * pvParam )
 
 
     /* Unconditionally remove the subscriptions. */
-    ( void ) submgr_removeSubscription( ( SubscriptionElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
+    ( void ) submgr_removeSubscription( ( SubCallbackElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
                                  OTA_JOB_NOTIFY_TOPIC_FILTER,
                                  OTA_JOB_NOTIFY_TOPIC_FILTER_LENGTH );
 
-    ( void ) submgr_removeSubscription( ( SubscriptionElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
+    ( void ) submgr_removeSubscription( ( SubCallbackElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
                                  OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER,
                                  OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER_LENGTH );
 
-    ( void ) submgr_removeSubscription( ( SubscriptionElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
+    ( void ) submgr_removeSubscription( ( SubCallbackElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
                                  OTA_DATA_STREAM_TOPIC_FILTER,
                                  OTA_DATA_STREAM_TOPIC_FILTER_LENGTH );
 

@@ -120,14 +120,13 @@ struct MQTTAgentCommandContext
     char * pcDeviceId;
     char * ppcTopic[ NUM_TOPIC_STRINGS ];
     BaseType_t xWaitingForCallback;
+    MQTTAgentHandle_t xAgentHandle;
 };
 
 typedef struct MQTTAgentCommandContext DefenderAgentCtx_t;
 
-/*-----------------------------------------------------------*/
-extern MQTTAgentContext_t xGlobalMqttAgentContext;
-
 BaseType_t xExitFlag = pdFALSE;
+
 /*-----------------------------------------------------------*/
 
 /**
@@ -245,135 +244,6 @@ static void prvSubscribeOpCb( DefenderAgentCtx_t * pxCommandContext,
     }
 }
 
-static bool prvSubscribeToTopic( const char * pcTopic,
-                                 size_t xTopicLen,
-                                 IncomingPubCallback_t pxCallback,
-                                 DefenderAgentCtx_t * pxCtx )
-{
-    bool xReturn = false;
-
-    configASSERT_CONTINUE( pcTopic );
-    configASSERT_CONTINUE( xTopicLen > 0 );
-    configASSERT_CONTINUE( pxCallback != NULL );
-
-    if( xTopicLen > 0 &&
-        pcTopic != NULL )
-    {
-        uint32_t ulStatus;
-        BaseType_t xNotifyResult = pdFALSE;
-
-        MQTTSubscribeInfo_t xSubscribeInfo = {
-            .pTopicFilter = pcTopic,
-            .topicFilterLength = xTopicLen,
-            .qos = MQTTQoS1,
-        };
-
-        MQTTAgentSubscribeArgs_t xSubscribeArgs = {
-           .numSubscriptions = 1,
-           .pSubscribeInfo = &xSubscribeInfo,
-        };
-
-        MQTTAgentCommandInfo_t xCommandParams = {
-            .cmdCompleteCallback = prvSubscribeOpCb,
-            .pCmdCompleteCallbackContext = pxCtx,
-            .blockTimeMs = MQTT_BLOCK_TIME_MS,
-        };
-
-        ulStatus = MQTTAgent_Subscribe( &xGlobalMqttAgentContext,
-                                        &xSubscribeArgs,
-                                        &xCommandParams );
-
-        if( ulStatus == MQTTSuccess )
-        {
-            ulStatus = MQTTIllegalState;
-
-            /* Wait for callback */
-            xNotifyResult = xTaskNotifyWait( 0,
-                                             0xFFFFFFFF,
-                                             &ulStatus,
-                                             RESPONSE_TIMEOUT_MS );
-        }
-
-        if( xNotifyResult == pdTRUE &&
-            ulStatus == MQTTSuccess )
-        {
-            xReturn = true;
-        }
-    }
-
-    /* If successful, register the callback */
-    if( xReturn == true )
-    {
-        xReturn = mrouter_registerCallback( pcTopic, xTopicLen, pxCallback, ( void * ) pxCtx );
-    }
-
-    return xReturn;
-}
-
-
-static bool prvUnsubscribeFromTopic( const char * pcTopic,
-                                     size_t xTopicLen,
-                                     IncomingPubCallback_t pxCallback,
-                                     DefenderAgentCtx_t * pxCtx )
-{
-    bool xReturn = false;
-    configASSERT_CONTINUE( pcTopic );
-    configASSERT_CONTINUE( xTopicLen > 0 );
-    configASSERT_CONTINUE( pxCallback != NULL );
-
-    if( xTopicLen > 0 &&
-        pcTopic != NULL )
-    {
-        uint32_t ulStatus;
-        BaseType_t xNotifyResult = pdFALSE;
-
-        MQTTSubscribeInfo_t xSubscribeInfo = {
-            .pTopicFilter = pcTopic,
-            .topicFilterLength = xTopicLen,
-            .qos = MQTTQoS1,
-        };
-
-        MQTTAgentSubscribeArgs_t xSubscribeArgs = {
-           .numSubscriptions = 1,
-           .pSubscribeInfo = &xSubscribeInfo,
-        };
-
-        MQTTAgentCommandInfo_t xCommandParams = {
-            .cmdCompleteCallback = prvSubscribeOpCb,
-            .pCmdCompleteCallbackContext = pxCtx,
-            .blockTimeMs = MQTT_BLOCK_TIME_MS,
-        };
-
-        ulStatus = MQTTAgent_Unsubscribe( &xGlobalMqttAgentContext,
-                                          &xSubscribeArgs,
-                                          &xCommandParams );
-
-        if( ulStatus == MQTTSuccess )
-        {
-            ulStatus = MQTTIllegalState;
-
-            /* Wait for callback */
-            xNotifyResult = xTaskNotifyWait( 0,
-                                             0xFFFFFFFF,
-                                             &ulStatus,
-                                             RESPONSE_TIMEOUT_MS );
-        }
-
-        if( xNotifyResult == pdTRUE &&
-            ulStatus == MQTTSuccess )
-        {
-            xReturn = true;
-        }
-    }
-
-    /* If successful, deregister the callback */
-    if( xReturn == true )
-    {
-        xReturn = mrouter_deRegisterCallback( pcTopic, xTopicLen, pxCallback, ( void * ) pxCtx );
-    }
-    return xReturn;
-}
-
 static void prvClearCtx( DefenderAgentCtx_t * pxCtx )
 {
     if( pxCtx->pcDeviceId )
@@ -468,54 +338,57 @@ static bool prvBuildDefenderTopicStrings( DefenderAgentCtx_t * pxCtx )
 
 static bool prvSubscribeToDefenderTopics( DefenderAgentCtx_t * pxCtx )
 {
-    bool xSuccess = true;
+    MQTTStatus_t xStatus = MQTTSuccess;
 
-    xSuccess = prvSubscribeToTopic( pxCtx->ppcTopic[ IDX_ACCEPTED ],
-                                    pxCtx->pxTopicLen[ IDX_ACCEPTED ],
-                                    prvReportAcceptedCallback,
-                                    pxCtx );
+    xStatus = MqttAgent_SubscribeSync( pxCtx->xAgentHandle,
+    								   pxCtx->ppcTopic[ IDX_ACCEPTED ],
+									   MQTTQoS1,
+									   prvReportAcceptedCallback,
+									   pxCtx );
 
-    configASSERT_CONTINUE( xSuccess );
+    configASSERT_CONTINUE( xStatus == MQTTSuccess );
 
-    if( !xSuccess )
+    if( xStatus != MQTTSuccess )
     {
         LogError( "Failed to subscribe to topic: %s", pxCtx->ppcTopic[ IDX_ACCEPTED ] );
     }
     else
     {
-        xSuccess = prvSubscribeToTopic( pxCtx->ppcTopic[ IDX_REJECTED ],
-                                        pxCtx->pxTopicLen[ IDX_REJECTED ],
-                                        prvReportRejectedCallback,
-                                        pxCtx );
+    	xStatus = MqttAgent_SubscribeSync( pxCtx->xAgentHandle,
+    									   pxCtx->ppcTopic[ IDX_REJECTED ],
+    									   MQTTQoS1,
+                                           prvReportRejectedCallback,
+                                           pxCtx );
 
-        configASSERT_CONTINUE( xSuccess );
+        configASSERT_CONTINUE(  xStatus == MQTTSuccess );
 
-        if( !xSuccess )
+        if( xStatus != MQTTSuccess )
         {
             LogError( "Failed to subscribe to topic: %s", pxCtx->ppcTopic[ IDX_REJECTED ] );
         }
     }
 
-    return xSuccess;
+    return ( xStatus == MQTTSuccess );
 }
 
 static void prvUnsubscribeFromDefenderTopics( DefenderAgentCtx_t * pxCtx  )
 {
-    bool xSuccess = true;
+	MQTTStatus_t xStatus = MQTTSuccess;
 
-    xSuccess = prvUnsubscribeFromTopic( pxCtx->ppcTopic[ IDX_ACCEPTED ],
-                                    pxCtx->pxTopicLen[ IDX_ACCEPTED ],
-                                    prvReportAcceptedCallback,
-                                    pxCtx );
+	xStatus = MqttAgent_UnSubscribeSync( pxCtx->xAgentHandle,
+										 pxCtx->ppcTopic[ IDX_ACCEPTED ],
+										 prvReportAcceptedCallback,
+										 pxCtx );
 
-    configASSERT_CONTINUE( xSuccess );
+    configASSERT_CONTINUE(  xStatus == MQTTSuccess );
 
-    xSuccess = prvUnsubscribeFromTopic( pxCtx->ppcTopic[ IDX_REJECTED ],
-                                    pxCtx->pxTopicLen[ IDX_REJECTED ],
-                                    prvReportRejectedCallback,
-                                    pxCtx );
 
-    configASSERT_CONTINUE( xSuccess );
+	xStatus = MqttAgent_UnSubscribeSync( pxCtx->xAgentHandle,
+										 pxCtx->ppcTopic[ IDX_REJECTED ],
+										 prvReportRejectedCallback,
+										 pxCtx );
+
+	configASSERT_CONTINUE(  xStatus == MQTTSuccess );
 }
 
 /*-----------------------------------------------------------*/
@@ -675,7 +548,7 @@ static bool prvPublishDeviceMetricsReport( DefenderAgentCtx_t * pxCtx,
 
     pxCtx->xWaitingForCallback = pdTRUE;
 
-    ulStatus = MQTTAgent_Publish( &xGlobalMqttAgentContext,
+    ulStatus = MQTTAgent_Publish( pxCtx->xAgentHandle,
                                   &xPublishInfo,
                                   &xCommandParams );
 
@@ -750,13 +623,9 @@ void vDefenderAgentTask( void * pvParameters )
         }
     }
 
-    /* Wait for first mqtt connection */
-    ( void ) xEventGroupWaitBits( xSystemEvents,
-                                  EVT_MASK_MQTT_CONNECTED,
-                                  pdFALSE,
-                                  pdTRUE,
-                                  portMAX_DELAY );
+    /* Wait for MqttAgent to be ready. */
 
+    xCtx.xAgentHandle = xGetMqttAgentHandle();
 
     /* Subscribe to relevant topics */
     if( xSuccess )
