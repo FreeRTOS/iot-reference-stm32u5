@@ -46,6 +46,7 @@
  */
 
 #include "logging_levels.h"
+/* define LOG_LEVEL here if you want to modify the logging level from the default */
 
 #define LOG_LEVEL LOG_INFO
 
@@ -74,6 +75,8 @@
 #include "shadow.h"
 
 #include "kvstore.h"
+
+#include "main.h"
 
 /**
  * @brief Format string representing a Shadow document with a "reported" state.
@@ -419,8 +422,8 @@ static bool prvSubscribeToShadowUpdateTopics( ShadowDeviceCtx_t * pxCtx )
     if(  xStatus == MQTTSuccess &&
          xSubSuccess == false )
     {
-        LogError( "Failed to register an incoming publish callback for topic %s.",
-                  pxCtx->pcTopicUpdateDelta );
+        LogError( ("Failed to register an incoming publish callback for topic %s.",
+                  pxCtx->pcTopicUpdateDelta) );
         xStatus = MQTTBadResponse;
     }
     else if( xSubSuccess )
@@ -439,8 +442,8 @@ static bool prvSubscribeToShadowUpdateTopics( ShadowDeviceCtx_t * pxCtx )
     if( xStatus == MQTTSuccess &&
         xSubSuccess == false )
     {
-        LogError( "Failed to register an incoming publish callback for topic %s.",
-                  pxCtx->pcTopicUpdateAccepted );
+        LogError( ("Failed to register an incoming publish callback for topic %s.",
+                  pxCtx->pcTopicUpdateAccepted) );
         xStatus = MQTTBadResponse;
     }
     else if( xSubSuccess )
@@ -460,8 +463,8 @@ static bool prvSubscribeToShadowUpdateTopics( ShadowDeviceCtx_t * pxCtx )
     if( xStatus == MQTTSuccess &&
         xSubSuccess == false )
     {
-        LogError( "Failed to register an incoming publish callback for topic %s.",
-                  pxCtx->pcTopicUpdateRejected );
+        LogError( ("Failed to register an incoming publish callback for topic %s.",
+                  pxCtx->pcTopicUpdateRejected) );
     }
 
     return xSubSuccess;
@@ -502,9 +505,9 @@ static void prvIncomingPublishUpdateDeltaCallback( void * pvCtx,
     configASSERT( pxPublishInfo != NULL );
     configASSERT( pxPublishInfo->pPayload != NULL );
 
-    LogDebug( "/update/delta json payload:%.*s.",
+    LogDebug( ("/update/delta json payload:%.*s.",
               pxPublishInfo->payloadLength,
-              ( const char * ) pxPublishInfo->pPayload );
+              ( const char * ) pxPublishInfo->pPayload ));
 
     /* The payload will look similar to this:
      * {
@@ -557,15 +560,15 @@ static void prvIncomingPublishUpdateDeltaCallback( void * pvCtx,
                  * that we've received before. Your application may use a
                  * different approach.
                  */
-                LogWarn( "Received unexpected delta update with version %u. Current version is %u",
+                LogWarn( ("Received unexpected delta update with version %u. Current version is %u",
                            ( unsigned int ) ulVersion,
-                           ( unsigned int ) ulCurrentVersion );
+                           ( unsigned int ) ulCurrentVersion) );
             }
             else
             {
-                LogInfo( "Received delta update with version %.*s.",
+                LogInfo( ("Received delta update with version %.*s.",
                            ulOutValueLength,
-                           pcOutValue );
+                           pcOutValue ));
 
                 /* Set received version as the current version. */
                 ulCurrentVersion = ulVersion;
@@ -587,9 +590,18 @@ static void prvIncomingPublishUpdateDeltaCallback( void * pvCtx,
                     /* Convert the powerOn state value to an unsigned integer value. */
                     ulNewState = ( uint32_t ) strtoul( pcOutValue, NULL, 10 );
 
-                    LogInfo( "Setting powerOn state to %u.", ( unsigned int ) ulNewState );
+                    LogInfo( ("Setting powerOn state to %u.", ( unsigned int ) ulNewState ));
                     /* Set the new powerOn state. */
                     pxCtx->ulCurrentPowerOnState = ulNewState;
+
+                    if(ulNewState == 1)
+                    {
+                        HAL_GPIO_WritePin( LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET );/* Turn the LED ON */
+                    }
+                    else
+                    {
+                    	HAL_GPIO_WritePin( LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET );/* Turn the LED off */
+                    }
                 }
             }
         }
@@ -612,9 +624,9 @@ static void prvIncomingPublishUpdateAcceptedCallback( void * pvCtx,
     configASSERT( pxPublishInfo != NULL );
     configASSERT( pxPublishInfo->pPayload != NULL );
 
-    LogDebug( "/update/accepted JSON payload: %.*s.",
+    LogDebug( ("/update/accepted JSON payload: %.*s.",
               pxPublishInfo->payloadLength,
-              ( const char * ) pxPublishInfo->pPayload );
+              ( const char * ) pxPublishInfo->pPayload ));
 
     /* Handle the reported state with state change in /update/accepted topic.
      * Thus we will retrieve the client token from the JSON document to see if
@@ -674,11 +686,11 @@ static void prvIncomingPublishUpdateAcceptedCallback( void * pvCtx,
          */
         if( ulReceivedToken != pxCtx->ulClientToken )
         {
-            LogDebug( "Ignoring publish on /update/accepted with clientToken %lu.", ( unsigned long ) ulReceivedToken );
+            LogDebug(( "Ignoring publish on /update/accepted with clientToken %lu.", ( unsigned long ) ulReceivedToken ));
         }
         else
         {
-            LogInfo( "Received accepted response for update with token %lu. ", ( unsigned long ) pxCtx->ulClientToken );
+            LogInfo(( "Received accepted response for update with token %lu. ", ( unsigned long ) pxCtx->ulClientToken ));
 
             /*  Obtain the accepted state from the response and update our last sent state. */
             result = JSON_Search( ( char * ) pxPublishInfo->pPayload,
@@ -721,9 +733,9 @@ static void prvIncomingPublishUpdateRejectedCallback( void * pvCtx,
     configASSERT( pxPublishInfo != NULL );
     configASSERT( pxPublishInfo->pPayload != NULL );
 
-    LogDebug( "/update/rejected json payload: %.*s.",
+    LogDebug(( "/update/rejected json payload: %.*s.",
                 pxPublishInfo->payloadLength,
-                ( const char * ) pxPublishInfo->pPayload );
+                ( const char * ) pxPublishInfo->pPayload ));
 
     /* The payload will look similar to this:
      * {
@@ -755,7 +767,7 @@ static void prvIncomingPublishUpdateRejectedCallback( void * pvCtx,
 
     if( result != JSONSuccess )
     {
-        LogDebug( "Ignoring publish on /update/rejected with clientToken %lu.", ( unsigned long ) ulReceivedToken );
+        LogDebug(( "Ignoring publish on /update/rejected with clientToken %lu.", ( unsigned long ) ulReceivedToken ));
     }
     else
     {
@@ -769,7 +781,7 @@ static void prvIncomingPublishUpdateRejectedCallback( void * pvCtx,
          */
         if( ulReceivedToken != pxCtx->ulClientToken )
         {
-            LogDebug( "Ignoring publish on /update/rejected with clientToken %lu.", ( unsigned long ) ulReceivedToken );
+            LogDebug(( "Ignoring publish on /update/rejected with clientToken %lu.", ( unsigned long ) ulReceivedToken ));
         }
         else
         {
@@ -783,13 +795,13 @@ static void prvIncomingPublishUpdateRejectedCallback( void * pvCtx,
 
             if( result != JSONSuccess )
             {
-                LogWarn( "Received rejected response for update with token %lu and no error code.", ( unsigned long ) pxCtx->ulClientToken );
+                LogWarn(( "Received rejected response for update with token %lu and no error code.", ( unsigned long ) pxCtx->ulClientToken ));
             }
             else
             {
-                LogWarn( "Received rejected response for update with token %lu and error code %.*s.", ( unsigned long ) pxCtx->ulClientToken,
+                LogWarn(( "Received rejected response for update with token %lu and error code %.*s.", ( unsigned long ) pxCtx->ulClientToken,
                            ulOutValueLength,
-                           pcOutValue );
+                           pcOutValue ));
             }
 
             /* Wake up the shadow task which is waiting for this response. */
@@ -854,11 +866,11 @@ void vShadowDeviceTask( void * pvParameters )
         {
             if( xShadowCtx.ulCurrentPowerOnState == xShadowCtx.ulReportedPowerOnState )
             {
-                LogDebug( "No change in powerOn state since last report. Current state is %u.", xShadowCtx.ulCurrentPowerOnState );
+                LogDebug(( "No change in powerOn state since last report. Current state is %u.", xShadowCtx.ulCurrentPowerOnState ));
             }
             else
             {
-                LogInfo( "PowerOn state is now %u. Sending new report.", ( unsigned int ) xShadowCtx.ulCurrentPowerOnState );
+                LogInfo(( "PowerOn state is now %u. Sending new report.", ( unsigned int ) xShadowCtx.ulCurrentPowerOnState ));
 
                 /* Create a new client token and save it for use in the update accepted and rejected callbacks. */
                 xShadowCtx.ulClientToken = ( xTaskGetTickCount() % 1000000 );
@@ -875,8 +887,8 @@ void vShadowDeviceTask( void * pvParameters )
                           ( long unsigned ) xShadowCtx.ulClientToken );
 
                 /* Send update. */
-                LogInfo( "Publishing to /update with following client token %lu.", ( long unsigned ) xShadowCtx.ulClientToken );
-                LogDebug( "Publish content: %.*s", shadowexampleSHADOW_REPORTED_JSON_LENGTH, pcUpdateDocument );
+                LogInfo(( "Publishing to /update with following client token %lu.", ( long unsigned ) xShadowCtx.ulClientToken ));
+                LogDebug(( "Publish content: %.*s", shadowexampleSHADOW_REPORTED_JSON_LENGTH, pcUpdateDocument ));
 
                 xCommandAdded = MQTTAgent_Publish( &xGlobalMqttAgentContext,
                                                    &xPublishInfo,
