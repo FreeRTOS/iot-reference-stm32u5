@@ -76,7 +76,7 @@
 
 #include "kvstore.h"
 
-#include "main.h"
+#include "hw_defs.h"
 
 /**
  * @brief Format string representing a Shadow document with a "reported" state.
@@ -188,6 +188,8 @@ typedef struct MQTTAgentCommandContext
      * @brief The handle of this task. It is used by callbacks to notify this task.
      */
     TaskHandle_t xShadowDeviceTaskHandle;
+
+    MQTTAgentHandle_t xAgentHandle;
 } ShadowDeviceCtx_t;
 
 extern MQTTAgentContext_t xGlobalMqttAgentContext;
@@ -212,9 +214,6 @@ static bool prvSubscribeToShadowUpdateTopics( ShadowDeviceCtx_t * pxCtx );
  * operation.
  *
  * See https://freertos.org/mqtt/mqtt-agent-demo.html#example_mqtt_api_call
- *
- * @param[in] pxCommandContext Context of the initial command.
- * @param[in] pxReturnInfo The result of the command.
  */
 static void prvSubscribeCommandCallback( MQTTAgentCommandContext_t * pCmdCallbackContext,
                                          MQTTAgentReturnInfo_t * pxReturnInfo );
@@ -223,9 +222,6 @@ static void prvSubscribeCommandCallback( MQTTAgentCommandContext_t * pCmdCallbac
  * @brief The callback to execute when there is an incoming publish on the
  * topic for delta updates. It verifies the document and sets the
  * powerOn state accordingly.
- *
- * @param[in] pvIncomingPublishCallbackContext Context of the initial command.
- * @param[in] pxPublishInfo Deserialized publish.
  */
 static void prvIncomingPublishUpdateDeltaCallback( void * pvCtx,
                                                    MQTTPublishInfo_t * pxPublishInfo );
@@ -235,9 +231,6 @@ static void prvIncomingPublishUpdateDeltaCallback( void * pvCtx,
  * topic for accepted requests. It verifies the document is valid and is being waited on.
  * If so it updates the last reported state and notifies the task to inform completion
  * of the update request.
- *
- * @param[in] pvIncomingPublishCallbackContext Context of the initial command.
- * @param[in] pxPublishInfo Deserialized publish.
  */
 static void prvIncomingPublishUpdateAcceptedCallback( void * pvCtx,
                                                       MQTTPublishInfo_t * pxPublishInfo );
@@ -247,9 +240,6 @@ static void prvIncomingPublishUpdateAcceptedCallback( void * pvCtx,
  * @brief The callback to execute when there is an incoming publish on the
  * topic for rejected requests. It verifies the document is valid and is being waited on.
  * If so it notifies the task to inform completion of the update request.
- *
- * @param[in] pvIncomingPublishCallbackContext Context of the initial command.
- * @param[in] pxPublishInfo Deserialized publish.
  */
 static void prvIncomingPublishUpdateRejectedCallback( void * pvCtx,
                                                       MQTTPublishInfo_t * pxPublishInfo );
@@ -351,141 +341,45 @@ static bool prvInitializeCtx( ShadowDeviceCtx_t * pxCtx )
 static bool prvSubscribeToShadowUpdateTopics( ShadowDeviceCtx_t * pxCtx )
 {
     MQTTStatus_t xStatus = MQTTSuccess;
-    MQTTAgentCommandInfo_t xCommandParams = { 0 };
 
-    /* These must persist until the command is processed. */
-    MQTTAgentSubscribeArgs_t xSubscribeArgs = { 0 };
-    MQTTSubscribeInfo_t xSubscribeInfo[ 3 ];
-    bool xSubSuccess = false;
+    xStatus = MqttAgent_SubscribeSync( pxCtx->xAgentHandle,
+    								   pxCtx->pcTopicUpdateDelta,
+									   MQTTQoS1,
+									   prvIncomingPublishUpdateDeltaCallback,
+									   pxCtx );
 
-    /* Subscribe to shadow topic for responses for incoming delta updates. */
-    xSubscribeInfo[ 0 ].pTopicFilter = pxCtx->pcTopicUpdateDelta;
-    xSubscribeInfo[ 0 ].topicFilterLength = pxCtx->xTopicUpdateDeltaLen;
-    xSubscribeInfo[ 0 ].qos = MQTTQoS1;
+    if( xStatus != MQTTSuccess )
+	{
+		LogError( "Failed to subscribe to topic: %s", pxCtx->pcTopicUpdateDelta );
+	}
+	else
+	{
+		xStatus = MqttAgent_SubscribeSync( pxCtx->xAgentHandle,
+										   pxCtx->pcTopicUpdateAccepted,
+										   MQTTQoS1,
+										   prvIncomingPublishUpdateAcceptedCallback,
+										   pxCtx );
 
-    /* Subscribe to shadow topic for accepted responses for submitted updates. */
-    xSubscribeInfo[ 1 ].pTopicFilter = pxCtx->pcTopicUpdateAccepted;
-    xSubscribeInfo[ 1 ].topicFilterLength = pxCtx->xTopicUpdateAcceptedLen;
-    xSubscribeInfo[ 1 ].qos = MQTTQoS1;
+		if( xStatus != MQTTSuccess )
+		{
+			LogError( "Failed to subscribe to topic: %s", pxCtx->pcTopicUpdateAccepted );
+		}
+	}
 
-    /* Subscribe to shadow topic for rejected responses for submitted updates. */
-    xSubscribeInfo[ 2 ].pTopicFilter = pxCtx->pcTopicUpdateRejected;
-    xSubscribeInfo[ 2 ].topicFilterLength = pxCtx->xTopicUpdateRejectedLen;
-    xSubscribeInfo[ 2 ].qos = MQTTQoS1;
 
-    /* Complete the subscribe information. The topic string must persist for
-     * duration of subscription - although in this case it is a static const so
-     * will persist for the lifetime of the application. */
-    xSubscribeArgs.pSubscribeInfo = xSubscribeInfo;
-    xSubscribeArgs.numSubscriptions = 3;
-
-    /* Loop in case the queue used to communicate with the MQTT agent is full and
-     * attempts to post to it time out.  The queue will not become full if the
-     * priority of the MQTT agent task is higher than the priority of the task
-     * calling this function. */
-    xTaskNotifyStateClear( NULL );
-    xCommandParams.blockTimeMs = shadowexampleMAX_COMMAND_SEND_BLOCK_TIME_MS;
-    xCommandParams.cmdCompleteCallback = prvSubscribeCommandCallback;
-    xCommandParams.pCmdCompleteCallbackContext = pxCtx;
-    LogDebug( "Sending subscribe request to agent for shadow topics." );
-
-    do
+    if( xStatus == MQTTSuccess )
     {
-        /* If this fails, the agent's queue is full, so we retry until the agent
-         * has more space in the queue. */
-        xStatus = MQTTAgent_Subscribe( &xGlobalMqttAgentContext,
-                                       &( xSubscribeArgs ),
-                                       &xCommandParams );
-    } while( xStatus != MQTTSuccess );
-
-    uint32_t ulResult;
-
-    /* Wait for acks from subscribe messages - this is optional.
-     *  If xTaskNotifyWait returns is zero then the wait timed out. */
-    if( xTaskNotifyWait( 0, 0xFFFFFFFF, &ulResult,
-                         pdMS_TO_TICKS( shadow_SIGNAL_TIMEOUT ) ) &&
-        ulResult == MQTTSuccess )
-    {
-        LogDebug( "Successfully subscribed to shadow update topics." );
-
-        xSubSuccess = submgr_addSubscription( ( SubscriptionElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
-                                              pxCtx->pcTopicUpdateDelta,
-                                              pxCtx->xTopicUpdateDeltaLen,
-                                              prvIncomingPublishUpdateDeltaCallback,
-                                              pxCtx );
+		xStatus = MqttAgent_SubscribeSync( pxCtx->xAgentHandle,
+										   pxCtx->pcTopicUpdateRejected,
+										   MQTTQoS1,
+										   prvIncomingPublishUpdateRejectedCallback,
+										   pxCtx );
+		if( xStatus != MQTTSuccess )
+		{
+			LogError( "Failed to subscribe to topic: %s", pxCtx->pcTopicUpdateRejected );
+		}
     }
-    else
-    {
-        LogError( "Failed to subscribe to shadow update topics. Please check that the shadow services is enabled for this device." );
-    }
-
-    if(  xStatus == MQTTSuccess &&
-         xSubSuccess == false )
-    {
-        LogError( ("Failed to register an incoming publish callback for topic %s.",
-                  pxCtx->pcTopicUpdateDelta) );
-        xStatus = MQTTBadResponse;
-    }
-    else if( xSubSuccess )
-    {
-        xSubSuccess = submgr_addSubscription( ( SubscriptionElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
-                                    pxCtx->pcTopicUpdateAccepted,
-                                    pxCtx->xTopicUpdateAcceptedLen,
-                                    prvIncomingPublishUpdateAcceptedCallback,
-                                    pxCtx );
-    }
-    else
-    {
-        /* Empty */
-    }
-
-    if( xStatus == MQTTSuccess &&
-        xSubSuccess == false )
-    {
-        LogError( ("Failed to register an incoming publish callback for topic %s.",
-                  pxCtx->pcTopicUpdateAccepted) );
-        xStatus = MQTTBadResponse;
-    }
-    else if( xSubSuccess )
-    {
-        xSubSuccess = submgr_addSubscription( ( SubscriptionElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
-                                    pxCtx->pcTopicUpdateRejected,
-                                    pxCtx->xTopicUpdateRejectedLen,
-                                    prvIncomingPublishUpdateRejectedCallback,
-                                    pxCtx );
-        xStatus = xSubSuccess ? MQTTSuccess : MQTTBadResponse;
-    }
-    else
-    {
-        /* empty */
-    }
-
-    if( xStatus == MQTTSuccess &&
-        xSubSuccess == false )
-    {
-        LogError( ("Failed to register an incoming publish callback for topic %s.",
-                  pxCtx->pcTopicUpdateRejected) );
-    }
-
-    return xSubSuccess;
-}
-
-/*-----------------------------------------------------------*/
-
-static void prvSubscribeCommandCallback( MQTTAgentCommandContext_t * pCmdCallbackContext,
-                                         MQTTAgentReturnInfo_t * pxReturnInfo )
-{
-    ShadowDeviceCtx_t * pxCtx = ( ShadowDeviceCtx_t * ) ( void * ) pCmdCallbackContext;
-
-    configASSERT( pCmdCallbackContext != NULL );
-    configASSERT( pxCtx->xShadowDeviceTaskHandle != NULL );
-    configASSERT( pxReturnInfo != NULL );
-
-
-
-    ( void ) xTaskNotify( pxCtx->xShadowDeviceTaskHandle,
-                          pxReturnInfo->returnCode,
-                          eSetValueWithOverwrite );
+    return ( xStatus == MQTTSuccess );
 }
 
 /*-----------------------------------------------------------*/
@@ -505,9 +399,9 @@ static void prvIncomingPublishUpdateDeltaCallback( void * pvCtx,
     configASSERT( pxPublishInfo != NULL );
     configASSERT( pxPublishInfo->pPayload != NULL );
 
-    LogDebug( ("/update/delta json payload:%.*s.",
+    LogDebug( "/update/delta json payload:%.*s.",
               pxPublishInfo->payloadLength,
-              ( const char * ) pxPublishInfo->pPayload ));
+              ( const char * ) pxPublishInfo->pPayload );
 
     /* The payload will look similar to this:
      * {
@@ -566,9 +460,9 @@ static void prvIncomingPublishUpdateDeltaCallback( void * pvCtx,
             }
             else
             {
-                LogInfo( ("Received delta update with version %.*s.",
+                LogInfo( "Received delta update with version %.*s.",
                            ulOutValueLength,
-                           pcOutValue ));
+                           pcOutValue );
 
                 /* Set received version as the current version. */
                 ulCurrentVersion = ulVersion;
@@ -590,7 +484,7 @@ static void prvIncomingPublishUpdateDeltaCallback( void * pvCtx,
                     /* Convert the powerOn state value to an unsigned integer value. */
                     ulNewState = ( uint32_t ) strtoul( pcOutValue, NULL, 10 );
 
-                    LogInfo( ("Setting powerOn state to %u.", ( unsigned int ) ulNewState ));
+                    LogInfo( "Setting powerOn state to %u.", ( unsigned int ) ulNewState );
                     /* Set the new powerOn state. */
                     pxCtx->ulCurrentPowerOnState = ulNewState;
 
@@ -624,9 +518,9 @@ static void prvIncomingPublishUpdateAcceptedCallback( void * pvCtx,
     configASSERT( pxPublishInfo != NULL );
     configASSERT( pxPublishInfo->pPayload != NULL );
 
-    LogDebug( ("/update/accepted JSON payload: %.*s.",
+    LogDebug( "/update/accepted JSON payload: %.*s.",
               pxPublishInfo->payloadLength,
-              ( const char * ) pxPublishInfo->pPayload ));
+              ( const char * ) pxPublishInfo->pPayload );
 
     /* Handle the reported state with state change in /update/accepted topic.
      * Thus we will retrieve the client token from the JSON document to see if
@@ -686,11 +580,11 @@ static void prvIncomingPublishUpdateAcceptedCallback( void * pvCtx,
          */
         if( ulReceivedToken != pxCtx->ulClientToken )
         {
-            LogDebug(( "Ignoring publish on /update/accepted with clientToken %lu.", ( unsigned long ) ulReceivedToken ));
+            LogDebug( "Ignoring publish on /update/accepted with clientToken %lu.", ( unsigned long ) ulReceivedToken );
         }
         else
         {
-            LogInfo(( "Received accepted response for update with token %lu. ", ( unsigned long ) pxCtx->ulClientToken ));
+            LogInfo( "Received accepted response for update with token %lu. ", ( unsigned long ) pxCtx->ulClientToken );
 
             /*  Obtain the accepted state from the response and update our last sent state. */
             result = JSON_Search( ( char * ) pxPublishInfo->pPayload,
@@ -733,9 +627,9 @@ static void prvIncomingPublishUpdateRejectedCallback( void * pvCtx,
     configASSERT( pxPublishInfo != NULL );
     configASSERT( pxPublishInfo->pPayload != NULL );
 
-    LogDebug(( "/update/rejected json payload: %.*s.",
+    LogDebug( "/update/rejected json payload: %.*s.",
                 pxPublishInfo->payloadLength,
-                ( const char * ) pxPublishInfo->pPayload ));
+                ( const char * ) pxPublishInfo->pPayload );
 
     /* The payload will look similar to this:
      * {
@@ -767,7 +661,7 @@ static void prvIncomingPublishUpdateRejectedCallback( void * pvCtx,
 
     if( result != JSONSuccess )
     {
-        LogDebug(( "Ignoring publish on /update/rejected with clientToken %lu.", ( unsigned long ) ulReceivedToken ));
+        LogDebug( "Ignoring publish on /update/rejected with clientToken %lu.", ( unsigned long ) ulReceivedToken );
     }
     else
     {
@@ -781,7 +675,7 @@ static void prvIncomingPublishUpdateRejectedCallback( void * pvCtx,
          */
         if( ulReceivedToken != pxCtx->ulClientToken )
         {
-            LogDebug(( "Ignoring publish on /update/rejected with clientToken %lu.", ( unsigned long ) ulReceivedToken ));
+            LogDebug( "Ignoring publish on /update/rejected with clientToken %lu.", ( unsigned long ) ulReceivedToken );
         }
         else
         {
@@ -795,13 +689,13 @@ static void prvIncomingPublishUpdateRejectedCallback( void * pvCtx,
 
             if( result != JSONSuccess )
             {
-                LogWarn(( "Received rejected response for update with token %lu and no error code.", ( unsigned long ) pxCtx->ulClientToken ));
+                LogWarn( "Received rejected response for update with token %lu and no error code.", ( unsigned long ) pxCtx->ulClientToken );
             }
             else
             {
-                LogWarn(( "Received rejected response for update with token %lu and error code %.*s.", ( unsigned long ) pxCtx->ulClientToken,
+                LogWarn( "Received rejected response for update with token %lu and error code %.*s.", ( unsigned long ) pxCtx->ulClientToken,
                            ulOutValueLength,
-                           pcOutValue ));
+                           pcOutValue );
             }
 
             /* Wake up the shadow task which is waiting for this response. */
@@ -830,6 +724,9 @@ void vShadowDeviceTask( void * pvParameters )
 
     /* Record the handle of this task so that the callbacks can send a notification to this task. */
     xShadowCtx.xShadowDeviceTaskHandle = xTaskGetCurrentTaskHandle();
+
+    /* Wait for MqttAgent to be ready. */
+    xShadowCtx.xAgentHandle = xGetMqttAgentHandle();
 
     xStatus = prvInitializeCtx( &xShadowCtx );
 
@@ -866,11 +763,11 @@ void vShadowDeviceTask( void * pvParameters )
         {
             if( xShadowCtx.ulCurrentPowerOnState == xShadowCtx.ulReportedPowerOnState )
             {
-                LogDebug(( "No change in powerOn state since last report. Current state is %u.", xShadowCtx.ulCurrentPowerOnState ));
+                LogDebug( "No change in powerOn state since last report. Current state is %u.", xShadowCtx.ulCurrentPowerOnState );
             }
             else
             {
-                LogInfo(( "PowerOn state is now %u. Sending new report.", ( unsigned int ) xShadowCtx.ulCurrentPowerOnState ));
+                LogInfo( "PowerOn state is now %u. Sending new report.", ( unsigned int ) xShadowCtx.ulCurrentPowerOnState );
 
                 /* Create a new client token and save it for use in the update accepted and rejected callbacks. */
                 xShadowCtx.ulClientToken = ( xTaskGetTickCount() % 1000000 );
@@ -887,10 +784,10 @@ void vShadowDeviceTask( void * pvParameters )
                           ( long unsigned ) xShadowCtx.ulClientToken );
 
                 /* Send update. */
-                LogInfo(( "Publishing to /update with following client token %lu.", ( long unsigned ) xShadowCtx.ulClientToken ));
-                LogDebug(( "Publish content: %.*s", shadowexampleSHADOW_REPORTED_JSON_LENGTH, pcUpdateDocument ));
+                LogInfo( "Publishing to /update with following client token %lu.", ( long unsigned ) xShadowCtx.ulClientToken );
+                LogDebug( "Publish content: %.*s", shadowexampleSHADOW_REPORTED_JSON_LENGTH, pcUpdateDocument );
 
-                xCommandAdded = MQTTAgent_Publish( &xGlobalMqttAgentContext,
+                xCommandAdded = MQTTAgent_Publish( xShadowCtx.xAgentHandle,
                                                    &xPublishInfo,
                                                    &xCommandParams );
 
