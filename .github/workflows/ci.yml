@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Broken Link Check
-        uses: technote-space/broken-link-checker-action@v2
+        uses: technote-space/broken-link-checker-action@f08f8cd2d296775be4be79a085055228819a53f3
 
   spell-check:
     runs-on: ubuntu-latest
