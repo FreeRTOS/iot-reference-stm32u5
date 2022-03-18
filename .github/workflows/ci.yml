@@ -68,7 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install python pip
-        run:  apt-get install python3-pip
+        run:  sudo apt-get install python3-pip
       - name: Install virtualenv
         run: |
           pip install virtualenv
