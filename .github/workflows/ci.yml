@@ -63,3 +63,14 @@ jobs:
           git-secrets --register-aws
           git-secrets --scan
 
+
+  pre-commit-hooks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: create virtual environment
+        run: |
+          virtualenv venv
+          . venv/bin/activate
+          pip install pre-commit
+          pre-commit install
+          pre-commit run --all-files
