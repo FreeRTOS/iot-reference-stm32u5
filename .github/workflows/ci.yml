@@ -67,6 +67,12 @@ jobs:
   pre-commit-hooks:
     runs-on: ubuntu-latest
     steps:
+      - name: Install python pip
+        run:  apt-get install python3-pip
+      - name: Install virtualenv
+        run: |
+          pip install virtualenv
+          sudo /usr/bin/easy_install virtualenv
       - name: create virtual environment
         run: |
           virtualenv venv
