@@ -9,7 +9,7 @@ on:
 
 jobs:
 
-  broken-bink-check:
+  broken-link-check:
     runs-on: ubuntu-latest
     steps:
       - name: Broken Link Check
