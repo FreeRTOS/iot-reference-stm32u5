@@ -67,15 +67,12 @@
  */
 #define MQTT_PUBLISH_MAX_LEN              ( 200 )
 #define MQTT_PUBLISH_PERIOD_MS            ( 1000 )
-#define MQTT_PUBLISH_TOPIC                "motion_sensor_data"
 #define MQTT_PUBLICH_TOPIC_STR_LEN        ( 256 )
-#define MQTT_PUBLISH_BLOCK_TIME_MS        ( 50 )
-#define MQTT_PUBLISH_NOTIFICATION_WAIT_MS ( 10*1000 )
+#define MQTT_PUBLISH_BLOCK_TIME_MS        ( 200 )
+#define MQTT_PUBLISH_NOTIFICATION_WAIT_MS ( 1000 )
 #define MQTT_NOTIFY_IDX                   ( 1 )
-#define MQTT_PUBLISH_QOS                  ( 0 )
+#define MQTT_PUBLISH_QOS                  ( MQTTQoS0 )
 
-
-extern MQTTAgentContext_t xGlobalMqttAgentContext;
 
 /*-----------------------------------------------------------*/
 /**
@@ -89,104 +86,107 @@ struct MQTTAgentCommandContext
     uint32_t ulNotificationValue;
 };
 
-static BaseType_t xIsMqttConnected( void )
-{
-    /* Wait for MQTT to be connected */
-    EventBits_t uxEvents = xEventGroupWaitBits( xSystemEvents,
-                                                EVT_MASK_MQTT_CONNECTED,
-                                                pdFALSE,
-                                                pdTRUE,
-                                                0 );
-    return( ( uxEvents & EVT_MASK_MQTT_CONNECTED ) == EVT_MASK_MQTT_CONNECTED );
-}
-
-
 /*-----------------------------------------------------------*/
 static void prvPublishCommandCallback( MQTTAgentCommandContext_t * pxCommandContext,
                                        MQTTAgentReturnInfo_t * pxReturnInfo )
 {
-    configASSERT( pxCommandContext != NULL );
+	TaskHandle_t xTaskHandle = ( TaskHandle_t ) pxCommandContext;
     configASSERT( pxReturnInfo != NULL );
 
-    pxCommandContext->xReturnStatus = pxReturnInfo->returnCode;
-    if( pxCommandContext->xTaskToNotify != NULL )
+    uint32_t ulNotifyValue = pxReturnInfo->returnCode;
+
+    if( xTaskHandle!= NULL )
     {
         /* Send the context's ulNotificationValue as the notification value so
          * the receiving task can check the value it set in the context matches
          * the value it receives in the notification. */
-        xTaskNotify( pxCommandContext->xTaskToNotify,
-                     pxCommandContext->ulNotificationValue,
-                     eSetValueWithOverwrite );
+    	( void ) xTaskNotifyIndexed( xTaskHandle,
+    								MQTT_NOTIFY_IDX,
+									ulNotifyValue,
+									eSetValueWithOverwrite );
     }
 }
 
 /*-----------------------------------------------------------*/
-static BaseType_t prvWaitForCommandAcknowledgment( uint32_t * pulNotifiedValue )
-{
-    BaseType_t xReturn;
 
-    /* Wait for this task to get notified, passing out the value it gets
-     * notified with. */
-    xReturn = xTaskNotifyWait( 0,
-                               pdTRUE,
-                               pulNotifiedValue,
-                               pdMS_TO_TICKS( MQTT_PUBLISH_NOTIFICATION_WAIT_MS ) );
-    return xReturn;
-}
-
-/*-----------------------------------------------------------*/
-static BaseType_t prvPublishAndWaitForAck( const char * pcTopic,
+static BaseType_t prvPublishAndWaitForAck( MQTTAgentHandle_t xAgentHandle,
+										   const char * pcTopic,
                                            const void * pvPublishData,
                                            size_t xPublishDataLen )
 {
-    MQTTStatus_t xStatus = 0xFF;
-    BaseType_t xResult = pdPASS;
-    uint32_t ulNotifications = 0;
-    uint32_t ulAckNotification = 1u;
+    MQTTStatus_t xStatus;
 
     configASSERT( pcTopic != NULL );
     configASSERT( pvPublishData != NULL );
     configASSERT( xPublishDataLen > 0 );
 
-    MQTTPublishInfo_t xPublishInfo;
-    memset( ( void * ) &xPublishInfo, 0x00, sizeof( xPublishInfo ) );
-    xPublishInfo.qos = MQTT_PUBLISH_QOS;
-    xPublishInfo.pTopicName = pcTopic;
-    xPublishInfo.topicNameLength = strlen( pcTopic );
-    xPublishInfo.pPayload = pvPublishData;
-    xPublishInfo.payloadLength = xPublishDataLen;
+    MQTTPublishInfo_t xPublishInfo =
+    {
+        .qos = MQTT_PUBLISH_QOS,
+        .retain = 0,
+        .dup = 0,
+        .pTopicName = pcTopic,
+        .topicNameLength = strlen( pcTopic ),
+        .pPayload = pvPublishData,
+        .payloadLength = xPublishDataLen
+    };
 
-    MQTTAgentCommandContext_t xCommandContext;
-    memset( ( void * ) &xCommandContext, 0x00, sizeof( xCommandContext ) );
-    xCommandContext.xTaskToNotify = xTaskGetCurrentTaskHandle();
-    xCommandContext.ulNotificationValue = ulAckNotification;
+    MQTTAgentCommandInfo_t xCommandParams =
+    {
+        .blockTimeMs = MQTT_PUBLISH_BLOCK_TIME_MS,
+        .cmdCompleteCallback = prvPublishCommandCallback,
+        .pCmdCompleteCallbackContext = ( void * ) xTaskGetCurrentTaskHandle(),
+    };
 
-    MQTTAgentCommandInfo_t xCommandParams;
-    xCommandParams.blockTimeMs = MQTT_PUBLISH_BLOCK_TIME_MS;
-    xCommandParams.cmdCompleteCallback = prvPublishCommandCallback;
-    xCommandParams.pCmdCompleteCallbackContext = &xCommandContext;
 
-    LogInfo("Publishing message");
+
+    if( xPublishInfo.qos > MQTTQoS0 )
+    {
+    	xCommandParams.pCmdCompleteCallbackContext = ( void * ) xTaskGetCurrentTaskHandle();
+    }
+
     /* Clear the notification index */
-    xStatus = MQTTAgent_Publish( &xGlobalMqttAgentContext,
+    xTaskNotifyStateClearIndexed( NULL, MQTT_NOTIFY_IDX );
+
+
+    xStatus = MQTTAgent_Publish( xAgentHandle,
                                  &xPublishInfo,
                                  &xCommandParams );
+
     if( xStatus == MQTTSuccess )
     {
-        prvWaitForCommandAcknowledgment( &ulNotifications );
-        if( ulNotifications != ulAckNotification )
-        {
-            LogError( "Timed out while waiting for ACK on publish to %s", pcTopic );
-            xResult = pdFAIL;
-        }
+    	uint32_t ulNotifyValue = 0;
+        BaseType_t xResult = pdFALSE;
+
+		xResult = xTaskNotifyWaitIndexed( MQTT_NOTIFY_IDX,
+										  0xFFFFFFFF,
+										  0xFFFFFFFF,
+										  &ulNotifyValue,
+										  pdMS_TO_TICKS( MQTT_PUBLISH_NOTIFICATION_WAIT_MS ) );
+		if( xResult )
+		{
+			xStatus = ( MQTTStatus_t ) ulNotifyValue;
+
+			if( xStatus != MQTTSuccess )
+			{
+				LogError( "MQTT Agent returned error code: %d during publish operation.",
+						  xStatus );
+				xResult = pdFALSE;
+			}
+		}
+		else
+		{
+			LogError( "Timed out while waiting for publish ACK or Sent event. xTimeout = %d",
+					  pdMS_TO_TICKS( MQTT_PUBLISH_NOTIFICATION_WAIT_MS ) );
+			xResult = pdFALSE;
+		}
     }
     else
     {
-        LogError("Failed to publish to %s", pcTopic );
-        xResult = pdFAIL;
+        LogError( "MQTTAgent_Publish returned error code: %d.", xStatus );
     }
 
-    return xResult;
+    return ( xStatus == MQTTSuccess );
 }
 
 /*-----------------------------------------------------------*/
@@ -210,39 +210,46 @@ static BaseType_t xInitSensors( void )
 }
 
 /*-----------------------------------------------------------*/
-void Task_MotionSensorsPublish( void * pvParameters )
+void vMotionSensorsPublish( void * pvParameters )
 {
 
     (void) pvParameters;
     BaseType_t xResult = pdFALSE;
     BaseType_t xExitFlag = pdFALSE;
-    char payloadBuf[ MQTT_PUBLISH_MAX_LEN ];
+
+    MQTTAgentHandle_t xAgentHandle = NULL;
+    char pcPayloadBuf[ MQTT_PUBLISH_MAX_LEN ];
+    char pcTopicString[ MQTT_PUBLICH_TOPIC_STR_LEN ] = { 0 };
+    char * pcDeviceId = NULL;
+    size_t xTopicLen = 0;
 
     xResult = xInitSensors();
 
     if( xResult != pdTRUE )
     {
-        LogError("Error while initializing environmental sensors.");
+        LogError( "Error while initializing motion sensors." );
         vTaskDelete( NULL );
     }
 
-    LogInfo( "Waiting until MQTT Agent is ready" );
-    vSleepUntilMQTTAgentReady();
-    LogInfo( "MQTT Agent is ready. Resuming..." );
+    pcDeviceId = KVStore_getStringHeap( CS_CORE_THING_NAME, NULL );
 
-
-    /* Build the topic string */
-    char pcTopicString[ MQTT_PUBLICH_TOPIC_STR_LEN ] = { 0 };
-    size_t xTopicLen = 0;
-
-    xTopicLen = strlcat( pcTopicString, "/", MQTT_PUBLICH_TOPIC_STR_LEN );
-
-    if( xTopicLen + 1 < MQTT_PUBLICH_TOPIC_STR_LEN )
+    if( pcDeviceId == NULL )
     {
-        ( void ) KVStore_getString( CS_CORE_THING_NAME, &( pcTopicString[ xTopicLen ] ), MQTT_PUBLICH_TOPIC_STR_LEN - xTopicLen );
-
-        xTopicLen = strlcat( pcTopicString, "/"MQTT_PUBLISH_TOPIC, MQTT_PUBLICH_TOPIC_STR_LEN );
+    	xExitFlag = pdTRUE;
     }
+    else
+    {
+    	xTopicLen = snprintf( pcTopicString, MQTT_PUBLICH_TOPIC_STR_LEN, "/%s/motion_sensor_data", pcDeviceId );
+
+    	vPortFree( pcDeviceId );
+    }
+
+    if( xTopicLen == 0 || xTopicLen > MQTT_PUBLICH_TOPIC_STR_LEN )
+    {
+    	LogError( "Error while constructing topic string." );
+    }
+
+    xAgentHandle = xGetMqttAgentHandle();
 
     while( xExitFlag == pdFALSE )
     {
@@ -256,7 +263,7 @@ void Task_MotionSensorsPublish( void * pvParameters )
 
         if( lBspError == BSP_ERROR_NONE )
         {
-            int bytesWritten = snprintf( payloadBuf,
+            int bytesWritten = snprintf( pcPayloadBuf,
                                      MQTT_PUBLISH_MAX_LEN,
                                      "{"
                                           "\"acceleration_mG\":"
@@ -283,10 +290,11 @@ void Task_MotionSensorsPublish( void * pvParameters )
                                      xMagnetoAxes.x, xMagnetoAxes.y, xMagnetoAxes.z );
 
             if( bytesWritten < MQTT_PUBLISH_MAX_LEN &&
-                xIsMqttConnected() == pdTRUE )
+            	xIsMqttAgentConnected() == pdTRUE )
             {
-                xResult = prvPublishAndWaitForAck( pcTopicString,
-                                                   payloadBuf,
+                xResult = prvPublishAndWaitForAck( xAgentHandle,
+                								   pcTopicString,
+                                                   pcPayloadBuf,
                                                    bytesWritten );
                 if( xResult != pdPASS )
                 {

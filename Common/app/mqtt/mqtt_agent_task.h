@@ -11,6 +11,10 @@ MQTTAgentHandle_t xGetMqttAgentHandle( void );
 /* Event group based mechanism that can be used to block tasks until agent is ready */
 void vSleepUntilMQTTAgentReady( void );
 
+void vSleepUntilMQTTAgentConnected( void );
+
+bool xIsMqttAgentConnected( void );
+
 void vMQTTAgentTask( void * pvParameters );
 
 

@@ -82,6 +82,6 @@
 #define MQTT_AGENT_NETWORK_BUFFER_SIZE               ( 6 * 1024 )
 
 
-#define MQTT_AGENT_MAX_EVENT_QUEUE_WAIT_TIME         ( 10 )
+#define MQTT_AGENT_MAX_EVENT_QUEUE_WAIT_TIME         ( 1 )
 
 #endif /* ifndef CORE_MQTT_CONFIG_H */

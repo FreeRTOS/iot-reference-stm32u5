@@ -57,12 +57,14 @@
 /*
  */
 #define MQTT_PUBLISH_MAX_LEN              ( 512 )
-#define MQTT_PUBLISH_TIME_BETWEEN_MS      ( 10 * 1000 )
+#define MQTT_PUBLISH_TIME_BETWEEN_MS      ( 1 * 1000 )
 #define MQTT_PUBLISH_TOPIC                "env_sensor_data"
 #define MQTT_PUBLICH_TOPIC_STR_LEN        ( 256 )
-#define MQTT_PUBLISH_BLOCK_TIME_MS        ( 10 * 1000 )
+#define MQTT_PUBLISH_BLOCK_TIME_MS        ( 0 )
+#define MQTT_PUBLISH_NOTIFICATION_WAIT_MS ( 1000 )
+
 #define MQTT_NOTIFY_IDX                   ( 1 )
-#define MQTT_PUBLISH_QOS                  ( 1 )
+#define MQTT_PUBLISH_QOS                  ( MQTTQoS1 )
 
 /*-----------------------------------------------------------*/
 
@@ -154,12 +156,12 @@ static BaseType_t prvPublishAndWaitForAck( MQTTAgentHandle_t xAgentHandle,
     {
         xResult = ulTaskNotifyTakeIndexed( MQTT_NOTIFY_IDX,
                                            pdTRUE,
-                                           pdMS_TO_TICKS( MQTT_PUBLISH_BLOCK_TIME_MS ) );
+                                           pdMS_TO_TICKS( MQTT_PUBLISH_NOTIFICATION_WAIT_MS ) );
 
         if( xResult == 0 )
         {
             LogError( "Timed out while waiting for publish ACK or Sent event. xTimeout = %d",
-                      pdMS_TO_TICKS( MQTT_PUBLISH_BLOCK_TIME_MS ) );
+                      pdMS_TO_TICKS( MQTT_PUBLISH_NOTIFICATION_WAIT_MS ) );
             xResult = pdFALSE;
         }
         else if( xCommandContext.xReturnStatus != MQTTSuccess )
@@ -243,9 +245,10 @@ void vEnvironmentSensorPublishTask( void * pvParameters )
     BaseType_t xExitFlag = pdFALSE;
     char payloadBuf[ MQTT_PUBLISH_MAX_LEN ];
     MQTTAgentHandle_t xAgentHandle = NULL;
+    char pcTopicString[ MQTT_PUBLICH_TOPIC_STR_LEN ] = { 0 };
+    size_t xTopicLen = 0;
 
     (void) pvParameters;
-
 
     xResult = xInitSensors();
 
@@ -254,14 +257,6 @@ void vEnvironmentSensorPublishTask( void * pvParameters )
         LogError("Error while initializing environmental sensors.");
         vTaskDelete( NULL );
     }
-    
-    LogInfo( "Waiting until MQTT Agent is ready" );
-    vSleepUntilMQTTAgentReady();
-    LogInfo( "MQTT Agent is ready. Resuming..." );
-
-    /* Build the topic string */
-    char pcTopicString[ MQTT_PUBLICH_TOPIC_STR_LEN ] = { 0 };
-    size_t xTopicLen = 0;
 
     xTopicLen = strlcat( pcTopicString, "/", MQTT_PUBLICH_TOPIC_STR_LEN );
 

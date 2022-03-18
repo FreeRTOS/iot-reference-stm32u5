@@ -216,6 +216,39 @@ void vSleepUntilMQTTAgentReady( void )
 
 /*-----------------------------------------------------------*/
 
+void vSleepUntilMQTTAgentConnected( void )
+{
+    configASSERT( xSystemEvents != NULL );
+    while( 1 )
+    {
+        EventBits_t uxEvents = xEventGroupWaitBits( xSystemEvents,
+        											EVT_MASK_MQTT_CONNECTED,
+                                                    pdFALSE,
+                                                    pdTRUE,
+                                                    portMAX_DELAY );
+
+        if( uxEvents & EVT_MASK_MQTT_CONNECTED )
+        {
+            break;
+        }
+    }
+}
+
+/*-----------------------------------------------------------*/
+
+bool xIsMqttAgentConnected( void )
+{
+	EventBits_t uxEvents = xEventGroupWaitBits( xSystemEvents,
+	                                            EVT_MASK_MQTT_CONNECTED,
+	                                            pdFALSE,
+	                                            pdTRUE,
+	                                            0 );
+
+	return( ( bool ) ( uxEvents & EVT_MASK_MQTT_CONNECTED ) );
+}
+
+/*-----------------------------------------------------------*/
+
 static inline void prvUpdateCallbackRefs( SubCallbackElement_t * pxCallbacksList,
 										  MQTTSubscribeInfo_t * pxSubList,
 										  size_t uxOldIdx,
@@ -384,6 +417,7 @@ static void prvResubscribeCommandCallback( MQTTAgentCommandContext_t * pxCommand
 		}
 	}
 	( void ) xSemaphoreGive( pxCtx->xMutex );
+	LogDebug( " <<<< Semaphore Give <<<<" );
 }
 
 /*-----------------------------------------------------------*/
@@ -429,6 +463,7 @@ static MQTTStatus_t prvHandleResubscribe( MQTTAgentContext_t * pxMqttAgentCtx,
 	else
 	{
 		( void ) xSemaphoreGive( pxCtx->xMutex );
+		LogDebug( " <<<< Semaphore Give <<<<" );
 
 		/* Mark the resubscribe as success if there is nothing to be subscribed to. */
 		xStatus = MQTTSuccess;
@@ -483,8 +518,11 @@ static void prvIncomingPublishCallback( MQTTAgentContext_t * pMqttAgentContext,
 
     pxCtx = ( SubMgrCtx_t * )pMqttAgentContext->pIncomingCallbackContext;
 
+    LogDebug( ">> waiting for xSemaphoreTake" );
+
     if( xSemaphoreTake( pxCtx->xMutex, portMAX_DELAY ) == pdTRUE )
     {
+    	LogDebug( ">>>> xSemaphoreTake complete." );
     	/* Iterate over pxCtx->pxCallbacks list */
         for( uint32_t ulCbIdx = 0; ulCbIdx < MQTT_AGENT_MAX_CALLBACKS; ulCbIdx++ )
         {
@@ -506,6 +544,7 @@ static void prvIncomingPublishCallback( MQTTAgentContext_t * pMqttAgentContext,
             }
         }
         ( void ) xSemaphoreGive( pxCtx->xMutex );
+        LogDebug( " <<<< Semaphore Give <<<<" );
     }
 
     if( !xPublishHandled )
@@ -566,6 +605,7 @@ static MQTTStatus_t prvSubscriptionManagerCtxInit( SubMgrCtx_t * pxSubMgrCtx )
 
 	if( pxSubMgrCtx->xMutex )
 	{
+		LogDebug( "Creating MqttAgent Mutex." );
 		( void )xSemaphoreTake( pxSubMgrCtx->xMutex, portMAX_DELAY );
 		prvSubscriptionManagerCtxReset( pxSubMgrCtx );
 	}
@@ -927,6 +967,7 @@ void vMQTTAgentTask( void * pvParameters )
             {
             	prvSubscriptionManagerCtxReset( &( pxCtx->xSubMgrCtx ) );
             	( void ) xSemaphoreGive( pxCtx->xSubMgrCtx.xMutex );
+            	LogDebug( " <<<< Semaphore Give <<<<" );
             }
 
             /* Further reconnects will include a session resume operation */
@@ -956,7 +997,9 @@ void vMQTTAgentTask( void * pvParameters )
             ( void ) xEventGroupClearBits( xSystemEvents, EVT_MASK_MQTT_CONNECTED );
 
             /* Wait for any subscription related calls to complete */
+            LogDebug( ">> waiting for xSemaphoreTake" );
             ( void ) xSemaphoreTake( pxCtx->xSubMgrCtx.xMutex, portMAX_DELAY );
+            LogDebug( ">>>> xSemaphoreTake complete." );
 
             /* Reset subscription status */
             memset( pxCtx->xSubMgrCtx.pxSubAckStatus,
@@ -1138,12 +1181,17 @@ MQTTStatus_t MqttAgent_SubscribeSync( MQTTAgentHandle_t xHandle,
     	xStatus = MQTTBadParameter;
     }
 
+    if( xStatus == MQTTSuccess )
+    	LogDebug( ">> waiting for xSemaphoreTake" );
+
     /* Acquire mutex */
     if( xStatus == MQTTSuccess &&
     	xSemaphoreTake( pxCtx->xMutex, portMAX_DELAY ) == pdTRUE )
     {
     	size_t uxTargetSubIdx = MQTT_AGENT_MAX_SUBSCRIPTIONS;
     	size_t uxTargetCbIdx = MQTT_AGENT_MAX_CALLBACKS;
+
+    	LogDebug( ">>>> xSemaphoreTake complete." );
 
     	/* If no slot is found, return MQTTNoMemory */
     	xStatus = MQTTNoMemory;
@@ -1238,6 +1286,8 @@ MQTTStatus_t MqttAgent_SubscribeSync( MQTTAgentHandle_t xHandle,
     		pxCtx->pulSubCbCount[ uxTargetSubIdx ]++;
     	}
 
+    	( void )xSemaphoreGive( pxCtx->xMutex );
+    	LogDebug( " <<<< Semaphore Give <<<<" );
 
 
     	if( xStatus == MQTTSuccess &&
@@ -1249,7 +1299,7 @@ MQTTStatus_t MqttAgent_SubscribeSync( MQTTAgentHandle_t xHandle,
 										 portMAX_DELAY );
     	}
 
-    	( void )xSemaphoreGive( pxCtx->xMutex );
+
 
     }
     else
@@ -1352,12 +1402,17 @@ MQTTStatus_t MqttAgent_UnSubscribeSync( MQTTAgentHandle_t xHandle,
     	xStatus = MQTTBadParameter;
     }
 
+    if( xStatus == MQTTSuccess )
+    	LogDebug( ">> waiting for xSemaphoreTake" );
+
     /* Acquire mutex */
 	if( xStatus == MQTTSuccess &&
 		xSemaphoreTake( pxCtx->xMutex, portMAX_DELAY ) == pdTRUE )
 	{
 		MQTTSubscribeInfo_t * pxSubInfo = NULL;
 		size_t uxSubInfoIdx = MQTT_AGENT_MAX_SUBSCRIPTIONS;
+
+		LogDebug( ">>>> xSemaphoreTake complete." );
 
 		xStatus = MQTTNoDataAvailable;
 
@@ -1405,6 +1460,9 @@ MQTTStatus_t MqttAgent_UnSubscribeSync( MQTTAgentHandle_t xHandle,
 			}
 		}
 
+		( void ) xSemaphoreGive( pxCtx->xMutex );
+		LogDebug( " <<<< Semaphore Give <<<<" );
+
 		if( xStatus == MQTTSuccess &&
 			pxCtx->pulSubCbCount[ uxSubInfoIdx ] == 0 )
 		{
@@ -1422,7 +1480,7 @@ MQTTStatus_t MqttAgent_UnSubscribeSync( MQTTAgentHandle_t xHandle,
 			}
 		}
 
-		( void ) xSemaphoreGive( pxCtx->xMutex );
+
 	}
 	return xStatus;
 }

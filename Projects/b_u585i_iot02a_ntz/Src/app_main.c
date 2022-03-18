@@ -174,7 +174,7 @@ static void vHeartbeatTask( void * pvParameters )
 
 extern void net_main( void * pvParameters );
 extern void vMQTTAgentTask( void * );
-//extern void Task_MotionSensorsPublish( void * );
+extern void vMotionSensorsPublish( void * );
 extern void vEnvironmentSensorPublishTask( void * );
 extern void vShadowDeviceTask( void * );
 //extern void vOTAUpdateTask( void * pvParam );
@@ -230,12 +230,12 @@ void vInitTask( void * pvArgs )
 //
 //    configASSERT( xResult == pdTRUE );
 
-//    xResult = xTaskCreate( vEnvironmentSensorPublishTask, "EnvSense", 1024, NULL, 10, NULL );
-//    configASSERT( xResult == pdTRUE );
+    xResult = xTaskCreate( vEnvironmentSensorPublishTask, "EnvSense", 2048, NULL, 10, NULL );
+    configASSERT( xResult == pdTRUE );
 //
 //
-//    xResult = xTaskCreate( Task_MotionSensorsPublish, "MotionS", 1024, NULL, 11, NULL );
-//    configASSERT( xResult == pdTRUE );
+    xResult = xTaskCreate( vMotionSensorsPublish, "MotionS", 2048, NULL, 11, NULL );
+    configASSERT( xResult == pdTRUE );
 
     xResult = xTaskCreate( vShadowDeviceTask, "ShadowDevice", 1024, NULL, 5, NULL );
     configASSERT( xResult == pdTRUE );
