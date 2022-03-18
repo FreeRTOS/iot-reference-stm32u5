@@ -67,6 +67,7 @@ jobs:
   pre-commit-hooks:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
       - name: Install python pip
         run:  sudo apt-get install python3-pip
       - name: Install virtualenv
