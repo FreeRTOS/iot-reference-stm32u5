@@ -25,8 +25,8 @@
  * @brief TLS transport interface header.
  */
 
-#ifndef MBEDTLS_TRANSPORT
-#define MBEDTLS_TRANSPORT
+#ifndef _MBEDTLS_TRANSPORT_H
+#define _MBEDTLS_TRANSPORT_H
 
 /* socket definitions  */
 #include "transport_interface_ext.h"
@@ -47,7 +47,6 @@
 #include "core_pkcs11.h"
 #endif /* MBEDTLS_TRANSPORT_PKCS11 */
 
-
 #ifdef MBEDTLS_TRANSPORT_PSA
 #include "psa/crypto.h"
 #include "psa/internal_trusted_storage.h"
@@ -55,11 +54,7 @@
 #endif /* MBEDTLS_TRANSPORT_PSA */
 
 
-/*
- * Define MBEDTLS_DEBUG_C if you would like to enable mbedtls debugging
- */
-/* #define MBEDTLS_DEBUG_C */
-
+/* Public Types */
 typedef enum
 {
 	STATE_UNKNOWN = 0,
@@ -67,6 +62,28 @@ typedef enum
 	STATE_CONFIGURED = 2,
 	STATE_CONNECTED = 3,
 } ConnectionState_t;
+
+typedef enum TlsTransportStatus
+{
+    TLS_TRANSPORT_SUCCESS 				= 0,
+	TLS_TRANSPORT_UNKNOWN_ERROR			= -1,
+    TLS_TRANSPORT_INVALID_PARAMETER 	= -2,
+    TLS_TRANSPORT_INSUFFICIENT_MEMORY 	= -3,
+    TLS_TRANSPORT_INVALID_CREDENTIALS 	= -4,
+    TLS_TRANSPORT_HANDSHAKE_FAILED 		= -5,
+    TLS_TRANSPORT_INTERNAL_ERROR 		= -6,
+    TLS_TRANSPORT_CONNECT_FAILURE  		= -7,
+	TLS_TRANSPORT_PKI_OBJECT_NOT_FOUND 	= -8,
+	TLS_TRANSPORT_PKI_OBJECT_PARSE_FAIL = -9,
+	TLS_TRANSPORT_DNS_FAILED			= -10,
+	TLS_TRANSPORT_INSUFFICIENT_SOCKETS  = -11,
+	TLS_TRANSPORT_INVALID_HOSTNAME      = -12,
+	TLS_TRANSPORT_CLIENT_CERT_INVALID   = -13,
+	TLS_TRANSPORT_NO_VALID_CA_CERT      = -14,
+	TLS_TRANSPORT_CLIENT_KEY_INVALID    = -15,
+} TlsTransportStatus_t;
+
+typedef void ( * GenericCallback_t )( void * );
 
 typedef enum PkiObjectForm
 {
@@ -106,6 +123,10 @@ typedef struct PkiObject
 #define PKI_OBJ_PSA_ITS( storage_id ) 	{ .xForm = OBJ_FORM_PSA_ITS, 		.xPsaStorageId = storage_id }
 #define PKI_OBJ_PSA_PS( storage_id ) 	{ .xForm = OBJ_FORM_PSA_PS, 		.xPsaStorageId = storage_id }
 
+/*-----------------------------------------------------------*/
+
+/* Lwip related definitions */
+
 #define sock_socket 	lwip_socket
 #define sock_connect 	lwip_connect
 #define sock_send 		lwip_send
@@ -119,41 +140,43 @@ typedef struct PkiObject
 
 typedef int SockHandle_t;
 
-//typedef union PkiObject
-//{
-//	struct
-//	{
-//		size_t uxLen;
-//		const unsigned char * pucBuffer;
-//	} xBuffer;
-//
-//	char * pcPkcs11Label;
-//	psa_key_id_t xPsaCryptoId;
-//	psa_storage_uid_t xPsaStorageId;
-//} PkiObject_t;
+/*-----------------------------------------------------------*/
 
 /**
- * @brief TLS Connect / Disconnect return status.
+ * @brief Utility for converting the high-level code in an mbedTLS error to string,
+ * if the code-contains a high-level code; otherwise, using a default string.
  */
-typedef enum TlsTransportStatus
-{
-    TLS_TRANSPORT_SUCCESS 				= 0,
-	TLS_TRANSPORT_UNKNOWN_ERROR			= -1,
-    TLS_TRANSPORT_INVALID_PARAMETER 	= -2,
-    TLS_TRANSPORT_INSUFFICIENT_MEMORY 	= -3,
-    TLS_TRANSPORT_INVALID_CREDENTIALS 	= -4,
-    TLS_TRANSPORT_HANDSHAKE_FAILED 		= -5,
-    TLS_TRANSPORT_INTERNAL_ERROR 		= -6,
-    TLS_TRANSPORT_CONNECT_FAILURE  		= -7,
-	TLS_TRANSPORT_PKI_OBJECT_NOT_FOUND 	= -8,
-	TLS_TRANSPORT_PKI_OBJECT_PARSE_FAIL = -9,
-	TLS_TRANSPORT_DNS_FAILED			= -10,
-	TLS_TRANSPORT_INSUFFICIENT_SOCKETS  = -11,
-	TLS_TRANSPORT_INVALID_HOSTNAME      = -12,
-	TLS_TRANSPORT_CLIENT_CERT_INVALID   = -13,
-	TLS_TRANSPORT_NO_VALID_CA_CERT      = -14,
-	TLS_TRANSPORT_CLIENT_KEY_INVALID    = -15,
-} TlsTransportStatus_t;
+#ifndef mbedtlsHighLevelCodeOrDefault
+#define mbedtlsHighLevelCodeOrDefault( mbedTlsCode )        \
+    ( mbedtls_high_level_strerr( mbedTlsCode ) != NULL ) ? \
+      mbedtls_high_level_strerr( mbedTlsCode ) : ( const char * ) "<No-High-Level-Code>"
+#endif /* mbedtlsHighLevelCodeOrDefault */
+
+/**
+ * @brief Utility for converting the level-level code in an mbedTLS error to string,
+ * if the code-contains a level-level code; otherwise, using a default string.
+ */
+#ifndef mbedtlsLowLevelCodeOrDefault
+#define mbedtlsLowLevelCodeOrDefault( mbedTlsCode )        \
+    ( mbedtls_low_level_strerr( mbedTlsCode ) != NULL ) ? \
+      mbedtls_low_level_strerr( mbedTlsCode ) : ( const char * ) "<No-Low-Level-Code>"
+#endif /* mbedtlsLowLevelCodeOrDefault */
+
+#define MBEDTLS_MSG_IF_ERROR( lError, pMessage ) do\
+{ \
+	if( lError < 0 ) \
+		LogError( pMessage " %s : %s." , \
+				  mbedtlsHighLevelCodeOrDefault( lError ), \
+				  mbedtlsLowLevelCodeOrDefault( lError ) ); \
+} while( 0 )
+
+#define MBEDTLS_LOG_IF_ERROR( lError, pFormatString, ... ) do\
+{ \
+	if( lError < 0 ) \
+		LogError( pFormatString " %s : %s.", __VA_ARGS__ , \
+				  mbedtlsHighLevelCodeOrDefault( lError ), \
+				  mbedtlsLowLevelCodeOrDefault( lError ) ); \
+} while( 0 )
 
 
 /**
@@ -163,12 +186,8 @@ typedef enum TlsTransportStatus
  */
 NetworkContext_t * mbedtls_transport_allocate( void );
 
-
 /**
- * @brief Deallocate a TLS Network Context
- *
- * @param[in] pxNetworkContext The network context to be deallocated.
- *
+ * @brief Deallocate a TLS NetworkContext_t.
  */
 void mbedtls_transport_free( NetworkContext_t * pxNetworkContext );
 
@@ -180,6 +199,11 @@ TlsTransportStatus_t mbedtls_transport_configure( NetworkContext_t * pxNetworkCo
 												  const PkiObject_t * pxClientCert,
 												  const PkiObject_t * pxRootCaCerts,
 												  const size_t uxNumRootCA );
+
+
+int32_t mbedtls_transport_setrecvcallback( NetworkContext_t * pxNetworkContext,
+									       GenericCallback_t pxCallback,
+									       void * pvCtx );
 
 
 /**
@@ -218,7 +242,7 @@ int32_t mbedtls_transport_setsockopt( NetworkContext_t * pxNetworkContext,
 		                              uint32_t ulOptionLen );
 
 /**
- * @brief Gracefully disconnect an established TLS connection and free any heap allocated resources.
+ * @brief Gracefully disconnect an established TLS connection.
  *
  * @param[in] pNetworkContext Network context.
  */
@@ -229,10 +253,6 @@ void mbedtls_transport_disconnect( NetworkContext_t * pxNetworkContext );
  *
  * This is the TLS version of the transport interface's
  * #TransportRecv_t function.
- *
- * @param[in] pNetworkContext The Network context.
- * @param[out] pBuffer Buffer to receive bytes into.
- * @param[in] bytesToRecv Number of bytes to receive from the network.
  *
  * @return Number of bytes (> 0) received if successful;
  * 0 if the socket times out without reading any bytes;
@@ -247,10 +267,6 @@ int32_t mbedtls_transport_recv( NetworkContext_t * pxNetworkContext,
  *
  * This is the TLS version of the transport interface's
  * #TransportSend_t function.
- *
- * @param[in] pNetworkContext The network context.
- * @param[in] pBuffer Buffer containing the bytes to send.
- * @param[in] uxBytesToSend Number of bytes to send from the buffer.
  *
  * @return Number of bytes (> 0) sent on success;
  * 0 if the socket times out without sending any bytes;
@@ -304,4 +320,4 @@ int lPSARandomCallback( void * pvCtx, unsigned char * pucOutput,
 
 #endif /* MBEDTLS_TRANSPORT_PSA */
 
-#endif /* MBEDTLS_TRANSPORT */
+#endif /* _MBEDTLS_TRANSPORT_H */

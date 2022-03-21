@@ -66,7 +66,7 @@
  * payloads.
  */
 #define MQTT_PUBLISH_MAX_LEN              ( 200 )
-#define MQTT_PUBLISH_PERIOD_MS            ( 1000 )
+#define MQTT_PUBLISH_PERIOD_MS            ( 100 )
 #define MQTT_PUBLICH_TOPIC_STR_LEN        ( 256 )
 #define MQTT_PUBLISH_BLOCK_TIME_MS        ( 200 )
 #define MQTT_PUBLISH_NOTIFICATION_WAIT_MS ( 1000 )
@@ -240,8 +240,6 @@ void vMotionSensorsPublish( void * pvParameters )
     else
     {
     	xTopicLen = snprintf( pcTopicString, MQTT_PUBLICH_TOPIC_STR_LEN, "/%s/motion_sensor_data", pcDeviceId );
-
-    	vPortFree( pcDeviceId );
     }
 
     if( xTopicLen == 0 || xTopicLen > MQTT_PUBLICH_TOPIC_STR_LEN )
@@ -305,4 +303,6 @@ void vMotionSensorsPublish( void * pvParameters )
 
         vTaskDelay( pdMS_TO_TICKS( MQTT_PUBLISH_PERIOD_MS ) );
     }
+
+    vPortFree( pcDeviceId );
 }

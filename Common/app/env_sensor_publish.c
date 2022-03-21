@@ -57,14 +57,14 @@
 /*
  */
 #define MQTT_PUBLISH_MAX_LEN              ( 512 )
-#define MQTT_PUBLISH_TIME_BETWEEN_MS      ( 1 * 1000 )
+#define MQTT_PUBLISH_TIME_BETWEEN_MS      ( 100 )
 #define MQTT_PUBLISH_TOPIC                "env_sensor_data"
 #define MQTT_PUBLICH_TOPIC_STR_LEN        ( 256 )
-#define MQTT_PUBLISH_BLOCK_TIME_MS        ( 0 )
+#define MQTT_PUBLISH_BLOCK_TIME_MS        ( 1000 )
 #define MQTT_PUBLISH_NOTIFICATION_WAIT_MS ( 1000 )
 
 #define MQTT_NOTIFY_IDX                   ( 1 )
-#define MQTT_PUBLISH_QOS                  ( MQTTQoS1 )
+#define MQTT_PUBLISH_QOS                  ( MQTTQoS0 )
 
 /*-----------------------------------------------------------*/
 

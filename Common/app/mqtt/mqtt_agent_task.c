@@ -50,11 +50,12 @@
 
 /* MQTT agent include. */
 #include "core_mqtt_agent.h"
+#include "core_mqtt_agent_message_interface.h"
 
 /* MQTT Agent ports. */
-#include "freertos_agent_message.h"
 #include "freertos_command_pool.h"
 #include "core_pkcs11_config.h"
+
 
 /* Exponential backoff retry include. */
 #include "backoff_algorithm.h"
@@ -98,6 +99,9 @@
 
 #define MQTT_AGENT_NOTIFY_IDX						( 3 )
 
+#define MQTT_AGENT_NOTIFY_FLAG_SOCKET_RECV			( 1 << 31 )
+#define MQTT_AGENT_NOTIFY_FLAG_M_QUEUE				( 1 << 30 )
+
 /**
  * @brief Socket send and receive timeouts to use.
  */
@@ -107,6 +111,12 @@
 
 #define MUTEX_IS_OWNED( xHandle ) ( xTaskGetCurrentTaskHandle() == xSemaphoreGetMutexHolder( xHandle ) )
 //#define MUTEX_IS_OWNED( xHandle ) 1
+
+struct MQTTAgentMessageContext
+{
+    QueueHandle_t xQueue;
+    TaskHandle_t xAgentTaskHandle;
+};
 
 typedef struct MQTTAgentSubscriptionManagerCtx
 {
@@ -126,14 +136,16 @@ typedef struct MQTTAgentSubscriptionManagerCtx
 typedef struct MQTTAgentTaskCtx
 {
     MQTTAgentContext_t xAgentContext;
+
     MQTTFixedBuffer_t xNetworkFixedBuffer;
     TransportInterface_t xTransport; //TODO: remove this. Is copied into mqtt context by MQTT_Init
+
     MQTTAgentMessageInterface_t xMessageInterface;
-    MQTTConnectInfo_t xConnectInfo;
     MQTTAgentMessageContext_t xAgentMessageCtx;
 
     SubMgrCtx_t xSubMgrCtx;
 
+    MQTTConnectInfo_t xConnectInfo;
     char * pcMqttEndpoint;
     size_t uxMqttEndpointLen;
     uint32_t ulMqttPort;
@@ -374,6 +386,78 @@ static inline void prvCompressCallbackList( SubCallbackElement_t * pxCallbackLis
 		}
 	}
 	*puxCallbackCount = uxCallbackCount;
+}
+
+/*-----------------------------------------------------------*/
+
+static void prvSocketRecvReadyCallback( void * pvCtx )
+{
+	MQTTAgentMessageContext_t * pxMsgCtx = ( MQTTAgentMessageContext_t * ) pvCtx;
+
+	if( pxMsgCtx )
+	{
+		( void ) xTaskNotifyIndexed( pxMsgCtx->xAgentTaskHandle ,
+									 MQTT_AGENT_NOTIFY_IDX,
+									 MQTT_AGENT_NOTIFY_FLAG_SOCKET_RECV,
+									 eSetBits );
+	}
+}
+
+/*-----------------------------------------------------------*/
+
+static bool prvAgentMessageSend( MQTTAgentMessageContext_t * pxMsgCtx,
+                        		 MQTTAgentCommand_t * const * pxCommandToSend,
+								 uint32_t blockTimeMs )
+{
+    BaseType_t xQueueStatus = pdFAIL;
+
+    if( pxMsgCtx && pxCommandToSend )
+    {
+    	xQueueStatus = xQueueSendToBack( pxMsgCtx->xQueue, pxCommandToSend, pdMS_TO_TICKS( blockTimeMs ) );
+
+        /* Notify the agent that a message is waiting */
+        if( pxMsgCtx->xAgentTaskHandle )
+        {
+    		( void ) xTaskNotifyIndexed( pxMsgCtx->xAgentTaskHandle ,
+    									 MQTT_AGENT_NOTIFY_IDX,
+										 MQTT_AGENT_NOTIFY_FLAG_M_QUEUE,
+										 eSetBits );
+        }
+    }
+
+    return ( bool ) xQueueStatus;
+}
+
+/*-----------------------------------------------------------*/
+
+static bool prvAgentMessageReceive( MQTTAgentMessageContext_t * pxMsgCtx,
+                           	   	    MQTTAgentCommand_t ** ppxReceivedCommand,
+									uint32_t blockTimeMs )
+{
+    BaseType_t xQueueStatus = pdFAIL;
+    uint32_t ulNotifyValue = 0;
+
+    if( pxMsgCtx && ppxReceivedCommand )
+    {
+    	if( xTaskNotifyWaitIndexed( MQTT_AGENT_NOTIFY_IDX,
+    								0x0,
+    								0xFFFFFFFF,
+    								&ulNotifyValue,
+    								pdMS_TO_TICKS( blockTimeMs ) ) )
+    	{
+    		/* Prioritize processing incoming network packets over local requests */
+    		if( ulNotifyValue & MQTT_AGENT_NOTIFY_FLAG_SOCKET_RECV )
+    		{
+    			*ppxReceivedCommand = NULL;
+    		}
+    		else
+    		{
+    			xQueueStatus = xQueueReceive( pxMsgCtx->xQueue, ppxReceivedCommand, 0 );
+    		}
+    	}
+    }
+
+    return ( bool ) xQueueStatus;
 }
 
 
@@ -622,14 +706,14 @@ static void prvFreeAgentTaskCtx( MQTTAgentTaskCtx_t * pxCtx )
 {
 	if( pxCtx )
 	{
-		if( pxCtx->xAgentMessageCtx.queue != NULL )
+		if( pxCtx->xAgentMessageCtx.xQueue != NULL )
 		{
-			vQueueDelete( pxCtx->xAgentMessageCtx.queue );
+			vQueueDelete( pxCtx->xAgentMessageCtx.xQueue );
 		}
 
 		if( pxCtx->xConnectInfo.pClientIdentifier != NULL )
 		{
-			vPortFree( pxCtx->xConnectInfo.pClientIdentifier );
+			vPortFree( ( void * ) pxCtx->xConnectInfo.pClientIdentifier );
 		}
 
 		if( pxCtx->pcMqttEndpoint != NULL )
@@ -711,21 +795,23 @@ static MQTTStatus_t prvConfigureAgentTaskCtx( MQTTAgentTaskCtx_t * pxCtx,
 
     if( xStatus == MQTTSuccess )
     {
-        pxCtx->xAgentMessageCtx.queue = xQueueCreate( MQTT_AGENT_COMMAND_QUEUE_LENGTH,
+        pxCtx->xAgentMessageCtx.xQueue = xQueueCreate( MQTT_AGENT_COMMAND_QUEUE_LENGTH,
                                                       sizeof( MQTTAgentCommand_t * ) );
-        if( pxCtx->xAgentMessageCtx.queue == NULL )
+        if( pxCtx->xAgentMessageCtx.xQueue == NULL )
         {
             xStatus = MQTTNoMemory;
             LogError( "Failed to allocate MQTT Agent message queue." );
         }
+
+        pxCtx->xAgentMessageCtx.xAgentTaskHandle = xTaskGetCurrentTaskHandle();
     }
 
     if( xStatus == MQTTSuccess )
     {
         /* Setup message interface */
         pxCtx->xMessageInterface.pMsgCtx = &( pxCtx->xAgentMessageCtx );
-        pxCtx->xMessageInterface.send = Agent_MessageSend;
-        pxCtx->xMessageInterface.recv = Agent_MessageReceive;
+        pxCtx->xMessageInterface.send = prvAgentMessageSend;
+        pxCtx->xMessageInterface.recv = prvAgentMessageReceive;
         pxCtx->xMessageInterface.getCommand = Agent_GetCommand;
         pxCtx->xMessageInterface.releaseCommand = Agent_ReleaseCommand;
     }
@@ -792,6 +878,7 @@ void vMQTTAgentTask( void * pvParameters )
     MQTTAgentTaskCtx_t * pxCtx = NULL;
     uint8_t * pucNetworkBuffer = NULL;
     NetworkContext_t * pxNetworkContext = NULL;
+    uint16_t usNextRetryBackOff = 0U;
 
     ( void ) pvParameters;
 
@@ -876,6 +963,20 @@ void vMQTTAgentTask( void * pvParameters )
         }
     }
 
+    if( xMQTTStatus == MQTTSuccess )
+    {
+    	xTlsStatus = mbedtls_transport_setrecvcallback( pxNetworkContext,
+    													prvSocketRecvReadyCallback,
+    												    &( pxCtx->xAgentMessageCtx ) );
+
+        if( xTlsStatus != TLS_TRANSPORT_SUCCESS )
+        {
+            LogError( "Failed to configure socket recv ready callback." );
+            xMQTTStatus = MQTTBadParameter;
+        }
+    }
+
+
     if( xMQTTStatus != MQTTSuccess )
     {
         xExitFlag = pdTRUE;
@@ -916,8 +1017,6 @@ void vMQTTAgentTask( void * pvParameters )
 
             if( xTlsStatus != TLS_TRANSPORT_SUCCESS )
             {
-                uint16_t usNextRetryBackOff = 0U;
-
                 /* Get back-off value (in seconds) for the next connection retry. */
                 xBackoffAlgStatus = BackoffAlgorithm_GetNextBackoff( &xReconnectParams,
                                                                      uxRand(),
@@ -925,14 +1024,14 @@ void vMQTTAgentTask( void * pvParameters )
 
                 if( xBackoffAlgStatus == BackoffAlgorithmSuccess )
                 {
-                    LogWarn( ( "Connecting to the mqtt broker failed. "
-                               "Retrying connection in %hu seconds.",
-                               usNextRetryBackOff ) );
+                    LogWarn( "Connecting to the mqtt broker failed. "
+                             "Retrying connection in %hu seconds.",
+                             usNextRetryBackOff );
                     vTaskDelay( pdMS_TO_TICKS( 1000 * usNextRetryBackOff ) );
                 }
-                else if( xBackoffAlgStatus == BackoffAlgorithmRetriesExhausted )
+                else
                 {
-                    LogError( ( "Connection to the broker failed, all attempts exhausted." ) );
+                    LogError( "Connection to the broker failed, all attempts exhausted." );
                     xExitFlag = pdTRUE;
                 }
             }
@@ -941,6 +1040,8 @@ void vMQTTAgentTask( void * pvParameters )
         if( xTlsStatus == TLS_TRANSPORT_SUCCESS )
         {
             bool xSessionPresent = false;
+
+            ( void ) MQTTAgent_CancelAll( &( pxCtx->xAgentContext ) );
 
             xMQTTStatus = MQTT_Connect( &( pxCtx->xAgentContext.mqttContext ),
                                         &( pxCtx->xConnectInfo ),
@@ -984,13 +1085,20 @@ void vMQTTAgentTask( void * pvParameters )
         if( xMQTTStatus == MQTTSuccess )
         {
             ( void ) xEventGroupSetBits( xSystemEvents, EVT_MASK_MQTT_CONNECTED );
+            xReconnectParams.attemptsDone = 0;
+            xReconnectParams.nextJitterMax = RETRY_BACKOFF_BASE_S;
 
-            /* MQTTAgent_CommandLoop() is effectively the agent implementation.  It
-             * will manage the MQTT protocol until such time that an error occurs,
-             * which could be a disconnect.  If an error occurs the MQTT context on
-             * which the error happened is returned so there can be an attempt to
-             * clean up and reconnect however the application writer prefers. */
-            xMQTTStatus = MQTTAgent_CommandLoop( &( pxCtx->xAgentContext ) );
+			/* MQTTAgent_CommandLoop() is effectively the agent implementation.  It
+			 * will manage the MQTT protocol until such time that an error occurs,
+			 * which could be a disconnect.  If an error occurs the MQTT context on
+			 * which the error happened is returned so there can be an attempt to
+			 * clean up and reconnect however the application writer prefers. */
+			xMQTTStatus = MQTTAgent_CommandLoop( &( pxCtx->xAgentContext ) );
+
+            LogDebug( "MQTTAgent_CommandLoop returned with status: %s.",
+            		  MQTT_Status_strerror( xMQTTStatus ) );
+
+            ( void ) MQTTAgent_CancelAll( &( pxCtx->xAgentContext ) );
 
             mbedtls_transport_disconnect( pxNetworkContext );
 
@@ -1007,11 +1115,26 @@ void vMQTTAgentTask( void * pvParameters )
 					sizeof( pxCtx->xSubMgrCtx.pxSubAckStatus ) );
         }
 
-        vTaskDelay( 10 * 1000 );
+        if( !xExitFlag )
+        {
+			/* Get back-off value (in seconds) for the next connection retry. */
+			xBackoffAlgStatus = BackoffAlgorithm_GetNextBackoff( &xReconnectParams,
+																 uxRand(),
+																 &usNextRetryBackOff );
+
+			if( xBackoffAlgStatus == BackoffAlgorithmSuccess )
+			{
+				LogWarn( "Disconnected from the MQTT Broker. Retrying in %hu seconds.",
+						   usNextRetryBackOff );
+				vTaskDelay( pdMS_TO_TICKS( 1000 * usNextRetryBackOff ) );
+			}
+			else
+			{
+				LogError( "Reconnect limit reached. Will exit..." );
+				xExitFlag = pdTRUE;
+			}
+        }
     }
-
-
-    LogInfo( "Cleaning up." );
 
     if( pxCtx != NULL )
     {
@@ -1484,3 +1607,5 @@ MQTTStatus_t MqttAgent_UnSubscribeSync( MQTTAgentHandle_t xHandle,
 	}
 	return xStatus;
 }
+
+

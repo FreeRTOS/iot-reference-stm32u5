@@ -29,6 +29,13 @@
  * @brief Implements functions to obtain and release commands.
  */
 
+#include "logging_levels.h"
+
+#define LOG_LEVEL LOG_ERROR
+
+#include "logging.h"
+
+
 /* Standard includes. */
 #include <string.h>
 #include <stdio.h>
@@ -39,12 +46,6 @@
 
 /* Header include. */
 #include "freertos_command_pool.h"
-#include "freertos_agent_message.h"
-
-/*-----------------------------------------------------------*/
-
-#define QUEUE_NOT_INITIALIZED    ( 0U )
-#define QUEUE_INITIALIZED        ( 1U )
 
 /**
  * @brief The pool of command structures used to hold information on commands (such
@@ -53,93 +54,70 @@
  */
 static MQTTAgentCommand_t commandStructurePool[ MQTT_COMMAND_CONTEXTS_POOL_SIZE ];
 
-/**
- * @brief The message context used to guard the pool of MQTTAgentCommand_t structures.
- * For FreeRTOS, this is implemented with a queue. Structures may be
- * obtained by receiving a pointer from the queue, and returned by
- * sending the pointer back into it.
- */
-static MQTTAgentMessageContext_t commandStructMessageCtx;
-
-/**
- * @brief Initialization status of the queue.
- */
-static volatile uint8_t initStatus = QUEUE_NOT_INITIALIZED;
+static QueueHandle_t xCommandPoolQueue = NULL;
 
 /*-----------------------------------------------------------*/
 
 void Agent_InitializePool( void )
 {
-    size_t i;
-    MQTTAgentCommand_t * pCommand;
-    static uint8_t staticQueueStorageArea[ MQTT_COMMAND_CONTEXTS_POOL_SIZE * sizeof( MQTTAgentCommand_t * ) ];
-    static StaticQueue_t staticQueueStructure;
-    bool commandAdded = false;
+	if( xCommandPoolQueue == NULL )
+	{
+		xCommandPoolQueue = xQueueCreate( MQTT_COMMAND_CONTEXTS_POOL_SIZE, sizeof( MQTTAgentCommand_t * ) );
 
-    if( initStatus == QUEUE_NOT_INITIALIZED )
-    {
-        memset( ( void * ) commandStructurePool, 0x00, sizeof( commandStructurePool ) );
-        commandStructMessageCtx.queue = xQueueCreateStatic( MQTT_COMMAND_CONTEXTS_POOL_SIZE,
-                                                       sizeof( MQTTAgentCommand_t * ),
-                                                       staticQueueStorageArea,
-                                                       &staticQueueStructure );
-        configASSERT( commandStructMessageCtx.queue );
-
-        /* Populate the queue. */
-        for( i = 0; i < MQTT_COMMAND_CONTEXTS_POOL_SIZE; i++ )
+        /* Populate the queue with pointers to each command structure. */
+        for( uint32_t ulIdx = 0; ulIdx < MQTT_COMMAND_CONTEXTS_POOL_SIZE; ulIdx++ )
         {
-            /* Store the address as a variable. */
-            pCommand = &commandStructurePool[ i ];
-            /* Send the pointer to the queue. */
-            commandAdded = Agent_MessageSend( &commandStructMessageCtx, &pCommand, 0U );
-            configASSERT( commandAdded );
-        }
+        	MQTTAgentCommand_t * pCommand = &commandStructurePool[ ulIdx ];
 
-        initStatus = QUEUE_INITIALIZED;
+            ( void ) xQueueSend( xCommandPoolQueue, &pCommand, 0U );
+        }
     }
 }
 
 /*-----------------------------------------------------------*/
 
-MQTTAgentCommand_t * Agent_GetCommand( uint32_t blockTimeMs )
+MQTTAgentCommand_t * Agent_GetCommand( uint32_t ulBlockTimeMs )
 {
-    MQTTAgentCommand_t * structToUse = NULL;
-    bool structRetrieved = false;
+    MQTTAgentCommand_t * pxCommandStruct = NULL;
 
-    /* Check queue has been created. */
-    configASSERT( initStatus == QUEUE_INITIALIZED );
-
-    /* Retrieve a struct from the queue. */
-    structRetrieved = Agent_MessageReceive( &commandStructMessageCtx, &( structToUse ), blockTimeMs );
-
-    if( !structRetrieved )
+    if( xCommandPoolQueue )
     {
-        LogError( ( "No command structure available." ) );
+    	if( !xQueueReceive( xCommandPoolQueue, &pxCommandStruct, pdMS_TO_TICKS( ulBlockTimeMs ) ) )
+    	{
+    		LogError( ( "No command structure available." ) );
+    	}
+    }
+    else
+    {
+    	LogError( ( "Command pool not initialized." ) );
     }
 
-    return structToUse;
+    return pxCommandStruct;
 }
 
 /*-----------------------------------------------------------*/
 
 bool Agent_ReleaseCommand( MQTTAgentCommand_t * pCommandToRelease )
 {
-    bool structReturned = false;
+    BaseType_t xStructReturned = pdFALSE;
 
-    configASSERT( initStatus == QUEUE_INITIALIZED );
-
-    /* See if the structure being returned is actually from the pool. */
-    if( ( pCommandToRelease >= commandStructurePool ) &&
-        ( pCommandToRelease < ( commandStructurePool + MQTT_COMMAND_CONTEXTS_POOL_SIZE ) ) )
+    if( !xCommandPoolQueue )
     {
-        structReturned = Agent_MessageSend( &commandStructMessageCtx, &pCommandToRelease, 0U );
+    	LogError( ( "Command pool not initialized." ) );
+    }
+    /* See if the structure being returned is actually from the pool. */
+    else if( pCommandToRelease < commandStructurePool ||
+            pCommandToRelease > ( commandStructurePool + MQTT_COMMAND_CONTEXTS_POOL_SIZE ) )
+    {
+    	LogError( ( "Provided pointer: %p does not belong to the command pool.", pCommandToRelease ) );
+    }
+    else
+    {
+    	xStructReturned = xQueueSend( xCommandPoolQueue, &pCommandToRelease, 0U );
 
-        /* The send should not fail as the queue was created to hold every command
-         * in the pool. */
-        configASSERT( structReturned );
         LogDebug( ( "Returned Command Context %d to pool",
                     ( int ) ( pCommandToRelease - commandStructurePool ) ) );
     }
 
-    return structReturned;
+    return ( bool ) xStructReturned;
 }
