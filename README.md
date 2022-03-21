@@ -29,10 +29,10 @@ Devices uses digital signatures to verify the authenticity of the firmware updat
 [ req ]
 prompt             = no
 distinguished_name = my_dn
-                    
+
 [ my_dn ]
 commonName = test_signer@amazon.com
-                    
+
 [ my_exts ]
 keyUsage         = digitalSignature
 extendedKeyUsage = codeSigning
@@ -65,9 +65,9 @@ aws acm import-certificate --certificate fileb://ecdsasigner.crt --private-key f
 ```
 
 5. Connect the device to a terminal over serial port. On the command line prompt type following command to provision public key to device:
-  
+
   `> pki import cert ota_signer_pub`
-   
+
    Press `Enter` then paste the contents of the PEM public key file `ecdsasigner-pub-key.pem` into the terminal.
    Press `Enter` again.
    Device should successfully provision the public key used to verify the digital signature.
@@ -146,7 +146,7 @@ Create a new OTA update job from the configuration file:
 aws iot create-ota-update --cli-input-json file://<ota job configuration file path in your filesystem>
 ```
 
-The command on success returns the OTA Update identifier and status of the Job as `CREATE_PENDING`. To get the corresponding job ID of the OTA Job, execute the following command and look for `awsIotJobId` field in json document returned. 
+The command on success returns the OTA Update identifier and status of the Job as `CREATE_PENDING`. To get the corresponding job ID of the OTA Job, execute the following command and look for `awsIotJobId` field in json document returned.
 
 ```
 aws iot get-ota-update --ota-update-id=<ota update id created above>
@@ -199,5 +199,4 @@ See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more inform
 ## License
 
 Project source code under `.\Projects` and libraries under `.\Middleware\AWS` and `.\Middleware\FreeRTOS` are licensed under the MIT-0 License. See the LICENSE file.
-Libraries other than from AWS and FreeRTOS under `.\Middleware` and hardware platform driver source code under `.\Drivers` are under separate license. See source header documentation. 
-
+Libraries other than from AWS and FreeRTOS under `.\Middleware` and hardware platform driver source code under `.\Drivers` are under separate license. See source header documentation.

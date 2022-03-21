@@ -79,4 +79,3 @@ typedef struct mbedtls_aes_xts_context
 #endif /* MBEDTLS_AES_ALT */
 
 #endif /* MBEDTLS_AES_ALT_H */
-
