@@ -1232,6 +1232,8 @@ static CK_RV p11_rsa_ctx_init( void * pvCtx,
 		xResult = CKR_FUNCTION_FAILED;
 	}
 
+	(void) pxMbedRsaCtx;
+
 	return xResult;
 }
 

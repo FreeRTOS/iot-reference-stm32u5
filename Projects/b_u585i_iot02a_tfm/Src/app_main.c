@@ -43,7 +43,7 @@
 
 #include "cli/cli.h"
 
-volatile EventGroupHandle_t xSystemEvents = NULL;
+EventGroupHandle_t xSystemEvents = NULL;
 
 typedef void( * VectorTable_t )(void);
 
@@ -52,6 +52,8 @@ typedef void( * VectorTable_t )(void);
 #define VECTOR_TABLE_ALIGN_CM33         0x400U
 
 static VectorTable_t pulVectorTableSRAM[ VECTOR_TABLE_SIZE ] __attribute__(( aligned (VECTOR_TABLE_ALIGN_CM33) ));
+
+extern int32_t ns_interface_lock_init( void );
 
 /* Relocate vector table to ram for runtime interrupt registration */
 static void vRelocateVectorTable( void )

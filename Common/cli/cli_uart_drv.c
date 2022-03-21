@@ -21,7 +21,6 @@
  */
 
 #include "FreeRTOS.h"
-#include "FreeRTOS_CLI.h"
 #include "task.h"
 
 #include "cli.h"

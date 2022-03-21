@@ -23,12 +23,27 @@
 #define MXCHIP_RESET_Pin 		GPIO_PIN_15
 #define MXCHIP_RESET_GPIO_Port 	GPIOF
 
-RTC_HandleTypeDef * pxHndlRtc;
-SPI_HandleTypeDef * pxHndlSpi2;
-UART_HandleTypeDef * pxHndlUart1;
-DCACHE_HandleTypeDef * pxHndlDCache;
-DMA_HandleTypeDef * pxHndlGpdmaCh4;
-DMA_HandleTypeDef * pxHndlGpdmaCh5;
+extern RTC_HandleTypeDef * pxHndlRtc;
+extern SPI_HandleTypeDef * pxHndlSpi2;
+extern TIM_HandleTypeDef * pxHndlTim5;
+extern UART_HandleTypeDef * pxHndlUart1;
+extern DCACHE_HandleTypeDef * pxHndlDCache;
+extern DMA_HandleTypeDef * pxHndlGpdmaCh4;
+extern DMA_HandleTypeDef * pxHndlGpdmaCh5;
+
+static inline uint32_t timer_get_count( TIM_HandleTypeDef * pxHndl )
+{
+	if( pxHndl )
+	{
+		return __HAL_TIM_GetCounter( pxHndlTim5 );
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+void hw_init( void );
 
 typedef void ( * GPIOInterruptCallback_t ) ( void * pvContext );
 

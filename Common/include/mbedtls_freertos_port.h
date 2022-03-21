@@ -33,11 +33,7 @@
 #include "semphr.h"
 
 /**
- * @brief mbed TLS mutex type.
- *
- * mbed TLS requires platform specific definition for the mutext type. Defining the type for
- * FreeRTOS with FreeRTOS semaphore
- * handle and semaphore storage as members.
+ * @brief mbed TLS mutex type definition for MBEDTLS_THREADING_C implementation.
  */
 typedef struct mbedtls_threading_mutex
 {
@@ -45,12 +41,8 @@ typedef struct mbedtls_threading_mutex
     StaticSemaphore_t mutexStorage;
 } mbedtls_threading_mutex_t;
 
+#if defined(MBEDTLS_THREADING_ALT)
 int mbedtls_platform_threading_init( void );
-
-/* mbed TLS mutex functions. */
-void mbedtls_platform_mutex_init( mbedtls_threading_mutex_t * pMutex );
-void mbedtls_platform_mutex_free( mbedtls_threading_mutex_t * pMutex );
-int mbedtls_platform_mutex_lock( mbedtls_threading_mutex_t * pMutex );
-int mbedtls_platform_mutex_unlock( mbedtls_threading_mutex_t * pMutex );
+#endif
 
 #endif /* ifndef MBEDTLS_FREERTOS_PORT_H_ */

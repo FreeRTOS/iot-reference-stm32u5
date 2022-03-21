@@ -31,7 +31,6 @@
 
 #include "logging.h"
 
-//#include "main.h"
 #include "sys_evt.h"
 #include "FreeRTOS.h"
 #include "task.h"
@@ -50,7 +49,7 @@
 
 static lfs_t * pxLfsCtx = NULL;
 
-volatile EventGroupHandle_t xSystemEvents = NULL;
+EventGroupHandle_t xSystemEvents = NULL;
 
 lfs_t * pxGetDefaultFsCtx( void )
 {
@@ -186,12 +185,6 @@ void vInitTask( void * pvArgs )
     BaseType_t xResult;
     int xMountStatus;
 
-    /* Initialize PSA crypto api */
-//    psa_crypto_init();
-
-    /* Initialize threading_alt implementation */
-//    mbedtls_platform_threading_init();
-
     xResult = xTaskCreate( Task_CLI, "cli", 2048, NULL, 10, NULL );
 
     xMountStatus = fs_init();
@@ -257,11 +250,6 @@ int main( void )
     vLoggingInit();
 
     LogInfo( "HW Init Complete." );
-
-//    if( ns_interface_lock_init() != 0 )
-//    {
-//        configASSERT(0);
-//    }
 
     xSystemEvents = xEventGroupCreate();
 

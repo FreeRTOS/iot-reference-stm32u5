@@ -37,7 +37,8 @@
 
 #define CLI_UART_TX_STREAM_LEN      1280
 
-char pcCliScratchBuffer[ CLI_OUTPUT_SCRATCH_BUF_LEN ];
-
 void Task_CLI( void * pvParameters );
+
+
+
 #endif

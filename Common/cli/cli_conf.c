@@ -21,11 +21,11 @@
  */
 
 #include "FreeRTOS.h"
-#include "FreeRTOS_CLI.h"
 #include "message_buffer.h"
 #include "task.h"
 
 #include "cli.h"
+#include "cli_prv.h"
 #include "logging.h"
 
 #include "kvstore.h"

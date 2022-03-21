@@ -76,7 +76,7 @@ __attribute__( ( optimize( "O0" ) ) ) void prvGetRegistersFromStack( uint32_t *p
     }
 }
 
-void HardFault_Handler( void ) __attribute__( ( naked ) );
+void HardFault_Handler( void ) __attribute__( ( naked, aligned(8) ) );
 
 void HardFault_Handler( void )
 {
@@ -207,12 +207,6 @@ void GPIO_EXTI_Register_Callback( uint16_t usGpioPinMask, GPIOInterruptCallback_
     uint32_t ulIndex = POSITION_VAL( usGpioPinMask );
 
     configASSERT( ulIndex < 16 );
-
-//    LogDebug( "Registering callback addr: %p, ctx: %p, to gpio pin_num: %d, pin_mask: %d.",
-//              pvCallback,
-//              pvContext,
-//              ulIndex,
-//              usGpioPinMask );
 
     xGpioCallbacks[ ulIndex ] = pvCallback;
     xGpioCallbackContext[ ulIndex ] = pvContext;

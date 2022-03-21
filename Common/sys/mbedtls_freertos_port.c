@@ -101,7 +101,7 @@ void mbedtls_platform_free( void * ptr )
  *
  * @param[in, out] pMutex mbedtls mutex handle.
  */
-void mbedtls_platform_mutex_init( mbedtls_threading_mutex_t * pMutex )
+static void mbedtls_platform_mutex_init( mbedtls_threading_mutex_t * pMutex )
 {
     configASSERT( pMutex != NULL );
 
@@ -121,11 +121,10 @@ void mbedtls_platform_mutex_init( mbedtls_threading_mutex_t * pMutex )
  * @note This function is an empty stub as nothing needs to be done to free
  * a statically allocated FreeRTOS mutex.
  */
-void mbedtls_platform_mutex_free( mbedtls_threading_mutex_t * pMutex )
+static void mbedtls_platform_mutex_free( mbedtls_threading_mutex_t * pMutex )
 {
     /* Nothing needs to be done to free a statically-allocated FreeRTOS mutex. */
 	vSemaphoreDelete( pMutex->mutexHandle );
-
 }
 
 /*-----------------------------------------------------------*/
@@ -137,7 +136,7 @@ void mbedtls_platform_mutex_free( mbedtls_threading_mutex_t * pMutex )
  *
  * @return 0 (success) is always returned as any other failure is asserted.
  */
-int mbedtls_platform_mutex_lock( mbedtls_threading_mutex_t * pMutex )
+static int mbedtls_platform_mutex_lock( mbedtls_threading_mutex_t * pMutex )
 {
     BaseType_t mutexStatus = 0;
 
@@ -162,7 +161,7 @@ int mbedtls_platform_mutex_lock( mbedtls_threading_mutex_t * pMutex )
  *
  * @return 0 is always returned as any other failure is asserted.
  */
-int mbedtls_platform_mutex_unlock( mbedtls_threading_mutex_t * pMutex )
+static int mbedtls_platform_mutex_unlock( mbedtls_threading_mutex_t * pMutex )
 {
     BaseType_t mutexStatus = 0;
 
@@ -183,7 +182,7 @@ int mbedtls_platform_mutex_unlock( mbedtls_threading_mutex_t * pMutex )
 #if defined(MBEDTLS_THREADING_ALT)
 int mbedtls_platform_threading_init( void )
 {
-    mbedtls_threading_set_alt( mbedtls_mutex_init,
+    mbedtls_threading_set_alt( mbedtls_platform_mutex_init,
                                mbedtls_platform_mutex_free,
                                mbedtls_platform_mutex_lock,
                                mbedtls_platform_mutex_unlock );

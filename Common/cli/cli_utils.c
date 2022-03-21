@@ -34,10 +34,8 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-/* Utils includes. */
-#include "FreeRTOS_CLI.h"
-
 #include "cli.h"
+#include "cli_prv.h"
 
 #include "core_cm33.h"
 

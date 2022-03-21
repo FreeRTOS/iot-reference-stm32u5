@@ -36,7 +36,10 @@ UART_HandleTypeDef * pxHndlUart1 = NULL;
 DCACHE_HandleTypeDef * pxHndlDCache = NULL;
 DMA_HandleTypeDef * pxHndlGpdmaCh4 = NULL;
 DMA_HandleTypeDef * pxHndlGpdmaCh5 = NULL;
+#ifndef TFM_PSA_API
 RNG_HandleTypeDef * pxHndlRng = NULL;
+#endif /* ! defined( TFM_PSA_API ) */
+TIM_HandleTypeDef * pxHndlTim5 = NULL;
 
 /* local function prototypes */
 static void SystemClock_Config( void );
@@ -48,7 +51,11 @@ static void hw_gpio_init( void );
 static void hw_spi2_msp_init( SPI_HandleTypeDef* pxHndlSpi );
 static void hw_spi2_msp_deinit( SPI_HandleTypeDef * pxHndlSpi );
 static void hw_spi_init( void );
+static void hw_tim5_init( void );
+
+#ifndef TFM_PSA_API
 static void hw_rng_init( void );
+#endif /* ! defined( TFM_PSA_API ) */
 
 void hw_init( void )
 {
@@ -74,14 +81,15 @@ void hw_init( void )
     /* Initialize GPIO */
     hw_gpio_init();
 
-//    hw_rtc_init();
-
     hw_gpdma_init();
 //    hw_rtc_init();
     hw_spi_init();
 
-    //TODO: Exclude for trustzone build.
+#ifndef TFM_PSA_API
     hw_rng_init();
+#endif
+
+    hw_tim5_init();
 }
 
 static void SystemClock_Config( void )
@@ -553,6 +561,7 @@ static void hw_spi_init( void )
     }
 }
 
+#ifndef TFM_PSA_API
 static void hw_rng_init( void )
 {
 	HAL_StatusTypeDef xResult = HAL_OK;
@@ -585,6 +594,35 @@ static void hw_rng_init( void )
 	{
 		pxHndlRng = &xRngHandle;
 	}
+}
+#endif /* !defined( TFM_PSA_API ) */
+
+static void hw_tim5_init( void )
+{
+	HAL_StatusTypeDef xResult = HAL_OK;
+
+	static TIM_HandleTypeDef xTim5Handle =
+	{
+		.Instance = TIM5,
+		.Init.Prescaler = 4096, /* 160 MHz / 4096 = 39KHz */
+		.Init.Period = 0xFFFFFFFF,
+	};
+
+    __TIM5_CLK_ENABLE();
+
+    xResult = HAL_TIM_Base_Init( &xTim5Handle );
+    configASSERT( xResult == HAL_OK );
+
+    if( xResult == HAL_OK )
+    {
+    	xResult = HAL_TIM_Base_Start( &xTim5Handle );
+    	configASSERT( xResult == HAL_OK );
+    }
+
+    if( xResult == HAL_OK )
+    {
+    	pxHndlTim5 = &xTim5Handle;
+    }
 }
 
 /* HAL MspInit Callbacks */

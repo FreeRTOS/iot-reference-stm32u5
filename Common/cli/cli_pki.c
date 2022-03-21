@@ -25,13 +25,13 @@
 
 /* FreeRTOS */
 #include "FreeRTOS.h"
-#include "FreeRTOS_CLI.h"
 #include "message_buffer.h"
 #include "task.h"
 
 
 /* Project Specific */
 #include "cli.h"
+#include "cli_prv.h"
 #include "logging.h"
 #include "kvstore.h"
 
@@ -846,12 +846,6 @@ static BaseType_t xImportCertificateIntoP11( const char * pcLabel,
     CK_RV xResult;
     BaseType_t xSessionInitialized = pdFALSE;
     CK_OBJECT_HANDLE xCertHandle = 0;
-
-    /* Set the mutex functions for mbed TLS thread safety. */
-    // mbedtls_threading_set_alt( mbedtls_platform_mutex_init,
-    //                            mbedtls_platform_mutex_free,
-    //                            mbedtls_platform_mutex_lock,
-    //                            mbedtls_platform_mutex_unlock );
 
     xResult = C_GetFunctionList( &pxFunctionList );
 

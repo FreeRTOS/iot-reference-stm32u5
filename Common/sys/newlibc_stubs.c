@@ -26,6 +26,7 @@
  */
 
 #include "FreeRTOS.h"
+#include "task.h"
 #include <malloc.h>
 #include <string.h>
 

@@ -168,9 +168,9 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 
 #define configASSERT( x )  do { \
                                if( ( x ) == 0 ) { \
-                                  /* vDyingGasp(); \ */ \
-                                  /* LogAssert( "Assertion failed." ); \ */ \
-                                 /*  vDyingGasp(); */ \
+                                  vDyingGasp(); \
+                                  LogAssert( "Assertion failed." ); \
+                                  vDyingGasp(); \
                                    while( 1 ) { \
                                        __NOP(); \
                                    } \
@@ -189,20 +189,9 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 #define configAPPLICATION_PROVIDES_cOutputBuffer 1
 #define configCOMMAND_INT_MAX_OUTPUT_SIZE 128
 
-TIM_HandleTypeDef htim5;
-
-#define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()        \
-do {                                                  \
-	htim5.Instance = TIM5;                              \
-	htim5.Init.Prescaler = 4096; /* 160 MHz / 4096 = 39KHz */ \
-	htim5.Init.Period = 0xFFFFFFFF;                     \
-                                                        \
-    __TIM5_CLK_ENABLE();                                \
-    HAL_TIM_Base_Init( &htim5 );                          \
-    HAL_TIM_Base_Start( &htim5 );                         \
-  }while(0)
-
-#define portGET_RUN_TIME_COUNTER_VALUE() ( __HAL_TIM_GetCounter( &htim5 ) )
+#include "hw_defs.h"
+#define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()
+#define portGET_RUN_TIME_COUNTER_VALUE() ( timer_get_count( pxHndlTim5 ) )
 
 
 

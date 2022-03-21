@@ -45,7 +45,7 @@ typedef struct
 	};
 } KVStoreDefaultEntry_t;
 
-const KVStoreDefaultEntry_t kvStoreDefaults[ CS_NUM_KEYS ];
+extern const KVStoreDefaultEntry_t kvStoreDefaults[ CS_NUM_KEYS ];
 
 /* Private functions for NVM implementation */
 

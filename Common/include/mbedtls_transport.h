@@ -280,8 +280,8 @@ int32_t mbedtls_transport_send( NetworkContext_t * pxNetworkContext,
 
 
 #ifdef MBEDTLS_TRANSPORT_PKCS11
-mbedtls_pk_info_t mbedtls_pkcs11_pk_ecdsa;
-mbedtls_pk_info_t mbedtls_pkcs11_pk_rsa;
+extern mbedtls_pk_info_t mbedtls_pkcs11_pk_ecdsa;
+extern mbedtls_pk_info_t mbedtls_pkcs11_pk_rsa;
 
 int32_t lReadCertificateFromPKCS11( mbedtls_x509_crt * pxCertificateContext,
 									CK_SESSION_HANDLE xP11SessionHandle,
