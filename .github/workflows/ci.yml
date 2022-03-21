@@ -34,7 +34,7 @@ jobs:
       - name: Run Uncrustify
         run: |
           uncrustify --version
-          find . -iname "*.[hc]" -exec uncrustify --check -c tools/uncrustify.cfg {} +
+          find Projects Common -iname "*.[hc]" -exec uncrustify --check -c tools/uncrustify.cfg {} +
       - name: Check For Trailing Whitespace
         run: |
           set +e

@@ -33,61 +33,67 @@
 
 #define osSemaphoreDef( name )
 
-#define osSemaphore( name ) ( xSemaphore##name )
+#define osSemaphore( name )    ( xSemaphore ## name )
 
-#define osSemaphoreId SemaphoreHandle_t
+#define osSemaphoreId    SemaphoreHandle_t
 
 #define osSemaphoreCreate( name, count ) \
-	( count == 1 ? xSemaphoreCreateMutex() : xSemaphoreCreateCounting( count, count ) )
+    ( count == 1 ? xSemaphoreCreateMutex() : xSemaphoreCreateCounting( count, count ) )
 
-typedef enum  {
-  osOK                    =     0,       ///< function completed; no error or event occurred.
-  osEventTimeout          =  0x40,       ///< function completed; timeout occurred.
-  osErrorParameter        =  0x80,       ///< parameter error: a mandatory parameter was missing or specified an incorrect object.
-  osErrorResource         =  0x81,       ///< resource not available: a specified resource was not available.
-  osErrorTimeoutResource  =  0xC1
+typedef enum
+{
+    osOK = 0,                /*/< function completed; no error or event occurred. */
+    osEventTimeout = 0x40,   /*/< function completed; timeout occurred. */
+    osErrorParameter = 0x80, /*/< parameter error: a mandatory parameter was missing or specified an incorrect object. */
+    osErrorResource = 0x81,  /*/< resource not available: a specified resource was not available. */
+    osErrorTimeoutResource = 0xC1
 } osStatus;
 
-#define osWaitForever     0xFFFFFFFF     ///< wait forever timeout value
+#define osWaitForever    0xFFFFFFFF      /*/< wait forever timeout value */
 
-static inline int32_t osSemaphoreWait( SemaphoreHandle_t xSemaphore, uint32_t ulWaitMs )
+static inline int32_t osSemaphoreWait( SemaphoreHandle_t xSemaphore,
+                                       uint32_t ulWaitMs )
 {
-	int32_t lRetVal = 0;
-	TickType_t xWaitTime;
+    int32_t lRetVal = 0;
+    TickType_t xWaitTime;
 
-	if( xSemaphore == NULL )
-	{
-		lRetVal = -1;
-	}
-	else if( ulWaitMs == osWaitForever )
-	{
-		xWaitTime = portMAX_DELAY;
-	}
-	else
-	{
-		xWaitTime = pdMS_TO_TICKS( ulWaitMs );
-	}
+    if( xSemaphore == NULL )
+    {
+        lRetVal = -1;
+    }
+    else if( ulWaitMs == osWaitForever )
+    {
+        xWaitTime = portMAX_DELAY;
+    }
+    else
+    {
+        xWaitTime = pdMS_TO_TICKS( ulWaitMs );
+    }
 
-	if( lRetVal == 0 &&
-	    xSemaphoreTake( xSemaphore, xWaitTime ) == pdTRUE )
-	{
-		lRetVal = ( int32_t ) uxSemaphoreGetCount( xSemaphore );
-	}
-	return lRetVal;
+    if( ( lRetVal == 0 ) &&
+        ( xSemaphoreTake( xSemaphore, xWaitTime ) == pdTRUE ) )
+    {
+        lRetVal = ( int32_t ) uxSemaphoreGetCount( xSemaphore );
+    }
+
+    return lRetVal;
 }
 
 static inline osStatus osSemaphoreRelease( SemaphoreHandle_t xSemaphore )
 {
-	osStatus xReturnStatus = osOK;
-	if( xSemaphore == NULL )
-	{
-		xReturnStatus = osErrorParameter;
-	}
-	if( xSemaphoreGive( xSemaphore ) == pdFALSE )
-	{
-		xReturnStatus = osErrorResource;
-	}
-	return xReturnStatus;
+    osStatus xReturnStatus = osOK;
+
+    if( xSemaphore == NULL )
+    {
+        xReturnStatus = osErrorParameter;
+    }
+
+    if( xSemaphoreGive( xSemaphore ) == pdFALSE )
+    {
+        xReturnStatus = osErrorResource;
+    }
+
+    return xReturnStatus;
 }
 
 #endif /* _CMSIS_OS_COMPAT */

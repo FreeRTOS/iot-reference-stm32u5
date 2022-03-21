@@ -50,10 +50,10 @@
 #include "lwip/stats.h"
 
 #if !INCLUDE_xTaskAbortDelay
-    #error "lwIP FreeRTOS port requires INCLUDE_xTaskAbortDelay"
+#error "lwIP FreeRTOS port requires INCLUDE_xTaskAbortDelay"
 #endif
 #if !INCLUDE_xTaskGetCurrentTaskHandle
-    #error "lwIP FreeRTOS port requires INCLUDE_xTaskGetCurrentTaskHandle"
+#error "lwIP FreeRTOS port requires INCLUDE_xTaskGetCurrentTaskHandle"
 #endif
 
 /* Very crude mechanism used to determine if the critical section handling
@@ -115,16 +115,16 @@ void sys_mbox_free( sys_mbox_t * pxMailBox )
         ulMessagesWaiting = uxQueueMessagesWaiting( pvxMailBox->xMbox );
         configASSERT( ( ulMessagesWaiting == 0 ) );
 
-        #if SYS_STATS
+#if SYS_STATS
+        {
+            if( ulMessagesWaiting != 0UL )
             {
-                if( ulMessagesWaiting != 0UL )
-                {
-                    SYS_STATS_INC( mbox.err );
-                }
-
-                SYS_STATS_DEC( mbox.used );
+                SYS_STATS_INC( mbox.err );
             }
-        #endif /* SYS_STATS */
+
+            SYS_STATS_DEC( mbox.used );
+        }
+#endif /* SYS_STATS */
 
         taskENTER_CRITICAL();
         xMbox = pvxMailBox->xMbox;
@@ -553,7 +553,7 @@ void sys_sem_free( sys_sem_t * pxSemaphore )
 *---------------------------------------------------------------------------*/
 void sys_init( void )
 {
-//    srand( rand() );
+/*    srand( rand() ); */
 }
 
 u32_t sys_now( void )
@@ -604,7 +604,7 @@ sys_thread_t sys_thread_new( const char * pcName,
 }
 
 #if LWIP_NETCONN_SEM_PER_THREAD
-    #if configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0
+#if configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0
 
 /*---------------------------------------------------------------------------*
 * Routine:  sys_arch_netconn_sem_get
@@ -614,34 +614,34 @@ sys_thread_t sys_thread_new( const char * pcName,
 *      The semaphore pointer lives in the 0th slot of the
 *      TCB local storage array.  Once allocated, it is never released.
 *---------------------------------------------------------------------------*/
-        sys_sem_t * sys_arch_netconn_sem_get( void )
-        {
-            void * ret;
-            TaskHandle_t task = xTaskGetCurrentTaskHandle();
+sys_sem_t * sys_arch_netconn_sem_get( void )
+{
+    void * ret;
+    TaskHandle_t task = xTaskGetCurrentTaskHandle();
 
-            configASSERT( task != NULL );
+    configASSERT( task != NULL );
 
-            ret = pvTaskGetThreadLocalStoragePointer( task, 0 );
+    ret = pvTaskGetThreadLocalStoragePointer( task, 0 );
 
-            if( ret == NULL )
-            {
-                sys_sem_t * sem;
-                err_t err;
-                /* allocate memory for this semaphore */
-                sem = mem_malloc( sizeof( sys_sem_t ) );
-                configASSERT( sem != NULL );
-                err = sys_sem_new( sem, 0 );
-                configASSERT( err == ERR_OK );
-                configASSERT( sys_sem_valid( sem ) );
-                vTaskSetThreadLocalStoragePointer( task, 0, sem );
-                ret = sem;
-            }
+    if( ret == NULL )
+    {
+        sys_sem_t * sem;
+        err_t err;
+        /* allocate memory for this semaphore */
+        sem = mem_malloc( sizeof( sys_sem_t ) );
+        configASSERT( sem != NULL );
+        err = sys_sem_new( sem, 0 );
+        configASSERT( err == ERR_OK );
+        configASSERT( sys_sem_valid( sem ) );
+        vTaskSetThreadLocalStoragePointer( task, 0, sem );
+        ret = sem;
+    }
 
-            return ret;
-        }
-    #else /* configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 */
-        #error LWIP_NETCONN_SEM_PER_THREAD needs configNUM_THREAD_LOCAL_STORAGE_POINTERS
-    #endif /* configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 */
+    return ret;
+}
+#else /* configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 */
+#error LWIP_NETCONN_SEM_PER_THREAD needs configNUM_THREAD_LOCAL_STORAGE_POINTERS
+#endif /* configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 */
 
 #endif /* LWIP_NETCONN_SEM_PER_THREAD */
 
@@ -694,6 +694,7 @@ void sys_arch_unprotect( sys_prot_t xValue )
         taskEXIT_CRITICAL();
     }
 }
+
 /*-------------------------------------------------------------------------*
 * End of File:  sys_arch.c
 *-------------------------------------------------------------------------*/

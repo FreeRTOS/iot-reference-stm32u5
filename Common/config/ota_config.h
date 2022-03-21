@@ -33,7 +33,7 @@
 
 /* define LOG_LEVEL here if you want to modify the logging level from the default */
 #ifndef LOG_LEVEL
-#define LOG_LEVEL LOG_INFO
+#define LOG_LEVEL    LOG_INFO
 #endif
 
 #include "logging.h"

@@ -9,7 +9,7 @@
 /*
  * Define MBEDTLS_TRANSPORT_PSA to enable certificate and key storage via the ARM PSA API.
  */
-//#define MBEDTLS_TRANSPORT_PSA
+/*#define MBEDTLS_TRANSPORT_PSA */
 
 
 #endif /* TLS_TRANSPORT_CONFIG */

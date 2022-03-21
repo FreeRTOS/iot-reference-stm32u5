@@ -33,16 +33,17 @@
 
 typedef struct
 {
-	const KVStoreValueType_t type;
-	const size_t length;
-	union{
-		const uint32_t u32;
-		const int32_t i32;
-		const BaseType_t bt;
-		const UBaseType_t ubt;
-		const void * const blob;
-		const char * const str;
-	};
+    const KVStoreValueType_t type;
+    const size_t length;
+    union
+    {
+        const uint32_t u32;
+        const int32_t i32;
+        const BaseType_t bt;
+        const UBaseType_t ubt;
+        const void * const blob;
+        const char * const str;
+    };
 } KVStoreDefaultEntry_t;
 
 extern const KVStoreDefaultEntry_t kvStoreDefaults[ CS_NUM_KEYS ];
@@ -53,21 +54,21 @@ extern const KVStoreDefaultEntry_t kvStoreDefaults[ CS_NUM_KEYS ];
 size_t xprvGetValueLengthFromImpl( KVStoreKey_t xKey );
 
 BaseType_t xprvReadValueFromImplStatic( KVStoreKey_t xKey,
-								        KVStoreValueType_t * pxType,
-								        size_t * pxLength,
-										void * pvBuffer,
-										size_t xBufferSize );
+                                        KVStoreValueType_t * pxType,
+                                        size_t * pxLength,
+                                        void * pvBuffer,
+                                        size_t xBufferSize );
 
 BaseType_t xprvReadValueFromImpl( KVStoreKey_t xKey,
-								  KVStoreValueType_t * pxType,
-								  size_t * pxLength,
-								  void * pvBuffer,
-								  size_t xBufferSize );
+                                  KVStoreValueType_t * pxType,
+                                  size_t * pxLength,
+                                  void * pvBuffer,
+                                  size_t xBufferSize );
 
 BaseType_t xprvWriteValueToImpl( KVStoreKey_t xKey,
-								 KVStoreValueType_t xType,
-								 size_t xLength,
-								 const void * pvData );
+                                 KVStoreValueType_t xType,
+                                 size_t xLength,
+                                 const void * pvData );
 
 void vprvNvImplInit( void );
 
@@ -77,15 +78,15 @@ void vprvNvImplInit( void );
 /* Cache related private functions */
 #if KV_STORE_CACHE_ENABLE
 BaseType_t xprvCopyValueFromCache( KVStoreKey_t key,
-							       KVStoreValueType_t * pxDataType,
-							       size_t * pxDataLength,
-						           void * pvBuffer,
-							       size_t xBufferSize );
+                                   KVStoreValueType_t * pxDataType,
+                                   size_t * pxDataLength,
+                                   void * pvBuffer,
+                                   size_t xBufferSize );
 
 BaseType_t xprvWriteCacheEntry( KVStoreKey_t xKey,
-					            KVStoreValueType_t xNewType,
-						        size_t xLength,
-						        const void * pvNewValue );
+                                KVStoreValueType_t xNewType,
+                                size_t xLength,
+                                const void * pvNewValue );
 
 void vprvCacheInit( void );
 
@@ -95,4 +96,3 @@ KVStoreValueType_t prvGetCacheEntryType( KVStoreKey_t xKey );
 #endif /* KV_STORE_CACHE_ENABLE */
 
 #endif /* _KVSTORE_PRV_H */
-

@@ -31,7 +31,7 @@
 
 #include "logging_levels.h"
 
-#define LOG_LEVEL LOG_ERROR
+#define LOG_LEVEL    LOG_ERROR
 
 #include "logging.h"
 
@@ -60,14 +60,14 @@ static QueueHandle_t xCommandPoolQueue = NULL;
 
 void Agent_InitializePool( void )
 {
-	if( xCommandPoolQueue == NULL )
-	{
-		xCommandPoolQueue = xQueueCreate( MQTT_COMMAND_CONTEXTS_POOL_SIZE, sizeof( MQTTAgentCommand_t * ) );
+    if( xCommandPoolQueue == NULL )
+    {
+        xCommandPoolQueue = xQueueCreate( MQTT_COMMAND_CONTEXTS_POOL_SIZE, sizeof( MQTTAgentCommand_t * ) );
 
         /* Populate the queue with pointers to each command structure. */
         for( uint32_t ulIdx = 0; ulIdx < MQTT_COMMAND_CONTEXTS_POOL_SIZE; ulIdx++ )
         {
-        	MQTTAgentCommand_t * pCommand = &commandStructurePool[ ulIdx ];
+            MQTTAgentCommand_t * pCommand = &commandStructurePool[ ulIdx ];
 
             ( void ) xQueueSend( xCommandPoolQueue, &pCommand, 0U );
         }
@@ -82,14 +82,14 @@ MQTTAgentCommand_t * Agent_GetCommand( uint32_t ulBlockTimeMs )
 
     if( xCommandPoolQueue )
     {
-    	if( !xQueueReceive( xCommandPoolQueue, &pxCommandStruct, pdMS_TO_TICKS( ulBlockTimeMs ) ) )
-    	{
-    		LogError( ( "No command structure available." ) );
-    	}
+        if( !xQueueReceive( xCommandPoolQueue, &pxCommandStruct, pdMS_TO_TICKS( ulBlockTimeMs ) ) )
+        {
+            LogError( ( "No command structure available." ) );
+        }
     }
     else
     {
-    	LogError( ( "Command pool not initialized." ) );
+        LogError( ( "Command pool not initialized." ) );
     }
 
     return pxCommandStruct;
@@ -103,17 +103,17 @@ bool Agent_ReleaseCommand( MQTTAgentCommand_t * pCommandToRelease )
 
     if( !xCommandPoolQueue )
     {
-    	LogError( ( "Command pool not initialized." ) );
+        LogError( ( "Command pool not initialized." ) );
     }
     /* See if the structure being returned is actually from the pool. */
-    else if( pCommandToRelease < commandStructurePool ||
-            pCommandToRelease > ( commandStructurePool + MQTT_COMMAND_CONTEXTS_POOL_SIZE ) )
+    else if( ( pCommandToRelease < commandStructurePool ) ||
+             ( pCommandToRelease > ( commandStructurePool + MQTT_COMMAND_CONTEXTS_POOL_SIZE ) ) )
     {
-    	LogError( ( "Provided pointer: %p does not belong to the command pool.", pCommandToRelease ) );
+        LogError( ( "Provided pointer: %p does not belong to the command pool.", pCommandToRelease ) );
     }
     else
     {
-    	xStructReturned = xQueueSend( xCommandPoolQueue, &pCommandToRelease, 0U );
+        xStructReturned = xQueueSend( xCommandPoolQueue, &pCommandToRelease, 0U );
 
         LogDebug( ( "Returned Command Context %d to pool",
                     ( int ) ( pCommandToRelease - commandStructurePool ) ) );

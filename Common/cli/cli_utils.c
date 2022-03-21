@@ -87,7 +87,7 @@ const CLI_Command_Definition_t xCommandDef_kill =
 const CLI_Command_Definition_t xCommandDef_killAll =
 {
     "killall",
-	"killall\r\n"
+    "killall\r\n"
     "    killall [ -SIGNAME ] <Task Name>\r\n"
     "    killall [ -n ] <Task Name>\r\n"
     "        Signal a task with a given name with the signal number or signal name given.\r\n\n",
@@ -97,7 +97,7 @@ const CLI_Command_Definition_t xCommandDef_killAll =
 const CLI_Command_Definition_t xCommandDef_heapStat =
 {
     "heapstat",
-	"heapstat\r\n"
+    "heapstat\r\n"
     "    heapstat [-b | --byte]\r\n"
     "        Display heap statistics in bytes.\r\n\n"
     "    heapstat -h | -k | --kibi\r\n"
@@ -113,18 +113,18 @@ const CLI_Command_Definition_t xCommandDef_heapStat =
 
 const CLI_Command_Definition_t xCommandDef_reset =
 {
-	"reset",
-	"reset\r\n"
-	"    Reset (reboot) the system.\r\n\n",
-	vResetCommand
+    "reset",
+    "reset\r\n"
+    "    Reset (reboot) the system.\r\n\n",
+    vResetCommand
 };
 
 const CLI_Command_Definition_t xCommandDef_uptime =
 {
-	"uptime",
-	"uptime\r\n"
-	"    Display system uptime.\r\n\n",
-	vUptimeCommand
+    "uptime",
+    "uptime\r\n"
+    "    Display system uptime.\r\n\n",
+    vUptimeCommand
 };
 
 /*-----------------------------------------------------------*/
@@ -133,28 +133,35 @@ const CLI_Command_Definition_t xCommandDef_uptime =
 static inline const char * pceTaskStateToString( eTaskState xState )
 {
     const char * pcState;
+
     switch( xState )
     {
-    case eRunning:
-        pcState = "RUNNING";
-        break;
-    case eReady:
-        pcState = "READY";
-        break;
-    case eBlocked:
-        pcState = "BLOCKED";
-        break;
-    case eSuspended:
-        pcState = "SUSPENDED";
-        break;
-    case eDeleted:
-        pcState = "DELETED";
-        break;
-    case eInvalid:
-    default:
-        pcState = "UNKNOWN";
-        break;
+        case eRunning:
+            pcState = "RUNNING";
+            break;
+
+        case eReady:
+            pcState = "READY";
+            break;
+
+        case eBlocked:
+            pcState = "BLOCKED";
+            break;
+
+        case eSuspended:
+            pcState = "SUSPENDED";
+            break;
+
+        case eDeleted:
+            pcState = "DELETED";
+            break;
+
+        case eInvalid:
+        default:
+            pcState = "UNKNOWN";
+            break;
     }
+
     return pcState;
 }
 
@@ -166,18 +173,18 @@ static uint32_t ulGetStackDepth( TaskHandle_t xTask )
     {
         volatile StackType_t * pxDontCare0;
 
-        #if ( portUSING_MPU_WRAPPERS == 1 )
-            xMPU_SETTINGS xDontCare1;
-        #endif
+#if ( portUSING_MPU_WRAPPERS == 1 )
+        xMPU_SETTINGS xDontCare1;
+#endif
         ListItem_t xDontCare2;
         ListItem_t xDontCare3;
         UBaseType_t uxDontCare4;
         StackType_t * pxStack;
         char pcDontCare5[ configMAX_TASK_NAME_LEN ];
 
-        #if ( ( portSTACK_GROWTH > 0 ) || ( configRECORD_STACK_HIGH_ADDRESS == 1 ) )
-            StackType_t * pxEndOfStack;
-        #endif
+#if ( ( portSTACK_GROWTH > 0 ) || ( configRECORD_STACK_HIGH_ADDRESS == 1 ) )
+        StackType_t * pxEndOfStack;
+#endif
     };
     struct tskTaskControlBlock * pxTCB = ( struct tskTaskControlBlock * ) xTask;
 
@@ -213,7 +220,7 @@ static void prvPSCommand( ConsoleIO_t * const pxCIO,
         pxCIO->print( "| Task |   State   |    Task Name     |___Priority__| %CPU | Stack | Stack | Stack |\r\n" );
         pxCIO->print( "|  ID  |           |                  | Base | Cur. |      | Alloc |  HWM  | Usage |\r\n" );
         pxCIO->print( "+----------------------------------------------------------------------------------+\r\n" );
-                   /* "| 1234 | AAAAAAAAA | AAAAAAAAAAAAAAAA |  00  |  00  | 000% | 00000 | 00000 | 000%  |" */
+        /* "| 1234 | AAAAAAAAA | AAAAAAAAAAAAAAAA |  00  |  00  | 000% | 00000 | 00000 | 000%  |" */
 
         for( uint32_t i = 0; i < uxNumTasks; i++ )
         {
@@ -229,7 +236,7 @@ static void prvPSCommand( ConsoleIO_t * const pxCIO,
                       pxTaskStatusArray[ i ].ulRunTimeCounter / ulTotalRuntime,
                       ulStackSize,
                       ( uint32_t ) pxTaskStatusArray[ i ].usStackHighWaterMark,
-                      ucStackUsagePct ) ;
+                      ucStackUsagePct );
 
             pxCIO->print( pcCliScratchBuffer );
         }
@@ -255,36 +262,40 @@ struct
     Signal_t xSignal;
     const char * const pcSignalName;
 }
-pcSignaMap [] =
+pcSignaMap[] =
 {
-    { SIGHUP, "SIGHUP" },
-    { SIGINT, "SIGINT"},
+    { SIGHUP,  "SIGHUP"  },
+    { SIGINT,  "SIGINT"  },
     { SIGQUIT, "SIGQUIT" },
     { SIGKILL, "SIGKILL" },
     { SIGTERM, "SIGTERM" },
     { SIGSTOP, "SIGSTOP" },
-    { SIGSTP, "SIGSTP" },
+    { SIGSTP,  "SIGSTP"  },
     { SIGCONT, "SIGCONT" }
 };
 
-static void vSignalTask( TaskHandle_t xTask, Signal_t xSignal )
+static void vSignalTask( TaskHandle_t xTask,
+                         Signal_t xSignal )
 {
     switch( xSignal )
     {
-    case SIGQUIT:
-    case SIGTERM:
-        vTaskSuspend( xTask );
-        vTaskDelete( xTask );
-        break;
-    case SIGSTOP:
-    case SIGSTP:
-        vTaskSuspend( xTask );
-        break;
-    case SIGCONT:
-        vTaskResume( xTask );
-        break;
-    default:
-        break;
+        case SIGQUIT:
+        case SIGTERM:
+            vTaskSuspend( xTask );
+            vTaskDelete( xTask );
+            break;
+
+        case SIGSTOP:
+        case SIGSTP:
+            vTaskSuspend( xTask );
+            break;
+
+        case SIGCONT:
+            vTaskResume( xTask );
+            break;
+
+        default:
+            break;
     }
 }
 
@@ -305,13 +316,13 @@ static TaskHandle_t xGetTaskHandleFromID( UBaseType_t uxTaskID )
 
         for( uint32_t i = 0; i < uxNumTasks; i++ )
         {
-
             if( pxTaskStatusArray[ i ].xTaskNumber == uxTaskID )
             {
                 xTaskHandle = pxTaskStatusArray[ i ].xHandle;
                 break;
             }
         }
+
         vPortFree( pxTaskStatusArray );
     }
 
@@ -332,13 +343,14 @@ static void vKillCommand( ConsoleIO_t * const pxCIO,
         {
             char * pcArg = &( ppcArgv[ i ][ 1 ] );
             uint32_t ulSignal = strtoul( pcArg, NULL, 10 );
+
             if( ulSignal != 0 )
             {
                 xTargetSignal = ulSignal;
             }
             else
             {
-                for(uint32_t i = 0; i < ( sizeof( pcSignaMap ) / sizeof( pcSignaMap[ 0 ] ) ); i++ )
+                for( uint32_t i = 0; i < ( sizeof( pcSignaMap ) / sizeof( pcSignaMap[ 0 ] ) ); i++ )
                 {
                     if( strcmp( pcSignaMap[ i ].pcSignalName, pcArg ) == 0 )
                     {
@@ -374,13 +386,14 @@ static void vKillAllCommand( ConsoleIO_t * const pxCIO,
         {
             char * pcArg = &( ppcArgv[ i ][ 1 ] );
             uint32_t ulSignal = strtoul( pcArg, NULL, 10 );
+
             if( ulSignal != 0 )
             {
                 xTargetSignal = ulSignal;
             }
             else
             {
-                for(uint32_t i = 0; i < ( sizeof( pcSignaMap ) / sizeof( pcSignaMap[ 0 ] ) ); i++ )
+                for( uint32_t i = 0; i < ( sizeof( pcSignaMap ) / sizeof( pcSignaMap[ 0 ] ) ); i++ )
                 {
                     if( strcmp( pcSignaMap[ i ].pcSignalName, pcArg ) == 0 )
                     {
@@ -418,7 +431,7 @@ static void vHeapStatCommand( ConsoleIO_t * const pxCIO,
             switch( ppcArgv[ i ][ 1 ] )
             {
                 case '-':
-                {
+
                     if( strcmp( "--kilo", ppcArgv[ i ] ) == 0 )
                     {
                         xDivisor = 1000;
@@ -446,18 +459,22 @@ static void vHeapStatCommand( ConsoleIO_t * const pxCIO,
                         pxCIO->print( "\r\n" );
                         xDivisor = 0;
                     }
+
                     break;
-                }
+
                 case 'k':
                 case 'h':
                     xDivisor = 1024;
                     break;
+
                 case 'm':
                     xDivisor = 1024 * 1024;
                     break;
+
                 case 'b':
                     xDivisor = 1;
                     break;
+
                 default:
                     pxCIO->print( "Error: Unrecognized argument: " );
                     pxCIO->print( ppcArgv[ i ] );
@@ -481,15 +498,19 @@ static void vHeapStatCommand( ConsoleIO_t * const pxCIO,
             case 1000:
                 cDivSymbol = "(KB)   ";
                 break;
+
             case 1024:
                 cDivSymbol = "(KiB)  ";
                 break;
+
             case ( 1000 * 1000 ):
                 cDivSymbol = "(MB)   ";
                 break;
+
             case ( 1024 * 1024 ):
                 cDivSymbol = "(MiB)  ";
                 break;
+
             case 1:
             default:
                 cDivSymbol = "(Bytes)";
@@ -593,30 +614,30 @@ static void vResetCommand( ConsoleIO_t * const pxCIO,
                            uint32_t ulArgc,
                            char * ppcArgv[] )
 {
-	NVIC_SystemReset();
+    NVIC_SystemReset();
 }
 
 static void vUptimeCommand( ConsoleIO_t * const pxCIO,
                             uint32_t ulArgc,
                             char * ppcArgv[] )
 {
-	size_t xLen = 0;
+    size_t xLen = 0;
 
-	const unsigned int MS_PER_SECOND = 1000;
-	const unsigned int MS_PER_MINUTE = 60 * MS_PER_SECOND;
-	const unsigned int MS_PER_HOUR = 60 * MS_PER_MINUTE;
-	const unsigned int MS_PER_DAY = 24 * MS_PER_HOUR;
+    const unsigned int MS_PER_SECOND = 1000;
+    const unsigned int MS_PER_MINUTE = 60 * MS_PER_SECOND;
+    const unsigned int MS_PER_HOUR = 60 * MS_PER_MINUTE;
+    const unsigned int MS_PER_DAY = 24 * MS_PER_HOUR;
 
-	unsigned long ulMsCount = ( xTaskGetTickCount() / portTICK_PERIOD_MS );
+    unsigned long ulMsCount = ( xTaskGetTickCount() / portTICK_PERIOD_MS );
 
-	xLen = snprintf( pcCliScratchBuffer,
-				     CLI_OUTPUT_SCRATCH_BUF_LEN,
+    xLen = snprintf( pcCliScratchBuffer,
+                     CLI_OUTPUT_SCRATCH_BUF_LEN,
                      "up %lu day(s) %02lu:%02lu:%02lu.%03lu\r\n",
-					 ulMsCount / MS_PER_DAY,
-					 ( ulMsCount % MS_PER_DAY ) / MS_PER_HOUR,
-					 ( ulMsCount % MS_PER_HOUR ) / MS_PER_MINUTE,
-					 ( ulMsCount % MS_PER_MINUTE ) / MS_PER_SECOND,
-					 ulMsCount % MS_PER_SECOND );
+                     ulMsCount / MS_PER_DAY,
+                     ( ulMsCount % MS_PER_DAY ) / MS_PER_HOUR,
+                     ( ulMsCount % MS_PER_HOUR ) / MS_PER_MINUTE,
+                     ( ulMsCount % MS_PER_MINUTE ) / MS_PER_SECOND,
+                     ulMsCount % MS_PER_SECOND );
 
-	pxCIO->write( pcCliScratchBuffer, xLen );
+    pxCIO->write( pcCliScratchBuffer, xLen );
 }

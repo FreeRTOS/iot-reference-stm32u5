@@ -23,7 +23,7 @@
  */
 
 #include "logging_levels.h"
-#define LOG_LEVEL LOG_ERROR
+#define LOG_LEVEL    LOG_ERROR
 #include "logging.h"
 
 
@@ -49,9 +49,9 @@ typedef struct
 } IPCRequestCtx_t;
 
 /* Static variables */
-IPCRequestCtx_t xIPCRequestCtxArray [ NUM_IPC_REQUEST_CTX ];
-static SemaphoreHandle_t xContextArrayMutex = NULL;        /* Mutex that must be held while modifying the xIPCRequestCtxArray */
-static SemaphoreHandle_t xContextCountSemaphore = NULL;    /* Allow clients to block while waiting for an IPCRequestCtx_t. */
+IPCRequestCtx_t xIPCRequestCtxArray[ NUM_IPC_REQUEST_CTX ];
+static SemaphoreHandle_t xContextArrayMutex = NULL;     /* Mutex that must be held while modifying the xIPCRequestCtxArray */
+static SemaphoreHandle_t xContextCountSemaphore = NULL; /* Allow clients to block while waiting for an IPCRequestCtx_t. */
 static ControlPlaneCtx_t * pxControlPlaneCtx = NULL;
 
 static void vClearCtx( IPCRequestCtx_t * pxRequestCtx )
@@ -71,7 +71,7 @@ static void vClearCtx( IPCRequestCtx_t * pxRequestCtx )
         /* Free the request buffer pbuf and clear the pointer */
         if( pxRequestCtx->pxTxPbuf != NULL )
         {
-            LogDebug( "Decreasing reference count of pbuf %p from %d to %d",  pxRequestCtx->pxTxPbuf,  pxRequestCtx->pxTxPbuf->ref, (  pxRequestCtx->pxTxPbuf->ref - 1 ) );
+            LogDebug( "Decreasing reference count of pbuf %p from %d to %d", pxRequestCtx->pxTxPbuf, pxRequestCtx->pxTxPbuf->ref, ( pxRequestCtx->pxTxPbuf->ref - 1 ) );
             PBUF_FREE( pxRequestCtx->pxTxPbuf );
             pxRequestCtx->pxTxPbuf = NULL;
         }
@@ -82,7 +82,7 @@ static void vClearCtx( IPCRequestCtx_t * pxRequestCtx )
         /* Free the response buffer pbuf and clear the pointer */
         if( pxRequestCtx->pxRxPbuf != NULL )
         {
-            LogDebug( "Decreasing reference count of pbuf %p from %d to %d",  pxRequestCtx->pxRxPbuf,  pxRequestCtx->pxRxPbuf->ref, (  pxRequestCtx->pxRxPbuf->ref - 1 ) );
+            LogDebug( "Decreasing reference count of pbuf %p from %d to %d", pxRequestCtx->pxRxPbuf, pxRequestCtx->pxRxPbuf->ref, ( pxRequestCtx->pxRxPbuf->ref - 1 ) );
             PBUF_FREE( pxRequestCtx->pxRxPbuf );
             pxRequestCtx->pxRxPbuf = NULL;
         }
@@ -98,7 +98,8 @@ static void vClearCtx( IPCRequestCtx_t * pxRequestCtx )
     }
 }
 
-static IPCRequestCtx_t * pxFindAvailableCtx( TickType_t xTimeout, BaseType_t xPbufLen )
+static IPCRequestCtx_t * pxFindAvailableCtx( TickType_t xTimeout,
+                                             BaseType_t xPbufLen )
 {
     IPCRequestCtx_t * pxRequestCtx = NULL;
     BaseType_t xResult = pdFALSE;
@@ -118,7 +119,7 @@ static IPCRequestCtx_t * pxFindAvailableCtx( TickType_t xTimeout, BaseType_t xPb
     {
         for( uint32_t i = 0; i < NUM_IPC_REQUEST_CTX; i++ )
         {
-            if( xIPCRequestCtxArray[ i ].ulRequestID  == 0 )
+            if( xIPCRequestCtxArray[ i ].ulRequestID == 0 )
             {
                 xIPCRequestCtxArray[ i ].ulRequestID = prvGetNextRequestID();
 
@@ -144,7 +145,7 @@ static IPCRequestCtx_t * pxFindAvailableCtx( TickType_t xTimeout, BaseType_t xPb
 
                 /* Allocate a tx pbuf */
                 pxRequestCtx->pxTxPbuf = PBUF_ALLOC_TX( xPbufLen );
-//                LogDebug( "Allocated pbuf: %p length: %d ref: %d",  pxRequestCtx->pxTxPbuf, pxRequestCtx->pxRxPbuf->tot_len, pxRequestCtx->pxRxPbuf->ref );
+/*                LogDebug( "Allocated pbuf: %p length: %d ref: %d",  pxRequestCtx->pxTxPbuf, pxRequestCtx->pxRxPbuf->tot_len, pxRequestCtx->pxRxPbuf->ref ); */
                 break;
             }
         }
@@ -157,6 +158,7 @@ static IPCRequestCtx_t * pxFindAvailableCtx( TickType_t xTimeout, BaseType_t xPb
     {
         LogError( "Timed out while acquiring xContextArrayMutex." );
     }
+
     return pxRequestCtx;
 }
 
@@ -199,7 +201,7 @@ static IPCError_t xSendIPCRequest( IPCPacket_t * pxTxPkt,
         pxRequestCtx->xWaitingTask = xTaskGetCurrentTaskHandle();
 
         /* Copy to pbuf */
-        (void) memcpy( pxRequestCtx->pxTxPbuf->payload, pxTxPkt, ulTxPacketLen );
+        ( void ) memcpy( pxRequestCtx->pxTxPbuf->payload, pxTxPkt, ulTxPacketLen );
 
         configASSERT( pxControlPlaneCtx->xControlPlaneSendQueue != NULL );
 
@@ -234,6 +236,7 @@ static IPCError_t xSendIPCRequest( IPCPacket_t * pxTxPkt,
     {
         /* Wait for notification */
         xResult = xTaskNotifyWait( 0, 0, NULL, xTimeout );
+
         if( xResult == pdTRUE )
         {
             pxResponsePacket = ( IPCPacket_t * ) pxRequestCtx->pxRxPbuf->payload;
@@ -266,10 +269,11 @@ IPCError_t mx_RequestVersion( char * pcVersionBuffer,
     IPCError_t xReturnValue = IPC_SUCCESS;
 
     IPCPacket_t xTxPkt;
+
     xTxPkt.xHeader.usIPCApiId = IPC_SYS_VERSION;
 
-    if( pcVersionBuffer != NULL &&
-        ulVersionLength >= MX_FIRMWARE_REVISION_SIZE )
+    if( ( pcVersionBuffer != NULL ) &&
+        ( ulVersionLength >= MX_FIRMWARE_REVISION_SIZE ) )
     {
         xReturnValue = xSendIPCRequest( &xTxPkt, 0,
                                         ( IPCPacketData_t * ) pcVersionBuffer,
@@ -280,6 +284,7 @@ IPCError_t mx_RequestVersion( char * pcVersionBuffer,
     {
         xReturnValue = IPC_PARAMETER_ERROR;
     }
+
     return xReturnValue;
 }
 
@@ -288,15 +293,17 @@ IPCError_t mx_FactoryReset( TickType_t xTimeout )
     IPCError_t xReturnValue = IPC_SUCCESS;
 
     IPCPacket_t xTxPkt;
+
     xTxPkt.xHeader.usIPCApiId = IPC_SYS_RESET;
 
     xReturnValue = xSendIPCRequest( &xTxPkt, 0,
-                                      NULL, 0,
-                                      xTimeout );
+                                    NULL, 0,
+                                    xTimeout );
     return xReturnValue;
 }
 
-IPCError_t mx_GetMacAddress( MacAddress_t * pxMacAddress, TickType_t xTimeout )
+IPCError_t mx_GetMacAddress( MacAddress_t * pxMacAddress,
+                             TickType_t xTimeout )
 {
     IPCError_t xReturnValue = IPC_SUCCESS;
 
@@ -306,15 +313,16 @@ IPCError_t mx_GetMacAddress( MacAddress_t * pxMacAddress, TickType_t xTimeout )
         xTxPkt.xHeader.usIPCApiId = IPC_WIFI_GET_MAC;
 
         xReturnValue = xSendIPCRequest( &xTxPkt,
-                                          0,
-                                          ( IPCPacketData_t * ) pxMacAddress,
-                                          sizeof( struct eth_addr ),
-                                          xTimeout );
+                                        0,
+                                        ( IPCPacketData_t * ) pxMacAddress,
+                                        sizeof( struct eth_addr ),
+                                        xTimeout );
     }
     else
     {
         xReturnValue = IPC_PARAMETER_ERROR;
     }
+
     return xReturnValue;
 }
 
@@ -328,8 +336,8 @@ IPCError_t mx_Connect( const char * pcSSID,
 
     /* Validate parameters */
 
-    if( pcSSID == NULL ||
-        strnlen( pcSSID, MX_SSID_BUF_LEN ) >= MX_SSID_BUF_LEN )
+    if( ( pcSSID == NULL ) ||
+        ( strnlen( pcSSID, MX_SSID_BUF_LEN ) >= MX_SSID_BUF_LEN ) )
     {
         LogError( "Invalid pcSSID parameter. pcSSID must be non-null and at most 32 characters long." );
         xReturnValue = IPC_PARAMETER_ERROR;
@@ -338,15 +346,16 @@ IPCError_t mx_Connect( const char * pcSSID,
     if( pcPSK == NULL )
     {
         LogError( "Invalid pcPSK parameter. pcPSK must be non-null." );
-                xReturnValue = IPC_PARAMETER_ERROR;
+        xReturnValue = IPC_PARAMETER_ERROR;
     }
     else
     {
         lPSKLength = strnlen( pcPSK, MX_PSK_BUF_LEN );
+
         if( lPSKLength >= MX_PSK_BUF_LEN )
         {
             LogError( "Invalid pcSSID parameter. pcSSID must be 64 characters or less in length." );
-        xReturnValue = IPC_PARAMETER_ERROR;
+            xReturnValue = IPC_PARAMETER_ERROR;
         }
     }
 
@@ -379,15 +388,16 @@ IPCError_t mx_Connect( const char * pcSSID,
 
 
         xReturnValue = xSendIPCRequest( &xTxPkt,
-                                          sizeof( IPCRequestWifiConnect_t ),
-                                          NULL,
-                                          0,
-                                          xTimeout );
+                                        sizeof( IPCRequestWifiConnect_t ),
+                                        NULL,
+                                        0,
+                                        xTimeout );
     }
     else
     {
         xReturnValue = IPC_PARAMETER_ERROR;
     }
+
     return xReturnValue;
 }
 
@@ -396,6 +406,7 @@ IPCError_t mx_Disconnect( TickType_t xTimeout )
     IPCError_t xReturnValue = IPC_SUCCESS;
 
     IPCPacket_t xTxPkt;
+
     xTxPkt.xHeader.usIPCApiId = IPC_WIFI_DISCONNECT;
 
     xReturnValue = xSendIPCRequest( &xTxPkt, 0,
@@ -405,14 +416,15 @@ IPCError_t mx_Disconnect( TickType_t xTimeout )
     return xReturnValue;
 }
 
-IPCError_t mx_SetBypassMode( BaseType_t xEnable, TickType_t xTimeout )
+IPCError_t mx_SetBypassMode( BaseType_t xEnable,
+                             TickType_t xTimeout )
 {
     IPCError_t xError = IPC_SUCCESS;
 
     IPCPacket_t xTxPkt;
 
-    if( xEnable == pdFALSE ||
-        xEnable == pdTRUE )
+    if( ( xEnable == pdFALSE ) ||
+        ( xEnable == pdTRUE ) )
     {
         xTxPkt.xHeader.usIPCApiId = IPC_WIFI_BYPASS_SET;
         xTxPkt.xData.xRequestWifiBypassSet.enable = ( uint32_t ) xEnable;
@@ -428,9 +440,11 @@ IPCError_t mx_SetBypassMode( BaseType_t xEnable, TickType_t xTimeout )
     return xError;
 }
 
-IPCError_t mx_RegisterEventCallback( MxEventCallback_t xCallback, void * pxCallbackContext )
+IPCError_t mx_RegisterEventCallback( MxEventCallback_t xCallback,
+                                     void * pxCallbackContext )
 {
     IPCError_t xError;
+
     if( pxControlPlaneCtx != NULL )
     {
         xError = IPC_SUCCESS;
@@ -439,9 +453,10 @@ IPCError_t mx_RegisterEventCallback( MxEventCallback_t xCallback, void * pxCallb
     }
     else
     {
-        LogError("Unable to set MxEventCallback. ControlPlaneRouter task has not been started.");
+        LogError( "Unable to set MxEventCallback. ControlPlaneRouter task has not been started." );
         xError = IPC_ERROR_INTERNAL;
     }
+
     return xError;
 }
 
@@ -453,7 +468,7 @@ IPCError_t mx_RegisterEventCallback( MxEventCallback_t xCallback, void * pxCallb
 void prvControlPlaneRouter( void * pvParameters )
 {
     /* Get context */
-    ControlPlaneCtx_t * pxCtx = ( ControlPlaneCtx_t *) pvParameters;
+    ControlPlaneCtx_t * pxCtx = ( ControlPlaneCtx_t * ) pvParameters;
 
     /* Export context to other functions in this file */
     pxControlPlaneCtx = pxCtx;
@@ -488,18 +503,20 @@ void prvControlPlaneRouter( void * pvParameters )
                                          sizeof( PacketBuffer_t * ),
                                          portMAX_DELAY );
 
-        if( xResult != pdFALSE &&
-            pxRxPbuf != NULL )
+        if( ( xResult != pdFALSE ) &&
+            ( pxRxPbuf != NULL ) )
         {
             IPCPacket_t * pxRxPacket = ( IPCPacket_t * ) pxRxPbuf->payload;
 
             char ucPrintBuf[ pxRxPbuf->tot_len * 2 + 1 ];
+
             for( uint32_t i = 0; i < pxRxPbuf->tot_len; i++ )
             {
-                snprintf( &ucPrintBuf[ 2 * i ], 3, "%02X", ((uint8_t*)pxRxPbuf->payload)[i] );
+                snprintf( &ucPrintBuf[ 2 * i ], 3, "%02X", ( ( uint8_t * ) pxRxPbuf->payload )[ i ] );
             }
+
             ucPrintBuf[ pxRxPbuf->tot_len * 2 ] = 0;
-            LogDebug("%s", ucPrintBuf);
+            LogDebug( "%s", ucPrintBuf );
 
             /* Check if message is a notification */
             if( pxRxPacket->xHeader.ulIPCRequestId == 0 )
@@ -523,6 +540,7 @@ void prvControlPlaneRouter( void * pvParameters )
                 configASSERT( xResult == pdTRUE );
 
                 IPCRequestCtx_t * pxTargetCtx = NULL;
+
                 for( uint32_t i = 0; i < NUM_IPC_REQUEST_CTX; i++ )
                 {
                     if( xIPCRequestCtxArray[ i ].ulRequestID == pxRxPacket->xHeader.ulIPCRequestId )
@@ -533,11 +551,11 @@ void prvControlPlaneRouter( void * pvParameters )
                 }
 
                 /* Send packet to waiting thread */
-                if( pxTargetCtx != NULL &&
-                    pxTargetCtx->pxRxPbuf == NULL &&
-                    pxTargetCtx->xWaitingTask != NULL )
+                if( ( pxTargetCtx != NULL ) &&
+                    ( pxTargetCtx->pxRxPbuf == NULL ) &&
+                    ( pxTargetCtx->xWaitingTask != NULL ) )
                 {
-                    LogDebug("Notifying waiting task %d of RX packet.", pxTargetCtx->xWaitingTask );
+                    LogDebug( "Notifying waiting task %d of RX packet.", pxTargetCtx->xWaitingTask );
                     pxTargetCtx->pxRxPbuf = pxRxPbuf;
                     xResult = xTaskNotify( pxTargetCtx->xWaitingTask, 0, eNoAction );
 
@@ -571,7 +589,7 @@ void prvControlPlaneRouter( void * pvParameters )
         }
         else
         {
-            LogError("Error when reading from xControlPlaneResponseBuff");
+            LogError( "Error when reading from xControlPlaneResponseBuff" );
         }
     }
 }

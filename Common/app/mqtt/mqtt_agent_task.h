@@ -18,4 +18,4 @@ bool xIsMqttAgentConnected( void );
 void vMQTTAgentTask( void * pvParameters );
 
 
-#endif
+#endif /* ifndef _MQTT_AGENT_TASK_H_ */

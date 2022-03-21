@@ -47,7 +47,7 @@
  */
 
 #include "logging_levels.h"
-#define LOG_LEVEL LOG_ERROR
+#define LOG_LEVEL    LOG_ERROR
 #include "logging.h"
 
 
@@ -80,27 +80,27 @@
 
 #include "cbor.h"
 
-#define TCP_PORTS_MAX                       10
-#define UDP_PORTS_MAX                       10
-#define CONNECTIONS_MAX                     10
-#define TASKS_MAX                           10
-#define REPORT_BUFFER_SIZE                  1024
+#define TCP_PORTS_MAX                      10
+#define UDP_PORTS_MAX                      10
+#define CONNECTIONS_MAX                    10
+#define TASKS_MAX                          10
+#define REPORT_BUFFER_SIZE                 1024
 
-#define REPORT_MAJOR_VERSION                1
-#define REPORT_MINOR_VERSION                0
+#define REPORT_MAJOR_VERSION               1
+#define REPORT_MINOR_VERSION               0
 
-#define MS_BETWEEN_REPORTS                  ( 5 * 60 * 1000U )     /* 5 Minute reporting interval */
-#define RESPONSE_TIMEOUT_MS                 ( 30 * 1000U )
-#define MQTT_BLOCK_TIME_MS                  ( 10 * 1000U )
+#define MS_BETWEEN_REPORTS                 ( 5 * 60 * 1000U )      /* 5 Minute reporting interval */
+#define RESPONSE_TIMEOUT_MS                ( 30 * 1000U )
+#define MQTT_BLOCK_TIME_MS                 ( 10 * 1000U )
 
-#define RESPONSE_REPORT_ID_FIELD            "reportId"
-#define RESPONSE_REPORT_ID_FIELD_LENGTH     ( sizeof( RESPONSE_REPORT_ID_FIELD ) - 1 )
+#define RESPONSE_REPORT_ID_FIELD           "reportId"
+#define RESPONSE_REPORT_ID_FIELD_LENGTH    ( sizeof( RESPONSE_REPORT_ID_FIELD ) - 1 )
 
-#define NUM_TOPIC_STRINGS                   3
+#define NUM_TOPIC_STRINGS                  3
 
-#define IDX_PUBLISH                         0
-#define IDX_ACCEPTED                        1
-#define IDX_REJECTED                        2
+#define IDX_PUBLISH                        0
+#define IDX_ACCEPTED                       1
+#define IDX_REJECTED                       2
 
 /*-----------------------------------------------------------*/
 
@@ -164,7 +164,7 @@ static void prvSubscribeOpCb( MQTTAgentCommandContext_t * pxCommandContext,
  * @param[in] pxPublishInfo Deserialized publish.
  */
 static void prvReportAcceptedCallback( void * pxSubscriptionContext,
-                                                MQTTPublishInfo_t * pxPublishInfo );
+                                       MQTTPublishInfo_t * pxPublishInfo );
 
 /**
  * @brief The callback to execute when there is an incoming publish on the
@@ -235,8 +235,8 @@ static void prvSubscribeOpCb( DefenderAgentCtx_t * pxCommandContext,
     configASSERT_CONTINUE( pxCommandContext );
     configASSERT_CONTINUE( pxReturnInfo );
 
-    if( pxCommandContext != NULL &&
-        pxReturnInfo != NULL )
+    if( ( pxCommandContext != NULL ) &&
+        ( pxReturnInfo != NULL ) )
     {
         ( void ) xTaskNotify( pxCommandContext->xAgentTask,
                               pxReturnInfo->returnCode,
@@ -255,7 +255,7 @@ static void prvClearCtx( DefenderAgentCtx_t * pxCtx )
     {
         if( pxCtx->ppcTopic[ i ] )
         {
-            vPortFree(  pxCtx->ppcTopic[ i ] );
+            vPortFree( pxCtx->ppcTopic[ i ] );
         }
     }
 
@@ -295,8 +295,8 @@ static bool prvBuildDefenderTopicStrings( DefenderAgentCtx_t * pxCtx )
             configASSERT_CONTINUE( xRslt == DefenderSuccess );
             configASSERT_CONTINUE( usLenWritten == pxCtx->pxTopicLen[ i ] );
 
-            if( xRslt == DefenderSuccess &&
-                usLenWritten <= pxCtx->pxTopicLen[ i ] )
+            if( ( xRslt == DefenderSuccess ) &&
+                ( usLenWritten <= pxCtx->pxTopicLen[ i ] ) )
             {
                 pxCtx->pxTopicLen[ i ] = usLenWritten;
 
@@ -341,10 +341,10 @@ static bool prvSubscribeToDefenderTopics( DefenderAgentCtx_t * pxCtx )
     MQTTStatus_t xStatus = MQTTSuccess;
 
     xStatus = MqttAgent_SubscribeSync( pxCtx->xAgentHandle,
-    								   pxCtx->ppcTopic[ IDX_ACCEPTED ],
-									   MQTTQoS1,
-									   prvReportAcceptedCallback,
-									   pxCtx );
+                                       pxCtx->ppcTopic[ IDX_ACCEPTED ],
+                                       MQTTQoS1,
+                                       prvReportAcceptedCallback,
+                                       pxCtx );
 
     configASSERT_CONTINUE( xStatus == MQTTSuccess );
 
@@ -354,13 +354,13 @@ static bool prvSubscribeToDefenderTopics( DefenderAgentCtx_t * pxCtx )
     }
     else
     {
-    	xStatus = MqttAgent_SubscribeSync( pxCtx->xAgentHandle,
-    									   pxCtx->ppcTopic[ IDX_REJECTED ],
-    									   MQTTQoS1,
+        xStatus = MqttAgent_SubscribeSync( pxCtx->xAgentHandle,
+                                           pxCtx->ppcTopic[ IDX_REJECTED ],
+                                           MQTTQoS1,
                                            prvReportRejectedCallback,
                                            pxCtx );
 
-        configASSERT_CONTINUE(  xStatus == MQTTSuccess );
+        configASSERT_CONTINUE( xStatus == MQTTSuccess );
 
         if( xStatus != MQTTSuccess )
         {
@@ -368,40 +368,41 @@ static bool prvSubscribeToDefenderTopics( DefenderAgentCtx_t * pxCtx )
         }
     }
 
-    return ( xStatus == MQTTSuccess );
+    return( xStatus == MQTTSuccess );
 }
 
-static void prvUnsubscribeFromDefenderTopics( DefenderAgentCtx_t * pxCtx  )
+static void prvUnsubscribeFromDefenderTopics( DefenderAgentCtx_t * pxCtx )
 {
-	MQTTStatus_t xStatus = MQTTSuccess;
+    MQTTStatus_t xStatus = MQTTSuccess;
 
-	xStatus = MqttAgent_UnSubscribeSync( pxCtx->xAgentHandle,
-										 pxCtx->ppcTopic[ IDX_ACCEPTED ],
-										 prvReportAcceptedCallback,
-										 pxCtx );
+    xStatus = MqttAgent_UnSubscribeSync( pxCtx->xAgentHandle,
+                                         pxCtx->ppcTopic[ IDX_ACCEPTED ],
+                                         prvReportAcceptedCallback,
+                                         pxCtx );
 
-    configASSERT_CONTINUE(  xStatus == MQTTSuccess );
+    configASSERT_CONTINUE( xStatus == MQTTSuccess );
 
 
-	xStatus = MqttAgent_UnSubscribeSync( pxCtx->xAgentHandle,
-										 pxCtx->ppcTopic[ IDX_REJECTED ],
-										 prvReportRejectedCallback,
-										 pxCtx );
+    xStatus = MqttAgent_UnSubscribeSync( pxCtx->xAgentHandle,
+                                         pxCtx->ppcTopic[ IDX_REJECTED ],
+                                         prvReportRejectedCallback,
+                                         pxCtx );
 
-	configASSERT_CONTINUE(  xStatus == MQTTSuccess );
+    configASSERT_CONTINUE( xStatus == MQTTSuccess );
 }
 
 /*-----------------------------------------------------------*/
 
-static void prvPrintHex( const uint8_t * pcPayload, size_t xPayloadLen )
+static void prvPrintHex( const uint8_t * pcPayload,
+                         size_t xPayloadLen )
 {
-    for( uint32_t i = 0; i < xPayloadLen; i += 16)
+    for( uint32_t i = 0; i < xPayloadLen; i += 16 )
     {
         LogDebug( "\t%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
-                  pcPayload[i + 0], pcPayload[i + 1], pcPayload[i + 2], pcPayload[i + 3],
-                  pcPayload[i + 4], pcPayload[i + 5], pcPayload[i + 6], pcPayload[i + 7],
-                  pcPayload[i + 8], pcPayload[i + 9], pcPayload[i + 10], pcPayload[i + 11],
-                  pcPayload[i + 12], pcPayload[i + 13], pcPayload[i + 14], pcPayload[i + 15] );
+                  pcPayload[ i + 0 ], pcPayload[ i + 1 ], pcPayload[ i + 2 ], pcPayload[ i + 3 ],
+                  pcPayload[ i + 4 ], pcPayload[ i + 5 ], pcPayload[ i + 6 ], pcPayload[ i + 7 ],
+                  pcPayload[ i + 8 ], pcPayload[ i + 9 ], pcPayload[ i + 10 ], pcPayload[ i + 11 ],
+                  pcPayload[ i + 12 ], pcPayload[ i + 13 ], pcPayload[ i + 14 ], pcPayload[ i + 15 ] );
     }
 }
 
@@ -430,7 +431,7 @@ static void prvReportAcceptedCallback( void * pvCtx,
 
         LogDebug( "Printing returned payload Len: %ld.", pxPublishInfo->payloadLength );
 
-        prvPrintHex( (uint8_t *) ( pxPublishInfo->pPayload ), pxPublishInfo->payloadLength );
+        prvPrintHex( ( uint8_t * ) ( pxPublishInfo->pPayload ), pxPublishInfo->payloadLength );
 
         /* Send a notification to the task in case it is waiting for this incoming
          * message. */
@@ -465,7 +466,7 @@ static void prvReportRejectedCallback( void * pvCtx,
 
         LogDebug( "Printing returned payload Len: %ld.", pxPublishInfo->payloadLength );
 
-        prvPrintHex( (uint8_t *) ( pxPublishInfo->pPayload ), pxPublishInfo->payloadLength );
+        prvPrintHex( ( uint8_t * ) ( pxPublishInfo->pPayload ), pxPublishInfo->payloadLength );
 
         /* Send a notification to the task in case it is waiting for this incoming
          * message. */
@@ -552,7 +553,6 @@ static bool prvPublishDeviceMetricsReport( DefenderAgentCtx_t * pxCtx,
                                   &xPublishInfo,
                                   &xCommandParams );
 
-
     if( ulStatus == MQTTSuccess )
     {
         ulStatus = MQTTIllegalState;
@@ -563,6 +563,7 @@ static bool prvPublishDeviceMetricsReport( DefenderAgentCtx_t * pxCtx,
                                          0xFFFFFFFF,
                                          &ulStatus,
                                          RESPONSE_TIMEOUT_MS );
+
         if( xNotifyResult == pdFALSE )
         {
             LogError( "Failed to publish report." );
@@ -582,7 +583,8 @@ static bool prvValidateDefenderResponse( const char * pcDefenderResponse,
                                          uint32_t ulDefenderResponseLength )
 {
     bool xStatus = true;
-    // TODO: validate response messages
+
+    /* TODO: validate response messages */
     return xStatus;
 }
 
@@ -592,6 +594,7 @@ void vDefenderAgentTask( void * pvParameters )
 {
     DefenderAgentCtx_t xCtx = { 0 };
     bool xSuccess = false;
+
     xExitFlag = pdFALSE;
 
     uint8_t pucReportBuffer[ REPORT_BUFFER_SIZE ] = { 0 };
@@ -719,7 +722,7 @@ void vDefenderAgentTask( void * pvParameters )
             configASSERT_CONTINUE( xError == CborNoError );
         }
 
-        if( xError != CborNoError  )
+        if( xError != CborNoError )
         {
             LogError( "Failed to collect device metrics." );
         }
@@ -753,17 +756,19 @@ void vDefenderAgentTask( void * pvParameters )
 
         switch( xReportStatus )
         {
-        case ReportStatusAccepted:
-            LogInfo( "Defender report accepted." );
-            break;
-        case ReportStatusRejected:
-            LogError( "Defender report rejected." );
-            break;
-        case ReportStatusInvalid:
-        case ReportStatusNotReceived:
-        default:
-            LogError( "Defender report response not received." );
-            break;
+            case ReportStatusAccepted:
+                LogInfo( "Defender report accepted." );
+                break;
+
+            case ReportStatusRejected:
+                LogError( "Defender report rejected." );
+                break;
+
+            case ReportStatusInvalid:
+            case ReportStatusNotReceived:
+            default:
+                LogError( "Defender report response not received." );
+                break;
         }
 
         LogDebug( "Sleeping until next report." );

@@ -40,7 +40,7 @@
 #include "logging_levels.h"
 /* define LOG_LEVEL here if you want to modify the logging level from the default */
 
-#define LOG_LEVEL LOG_INFO
+#define LOG_LEVEL    LOG_INFO
 
 #include "logging.h"
 
@@ -1080,27 +1080,27 @@ void vOTAUpdateTask( void * pvParam )
     {
         /* Add subscriptions for OTA with subscription manger. */
         subscriptionsAdded = submgr_addSubscription( ( SubCallbackElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
-                                              OTA_JOB_NOTIFY_TOPIC_FILTER,
-                                              OTA_JOB_NOTIFY_TOPIC_FILTER_LENGTH,
-                                              prvProcessIncomingJobMessage,
-                                              NULL );
+                                                     OTA_JOB_NOTIFY_TOPIC_FILTER,
+                                                     OTA_JOB_NOTIFY_TOPIC_FILTER_LENGTH,
+                                                     prvProcessIncomingJobMessage,
+                                                     NULL );
 
         if( subscriptionsAdded == true )
         {
             subscriptionsAdded = submgr_addSubscription( ( SubCallbackElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
-                                                  OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER,
-                                                  OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER_LENGTH,
-                                                  prvProcessIncomingJobMessage,
-                                                  NULL );
+                                                         OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER,
+                                                         OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER_LENGTH,
+                                                         prvProcessIncomingJobMessage,
+                                                         NULL );
         }
 
         if( subscriptionsAdded == true )
         {
             subscriptionsAdded = submgr_addSubscription( ( SubCallbackElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
-                                                  OTA_DATA_STREAM_TOPIC_FILTER,
-                                                  OTA_DATA_STREAM_TOPIC_FILTER_LENGTH,
-                                                  prvProcessIncomingData,
-                                                  NULL );
+                                                         OTA_DATA_STREAM_TOPIC_FILTER,
+                                                         OTA_DATA_STREAM_TOPIC_FILTER_LENGTH,
+                                                         prvProcessIncomingData,
+                                                         NULL );
         }
 
         if( subscriptionsAdded == false )
@@ -1166,16 +1166,16 @@ void vOTAUpdateTask( void * pvParam )
 
     /* Unconditionally remove the subscriptions. */
     ( void ) submgr_removeSubscription( ( SubCallbackElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
-                                 OTA_JOB_NOTIFY_TOPIC_FILTER,
-                                 OTA_JOB_NOTIFY_TOPIC_FILTER_LENGTH );
+                                        OTA_JOB_NOTIFY_TOPIC_FILTER,
+                                        OTA_JOB_NOTIFY_TOPIC_FILTER_LENGTH );
 
     ( void ) submgr_removeSubscription( ( SubCallbackElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
-                                 OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER,
-                                 OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER_LENGTH );
+                                        OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER,
+                                        OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER_LENGTH );
 
     ( void ) submgr_removeSubscription( ( SubCallbackElement_t * ) xGlobalMqttAgentContext.pIncomingCallbackContext,
-                                 OTA_DATA_STREAM_TOPIC_FILTER,
-                                 OTA_DATA_STREAM_TOPIC_FILTER_LENGTH );
+                                        OTA_DATA_STREAM_TOPIC_FILTER,
+                                        OTA_DATA_STREAM_TOPIC_FILTER_LENGTH );
 
     if( pcThingName != NULL )
     {

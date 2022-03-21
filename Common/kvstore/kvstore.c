@@ -32,18 +32,20 @@
 static SemaphoreHandle_t xKvMutex = NULL;
 
 #if KV_STORE_CACHE_ENABLE
-#define READ_ENTRY xprvCopyValueFromCache
-#define WRITE_ENTRY xprvWriteCacheEntry
+#define READ_ENTRY     xprvCopyValueFromCache
+#define WRITE_ENTRY    xprvWriteCacheEntry
 #else
-#define READ_ENTRY xprvReadValueFromImplStatic
-#define WRITE_ENTRY xprvWriteValueToImpl
+#define READ_ENTRY     xprvReadValueFromImplStatic
+#define WRITE_ENTRY    xprvWriteValueToImpl
 #endif
 
 const char * const kvStoreKeyMap[ CS_NUM_KEYS ] = KV_STORE_STRINGS;
 
 const KVStoreDefaultEntry_t kvStoreDefaults[ CS_NUM_KEYS ] = KV_STORE_DEFAULTS;
 
-static size_t xReadEntryOrDefault( KVStoreKey_t xKey, void * pvBuffer, size_t xBufferSize )
+static size_t xReadEntryOrDefault( KVStoreKey_t xKey,
+                                   void * pvBuffer,
+                                   size_t xBufferSize )
 {
     size_t xLength = 0;
 
@@ -55,19 +57,21 @@ static size_t xReadEntryOrDefault( KVStoreKey_t xKey, void * pvBuffer, size_t xB
     if( xLength == 0 )
     {
         size_t xDataLen = kvStoreDefaults[ xKey ].length;
+
         if( xBufferSize < xDataLen )
         {
             LogWarn( "Read from key: %s was truncated from %d bytes to %d bytes.",
                      kvStoreKeyMap[ xKey ], xDataLen, xBufferSize );
             xDataLen = xBufferSize;
         }
+
         if( xDataLen > sizeof( void * ) )
         {
             ( void ) memcpy( pvBuffer, kvStoreDefaults[ xKey ].blob, xDataLen );
         }
         else
         {
-            ( void ) memcpy( pvBuffer, &( kvStoreDefaults[ xKey ].u32), xDataLen );
+            ( void ) memcpy( pvBuffer, &( kvStoreDefaults[ xKey ].u32 ), xDataLen );
         }
 
         xLength = kvStoreDefaults[ xKey ].length;
@@ -100,79 +104,93 @@ void KVStore_init( void )
     ( void ) xSemaphoreGive( xKvMutex );
 }
 
-BaseType_t KVStore_setBlob( KVStoreKey_t key, size_t xLength, const void * pvNewValue )
+BaseType_t KVStore_setBlob( KVStoreKey_t key,
+                            size_t xLength,
+                            const void * pvNewValue )
 {
     BaseType_t xReturn = pdFALSE;
 
-    if( key < CS_NUM_KEYS && pvNewValue != NULL && xLength > 0
-                    && kvStoreDefaults[ key ].type == KV_TYPE_BLOB )
+    if( ( key < CS_NUM_KEYS ) && ( pvNewValue != NULL ) && ( xLength > 0 ) &&
+        ( kvStoreDefaults[ key ].type == KV_TYPE_BLOB ) )
     {
         xReturn = WRITE_ENTRY( key, KV_TYPE_BLOB, xLength, pvNewValue );
     }
+
     return xReturn;
 }
 
-BaseType_t KVStore_setString( KVStoreKey_t key, const char * pcNewValue )
+BaseType_t KVStore_setString( KVStoreKey_t key,
+                              const char * pcNewValue )
 {
     BaseType_t xReturn = pdFALSE;
 
-    if( key < CS_NUM_KEYS &&
-        pcNewValue != NULL &&
-        kvStoreDefaults[ key ].type == KV_TYPE_STRING )
+    if( ( key < CS_NUM_KEYS ) &&
+        ( pcNewValue != NULL ) &&
+        ( kvStoreDefaults[ key ].type == KV_TYPE_STRING ) )
     {
-        xReturn = WRITE_ENTRY( key, KV_TYPE_STRING, strlen( pcNewValue ) + 1, ( const void* ) pcNewValue );
+        xReturn = WRITE_ENTRY( key, KV_TYPE_STRING, strlen( pcNewValue ) + 1, ( const void * ) pcNewValue );
     }
+
     return xReturn;
 }
 
-BaseType_t KVStore_setUInt32( KVStoreKey_t key, uint32_t ulNewVal )
+BaseType_t KVStore_setUInt32( KVStoreKey_t key,
+                              uint32_t ulNewVal )
 {
     BaseType_t xReturn = pdFALSE;
 
-    if( key < CS_NUM_KEYS && kvStoreDefaults[ key ].type == KV_TYPE_UINT32 )
+    if( ( key < CS_NUM_KEYS ) && ( kvStoreDefaults[ key ].type == KV_TYPE_UINT32 ) )
     {
-        xReturn = WRITE_ENTRY( key, KV_TYPE_UINT32, sizeof(uint32_t), ( const void* ) &ulNewVal );
+        xReturn = WRITE_ENTRY( key, KV_TYPE_UINT32, sizeof( uint32_t ), ( const void * ) &ulNewVal );
     }
+
     return xReturn;
 }
 
-BaseType_t KVStore_setInt32( KVStoreKey_t key, int32_t lNewVal )
+BaseType_t KVStore_setInt32( KVStoreKey_t key,
+                             int32_t lNewVal )
 {
     BaseType_t xReturn = pdFALSE;
 
-    if( key < CS_NUM_KEYS && kvStoreDefaults[ key ].type == KV_TYPE_INT32 )
+    if( ( key < CS_NUM_KEYS ) && ( kvStoreDefaults[ key ].type == KV_TYPE_INT32 ) )
     {
-        xReturn = WRITE_ENTRY( key, KV_TYPE_INT32, sizeof(int32_t), ( const void* ) &lNewVal );
+        xReturn = WRITE_ENTRY( key, KV_TYPE_INT32, sizeof( int32_t ), ( const void * ) &lNewVal );
     }
+
     return xReturn;
 }
 
-BaseType_t KVStore_setUBase( KVStoreKey_t key, UBaseType_t uxNewVal )
+BaseType_t KVStore_setUBase( KVStoreKey_t key,
+                             UBaseType_t uxNewVal )
 {
     BaseType_t xReturn = pdFALSE;
 
-    if( key < CS_NUM_KEYS && kvStoreDefaults[ key ].type == KV_TYPE_UBASE_T )
+    if( ( key < CS_NUM_KEYS ) && ( kvStoreDefaults[ key ].type == KV_TYPE_UBASE_T ) )
     {
-        xReturn = WRITE_ENTRY( key, KV_TYPE_UBASE_T, sizeof(UBaseType_t),
-                               ( const void* ) &uxNewVal );
+        xReturn = WRITE_ENTRY( key, KV_TYPE_UBASE_T, sizeof( UBaseType_t ),
+                               ( const void * ) &uxNewVal );
     }
+
     return xReturn;
 }
 
-BaseType_t KVStore_setBase( KVStoreKey_t key, BaseType_t xNewVal )
+BaseType_t KVStore_setBase( KVStoreKey_t key,
+                            BaseType_t xNewVal )
 {
     BaseType_t xReturn = pdFALSE;
 
-    if( key < CS_NUM_KEYS && kvStoreDefaults[ key ].type == KV_TYPE_BASE_T )
+    if( ( key < CS_NUM_KEYS ) && ( kvStoreDefaults[ key ].type == KV_TYPE_BASE_T ) )
     {
-        xReturn = WRITE_ENTRY( key, KV_TYPE_BASE_T, sizeof(BaseType_t), ( const void* ) &xNewVal );
+        xReturn = WRITE_ENTRY( key, KV_TYPE_BASE_T, sizeof( BaseType_t ), ( const void * ) &xNewVal );
     }
+
     return xReturn;
 }
 
 size_t KVStore_getSize( KVStoreKey_t xKey )
 {
     size_t xDataLen = 0;
+
     if( xKey < CS_NUM_KEYS )
     {
         /* First check cache if available */
@@ -189,14 +207,17 @@ size_t KVStore_getSize( KVStoreKey_t xKey )
             xDataLen = kvStoreDefaults[ xKey ].length;
         }
     }
+
     return xDataLen;
 }
 
-size_t KVStore_getBlob( KVStoreKey_t key, void * pvBuffer, size_t xMaxLength )
+size_t KVStore_getBlob( KVStoreKey_t key,
+                        void * pvBuffer,
+                        size_t xMaxLength )
 {
     size_t xLength = 0;
 
-    if( key < CS_NUM_KEYS && pvBuffer != NULL && kvStoreDefaults[ key ].type == KV_TYPE_BLOB )
+    if( ( key < CS_NUM_KEYS ) && ( pvBuffer != NULL ) && ( kvStoreDefaults[ key ].type == KV_TYPE_BLOB ) )
     {
         ( void ) xSemaphoreTake( xKvMutex, portMAX_DELAY );
 
@@ -204,10 +225,12 @@ size_t KVStore_getBlob( KVStoreKey_t key, void * pvBuffer, size_t xMaxLength )
 
         ( void ) xSemaphoreGive( xKvMutex );
     }
+
     return xLength;
 }
 
-void * KVStore_getBlobHeap( KVStoreKey_t key, size_t * pxLength )
+void * KVStore_getBlobHeap( KVStoreKey_t key,
+                            size_t * pxLength )
 {
     size_t xLen = KVStore_getSize( key );
     void * pvBuffer = NULL;
@@ -248,20 +271,23 @@ KVStoreValueType_t KVStore_getType( KVStoreKey_t key )
     {
         xKvType = kvStoreDefaults[ key ].type;
     }
-    return ( xKvType );
+
+    return( xKvType );
 }
 
-size_t KVStore_getString( KVStoreKey_t key, char * pcBuffer, size_t xMaxLength )
+size_t KVStore_getString( KVStoreKey_t key,
+                          char * pcBuffer,
+                          size_t xMaxLength )
 {
     size_t xSizeWritten = 0;
 
-    if( key < CS_NUM_KEYS &&
-        pcBuffer != NULL &&
-        kvStoreDefaults[ key ].type == KV_TYPE_STRING )
+    if( ( key < CS_NUM_KEYS ) &&
+        ( pcBuffer != NULL ) &&
+        ( kvStoreDefaults[ key ].type == KV_TYPE_STRING ) )
     {
         ( void ) xSemaphoreTake( xKvMutex, portMAX_DELAY );
 
-        xSizeWritten = xReadEntryOrDefault( key, ( void* ) pcBuffer, xMaxLength );
+        xSizeWritten = xReadEntryOrDefault( key, ( void * ) pcBuffer, xMaxLength );
 
         /* Ensure null terminated */
         pcBuffer[ xMaxLength - 1 ] = '\0';
@@ -278,7 +304,8 @@ size_t KVStore_getString( KVStoreKey_t key, char * pcBuffer, size_t xMaxLength )
     return xSizeWritten;
 }
 
-char * KVStore_getStringHeap( KVStoreKey_t key, size_t * pxLength )
+char * KVStore_getStringHeap( KVStoreKey_t key,
+                              size_t * pxLength )
 {
     size_t xLen = KVStore_getSize( key );
     char * pcBuffer = NULL;
@@ -311,113 +338,120 @@ char * KVStore_getStringHeap( KVStoreKey_t key, size_t * pxLength )
     return pcBuffer;
 }
 
-uint32_t KVStore_getUInt32( KVStoreKey_t key, BaseType_t * pxSuccess )
+uint32_t KVStore_getUInt32( KVStoreKey_t key,
+                            BaseType_t * pxSuccess )
 {
     uint32_t ulReturnValue = 0;
 
     size_t xSizeWritten = 0;
 
-    if( key < CS_NUM_KEYS &&
-        kvStoreDefaults[ key ].type == KV_TYPE_UINT32 )
+    if( ( key < CS_NUM_KEYS ) &&
+        ( kvStoreDefaults[ key ].type == KV_TYPE_UINT32 ) )
     {
         ( void ) xSemaphoreTake( xKvMutex, portMAX_DELAY );
 
-        xSizeWritten = xReadEntryOrDefault( key, ( void* ) &ulReturnValue,
-                                            sizeof(uint32_t) );
+        xSizeWritten = xReadEntryOrDefault( key, ( void * ) &ulReturnValue,
+                                            sizeof( uint32_t ) );
 
         ( void ) xSemaphoreGive( xKvMutex );
     }
 
     if( pxSuccess != NULL )
     {
-        *pxSuccess = ( xSizeWritten == sizeof(uint32_t) );
+        *pxSuccess = ( xSizeWritten == sizeof( uint32_t ) );
     }
 
     return ulReturnValue;
 }
 
-int32_t KVStore_getInt32( KVStoreKey_t key, BaseType_t * pxSuccess )
+int32_t KVStore_getInt32( KVStoreKey_t key,
+                          BaseType_t * pxSuccess )
 {
     int32_t lReturnValue = 0;
 
     size_t xSizeWritten = 0;
 
-    if( key < CS_NUM_KEYS && kvStoreDefaults[ key ].type == KV_TYPE_INT32 )
+    if( ( key < CS_NUM_KEYS ) && ( kvStoreDefaults[ key ].type == KV_TYPE_INT32 ) )
     {
         ( void ) xSemaphoreTake( xKvMutex, portMAX_DELAY );
 
-        xSizeWritten = xReadEntryOrDefault( key, ( void* ) &lReturnValue, sizeof(int32_t) );
+        xSizeWritten = xReadEntryOrDefault( key, ( void * ) &lReturnValue, sizeof( int32_t ) );
 
         ( void ) xSemaphoreGive( xKvMutex );
     }
 
     if( pxSuccess != NULL )
     {
-        *pxSuccess = ( xSizeWritten == sizeof(int32_t) );
+        *pxSuccess = ( xSizeWritten == sizeof( int32_t ) );
     }
 
     return lReturnValue;
 }
 
-BaseType_t KVStore_getBase( KVStoreKey_t key, BaseType_t * pxSuccess )
+BaseType_t KVStore_getBase( KVStoreKey_t key,
+                            BaseType_t * pxSuccess )
 {
     BaseType_t xReturnValue = 0;
 
     size_t xSizeWritten = 0;
 
-    if( key < CS_NUM_KEYS && kvStoreDefaults[ key ].type == KV_TYPE_BASE_T )
+    if( ( key < CS_NUM_KEYS ) && ( kvStoreDefaults[ key ].type == KV_TYPE_BASE_T ) )
     {
         ( void ) xSemaphoreTake( xKvMutex, portMAX_DELAY );
 
-        xSizeWritten = xReadEntryOrDefault( key, ( void* ) &xReturnValue, sizeof(BaseType_t) );
+        xSizeWritten = xReadEntryOrDefault( key, ( void * ) &xReturnValue, sizeof( BaseType_t ) );
 
         ( void ) xSemaphoreGive( xKvMutex );
     }
 
     if( pxSuccess != NULL )
     {
-        *pxSuccess = ( xSizeWritten == sizeof(BaseType_t) );
+        *pxSuccess = ( xSizeWritten == sizeof( BaseType_t ) );
     }
 
     return xReturnValue;
 }
 
-UBaseType_t KVStore_getUBase( KVStoreKey_t key, BaseType_t * pxSuccess )
+UBaseType_t KVStore_getUBase( KVStoreKey_t key,
+                              BaseType_t * pxSuccess )
 {
     UBaseType_t xReturnValue = 0;
 
     size_t xSizeWritten = 0;
 
-    if( key < CS_NUM_KEYS && kvStoreDefaults[ key ].type == KV_TYPE_BASE_T )
+    if( ( key < CS_NUM_KEYS ) && ( kvStoreDefaults[ key ].type == KV_TYPE_BASE_T ) )
     {
         ( void ) xSemaphoreTake( xKvMutex, portMAX_DELAY );
 
-        xSizeWritten = xReadEntryOrDefault( key, ( void* ) &xReturnValue, sizeof(UBaseType_t) );
+        xSizeWritten = xReadEntryOrDefault( key, ( void * ) &xReturnValue, sizeof( UBaseType_t ) );
 
         ( void ) xSemaphoreGive( xKvMutex );
     }
 
     if( pxSuccess != NULL )
     {
-        *pxSuccess = ( xSizeWritten == sizeof(UBaseType_t) );
+        *pxSuccess = ( xSizeWritten == sizeof( UBaseType_t ) );
     }
 
     return xReturnValue;
 }
 
-const char* kvKeyToString( KVStoreKey_t xKey )
+const char * kvKeyToString( KVStoreKey_t xKey )
 {
     const char * retVal = NULL;
-    if( xKey < CS_NUM_KEYS && xKey >= 0 )
+
+    if( ( xKey < CS_NUM_KEYS ) && ( xKey >= 0 ) )
     {
         retVal = kvStoreKeyMap[ xKey ];
     }
+
     return retVal;
 }
 
 KVStoreKey_t kvStringToKey( const char * pcKey )
 {
     KVStoreKey_t xKey = CS_NUM_KEYS;
+
     for( uint32_t i = 0; i < CS_NUM_KEYS; i++ )
     {
         if( 0 == strcmp( kvStoreKeyMap[ i ], pcKey ) )
@@ -426,6 +460,6 @@ KVStoreKey_t kvStringToKey( const char * pcKey )
             break;
         }
     }
+
     return xKey;
 }
-

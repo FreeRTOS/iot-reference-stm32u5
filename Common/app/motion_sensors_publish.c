@@ -28,7 +28,7 @@
 #include "logging_levels.h"
 /* define LOG_LEVEL here if you want to modify the logging level from the default */
 
-#define LOG_LEVEL LOG_ERROR
+#define LOG_LEVEL    LOG_ERROR
 
 #include "logging.h"
 
@@ -65,16 +65,17 @@
  * @brief Size of statically allocated buffers for holding topic names and
  * payloads.
  */
-#define MQTT_PUBLISH_MAX_LEN              ( 200 )
-#define MQTT_PUBLISH_PERIOD_MS            ( 100 )
-#define MQTT_PUBLICH_TOPIC_STR_LEN        ( 256 )
-#define MQTT_PUBLISH_BLOCK_TIME_MS        ( 200 )
-#define MQTT_PUBLISH_NOTIFICATION_WAIT_MS ( 1000 )
-#define MQTT_NOTIFY_IDX                   ( 1 )
-#define MQTT_PUBLISH_QOS                  ( MQTTQoS0 )
+#define MQTT_PUBLISH_MAX_LEN                 ( 200 )
+#define MQTT_PUBLISH_PERIOD_MS               ( 100 )
+#define MQTT_PUBLICH_TOPIC_STR_LEN           ( 256 )
+#define MQTT_PUBLISH_BLOCK_TIME_MS           ( 200 )
+#define MQTT_PUBLISH_NOTIFICATION_WAIT_MS    ( 1000 )
+#define MQTT_NOTIFY_IDX                      ( 1 )
+#define MQTT_PUBLISH_QOS                     ( MQTTQoS0 )
 
 
 /*-----------------------------------------------------------*/
+
 /**
  * @brief Defines the structure to use as the command callback context in this
  * demo.
@@ -90,27 +91,28 @@ struct MQTTAgentCommandContext
 static void prvPublishCommandCallback( MQTTAgentCommandContext_t * pxCommandContext,
                                        MQTTAgentReturnInfo_t * pxReturnInfo )
 {
-	TaskHandle_t xTaskHandle = ( TaskHandle_t ) pxCommandContext;
+    TaskHandle_t xTaskHandle = ( TaskHandle_t ) pxCommandContext;
+
     configASSERT( pxReturnInfo != NULL );
 
     uint32_t ulNotifyValue = pxReturnInfo->returnCode;
 
-    if( xTaskHandle!= NULL )
+    if( xTaskHandle != NULL )
     {
         /* Send the context's ulNotificationValue as the notification value so
          * the receiving task can check the value it set in the context matches
          * the value it receives in the notification. */
-    	( void ) xTaskNotifyIndexed( xTaskHandle,
-    								MQTT_NOTIFY_IDX,
-									ulNotifyValue,
-									eSetValueWithOverwrite );
+        ( void ) xTaskNotifyIndexed( xTaskHandle,
+                                     MQTT_NOTIFY_IDX,
+                                     ulNotifyValue,
+                                     eSetValueWithOverwrite );
     }
 }
 
 /*-----------------------------------------------------------*/
 
 static BaseType_t prvPublishAndWaitForAck( MQTTAgentHandle_t xAgentHandle,
-										   const char * pcTopic,
+                                           const char * pcTopic,
                                            const void * pvPublishData,
                                            size_t xPublishDataLen )
 {
@@ -122,27 +124,25 @@ static BaseType_t prvPublishAndWaitForAck( MQTTAgentHandle_t xAgentHandle,
 
     MQTTPublishInfo_t xPublishInfo =
     {
-        .qos = MQTT_PUBLISH_QOS,
-        .retain = 0,
-        .dup = 0,
-        .pTopicName = pcTopic,
+        .qos             = MQTT_PUBLISH_QOS,
+        .retain          = 0,
+        .dup             = 0,
+        .pTopicName      = pcTopic,
         .topicNameLength = strlen( pcTopic ),
-        .pPayload = pvPublishData,
-        .payloadLength = xPublishDataLen
+        .pPayload        = pvPublishData,
+        .payloadLength   = xPublishDataLen
     };
 
     MQTTAgentCommandInfo_t xCommandParams =
     {
-        .blockTimeMs = MQTT_PUBLISH_BLOCK_TIME_MS,
-        .cmdCompleteCallback = prvPublishCommandCallback,
+        .blockTimeMs                 = MQTT_PUBLISH_BLOCK_TIME_MS,
+        .cmdCompleteCallback         = prvPublishCommandCallback,
         .pCmdCompleteCallbackContext = ( void * ) xTaskGetCurrentTaskHandle(),
     };
 
-
-
     if( xPublishInfo.qos > MQTTQoS0 )
     {
-    	xCommandParams.pCmdCompleteCallbackContext = ( void * ) xTaskGetCurrentTaskHandle();
+        xCommandParams.pCmdCompleteCallbackContext = ( void * ) xTaskGetCurrentTaskHandle();
     }
 
     /* Clear the notification index */
@@ -155,38 +155,39 @@ static BaseType_t prvPublishAndWaitForAck( MQTTAgentHandle_t xAgentHandle,
 
     if( xStatus == MQTTSuccess )
     {
-    	uint32_t ulNotifyValue = 0;
+        uint32_t ulNotifyValue = 0;
         BaseType_t xResult = pdFALSE;
 
-		xResult = xTaskNotifyWaitIndexed( MQTT_NOTIFY_IDX,
-										  0xFFFFFFFF,
-										  0xFFFFFFFF,
-										  &ulNotifyValue,
-										  pdMS_TO_TICKS( MQTT_PUBLISH_NOTIFICATION_WAIT_MS ) );
-		if( xResult )
-		{
-			xStatus = ( MQTTStatus_t ) ulNotifyValue;
+        xResult = xTaskNotifyWaitIndexed( MQTT_NOTIFY_IDX,
+                                          0xFFFFFFFF,
+                                          0xFFFFFFFF,
+                                          &ulNotifyValue,
+                                          pdMS_TO_TICKS( MQTT_PUBLISH_NOTIFICATION_WAIT_MS ) );
 
-			if( xStatus != MQTTSuccess )
-			{
-				LogError( "MQTT Agent returned error code: %d during publish operation.",
-						  xStatus );
-				xResult = pdFALSE;
-			}
-		}
-		else
-		{
-			LogError( "Timed out while waiting for publish ACK or Sent event. xTimeout = %d",
-					  pdMS_TO_TICKS( MQTT_PUBLISH_NOTIFICATION_WAIT_MS ) );
-			xResult = pdFALSE;
-		}
+        if( xResult )
+        {
+            xStatus = ( MQTTStatus_t ) ulNotifyValue;
+
+            if( xStatus != MQTTSuccess )
+            {
+                LogError( "MQTT Agent returned error code: %d during publish operation.",
+                          xStatus );
+                xResult = pdFALSE;
+            }
+        }
+        else
+        {
+            LogError( "Timed out while waiting for publish ACK or Sent event. xTimeout = %d",
+                      pdMS_TO_TICKS( MQTT_PUBLISH_NOTIFICATION_WAIT_MS ) );
+            xResult = pdFALSE;
+        }
     }
     else
     {
         LogError( "MQTTAgent_Publish returned error code: %d.", xStatus );
     }
 
-    return ( xStatus == MQTTSuccess );
+    return( xStatus == MQTTSuccess );
 }
 
 /*-----------------------------------------------------------*/
@@ -206,14 +207,13 @@ static BaseType_t xInitSensors( void )
     lBspError |= BSP_MOTION_SENSOR_Enable( 1, MOTION_MAGNETO );
     lBspError |= BSP_MOTION_SENSOR_SetOutputDataRate( 1, MOTION_MAGNETO, 1.0f );
 
-    return ( lBspError == BSP_ERROR_NONE ? pdTRUE : pdFALSE );
+    return( lBspError == BSP_ERROR_NONE ? pdTRUE : pdFALSE );
 }
 
 /*-----------------------------------------------------------*/
 void vMotionSensorsPublish( void * pvParameters )
 {
-
-    (void) pvParameters;
+    ( void ) pvParameters;
     BaseType_t xResult = pdFALSE;
     BaseType_t xExitFlag = pdFALSE;
 
@@ -235,16 +235,16 @@ void vMotionSensorsPublish( void * pvParameters )
 
     if( pcDeviceId == NULL )
     {
-    	xExitFlag = pdTRUE;
+        xExitFlag = pdTRUE;
     }
     else
     {
-    	xTopicLen = snprintf( pcTopicString, MQTT_PUBLICH_TOPIC_STR_LEN, "/%s/motion_sensor_data", pcDeviceId );
+        xTopicLen = snprintf( pcTopicString, MQTT_PUBLICH_TOPIC_STR_LEN, "/%s/motion_sensor_data", pcDeviceId );
     }
 
-    if( xTopicLen == 0 || xTopicLen > MQTT_PUBLICH_TOPIC_STR_LEN )
+    if( ( xTopicLen == 0 ) || ( xTopicLen > MQTT_PUBLICH_TOPIC_STR_LEN ) )
     {
-    	LogError( "Error while constructing topic string." );
+        LogError( "Error while constructing topic string." );
     }
 
     xAgentHandle = xGetMqttAgentHandle();
@@ -262,38 +262,39 @@ void vMotionSensorsPublish( void * pvParameters )
         if( lBspError == BSP_ERROR_NONE )
         {
             int bytesWritten = snprintf( pcPayloadBuf,
-                                     MQTT_PUBLISH_MAX_LEN,
-                                     "{"
-                                          "\"acceleration_mG\":"
-                                            "{"
-                                                "\"x\": %ld,"
-                                                "\"y\": %ld,"
-                                                "\"z\": %ld"
-                                            "},"
-                                          "\"gyro_mDPS\":"
-                                            "{"
-                                                "\"x\": %ld,"
-                                                "\"y\": %ld,"
-                                                "\"z\": %ld"
-                                            "},"
-                                          "\"magnetism_mGauss\":"
-                                            "{"
-                                                "\"x\": %ld,"
-                                                "\"y\": %ld,"
-                                                "\"z\": %ld"
-                                            "}"
-                                     "}",
-                                     xAcceleroAxes.x, xAcceleroAxes.y, xAcceleroAxes.z,
-                                     xGyroAxes.x, xGyroAxes.y, xGyroAxes.z,
-                                     xMagnetoAxes.x, xMagnetoAxes.y, xMagnetoAxes.z );
+                                         MQTT_PUBLISH_MAX_LEN,
+                                         "{"
+                                         "\"acceleration_mG\":"
+                                         "{"
+                                         "\"x\": %ld,"
+                                         "\"y\": %ld,"
+                                         "\"z\": %ld"
+                                         "},"
+                                         "\"gyro_mDPS\":"
+                                         "{"
+                                         "\"x\": %ld,"
+                                         "\"y\": %ld,"
+                                         "\"z\": %ld"
+                                         "},"
+                                         "\"magnetism_mGauss\":"
+                                         "{"
+                                         "\"x\": %ld,"
+                                         "\"y\": %ld,"
+                                         "\"z\": %ld"
+                                         "}"
+                                         "}",
+                                         xAcceleroAxes.x, xAcceleroAxes.y, xAcceleroAxes.z,
+                                         xGyroAxes.x, xGyroAxes.y, xGyroAxes.z,
+                                         xMagnetoAxes.x, xMagnetoAxes.y, xMagnetoAxes.z );
 
-            if( bytesWritten < MQTT_PUBLISH_MAX_LEN &&
-            	xIsMqttAgentConnected() == pdTRUE )
+            if( ( bytesWritten < MQTT_PUBLISH_MAX_LEN ) &&
+                ( xIsMqttAgentConnected() == pdTRUE ) )
             {
                 xResult = prvPublishAndWaitForAck( xAgentHandle,
-                								   pcTopicString,
+                                                   pcTopicString,
                                                    pcPayloadBuf,
                                                    bytesWritten );
+
                 if( xResult != pdPASS )
                 {
                     LogError( "Failed to publish motion sensor data" );

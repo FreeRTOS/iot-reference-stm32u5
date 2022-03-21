@@ -50,7 +50,7 @@ typedef struct xConsoleIO
                                       uint32_t length,
                                       TickType_t xTimeout );
 
-    const int32_t ( * readline ) ( char * * const bufferPtr );
+    const int32_t ( * readline )( char ** const bufferPtr );
 
     /**
      * Function writes the output of a finite length buffer to the console. If the buffer is a null
@@ -63,10 +63,10 @@ typedef struct xConsoleIO
     /**
      * Function writes a null terminated string to the console.
      */
-    const void ( * print ) ( const char * const pcString );
+    const void ( * print )( const char * const pcString );
 
-    const void ( * lock ) ( void );
-    const void ( * unlock ) ( void );
+    const void ( * lock )( void );
+    const void ( * unlock )( void );
 } ConsoleIO_t;
 
 /* The prototype to which callback functions used to process command line

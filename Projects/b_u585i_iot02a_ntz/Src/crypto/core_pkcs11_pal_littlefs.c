@@ -49,6 +49,7 @@
 static lfs_t * pLfsCtx = NULL;
 
 /*-----------------------------------------------------------*/
+
 /**
  * @brief Checks to see if a file exists
  *
@@ -68,11 +69,11 @@ static CK_RV prvFileExists( const char * pcFileName )
     }
     else
     {
-        lReturn = lfs_stat( pLfsCtx,  pcFileName, &xFileInfo );
+        lReturn = lfs_stat( pLfsCtx, pcFileName, &xFileInfo );
     }
 
-    if( lReturn < 0 ||
-        ( xFileInfo.type & LFS_TYPE_REG ) == 0 )
+    if( ( lReturn < 0 ) ||
+        ( ( xFileInfo.type & LFS_TYPE_REG ) == 0 ) )
     {
         xReturn = CKR_OBJECT_HANDLE_INVALID;
         LogInfo( ( "Could not open %s for reading.", pcFileName ) );
@@ -109,11 +110,11 @@ static CK_RV prvReadData( const char * pcFileName,
     *ppucData = NULL;
     *pulDataSize = 0;
 
-    lReturn = lfs_stat( pLfsCtx,  pcFileName, &xFileInfo );
+    lReturn = lfs_stat( pLfsCtx, pcFileName, &xFileInfo );
 
-    if( lReturn < 0 ||
-        ( xFileInfo.type & LFS_TYPE_REG ) == 0 ||
-         xFileInfo.size == 0 )
+    if( ( lReturn < 0 ) ||
+        ( ( xFileInfo.type & LFS_TYPE_REG ) == 0 ) ||
+        ( xFileInfo.size == 0 ) )
     {
         LogError( ( "PKCS #11 PAL failed to get object value. "
                     "Could not locate file named %s for reading. rc: %d, size: %d, type: %d",
@@ -127,8 +128,8 @@ static CK_RV prvReadData( const char * pcFileName,
         xFileOpenedFlag = pdTRUE;
     }
 
-    if( xReturn == CKR_OK &&
-        lReturn < 0 )
+    if( ( xReturn == CKR_OK ) &&
+        ( lReturn < 0 ) )
     {
         LogError( ( "PKCS #11 PAL failed to get object value. "
                     "Could not open file named %s for reading. rc: %d",
@@ -142,8 +143,8 @@ static CK_RV prvReadData( const char * pcFileName,
         *ppucData = pvPortMalloc( xFileInfo.size );
     }
 
-    if( xReturn == CKR_OK &&
-        *ppucData == NULL )
+    if( ( xReturn == CKR_OK ) &&
+        ( *ppucData == NULL ) )
     {
         *pulDataSize = 0;
         LogError( ( "PKCS #11 PAL failed to get object value. "
@@ -248,12 +249,14 @@ CK_OBJECT_HANDLE PKCS11_PAL_SaveObject( CK_ATTRIBUTE_PTR pxLabel,
             }
 
             lResult = lfs_file_sync( pLfsCtx, &xFile );
+
             if( lResult < 0 )
             {
                 LogError( ( "PKCS #11 PAL was unable to save object to file. "
                             "Failed to commit changes to flash. rc: %ld", lResult ) );
                 xHandle = ( CK_OBJECT_HANDLE ) eInvalidHandle;
             }
+
             ( void ) lfs_file_close( pLfsCtx, &xFile );
         }
     }

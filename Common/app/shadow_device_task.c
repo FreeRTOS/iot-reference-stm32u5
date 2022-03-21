@@ -48,7 +48,7 @@
 #include "logging_levels.h"
 /* define LOG_LEVEL here if you want to modify the logging level from the default */
 
-#define LOG_LEVEL LOG_INFO
+#define LOG_LEVEL    LOG_INFO
 
 #include "logging.h"
 
@@ -121,33 +121,33 @@
  *
  * Custom applications may calculate the length of the JSON document with the same method.
  */
-#define shadowexampleSHADOW_REPORTED_JSON_LENGTH        ( sizeof( shadowexampleSHADOW_REPORTED_JSON ) - 2 )
+#define shadowexampleSHADOW_REPORTED_JSON_LENGTH       ( sizeof( shadowexampleSHADOW_REPORTED_JSON ) - 2 )
 
 /**
  * @brief Time in ms to wait between checking for updates to report.
  */
-#define shadowMS_BETWEEN_REPORTS                        ( 15000U )
+#define shadowMS_BETWEEN_REPORTS                       ( 15000U )
 
 /**
  * @brief This demo uses task notifications to signal tasks from MQTT callback
  * functions. shadowexampleMS_TO_WAIT_FOR_NOTIFICATION defines the time, in ticks,
  * to wait for such a callback.
  */
-#define shadow_SIGNAL_TIMEOUT                           ( 30 * 1000 )
+#define shadow_SIGNAL_TIMEOUT                          ( 30 * 1000 )
 
 /**
  * @brief The maximum amount of time in milliseconds to wait for the commands
  * to be posted to the MQTT agent should the MQTT agent's command queue be full.
  * Tasks wait in the Blocked state, so don't use any CPU time.
  */
-#define shadowexampleMAX_COMMAND_SEND_BLOCK_TIME_MS     ( 60 * 1000 )
+#define shadowexampleMAX_COMMAND_SEND_BLOCK_TIME_MS    ( 60 * 1000 )
 
 /**
  * @brief An invalid value for the powerOn state. This is used to set the last
  * reported state to a value that will not match the current state. As we only
  * set the powerOn state to 0 or 1, any other value will suffice.
  */
-#define shadowexampleINVALID_POWERON_STATE              ( 2 )
+#define shadowexampleINVALID_POWERON_STATE             ( 2 )
 
 /**
  * @brief Defines structure passed to callbacks and local functions.
@@ -267,6 +267,7 @@ static bool prvInitializeCtx( ShadowDeviceCtx_t * pxCtx )
 
     /* Note: KVStore_getSize always returns the buffer length needed */
     pxCtx->pcDeviceName = pvPortMalloc( KVStore_getSize( CS_CORE_THING_NAME ) );
+
     if( pxCtx->pcDeviceName != NULL )
     {
         pxCtx->xDeviceNameLen = KVStore_getString( CS_CORE_THING_NAME,
@@ -343,43 +344,44 @@ static bool prvSubscribeToShadowUpdateTopics( ShadowDeviceCtx_t * pxCtx )
     MQTTStatus_t xStatus = MQTTSuccess;
 
     xStatus = MqttAgent_SubscribeSync( pxCtx->xAgentHandle,
-    								   pxCtx->pcTopicUpdateDelta,
-									   MQTTQoS1,
-									   prvIncomingPublishUpdateDeltaCallback,
-									   pxCtx );
+                                       pxCtx->pcTopicUpdateDelta,
+                                       MQTTQoS1,
+                                       prvIncomingPublishUpdateDeltaCallback,
+                                       pxCtx );
 
     if( xStatus != MQTTSuccess )
-	{
-		LogError( "Failed to subscribe to topic: %s", pxCtx->pcTopicUpdateDelta );
-	}
-	else
-	{
-		xStatus = MqttAgent_SubscribeSync( pxCtx->xAgentHandle,
-										   pxCtx->pcTopicUpdateAccepted,
-										   MQTTQoS1,
-										   prvIncomingPublishUpdateAcceptedCallback,
-										   pxCtx );
+    {
+        LogError( "Failed to subscribe to topic: %s", pxCtx->pcTopicUpdateDelta );
+    }
+    else
+    {
+        xStatus = MqttAgent_SubscribeSync( pxCtx->xAgentHandle,
+                                           pxCtx->pcTopicUpdateAccepted,
+                                           MQTTQoS1,
+                                           prvIncomingPublishUpdateAcceptedCallback,
+                                           pxCtx );
 
-		if( xStatus != MQTTSuccess )
-		{
-			LogError( "Failed to subscribe to topic: %s", pxCtx->pcTopicUpdateAccepted );
-		}
-	}
-
+        if( xStatus != MQTTSuccess )
+        {
+            LogError( "Failed to subscribe to topic: %s", pxCtx->pcTopicUpdateAccepted );
+        }
+    }
 
     if( xStatus == MQTTSuccess )
     {
-		xStatus = MqttAgent_SubscribeSync( pxCtx->xAgentHandle,
-										   pxCtx->pcTopicUpdateRejected,
-										   MQTTQoS1,
-										   prvIncomingPublishUpdateRejectedCallback,
-										   pxCtx );
-		if( xStatus != MQTTSuccess )
-		{
-			LogError( "Failed to subscribe to topic: %s", pxCtx->pcTopicUpdateRejected );
-		}
+        xStatus = MqttAgent_SubscribeSync( pxCtx->xAgentHandle,
+                                           pxCtx->pcTopicUpdateRejected,
+                                           MQTTQoS1,
+                                           prvIncomingPublishUpdateRejectedCallback,
+                                           pxCtx );
+
+        if( xStatus != MQTTSuccess )
+        {
+            LogError( "Failed to subscribe to topic: %s", pxCtx->pcTopicUpdateRejected );
+        }
     }
-    return ( xStatus == MQTTSuccess );
+
+    return( xStatus == MQTTSuccess );
 }
 
 /*-----------------------------------------------------------*/
@@ -454,15 +456,15 @@ static void prvIncomingPublishUpdateDeltaCallback( void * pvCtx,
                  * that we've received before. Your application may use a
                  * different approach.
                  */
-                LogWarn( ("Received unexpected delta update with version %u. Current version is %u",
+                LogWarn( ( "Received unexpected delta update with version %u. Current version is %u",
                            ( unsigned int ) ulVersion,
-                           ( unsigned int ) ulCurrentVersion) );
+                           ( unsigned int ) ulCurrentVersion ) );
             }
             else
             {
                 LogInfo( "Received delta update with version %.*s.",
-                           ulOutValueLength,
-                           pcOutValue );
+                         ulOutValueLength,
+                         pcOutValue );
 
                 /* Set received version as the current version. */
                 ulCurrentVersion = ulVersion;
@@ -488,13 +490,13 @@ static void prvIncomingPublishUpdateDeltaCallback( void * pvCtx,
                     /* Set the new powerOn state. */
                     pxCtx->ulCurrentPowerOnState = ulNewState;
 
-                    if(ulNewState == 1)
+                    if( ulNewState == 1 )
                     {
-                        HAL_GPIO_WritePin( LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET );/* Turn the LED ON */
+                        HAL_GPIO_WritePin( LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET ); /* Turn the LED ON */
                     }
                     else
                     {
-                    	HAL_GPIO_WritePin( LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET );/* Turn the LED off */
+                        HAL_GPIO_WritePin( LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET ); /* Turn the LED off */
                     }
                 }
             }
@@ -628,8 +630,8 @@ static void prvIncomingPublishUpdateRejectedCallback( void * pvCtx,
     configASSERT( pxPublishInfo->pPayload != NULL );
 
     LogDebug( "/update/rejected json payload: %.*s.",
-                pxPublishInfo->payloadLength,
-                ( const char * ) pxPublishInfo->pPayload );
+              pxPublishInfo->payloadLength,
+              ( const char * ) pxPublishInfo->pPayload );
 
     /* The payload will look similar to this:
      * {
@@ -694,8 +696,8 @@ static void prvIncomingPublishUpdateRejectedCallback( void * pvCtx,
             else
             {
                 LogWarn( "Received rejected response for update with token %lu and error code %.*s.", ( unsigned long ) pxCtx->ulClientToken,
-                           ulOutValueLength,
-                           pcOutValue );
+                         ulOutValueLength,
+                         pcOutValue );
             }
 
             /* Wake up the shadow task which is waiting for this response. */

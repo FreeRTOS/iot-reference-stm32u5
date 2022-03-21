@@ -48,7 +48,7 @@ static void hw_cache_init( void );
 static void hw_cache_deinit( void );
 static void hw_rtc_init( void );
 static void hw_gpio_init( void );
-static void hw_spi2_msp_init( SPI_HandleTypeDef* pxHndlSpi );
+static void hw_spi2_msp_init( SPI_HandleTypeDef * pxHndlSpi );
 static void hw_spi2_msp_deinit( SPI_HandleTypeDef * pxHndlSpi );
 static void hw_spi_init( void );
 static void hw_tim5_init( void );
@@ -60,6 +60,7 @@ static void hw_rng_init( void );
 void hw_init( void )
 {
     __HAL_RCC_SYSCFG_CLK_ENABLE();
+
     /*
      * Initializes flash interface and systick timer.
      * Note: HAL_Init calls HAL_MspInit.
@@ -82,7 +83,7 @@ void hw_init( void )
     hw_gpio_init();
 
     hw_gpdma_init();
-//    hw_rtc_init();
+/*    hw_rtc_init(); */
     hw_spi_init();
 
 #ifndef TFM_PSA_API
@@ -101,23 +102,23 @@ static void SystemClock_Config( void )
 
     RCC_OscInitTypeDef xRccOscInit =
     {
-        .OscillatorType = RCC_OSCILLATORTYPE_HSI48 | RCC_OSCILLATORTYPE_LSI | RCC_OSCILLATORTYPE_MSI,
-        .HSI48State = RCC_HSI48_ON,
-        .LSIState = RCC_LSI_ON,
-        .MSIState = RCC_MSI_ON,
+        .OscillatorType      = RCC_OSCILLATORTYPE_HSI48 | RCC_OSCILLATORTYPE_LSI | RCC_OSCILLATORTYPE_MSI,
+        .HSI48State          = RCC_HSI48_ON,
+        .LSIState            = RCC_LSI_ON,
+        .MSIState            = RCC_MSI_ON,
         .MSICalibrationValue = RCC_MSICALIBRATION_DEFAULT,
-        .MSIClockRange = RCC_MSIRANGE_0,
-        .LSIDiv = RCC_LSI_DIV1,
-        .PLL.PLLState = RCC_PLL_ON,
-        .PLL.PLLSource = RCC_PLLSOURCE_MSI,
-        .PLL.PLLMBOOST = RCC_PLLMBOOST_DIV4,
-        .PLL.PLLM = 3,
-        .PLL.PLLN = 10,
-        .PLL.PLLP = 2,
-        .PLL.PLLQ = 2,
-        .PLL.PLLR = 1,
-        .PLL.PLLRGE = RCC_PLLVCIRANGE_1,
-        .PLL.PLLFRACN = 0,
+        .MSIClockRange       = RCC_MSIRANGE_0,
+        .LSIDiv              = RCC_LSI_DIV1,
+        .PLL.PLLState        = RCC_PLL_ON,
+        .PLL.PLLSource       = RCC_PLLSOURCE_MSI,
+        .PLL.PLLMBOOST       = RCC_PLLMBOOST_DIV4,
+        .PLL.PLLM            = 3,
+        .PLL.PLLN            = 10,
+        .PLL.PLLP            = 2,
+        .PLL.PLLQ            = 2,
+        .PLL.PLLR            = 1,
+        .PLL.PLLRGE          = RCC_PLLVCIRANGE_1,
+        .PLL.PLLFRACN        = 0,
     };
 
     xResult = HAL_RCC_OscConfig( &xRccOscInit );
@@ -125,10 +126,10 @@ static void SystemClock_Config( void )
 
     const RCC_ClkInitTypeDef xRccClkInit =
     {
-        .ClockType = RCC_CLOCKTYPE_HCLK| RCC_CLOCKTYPE_SYSCLK |
-                     RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2 | RCC_CLOCKTYPE_PCLK3,
-        .SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK,
-        .AHBCLKDivider = RCC_SYSCLK_DIV1,
+        .ClockType      = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK |
+                          RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2 | RCC_CLOCKTYPE_PCLK3,
+        .SYSCLKSource   = RCC_SYSCLKSOURCE_PLLCLK,
+        .AHBCLKDivider  = RCC_SYSCLK_DIV1,
         .APB1CLKDivider = RCC_HCLK_DIV1,
         .APB2CLKDivider = RCC_HCLK_DIV1,
         .APB3CLKDivider = RCC_HCLK_DIV1,
@@ -177,7 +178,7 @@ static void hw_cache_init( void )
 
     static DCACHE_HandleTypeDef xHndlDCache =
     {
-        .Instance = DCACHE1,
+        .Instance           = DCACHE1,
         .Init.ReadBurstType = DCACHE_READ_BURST_WRAP,
     };
 
@@ -189,7 +190,7 @@ static void hw_cache_init( void )
 
     if( xResult == HAL_OK )
     {
-        (void) HAL_DCACHE_Disable( &xHndlDCache );
+        ( void ) HAL_DCACHE_Disable( &xHndlDCache );
         xResult = HAL_DCACHE_Invalidate( &xHndlDCache );
         configASSERT( xResult == HAL_OK );
     }
@@ -231,16 +232,16 @@ static void hw_rtc_init( void )
 
     static RTC_HandleTypeDef xHndlRtc =
     {
-        .Instance = RTC,
-        .Init.HourFormat = RTC_HOURFORMAT_24,
-        .Init.AsynchPrediv = 127,
-        .Init.SynchPrediv = 255,
-        .Init.OutPut = RTC_OUTPUT_DISABLE,
-        .Init.OutPutRemap = RTC_OUTPUT_REMAP_NONE,
+        .Instance            = RTC,
+        .Init.HourFormat     = RTC_HOURFORMAT_24,
+        .Init.AsynchPrediv   = 127,
+        .Init.SynchPrediv    = 255,
+        .Init.OutPut         = RTC_OUTPUT_DISABLE,
+        .Init.OutPutRemap    = RTC_OUTPUT_REMAP_NONE,
         .Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH,
-        .Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN,
-        .Init.OutPutPullUp = RTC_OUTPUT_PULLUP_NONE,
-        .Init.BinMode = RTC_BINARY_NONE,
+        .Init.OutPutType     = RTC_OUTPUT_TYPE_OPENDRAIN,
+        .Init.OutPutPullUp   = RTC_OUTPUT_PULLUP_NONE,
+        .Init.BinMode        = RTC_BINARY_NONE,
     };
 
     xResult = HAL_RTC_Init( &xHndlRtc );
@@ -255,106 +256,106 @@ static void hw_rtc_init( void )
 
 static void hw_gpio_init( void )
 {
-      /* GPIO Ports Clock Enable */
+    /* GPIO Ports Clock Enable */
 
-      HAL_PWREx_EnableVddIO2();
+    HAL_PWREx_EnableVddIO2();
 
-      __HAL_RCC_GPIOG_CLK_ENABLE();
-      __HAL_RCC_GPIOD_CLK_ENABLE();
-      __HAL_RCC_GPIOA_CLK_ENABLE();
-      __HAL_RCC_GPIOC_CLK_ENABLE();
-      __HAL_RCC_GPIOB_CLK_ENABLE();
-      __HAL_RCC_GPIOH_CLK_ENABLE();
-      __HAL_RCC_GPIOF_CLK_ENABLE();
+    __HAL_RCC_GPIOG_CLK_ENABLE();
+    __HAL_RCC_GPIOD_CLK_ENABLE();
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOC_CLK_ENABLE();
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    __HAL_RCC_GPIOH_CLK_ENABLE();
+    __HAL_RCC_GPIOF_CLK_ENABLE();
 
-      /* LED Outputs */
-      {
-          GPIO_InitTypeDef xGpioInit =
-          {
-              .Pin = LED_RED_Pin | LED_GREEN_Pin,
-              .Mode = GPIO_MODE_OUTPUT_PP,
-              .Pull = GPIO_NOPULL,
-              .Speed = GPIO_SPEED_FREQ_LOW,
-              .Alternate = 0X0,
-          };
+    /* LED Outputs */
+    {
+        GPIO_InitTypeDef xGpioInit =
+        {
+            .Pin       = LED_RED_Pin | LED_GREEN_Pin,
+            .Mode      = GPIO_MODE_OUTPUT_PP,
+            .Pull      = GPIO_NOPULL,
+            .Speed     = GPIO_SPEED_FREQ_LOW,
+            .Alternate = 0X0,
+        };
 
-          HAL_GPIO_Init( GPIOH, &xGpioInit );
+        HAL_GPIO_Init( GPIOH, &xGpioInit );
 
-          HAL_GPIO_WritePin( GPIOH, LED_RED_Pin | LED_GREEN_Pin, GPIO_PIN_RESET );
-      }
-
-
-      /* MXCHIP_FLOW_Pin Input */
-      {
-          GPIO_InitTypeDef xGpioInit =
-          {
-              .Pin = MXCHIP_FLOW_Pin,
-              .Mode = GPIO_MODE_IT_RISING,
-              .Pull = GPIO_NOPULL,
-              .Speed = GPIO_SPEED_FREQ_VERY_HIGH,
-              .Alternate = 0X0,
-          };
-
-          HAL_GPIO_Init( MXCHIP_FLOW_GPIO_Port, &xGpioInit );
-
-          HAL_NVIC_SetPriority( MXCHIP_FLOW_EXTI_IRQn, 5, 3 );
-          HAL_NVIC_EnableIRQ( MXCHIP_FLOW_EXTI_IRQn );
-      }
-
-      /* MXCHIP_NOTIFY_Pin Input */
-      {
-          GPIO_InitTypeDef xGpioInit =
-          {
-              .Pin = MXCHIP_NOTIFY_Pin,
-              .Mode = GPIO_MODE_IT_RISING,
-              .Pull = GPIO_NOPULL,
-              .Speed = GPIO_SPEED_FREQ_VERY_HIGH,
-              .Alternate = 0X0,
-          };
-
-          HAL_GPIO_Init( MXCHIP_NOTIFY_GPIO_Port, &xGpioInit );
-
-          HAL_NVIC_SetPriority( MXCHIP_NOTIFY_EXTI_IRQn, 5, 4 );
-          HAL_NVIC_EnableIRQ( MXCHIP_NOTIFY_EXTI_IRQn );
-      }
+        HAL_GPIO_WritePin( GPIOH, LED_RED_Pin | LED_GREEN_Pin, GPIO_PIN_RESET );
+    }
 
 
-      /* MXCHIP_NSS_Pin Output */
-      {
-          HAL_GPIO_WritePin( MXCHIP_NSS_GPIO_Port, MXCHIP_NSS_Pin, GPIO_PIN_SET );
+    /* MXCHIP_FLOW_Pin Input */
+    {
+        GPIO_InitTypeDef xGpioInit =
+        {
+            .Pin       = MXCHIP_FLOW_Pin,
+            .Mode      = GPIO_MODE_IT_RISING,
+            .Pull      = GPIO_NOPULL,
+            .Speed     = GPIO_SPEED_FREQ_VERY_HIGH,
+            .Alternate = 0X0,
+        };
 
-          GPIO_InitTypeDef xGpioInit =
-          {
-              .Pin = MXCHIP_NSS_Pin,
-              .Mode = GPIO_MODE_OUTPUT_PP,
-              .Pull = GPIO_NOPULL,
-              .Speed = GPIO_SPEED_FREQ_VERY_HIGH,
-              .Alternate = 0X0,
-          };
+        HAL_GPIO_Init( MXCHIP_FLOW_GPIO_Port, &xGpioInit );
 
-          HAL_GPIO_Init( MXCHIP_NSS_GPIO_Port, &xGpioInit );
-      }
+        HAL_NVIC_SetPriority( MXCHIP_FLOW_EXTI_IRQn, 5, 3 );
+        HAL_NVIC_EnableIRQ( MXCHIP_FLOW_EXTI_IRQn );
+    }
 
-      /* MXCHIP_RESET_Pin Output */
-      {
-          HAL_GPIO_WritePin( MXCHIP_RESET_GPIO_Port, MXCHIP_RESET_Pin, GPIO_PIN_RESET );
+    /* MXCHIP_NOTIFY_Pin Input */
+    {
+        GPIO_InitTypeDef xGpioInit =
+        {
+            .Pin       = MXCHIP_NOTIFY_Pin,
+            .Mode      = GPIO_MODE_IT_RISING,
+            .Pull      = GPIO_NOPULL,
+            .Speed     = GPIO_SPEED_FREQ_VERY_HIGH,
+            .Alternate = 0X0,
+        };
 
-          GPIO_InitTypeDef xGpioInit =
-          {
-              .Pin = MXCHIP_RESET_Pin,
-              .Mode = GPIO_MODE_OUTPUT_PP,
-              .Pull = GPIO_NOPULL,
-              .Speed = GPIO_SPEED_FREQ_LOW,
-              .Alternate = 0X0,
-          };
+        HAL_GPIO_Init( MXCHIP_NOTIFY_GPIO_Port, &xGpioInit );
 
-          HAL_GPIO_Init( MXCHIP_RESET_GPIO_Port, &xGpioInit );
-      }
+        HAL_NVIC_SetPriority( MXCHIP_NOTIFY_EXTI_IRQn, 5, 4 );
+        HAL_NVIC_EnableIRQ( MXCHIP_NOTIFY_EXTI_IRQn );
+    }
+
+
+    /* MXCHIP_NSS_Pin Output */
+    {
+        HAL_GPIO_WritePin( MXCHIP_NSS_GPIO_Port, MXCHIP_NSS_Pin, GPIO_PIN_SET );
+
+        GPIO_InitTypeDef xGpioInit =
+        {
+            .Pin       = MXCHIP_NSS_Pin,
+            .Mode      = GPIO_MODE_OUTPUT_PP,
+            .Pull      = GPIO_NOPULL,
+            .Speed     = GPIO_SPEED_FREQ_VERY_HIGH,
+            .Alternate = 0X0,
+        };
+
+        HAL_GPIO_Init( MXCHIP_NSS_GPIO_Port, &xGpioInit );
+    }
+
+    /* MXCHIP_RESET_Pin Output */
+    {
+        HAL_GPIO_WritePin( MXCHIP_RESET_GPIO_Port, MXCHIP_RESET_Pin, GPIO_PIN_RESET );
+
+        GPIO_InitTypeDef xGpioInit =
+        {
+            .Pin       = MXCHIP_RESET_Pin,
+            .Mode      = GPIO_MODE_OUTPUT_PP,
+            .Pull      = GPIO_NOPULL,
+            .Speed     = GPIO_SPEED_FREQ_LOW,
+            .Alternate = 0X0,
+        };
+
+        HAL_GPIO_Init( MXCHIP_RESET_GPIO_Port, &xGpioInit );
+    }
 }
 
 
 /* Static MSP Callbacks ( for HAL modules that support callback registration ) */
-static void hw_spi2_msp_init( SPI_HandleTypeDef* pxHndlSpi )
+static void hw_spi2_msp_init( SPI_HandleTypeDef * pxHndlSpi )
 {
     HAL_StatusTypeDef xResult;
 
@@ -363,12 +364,11 @@ static void hw_spi2_msp_init( SPI_HandleTypeDef* pxHndlSpi )
     RCC_PeriphCLKInitTypeDef xRccPeriphClkInit =
     {
         .PeriphClockSelection = RCC_PERIPHCLK_SPI2,
-        .Spi2ClockSelection = RCC_SPI2CLKSOURCE_PCLK1,
+        .Spi2ClockSelection   = RCC_SPI2CLKSOURCE_PCLK1,
     };
 
     xResult = HAL_RCCEx_PeriphCLKConfig( &xRccPeriphClkInit );
     configASSERT( xResult == HAL_OK );
-
 
     if( xResult == HAL_OK )
     {
@@ -387,36 +387,36 @@ static void hw_spi2_msp_init( SPI_HandleTypeDef* pxHndlSpi )
          * PD1     ------> SPI2_SCK
          */
 
-        GPIO_InitTypeDef xGpioInit = {
-            .Pin = GPIO_PIN_4 | GPIO_PIN_3 | GPIO_PIN_1,
-            .Mode = GPIO_MODE_AF_PP,
-            .Pull = GPIO_NOPULL,
-            .Speed = GPIO_SPEED_FREQ_HIGH,
+        GPIO_InitTypeDef xGpioInit =
+        {
+            .Pin       = GPIO_PIN_4 | GPIO_PIN_3 | GPIO_PIN_1,
+            .Mode      = GPIO_MODE_AF_PP,
+            .Pull      = GPIO_NOPULL,
+            .Speed     = GPIO_SPEED_FREQ_HIGH,
             .Alternate = GPIO_AF5_SPI2,
         };
 
         HAL_GPIO_Init( GPIOD, &xGpioInit );
     }
 
-
     static DMA_HandleTypeDef xHndlGpdmaCh4 =
     {
-        .Instance = GPDMA1_Channel4,
-        .Init =
+        .Instance                  = GPDMA1_Channel4,
+        .Init                      =
         {
-            .Request = GPDMA1_REQUEST_SPI2_RX,
-            .BlkHWRequest = DMA_BREQ_SINGLE_BURST,
-            .Direction = DMA_PERIPH_TO_MEMORY,
-            .SrcInc = DMA_SINC_FIXED,
-            .DestInc = DMA_DINC_INCREMENTED,
-            .SrcDataWidth = DMA_SRC_DATAWIDTH_BYTE,
-            .DestDataWidth = DMA_DEST_DATAWIDTH_BYTE,
-            .Priority = DMA_LOW_PRIORITY_HIGH_WEIGHT,
-            .SrcBurstLength = 1,
-            .DestBurstLength = 1,
-            .TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0|DMA_DEST_ALLOCATED_PORT1,
-            .TransferEventMode = DMA_TCEM_BLOCK_TRANSFER,
-            .Mode = DMA_NORMAL,
+            .Request               = GPDMA1_REQUEST_SPI2_RX,
+            .BlkHWRequest          = DMA_BREQ_SINGLE_BURST,
+            .Direction             = DMA_PERIPH_TO_MEMORY,
+            .SrcInc                = DMA_SINC_FIXED,
+            .DestInc               = DMA_DINC_INCREMENTED,
+            .SrcDataWidth          = DMA_SRC_DATAWIDTH_BYTE,
+            .DestDataWidth         = DMA_DEST_DATAWIDTH_BYTE,
+            .Priority              = DMA_LOW_PRIORITY_HIGH_WEIGHT,
+            .SrcBurstLength        = 1,
+            .DestBurstLength       = 1,
+            .TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT1,
+            .TransferEventMode     = DMA_TCEM_BLOCK_TRANSFER,
+            .Mode                  = DMA_NORMAL,
         },
     };
 
@@ -437,22 +437,22 @@ static void hw_spi2_msp_init( SPI_HandleTypeDef* pxHndlSpi )
 
     static DMA_HandleTypeDef xHndlGpdmaCh5 =
     {
-        .Instance = GPDMA1_Channel5,
-        .Init =
+        .Instance                  = GPDMA1_Channel5,
+        .Init                      =
         {
-            .Request = GPDMA1_REQUEST_SPI2_TX,
-            .BlkHWRequest = DMA_BREQ_SINGLE_BURST,
-            .Direction = DMA_MEMORY_TO_PERIPH,
-            .SrcInc = DMA_SINC_INCREMENTED,
-            .DestInc = DMA_DINC_FIXED,
-            .SrcDataWidth = DMA_SRC_DATAWIDTH_BYTE,
-            .DestDataWidth = DMA_DEST_DATAWIDTH_BYTE,
-            .Priority = DMA_LOW_PRIORITY_HIGH_WEIGHT,
-            .SrcBurstLength = 1,
-            .DestBurstLength = 1,
-            .TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0|DMA_DEST_ALLOCATED_PORT1,
-            .TransferEventMode = DMA_TCEM_BLOCK_TRANSFER,
-            .Mode = DMA_NORMAL,
+            .Request               = GPDMA1_REQUEST_SPI2_TX,
+            .BlkHWRequest          = DMA_BREQ_SINGLE_BURST,
+            .Direction             = DMA_MEMORY_TO_PERIPH,
+            .SrcInc                = DMA_SINC_INCREMENTED,
+            .DestInc               = DMA_DINC_FIXED,
+            .SrcDataWidth          = DMA_SRC_DATAWIDTH_BYTE,
+            .DestDataWidth         = DMA_DEST_DATAWIDTH_BYTE,
+            .Priority              = DMA_LOW_PRIORITY_HIGH_WEIGHT,
+            .SrcBurstLength        = 1,
+            .DestBurstLength       = 1,
+            .TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT1,
+            .TransferEventMode     = DMA_TCEM_BLOCK_TRANSFER,
+            .Mode                  = DMA_NORMAL,
         },
     };
 
@@ -470,7 +470,6 @@ static void hw_spi2_msp_init( SPI_HandleTypeDef* pxHndlSpi )
 
     if( xResult == HAL_OK )
     {
-
         pxHndlGpdmaCh4 = &xHndlGpdmaCh4;
         pxHndlGpdmaCh5 = &xHndlGpdmaCh5;
         HAL_NVIC_SetPriority( SPI2_IRQn, 5, 0 );
@@ -499,30 +498,30 @@ static void hw_spi_init( void )
 
     static SPI_HandleTypeDef xHndlSpi2 =
     {
-        .Instance = SPI2,
-        .Init.Mode = SPI_MODE_MASTER,
-        .Init.Direction = SPI_DIRECTION_2LINES,
-        .Init.DataSize = SPI_DATASIZE_8BIT,
-        .Init.CLKPolarity = SPI_POLARITY_LOW,
-        .Init.CLKPhase = SPI_PHASE_1EDGE,
-        .Init.NSS = SPI_NSS_SOFT,
-        .Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8,
-        .Init.FirstBit = SPI_FIRSTBIT_MSB,
-        .Init.TIMode = SPI_TIMODE_DISABLE,
-        .Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE,
-        .Init.CRCPolynomial = 0x7,
-        .Init.NSSPMode = SPI_NSS_PULSE_DISABLE,
-        .Init.NSSPolarity = SPI_NSS_POLARITY_LOW,
-        .Init.FifoThreshold = SPI_FIFO_THRESHOLD_01DATA,
+        .Instance                        = SPI2,
+        .Init.Mode                       = SPI_MODE_MASTER,
+        .Init.Direction                  = SPI_DIRECTION_2LINES,
+        .Init.DataSize                   = SPI_DATASIZE_8BIT,
+        .Init.CLKPolarity                = SPI_POLARITY_LOW,
+        .Init.CLKPhase                   = SPI_PHASE_1EDGE,
+        .Init.NSS                        = SPI_NSS_SOFT,
+        .Init.BaudRatePrescaler          = SPI_BAUDRATEPRESCALER_8,
+        .Init.FirstBit                   = SPI_FIRSTBIT_MSB,
+        .Init.TIMode                     = SPI_TIMODE_DISABLE,
+        .Init.CRCCalculation             = SPI_CRCCALCULATION_DISABLE,
+        .Init.CRCPolynomial              = 0x7,
+        .Init.NSSPMode                   = SPI_NSS_PULSE_DISABLE,
+        .Init.NSSPolarity                = SPI_NSS_POLARITY_LOW,
+        .Init.FifoThreshold              = SPI_FIFO_THRESHOLD_01DATA,
         .Init.TxCRCInitializationPattern = SPI_CRC_INITIALIZATION_ALL_ZERO_PATTERN,
         .Init.RxCRCInitializationPattern = SPI_CRC_INITIALIZATION_ALL_ZERO_PATTERN,
-        .Init.MasterSSIdleness = SPI_MASTER_SS_IDLENESS_00CYCLE,
-        .Init.MasterInterDataIdleness = SPI_MASTER_INTERDATA_IDLENESS_00CYCLE,
-        .Init.MasterReceiverAutoSusp = SPI_MASTER_RX_AUTOSUSP_DISABLE,
-        .Init.MasterKeepIOState = SPI_MASTER_KEEP_IO_STATE_DISABLE,
-        .Init.IOSwap = SPI_IO_SWAP_DISABLE,
-        .Init.ReadyMasterManagement = SPI_RDY_MASTER_MANAGEMENT_INTERNALLY,
-        .Init.ReadyPolarity = SPI_RDY_POLARITY_HIGH,
+        .Init.MasterSSIdleness           = SPI_MASTER_SS_IDLENESS_00CYCLE,
+        .Init.MasterInterDataIdleness    = SPI_MASTER_INTERDATA_IDLENESS_00CYCLE,
+        .Init.MasterReceiverAutoSusp     = SPI_MASTER_RX_AUTOSUSP_DISABLE,
+        .Init.MasterKeepIOState          = SPI_MASTER_KEEP_IO_STATE_DISABLE,
+        .Init.IOSwap                     = SPI_IO_SWAP_DISABLE,
+        .Init.ReadyMasterManagement      = SPI_RDY_MASTER_MANAGEMENT_INTERNALLY,
+        .Init.ReadyPolarity              = SPI_RDY_POLARITY_HIGH,
     };
 
     xResult = HAL_SPI_RegisterCallback( &xHndlSpi2, HAL_SPI_MSPINIT_CB_ID, &hw_spi2_msp_init );
@@ -530,7 +529,6 @@ static void hw_spi_init( void )
 
     xResult &= HAL_SPI_RegisterCallback( &xHndlSpi2, HAL_SPI_MSPDEINIT_CB_ID, &hw_spi2_msp_deinit );
     configASSERT( xResult == HAL_OK );
-
 
     if( xResult == HAL_OK )
     {
@@ -541,9 +539,9 @@ static void hw_spi_init( void )
 
     SPI_AutonomousModeConfTypeDef xSpiAutoModeConf =
     {
-        .TriggerState = SPI_AUTO_MODE_DISABLE,
+        .TriggerState     = SPI_AUTO_MODE_DISABLE,
         .TriggerSelection = SPI_GRP1_GPDMA_CH0_TCF_TRG,
-        .TriggerPolarity = SPI_TRIG_POLARITY_RISING,
+        .TriggerPolarity  = SPI_TRIG_POLARITY_RISING,
     };
 
     if( xResult == HAL_OK )
@@ -564,49 +562,49 @@ static void hw_spi_init( void )
 #ifndef TFM_PSA_API
 static void hw_rng_init( void )
 {
-	HAL_StatusTypeDef xResult = HAL_OK;
-	RCC_PeriphCLKInitTypeDef PeriphClkInit = { 0 };
-	static RNG_HandleTypeDef xRngHandle =
-	{
-		.Instance = RNG,
-		.Init.ClockErrorDetection = RNG_CED_ENABLE,
-		.Lock = HAL_UNLOCKED,
-		.State = HAL_RNG_STATE_RESET,
-		.RandomNumber = 0
-	};
+    HAL_StatusTypeDef xResult = HAL_OK;
+    RCC_PeriphCLKInitTypeDef PeriphClkInit = { 0 };
+    static RNG_HandleTypeDef xRngHandle =
+    {
+        .Instance                 = RNG,
+        .Init.ClockErrorDetection = RNG_CED_ENABLE,
+        .Lock                     = HAL_UNLOCKED,
+        .State                    = HAL_RNG_STATE_RESET,
+        .RandomNumber             = 0
+    };
 
-	PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RNG;
-	PeriphClkInit.RngClockSelection = RCC_RNGCLKSOURCE_HSI48;
+    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RNG;
+    PeriphClkInit.RngClockSelection = RCC_RNGCLKSOURCE_HSI48;
 
-	xResult = HAL_RCCEx_PeriphCLKConfig( &PeriphClkInit );
-	configASSERT( xResult == HAL_OK );
+    xResult = HAL_RCCEx_PeriphCLKConfig( &PeriphClkInit );
+    configASSERT( xResult == HAL_OK );
 
-	/* Peripheral clock enable */
-	__HAL_RCC_RNG_CLK_ENABLE();
+    /* Peripheral clock enable */
+    __HAL_RCC_RNG_CLK_ENABLE();
 
-	if( xResult == HAL_OK )
-	{
-		xResult = HAL_RNG_Init( &xRngHandle );
-		configASSERT( xResult == HAL_OK );
-	}
+    if( xResult == HAL_OK )
+    {
+        xResult = HAL_RNG_Init( &xRngHandle );
+        configASSERT( xResult == HAL_OK );
+    }
 
-	if( xResult == HAL_OK )
-	{
-		pxHndlRng = &xRngHandle;
-	}
+    if( xResult == HAL_OK )
+    {
+        pxHndlRng = &xRngHandle;
+    }
 }
 #endif /* !defined( TFM_PSA_API ) */
 
 static void hw_tim5_init( void )
 {
-	HAL_StatusTypeDef xResult = HAL_OK;
+    HAL_StatusTypeDef xResult = HAL_OK;
 
-	static TIM_HandleTypeDef xTim5Handle =
-	{
-		.Instance = TIM5,
-		.Init.Prescaler = 4096, /* 160 MHz / 4096 = 39KHz */
-		.Init.Period = 0xFFFFFFFF,
-	};
+    static TIM_HandleTypeDef xTim5Handle =
+    {
+        .Instance       = TIM5,
+        .Init.Prescaler = 4096, /* 160 MHz / 4096 = 39KHz */
+        .Init.Period    = 0xFFFFFFFF,
+    };
 
     __TIM5_CLK_ENABLE();
 
@@ -615,13 +613,13 @@ static void hw_tim5_init( void )
 
     if( xResult == HAL_OK )
     {
-    	xResult = HAL_TIM_Base_Start( &xTim5Handle );
-    	configASSERT( xResult == HAL_OK );
+        xResult = HAL_TIM_Base_Start( &xTim5Handle );
+        configASSERT( xResult == HAL_OK );
     }
 
     if( xResult == HAL_OK )
     {
-    	pxHndlTim5 = &xTim5Handle;
+        pxHndlTim5 = &xTim5Handle;
     }
 }
 
@@ -635,6 +633,7 @@ void HAL_MspInit( void )
 void HAL_I2C_MspDeInit( I2C_HandleTypeDef * pxHndlI2c )
 {
     configASSERT( pxHndlI2c != NULL );
+
     if( pxHndlI2c->Instance == I2C2 )
     {
         __HAL_RCC_I2C2_CLK_DISABLE();
@@ -651,7 +650,7 @@ void HAL_I2C_MspInit( I2C_HandleTypeDef * pxHndlI2c )
         RCC_PeriphCLKInitTypeDef xRccPeriphClkInit =
         {
             .PeriphClockSelection = RCC_PERIPHCLK_I2C2,
-            .Spi2ClockSelection = RCC_I2C2CLKSOURCE_PCLK1,
+            .Spi2ClockSelection   = RCC_I2C2CLKSOURCE_PCLK1,
         };
 
         xResult = HAL_RCCEx_PeriphCLKConfig( &xRccPeriphClkInit );
@@ -663,10 +662,10 @@ void HAL_I2C_MspInit( I2C_HandleTypeDef * pxHndlI2c )
 
             GPIO_InitTypeDef xGpioInit =
             {
-                .Pin = GPIO_PIN_4|GPIO_PIN_5,
-                .Mode = GPIO_MODE_AF_OD,
-                .Pull = GPIO_NOPULL,
-                .Speed = GPIO_SPEED_FREQ_HIGH,
+                .Pin       = GPIO_PIN_4 | GPIO_PIN_5,
+                .Mode      = GPIO_MODE_AF_OD,
+                .Pull      = GPIO_NOPULL,
+                .Speed     = GPIO_SPEED_FREQ_HIGH,
                 .Alternate = GPIO_AF4_I2C2,
             };
 
@@ -677,4 +676,3 @@ void HAL_I2C_MspInit( I2C_HandleTypeDef * pxHndlI2c )
         }
     }
 }
-

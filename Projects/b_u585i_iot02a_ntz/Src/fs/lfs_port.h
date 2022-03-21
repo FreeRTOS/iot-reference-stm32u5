@@ -38,5 +38,3 @@ const struct lfs_config * pxInitializeInternalFlashFs( TickType_t xBlockTime );
 
 /* Provided outside of the lfs port */
 lfs_t * pxGetDefaultFsCtx( void );
-
-

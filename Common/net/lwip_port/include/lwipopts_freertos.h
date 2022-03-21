@@ -225,7 +225,7 @@
  * thread calling socket/netconn functions instead of allocating one
  * semaphore per netconn (and per select etc.)
  */
-//#define LWIP_NETCONN_SEM_PER_THREAD    1
+/*#define LWIP_NETCONN_SEM_PER_THREAD    1 */
 
 /** LWIP_NETCONN_FULLDUPLEX==1: Enable code that allows reading from one thread,
  * writing from a 2nd thread and closing from a 3rd thread at the same time.
@@ -235,7 +235,7 @@
  * - sys_mbox_free() has to unblock receive tasks waiting on recvmbox/acceptmbox
  *   and prevent a task pending on this during/after deletion
  */
-#define LWIP_NETCONN_FULLDUPLEX        1
+#define LWIP_NETCONN_FULLDUPLEX    1
 
 
 /*
@@ -244,14 +244,14 @@
  * ------------------------------------
  */
 
-//#define LWIP_DEBUG      LWIP_DBG_ON
+/*#define LWIP_DEBUG      LWIP_DBG_ON */
 /*#define UDP_DEBUG LWIP_DBG_ON */
-//#define SOCKETS_DEBUG LWIP_DBG_ON
-//#define TCP_DEBUG   LWIP_DBG_ON
-//#define NETIF_DEBUG    LWIP_DBG_ON
+/*#define SOCKETS_DEBUG LWIP_DBG_ON */
+/*#define TCP_DEBUG   LWIP_DBG_ON */
+/*#define NETIF_DEBUG    LWIP_DBG_ON */
 /*#define ETHARP_DEBUG LWIP_DBG_ON */
 /*#define DHCP_DEBUG LWIP_DBG_ON */
-//#define IP_DEBUG LWIP_DBG_ON
+/*#define IP_DEBUG LWIP_DBG_ON */
 
 
 /*
@@ -262,8 +262,8 @@
 /**
  * @brief System error variable, errno.
  */
-    extern int FreeRTOS_errno;
-    #define errno    FreeRTOS_errno
+extern int FreeRTOS_errno;
+#define errno    FreeRTOS_errno
 #endif
 
 #endif /* __LWIPOPTS_FREERTOS_H__ */

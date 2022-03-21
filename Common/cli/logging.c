@@ -42,7 +42,7 @@
 #include "hw_defs.h"
 
 /*-----------------------------------------------------------*/
-// todo take into account maximum cli line length
+/* todo take into account maximum cli line length */
 #if ( CLI_UART_TX_STREAM_LEN < dlMAX_LOG_LINE_LENGTH )
 #error "CLI_UART_TX_STREAM_LEN must be >= dlMAX_LOG_LINE_LENGTH"
 #endif
@@ -57,15 +57,17 @@ static char pcPrintBuff[ dlMAX_PRINT_STRING_LENGTH ];
 void vDyingGasp( void )
 {
     BaseType_t xNumBytes = 0;
+
     pxEarlyUart = vInitUartEarly();
 
     do
     {
         xNumBytes = xMessageBufferReceiveFromISR( xLogMBuf, pcPrintBuff, dlMAX_PRINT_STRING_LENGTH, 0 );
-        (void) HAL_UART_Transmit( pxEarlyUart, ( uint8_t * ) pcPrintBuff, xNumBytes, 10 * 1000);
-        (void) HAL_UART_Transmit( pxEarlyUart, ( uint8_t * ) "\r\n", 2, 10 * 1000 );
+        ( void ) HAL_UART_Transmit( pxEarlyUart, ( uint8_t * ) pcPrintBuff, xNumBytes, 10 * 1000 );
+        ( void ) HAL_UART_Transmit( pxEarlyUart, ( uint8_t * ) "\r\n", 2, 10 * 1000 );
     }
     while( xNumBytes != 0 );
+
     HAL_GPIO_WritePin( LED_RED_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_SET );
     HAL_GPIO_WritePin( LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET );
 }
@@ -74,22 +76,24 @@ void vDyingGasp( void )
  * Blocking write function for early printing
  * PRE: must be called when scheduler is not running.
  */
-static void vSendLogMessageEarly( const char * buffer, unsigned int count )
+static void vSendLogMessageEarly( const char * buffer,
+                                  unsigned int count )
 {
     configASSERT( xTaskGetSchedulerState() != taskSCHEDULER_RUNNING );
 
 #ifdef LOGGING_OUTPUT_ITM
     uint32_t i = 0;
-    for(unsigned int i = 0; i < len; i++)
+
+    for( unsigned int i = 0; i < len; i++ )
     {
-        (void) ITM_SendChar( lineOutBuf[ i ] );
+        ( void ) ITM_SendChar( lineOutBuf[ i ] );
     }
 #endif
 
 
 #ifdef LOGGING_OUTPUT_UART
     /* blocking write to UART */
-    ( void ) HAL_UART_Transmit( pxEarlyUart, (uint8_t *)buffer, count, 100000 );
+    ( void ) HAL_UART_Transmit( pxEarlyUart, ( uint8_t * ) buffer, count, 100000 );
     ( void ) HAL_UART_Transmit( pxEarlyUart, ( uint8_t * ) "\r\n", 2, 100000 );
 #endif
 }
@@ -100,7 +104,8 @@ void vInitLoggingEarly( void )
     vSendLogMessageEarly( "\r\n", 2 );
 }
 
-static void vSendLogMessage( const char * buffer, unsigned int count )
+static void vSendLogMessage( const char * buffer,
+                             unsigned int count )
 {
     if( xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED )
     {
@@ -119,6 +124,7 @@ static void vSendLogMessage( const char * buffer, unsigned int count )
         if( xSpaceAvailable > sizeof( size_t ) )
         {
             xSpaceAvailable -= sizeof( size_t );
+
             if( xSpaceAvailable < ( count + sizeof( size_t ) ) )
             {
                 ( void ) xMessageBufferSendFromISR( xLogMBuf, buffer, xSpaceAvailable - sizeof( size_t ), &xHigherPriorityTaskWoken );
@@ -161,10 +167,10 @@ void vLoggingInit( void )
 
 /*-----------------------------------------------------------*/
 
-void vLoggingPrintf( const char * const     pcLogLevel,
-                     const char * const     pcFileName,
-                     const unsigned long    ulLineNumber,
-                     const char * const     pcFormat,
+void vLoggingPrintf( const char * const pcLogLevel,
+                     const char * const pcFileName,
+                     const unsigned long ulLineNumber,
+                     const char * const pcFormat,
                      ... )
 {
     uint32_t ulLenTotal = 0;
@@ -238,9 +244,9 @@ void vLoggingPrintf( const char * const     pcLogLevel,
         ulLenTotal--;
     }
 
-    if( pcFileName != NULL &&
-        ulLineNumber > 0 &&
-        ulLenTotal < dlMAX_LOG_LINE_LENGTH )
+    if( ( pcFileName != NULL ) &&
+        ( ulLineNumber > 0 ) &&
+        ( ulLenTotal < dlMAX_LOG_LINE_LENGTH ) )
     {
         /* Add the trailer including file name and line number */
         lLenPart = snprintf( &pcPrintBuff[ ulLenTotal ],
@@ -262,6 +268,7 @@ void vLoggingPrintf( const char * const     pcLogLevel,
     }
 
     vSendLogMessage( ( void * ) pcPrintBuff, ulLenTotal );
+
     if( xSchedulerWasSuspended == pdTRUE )
     {
         xTaskResumeAll();
@@ -271,5 +278,4 @@ void vLoggingPrintf( const char * const     pcLogLevel,
 /*-----------------------------------------------------------*/
 void vLoggingDeInit( void )
 {
-
 }

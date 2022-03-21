@@ -40,12 +40,12 @@ void NMI_Handler( void )
     }
 }
 
-__attribute__( ( optimize( "O0" ) ) ) void prvGetRegistersFromStack( uint32_t *pulFaultStackAddress )
+__attribute__( ( optimize( "O0" ) ) ) void prvGetRegistersFromStack( uint32_t * pulFaultStackAddress )
 {
     /* These are volatile to try and prevent the compiler/linker optimising them
-    away as the variables never actually get used.  If the debugger won't show the
-    values of the variables, make them global my moving their declaration outside
-    of this function. */
+     * away as the variables never actually get used.  If the debugger won't show the
+     * values of the variables, make them global my moving their declaration outside
+     * of this function. */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
     volatile uint32_t r0;
@@ -53,9 +53,9 @@ __attribute__( ( optimize( "O0" ) ) ) void prvGetRegistersFromStack( uint32_t *p
     volatile uint32_t r2;
     volatile uint32_t r3;
     volatile uint32_t r12;
-    volatile uint32_t lr;   /* Link register. */
-    volatile uint32_t pc;   /* Program counter. */
-    volatile uint32_t psr;  /* Program status register. */
+    volatile uint32_t lr;  /* Link register. */
+    volatile uint32_t pc;  /* Program counter. */
+    volatile uint32_t psr; /* Program status register. */
 
 
     r0 = pulFaultStackAddress[ 0 ];
@@ -70,13 +70,13 @@ __attribute__( ( optimize( "O0" ) ) ) void prvGetRegistersFromStack( uint32_t *p
 #pragma GCC diagnostic pop
 
     /* When the following line is hit, the variables contain the register values. */
-    for( ;; )
+    for( ; ; )
     {
-    	__NOP();
+        __NOP();
     }
 }
 
-void HardFault_Handler( void ) __attribute__( ( naked, aligned(8) ) );
+void HardFault_Handler( void ) __attribute__( ( naked, aligned( 8 ) ) );
 
 void HardFault_Handler( void )
 {
@@ -97,7 +97,7 @@ void MemManage_Handler( void )
 {
     while( 1 )
     {
-    	__NOP();
+        __NOP();
     }
 }
 
@@ -105,7 +105,7 @@ void BusFault_Handler( void )
 {
     while( 1 )
     {
-    	__NOP();
+        __NOP();
     }
 }
 
@@ -113,23 +113,23 @@ void UsageFault_Handler( void )
 {
     while( 1 )
     {
-    	__NOP();
+        __NOP();
     }
 }
 
 void Error_Handler( void )
 {
-	while( 1 )
-	{
-		__NOP();
-	}
+    while( 1 )
+    {
+        __NOP();
+    }
 }
 
 /* Note: SVC_Handler and PendSV_Handler are provided by the FreeRTOS Cortex-M33 port */
 
 void DebugMon_Handler( void )
 {
-	__NOP();
+    __NOP();
 }
 
 /* STM32U5xx Peripheral Interrupt Handlers */
@@ -145,55 +145,55 @@ void EXTI15_IRQHandler( void )
 
 void GPDMA1_Channel4_IRQHandler( void )
 {
-	if( pxHndlGpdmaCh4 != NULL )
-	{
-		HAL_DMA_IRQHandler( pxHndlGpdmaCh4 );
-	}
+    if( pxHndlGpdmaCh4 != NULL )
+    {
+        HAL_DMA_IRQHandler( pxHndlGpdmaCh4 );
+    }
 }
 
 void GPDMA1_Channel5_IRQHandler( void )
 {
-	if( pxHndlGpdmaCh5 != NULL )
-	{
-		HAL_DMA_IRQHandler( pxHndlGpdmaCh5 );
-	}
+    if( pxHndlGpdmaCh5 != NULL )
+    {
+        HAL_DMA_IRQHandler( pxHndlGpdmaCh5 );
+    }
 }
 
 /* Handle TIM6 interrupt for STM32 HAL time base. */
 void TIM6_IRQHandler( void )
 {
-//    HAL_TIM_IRQHandler(&htim6);
+/*    HAL_TIM_IRQHandler(&htim6); */
 }
 
 void SPI2_IRQHandler( void )
 {
-	if( pxHndlSpi2 )
-	{
-		HAL_SPI_IRQHandler( pxHndlSpi2 );
-	}
+    if( pxHndlSpi2 )
+    {
+        HAL_SPI_IRQHandler( pxHndlSpi2 );
+    }
 }
 
 extern void SysTick_Handler( void );
 
 void _SysTick_Handler( void )
 {
-	/* Clear overflow flag */
-	SysTick->CTRL;
+    /* Clear overflow flag */
+    SysTick->CTRL;
 
-	if( xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED )
-	{
-		/* Call the cortex-m33 port systick handler */
-		SysTick_Handler();
+    if( xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED )
+    {
+        /* Call the cortex-m33 port systick handler */
+        SysTick_Handler();
     }
 
-	HAL_IncTick();
+    HAL_IncTick();
 }
 
-void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
+void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef * htim )
 {
-//	if (htim->Instance == TIM6) {
-//		HAL_IncTick();
-//	}
+/*	if (htim->Instance == TIM6) { */
+/*		HAL_IncTick(); */
+/*	} */
 }
 
 /*
@@ -202,7 +202,9 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
  * @param pvCallback Callback function pointer
  * @param pvContext User provided context pointer
  */
-void GPIO_EXTI_Register_Callback( uint16_t usGpioPinMask, GPIOInterruptCallback_t pvCallback, void * pvContext )
+void GPIO_EXTI_Register_Callback( uint16_t usGpioPinMask,
+                                  GPIOInterruptCallback_t pvCallback,
+                                  void * pvContext )
 {
     uint32_t ulIndex = POSITION_VAL( usGpioPinMask );
 
@@ -213,25 +215,26 @@ void GPIO_EXTI_Register_Callback( uint16_t usGpioPinMask, GPIOInterruptCallback_
 }
 
 /**
-  * @brief  EXTI line rising detection callback.
-  * @param  GPIO_Pin: Specifies the port pin connected to corresponding EXTI line.
-  * @retval None
-  */
+ * @brief  EXTI line rising detection callback.
+ * @param  GPIO_Pin: Specifies the port pin connected to corresponding EXTI line.
+ * @retval None
+ */
 void HAL_GPIO_EXTI_Falling_Callback( uint16_t usGpioPinMask )
 {
     ( void ) usGpioPinMask;
 }
 
 /**
-  * @brief  EXTI line rising detection callback.
-  * @param  GPIO_Pin: Specifies the port pin connected to corresponding EXTI line.
-  * @retval None
-  */
+ * @brief  EXTI line rising detection callback.
+ * @param  GPIO_Pin: Specifies the port pin connected to corresponding EXTI line.
+ * @retval None
+ */
 void HAL_GPIO_EXTI_Rising_Callback( uint16_t usGpioPinMask )
 {
     uint32_t ulIndex = POSITION_VAL( usGpioPinMask );
+
     if( xGpioCallbacks[ ulIndex ] != NULL )
     {
-        (*(xGpioCallbacks[ ulIndex ]))( xGpioCallbackContext[ ulIndex ] );
+        ( *( xGpioCallbacks[ ulIndex ] ) )( xGpioCallbackContext[ ulIndex ] );
     }
 }
