@@ -178,6 +178,11 @@
  */
 #define MBEDTLS_PLATFORM_MEMORY
 
+#include <stddef.h>
+void * mbedtls_platform_calloc( size_t nmemb,
+                                size_t size );
+void mbedtls_platform_free( void * ptr );
+
 /**
  * \def MBEDTLS_PLATFORM_NO_STD_FUNCTIONS
  *
@@ -1694,7 +1699,7 @@
  *
  * Uncomment this to allow your own alternate threading implementation.
  */
-#define MBEDTLS_THREADING_ALT
+//#define MBEDTLS_THREADING_ALT
 
 /**
  * \def MBEDTLS_THREADING_PTHREAD
@@ -1732,7 +1737,7 @@
  *
  * Uncomment this to enable internal use of PSA Crypto and new associated APIs.
  */
-//#define MBEDTLS_USE_PSA_CRYPTO
+#define MBEDTLS_USE_PSA_CRYPTO
 
 /**
  * \def MBEDTLS_PSA_CRYPTO_CONFIG
@@ -2864,6 +2869,8 @@
  * Enable this layer to allow use of mutexes within mbed TLS
  */
 #define MBEDTLS_THREADING_C
+#define MBEDTLS_THREADING_IMPL
+#include "mbedtls_freertos_port.h"
 
 /**
  * \def MBEDTLS_TIMING_C
@@ -3261,3 +3268,9 @@
 //#define MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED
 
 /* \} name SECTION: Customisation configuration options */
+
+#define MBEDTLS_PSA_CRYPTO_C
+
+#include "mbedtls/check_config.h"
+
+#undef MBEDTLS_PSA_CRYPTO_C
