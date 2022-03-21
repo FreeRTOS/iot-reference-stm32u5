@@ -152,4 +152,3 @@ rm -r $TEMPDIR
 ```
 
 # Importing the projects into STM32CubeIDE
-

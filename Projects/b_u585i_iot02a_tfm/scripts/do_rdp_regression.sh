@@ -76,4 +76,3 @@ ${PROG_BIN} -c port=SWD mode=HotPlug -ob SECWM2_PSTRT=0 SECWM2_PEND=127
 echo; echo;
 echo "Resetting target"
 ${PROG_BIN} -c port=SWD mode=HotPlug --hardRst
-

@@ -352,5 +352,3 @@ extern TCPP0203_Drv_t TCPP0203_Driver;
   */
 
 #endif /* TCPP0203_H */
-
-

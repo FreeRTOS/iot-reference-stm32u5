@@ -481,7 +481,7 @@ int32_t LSM6DSO_ACC_SetOutputDataRate_With_Mode(LSM6DSO_Object_t *pObj, float_t 
 {
   int32_t ret = LSM6DSO_OK;
   float_t newOdr = Odr;
-  
+
   switch (Mode)
   {
     case LSM6DSO_ACC_HIGH_PERFORMANCE_MODE:
@@ -2500,7 +2500,7 @@ int32_t LSM6DSO_ACC_Set_6D_Orientation_Threshold(LSM6DSO_Object_t *pObj, uint8_t
   {
     return LSM6DSO_ERROR;
   }
-  
+
   if (lsm6dso_6d_threshold_set(&(pObj->Ctx), newThreshold) != LSM6DSO_OK)
   {
     return LSM6DSO_ERROR;
@@ -3419,7 +3419,7 @@ int32_t LSM6DSO_ACC_Enable_Inactivity_Detection(LSM6DSO_Object_t *pObj, lsm6dso_
       ret = LSM6DSO_ERROR;
       break;
   }
-  
+
   if (ret == LSM6DSO_ERROR)
   {
     return LSM6DSO_ERROR;

@@ -1,5 +1,8 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
+
+exclude: '^$|tools/pyocd'
+
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: 38b88246ccc552bffaaf54259d064beeee434539 # v4.0.1
@@ -52,4 +55,3 @@ repos:
     -   id: markdownlint
     -   id: protect-first-parent
     -   id: shellcheck
-

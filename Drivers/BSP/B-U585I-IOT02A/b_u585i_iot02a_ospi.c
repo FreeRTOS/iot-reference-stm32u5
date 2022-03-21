@@ -2075,4 +2075,3 @@ static int32_t OSPI1_DLYB_Enable(uint32_t Instance)
 /**
   * @}
   */
-
