@@ -31,7 +31,7 @@
 
 #include "logging.h"
 
-#include "main.h"
+#include "hw_defs.h"
 #include "sys_evt.h"
 #include "FreeRTOS.h"
 #include "task.h"
@@ -253,6 +253,10 @@ void vApplicationGetTimerTaskMemory( StaticTask_t ** ppxTimerTaskTCBBuffer,
 void vApplicationMallocFailedHook( void )
 {
     LogError( "Malloc failed" );
+    while(1)
+    {
+    	__NOP();
+    }
 }
 /*-----------------------------------------------------------*/
 

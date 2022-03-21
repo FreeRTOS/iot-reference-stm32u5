@@ -167,11 +167,11 @@ __STATIC_FORCEINLINE __NO_RETURN void __cmsis_start(void)
 #endif
 
 #ifndef __INITIAL_SP
-#define __INITIAL_SP              __StackTop
+#define __INITIAL_SP              Image$$ARM_LIB_STACK$$ZI$$Limit
 #endif
 
 #ifndef __STACK_LIMIT
-#define __STACK_LIMIT             __StackLimit
+#define __STACK_LIMIT             Image$$ARM_LIB_STACK$$ZI$$Base
 #endif
 
 #ifndef __VECTOR_TABLE

@@ -136,11 +136,14 @@
 
 void SystemInit(void)
 {
-  /* Nothing done in non-secure */
+	/* FPU settings ------------------------------------------------------------*/
+	#if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
+	SCB->CPACR |= ((3UL << 20U)|(3UL << 22U));  /* set CP10 and CP11 Full Access */
+	#endif
 
-  /* Non-secure main application shall call SystemCoreClockUpdate() to update */
-  /* the SystemCoreClock variable to insure non-secure application relies on  */
-  /* the initial clock reference set by secure application.                   */
+	/* Non-secure main application shall call SystemCoreClockUpdate() to update */
+	/* the SystemCoreClock variable to ensure non-secure application relies on  */
+	/* the initial clock reference set by secure application.                   */
 	SystemCoreClockUpdate();
 }
 
