@@ -28,7 +28,7 @@
 #include "logging_levels.h"
 /* define LOG_LEVEL here if you want to modify the logging level from the default */
 
-#define LOG_LEVEL LOG_ERROR
+#define LOG_LEVEL    LOG_ERROR
 
 #include "logging.h"
 
@@ -56,15 +56,15 @@
 
 /*
  */
-#define MQTT_PUBLISH_MAX_LEN              ( 512 )
-#define MQTT_PUBLISH_TIME_BETWEEN_MS      ( 100 )
-#define MQTT_PUBLISH_TOPIC                "env_sensor_data"
-#define MQTT_PUBLICH_TOPIC_STR_LEN        ( 256 )
-#define MQTT_PUBLISH_BLOCK_TIME_MS        ( 1000 )
-#define MQTT_PUBLISH_NOTIFICATION_WAIT_MS ( 1000 )
+#define MQTT_PUBLISH_MAX_LEN                 ( 512 )
+#define MQTT_PUBLISH_TIME_BETWEEN_MS         ( 100 )
+#define MQTT_PUBLISH_TOPIC                   "env_sensor_data"
+#define MQTT_PUBLICH_TOPIC_STR_LEN           ( 256 )
+#define MQTT_PUBLISH_BLOCK_TIME_MS           ( 1000 )
+#define MQTT_PUBLISH_NOTIFICATION_WAIT_MS    ( 1000 )
 
-#define MQTT_NOTIFY_IDX                   ( 1 )
-#define MQTT_PUBLISH_QOS                  ( MQTTQoS0 )
+#define MQTT_NOTIFY_IDX                      ( 1 )
+#define MQTT_PUBLISH_QOS                     ( MQTTQoS0 )
 
 /*-----------------------------------------------------------*/
 
@@ -109,7 +109,7 @@ static void prvPublishCommandCallback( MQTTAgentCommandContext_t * pxCommandCont
 /*-----------------------------------------------------------*/
 
 static BaseType_t prvPublishAndWaitForAck( MQTTAgentHandle_t xAgentHandle,
-										   const char * pcTopic,
+                                           const char * pcTopic,
                                            const void * pvPublishData,
                                            size_t xPublishDataLen )
 {
@@ -122,13 +122,13 @@ static BaseType_t prvPublishAndWaitForAck( MQTTAgentHandle_t xAgentHandle,
 
     MQTTPublishInfo_t xPublishInfo =
     {
-        .qos = MQTT_PUBLISH_QOS,
-        .retain = 0,
-        .dup = 0,
-        .pTopicName = pcTopic,
+        .qos             = MQTT_PUBLISH_QOS,
+        .retain          = 0,
+        .dup             = 0,
+        .pTopicName      = pcTopic,
         .topicNameLength = strlen( pcTopic ),
-        .pPayload = pvPublishData,
-        .payloadLength = xPublishDataLen
+        .pPayload        = pvPublishData,
+        .payloadLength   = xPublishDataLen
     };
 
     MQTTAgentCommandContext_t xCommandContext =
@@ -139,9 +139,9 @@ static BaseType_t prvPublishAndWaitForAck( MQTTAgentHandle_t xAgentHandle,
 
     MQTTAgentCommandInfo_t xCommandParams =
     {
-        .blockTimeMs = MQTT_PUBLISH_BLOCK_TIME_MS,
-        .cmdCompleteCallback = prvPublishCommandCallback,
-        .pCmdCompleteCallbackContext =  &xCommandContext,
+        .blockTimeMs                 = MQTT_PUBLISH_BLOCK_TIME_MS,
+        .cmdCompleteCallback         = prvPublishCommandCallback,
+        .pCmdCompleteCallbackContext = &xCommandContext,
     };
 
     /* Clear the notification index */
@@ -188,6 +188,7 @@ static BaseType_t xIsMqttConnected( void )
                                                 pdFALSE,
                                                 pdTRUE,
                                                 0 );
+
     return( ( uxEvents & EVT_MASK_MQTT_CONNECTED ) == EVT_MASK_MQTT_CONNECTED );
 }
 
@@ -221,18 +222,19 @@ static BaseType_t xInitSensors( void )
 
     lBspError |= BSP_ENV_SENSOR_SetOutputDataRate( 1, ENV_PRESSURE, 1.0f );
 
-    return ( lBspError == BSP_ERROR_NONE ? pdTRUE : pdFALSE );
+    return( lBspError == BSP_ERROR_NONE ? pdTRUE : pdFALSE );
 }
 
 static BaseType_t xUpdateSensorData( EnvironmentalSensorData_t * pxData )
 {
     int32_t lBspError = BSP_ERROR_NONE;
-	lBspError = BSP_ENV_SENSOR_GetValue( 0, ENV_TEMPERATURE, &pxData->fTemperature0 );
-	lBspError |= BSP_ENV_SENSOR_GetValue( 0, ENV_HUMIDITY, &pxData->fHumidity );
-	lBspError |= BSP_ENV_SENSOR_GetValue( 1, ENV_TEMPERATURE, &pxData->fTemperature1 );
-	lBspError |= BSP_ENV_SENSOR_GetValue( 1, ENV_PRESSURE, &pxData->fBarometricPressure );
 
-    return ( lBspError == BSP_ERROR_NONE ? pdTRUE : pdFALSE );
+    lBspError = BSP_ENV_SENSOR_GetValue( 0, ENV_TEMPERATURE, &pxData->fTemperature0 );
+    lBspError |= BSP_ENV_SENSOR_GetValue( 0, ENV_HUMIDITY, &pxData->fHumidity );
+    lBspError |= BSP_ENV_SENSOR_GetValue( 1, ENV_TEMPERATURE, &pxData->fTemperature1 );
+    lBspError |= BSP_ENV_SENSOR_GetValue( 1, ENV_PRESSURE, &pxData->fBarometricPressure );
+
+    return( lBspError == BSP_ERROR_NONE ? pdTRUE : pdFALSE );
 }
 
 /*-----------------------------------------------------------*/
@@ -248,13 +250,13 @@ void vEnvironmentSensorPublishTask( void * pvParameters )
     char pcTopicString[ MQTT_PUBLICH_TOPIC_STR_LEN ] = { 0 };
     size_t xTopicLen = 0;
 
-    (void) pvParameters;
+    ( void ) pvParameters;
 
     xResult = xInitSensors();
 
     if( xResult != pdTRUE )
     {
-        LogError("Error while initializing environmental sensors.");
+        LogError( "Error while initializing environmental sensors." );
         vTaskDelete( NULL );
     }
 
@@ -266,7 +268,6 @@ void vEnvironmentSensorPublishTask( void * pvParameters )
 
         xTopicLen = strlcat( pcTopicString, "/"MQTT_PUBLISH_TOPIC, MQTT_PUBLICH_TOPIC_STR_LEN );
     }
-
 
     xAgentHandle = xGetMqttAgentHandle();
 
@@ -300,7 +301,7 @@ void vEnvironmentSensorPublishTask( void * pvParameters )
             if( bytesWritten < MQTT_PUBLISH_MAX_LEN )
             {
                 xResult = prvPublishAndWaitForAck( xAgentHandle,
-                								   pcTopicString,
+                                                   pcTopicString,
                                                    payloadBuf,
                                                    bytesWritten );
             }
@@ -310,7 +311,7 @@ void vEnvironmentSensorPublishTask( void * pvParameters )
             }
             else
             {
-            	LogError( "Printf call failed." );
+                LogError( "Printf call failed." );
             }
 
             if( xResult == pdTRUE )

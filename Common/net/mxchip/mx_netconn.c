@@ -26,7 +26,7 @@
  */
 
 #include "logging_levels.h"
-#define LOG_LEVEL LOG_ERROR
+#define LOG_LEVEL    LOG_ERROR
 #include "logging.h"
 
 /* Standard includes */
@@ -53,49 +53,60 @@
 
 #include "stm32u5_iot_board.h"
 
-#define MACADDR_RETRY_WAIT_TIME_TICKS   pdMS_TO_TICKS( 10 * 1000 )
+#define MACADDR_RETRY_WAIT_TIME_TICKS    pdMS_TO_TICKS( 10 * 1000 )
 
 static TaskHandle_t xNetTaskHandle = NULL;
 static MxDataplaneCtx_t xDataPlaneCtx;
 static ControlPlaneCtx_t xControlPlaneCtx;
 
 #if LOG_LEVEL == LOG_DEBUG
+
 /*
  * @brief Converts from a MxEvent_t to a C string.
  */
-static const char* pcMxStatusToString( MxStatus_t xStatus )
+static const char * pcMxStatusToString( MxStatus_t xStatus )
 {
-	const char * pcReturn = "Unknown";
-	switch( xStatus )
-	{
-	case MX_STATUS_NONE:
-	    pcReturn = "None";
-	    break;
-	case MX_STATUS_STA_DOWN:
-	    pcReturn = "Station Down";
-	    break;
-	case MX_STATUS_STA_UP:
-	    pcReturn = "Station Up";
-	    break;
-	case MX_STATUS_STA_GOT_IP:
-	    pcReturn = "Station Got IP";
-	    break;
-	case MX_STATUS_AP_DOWN:
-	    pcReturn = "AP Down";
-	    break;
-	case MX_STATUS_AP_UP:
-	    pcReturn = "AP Up";
-	    break;
-	default:
-		/* default to "Unknown" string */
-		break;
-	}
-	return pcReturn;
+    const char * pcReturn = "Unknown";
+
+    switch( xStatus )
+    {
+        case MX_STATUS_NONE:
+            pcReturn = "None";
+            break;
+
+        case MX_STATUS_STA_DOWN:
+            pcReturn = "Station Down";
+            break;
+
+        case MX_STATUS_STA_UP:
+            pcReturn = "Station Up";
+            break;
+
+        case MX_STATUS_STA_GOT_IP:
+            pcReturn = "Station Got IP";
+            break;
+
+        case MX_STATUS_AP_DOWN:
+            pcReturn = "AP Down";
+            break;
+
+        case MX_STATUS_AP_UP:
+            pcReturn = "AP Up";
+            break;
+
+        default:
+            /* default to "Unknown" string */
+            break;
+    }
+
+    return pcReturn;
 }
-#endif
+#endif /* if LOG_LEVEL == LOG_DEBUG */
 
 /* Wait for all bits in ulTargetBits */
-static uint32_t ulWaitForNotifyBits( BaseType_t uxIndexToWaitOn, uint32_t ulTargetBits, TickType_t xTicksToWait )
+static uint32_t ulWaitForNotifyBits( BaseType_t uxIndexToWaitOn,
+                                     uint32_t ulTargetBits,
+                                     TickType_t xTicksToWait )
 {
     TickType_t xRemainingTicks = xTicksToWait;
     TimeOut_t xTimeOut;
@@ -107,11 +118,11 @@ static uint32_t ulWaitForNotifyBits( BaseType_t uxIndexToWaitOn, uint32_t ulTarg
     while( ( ulNotifyValueAccumulate & ulTargetBits ) != ulTargetBits )
     {
         uint32_t ulNotifyValue = 0x0;
-        (void) xTaskNotifyWaitIndexed( uxIndexToWaitOn,
-                                       0x0,
-                                       ulTargetBits, /* Clear only the target bits on return */
-                                       &ulNotifyValue,
-                                       xRemainingTicks );
+        ( void ) xTaskNotifyWaitIndexed( uxIndexToWaitOn,
+                                         0x0,
+                                         ulTargetBits, /* Clear only the target bits on return */
+                                         &ulNotifyValue,
+                                         xRemainingTicks );
 
         /* Accumulate notification bits */
         if( ulNotifyValue > 0 )
@@ -136,6 +147,7 @@ static uint32_t ulWaitForNotifyBits( BaseType_t uxIndexToWaitOn, uint32_t ulTarg
                                      0,
                                      eNoAction );
     }
+
     return( ( ulTargetBits & ulNotifyValueAccumulate ) > 0 );
 }
 
@@ -145,62 +157,68 @@ static void vHandleMxStatusUpdate( MxNetConnectCtx_t * pxCtx )
     {
         switch( pxCtx->xStatus )
         {
-        case MX_STATUS_STA_UP:
-        case MX_STATUS_STA_GOT_IP:
-        case MX_STATUS_AP_UP:
-            /* Set link up */
-            vSetLinkUp( &( pxCtx->xNetif ) );
-            break;
-        case MX_STATUS_NONE:
-        case MX_STATUS_STA_DOWN:
-        case MX_STATUS_AP_DOWN:
-            vSetLinkDown( &( pxCtx->xNetif ) );
-            break;
-        default:
-            LogWarn( "Unknown mxchip status indication: %d", pxCtx->xStatus );
-            /* Fail safe to setting link up */
-            vSetLinkUp( &( pxCtx->xNetif ) );
-            break;
+            case MX_STATUS_STA_UP:
+            case MX_STATUS_STA_GOT_IP:
+            case MX_STATUS_AP_UP:
+                /* Set link up */
+                vSetLinkUp( &( pxCtx->xNetif ) );
+                break;
+
+            case MX_STATUS_NONE:
+            case MX_STATUS_STA_DOWN:
+            case MX_STATUS_AP_DOWN:
+                vSetLinkDown( &( pxCtx->xNetif ) );
+                break;
+
+            default:
+                LogWarn( "Unknown mxchip status indication: %d", pxCtx->xStatus );
+                /* Fail safe to setting link up */
+                vSetLinkUp( &( pxCtx->xNetif ) );
+                break;
         }
     }
 }
 
-static BaseType_t xWaitForMxStatus( MxNetConnectCtx_t * pxCtx, MxStatus_t xTargetStatus, TickType_t xTicksToWait )
+static BaseType_t xWaitForMxStatus( MxNetConnectCtx_t * pxCtx,
+                                    MxStatus_t xTargetStatus,
+                                    TickType_t xTicksToWait )
 {
     TickType_t xRemainingTicks = xTicksToWait;
     TimeOut_t xTimeOut;
 
-	if( pxCtx->xStatus == xTargetStatus )
-	{
-	    return pdTRUE;
-	}
-
-	vTaskSetTimeOutState( &xTimeOut );
-
-	uint32_t ulNotifyBits;
-	while( pxCtx->xStatus <= xTargetStatus )
+    if( pxCtx->xStatus == xTargetStatus )
     {
+        return pdTRUE;
+    }
 
-	    ulNotifyBits = ulWaitForNotifyBits( NET_EVT_IDX,
-	                                        MX_STATUS_UPDATE_BIT,
-	                                        xRemainingTicks );
+    vTaskSetTimeOutState( &xTimeOut );
+
+    uint32_t ulNotifyBits;
+
+    while( pxCtx->xStatus <= xTargetStatus )
+    {
+        ulNotifyBits = ulWaitForNotifyBits( NET_EVT_IDX,
+                                            MX_STATUS_UPDATE_BIT,
+                                            xRemainingTicks );
 
         /* xTaskCheckForTimeOut adjusts xRemainingTicks */
-        if( ulNotifyBits > 0 ||
-            xTaskCheckForTimeOut( &xTimeOut, &xRemainingTicks ) == pdTRUE )
+        if( ( ulNotifyBits > 0 ) ||
+            ( xTaskCheckForTimeOut( &xTimeOut, &xRemainingTicks ) == pdTRUE ) )
         {
             /* Timed out or success. Exit loop */
             break;
         }
     }
 
-	return( pxCtx->xStatus >= xTargetStatus );
+    return( pxCtx->xStatus >= xTargetStatus );
 }
 
 BaseType_t net_request_reconnect( void )
 {
     BaseType_t xReturn = pdFALSE;
-    LogDebug("net_request_reconnect");
+
+    LogDebug( "net_request_reconnect" );
+
     if( xNetTaskHandle != NULL )
     {
         xReturn = xTaskNotifyIndexed( xNetTaskHandle,
@@ -208,13 +226,15 @@ BaseType_t net_request_reconnect( void )
                                       ASYNC_REQUEST_RECONNECT_BIT,
                                       eSetBits );
     }
+
     return xReturn;
 }
 
 /*
  * Handles network interface state change notifications from the control plane.
  */
-static void vMxStatusNotify( MxStatus_t xNewStatus, void * pvCtx )
+static void vMxStatusNotify( MxStatus_t xNewStatus,
+                             void * pvCtx )
 {
     MxNetConnectCtx_t * pxCtx = ( MxNetConnectCtx_t * ) pvCtx;
 
@@ -227,10 +247,10 @@ static void vMxStatusNotify( MxStatus_t xNewStatus, void * pvCtx )
 
     vHandleMxStatusUpdate( pxCtx );
 
-    (void) xTaskNotifyIndexed( pxCtx->xNetTaskHandle,
-                               NET_EVT_IDX,
-                               MX_STATUS_UPDATE_BIT,
-                               eSetBits );
+    ( void ) xTaskNotifyIndexed( pxCtx->xNetTaskHandle,
+                                 NET_EVT_IDX,
+                                 MX_STATUS_UPDATE_BIT,
+                                 eSetBits );
 }
 
 static void vLwipReadyCallback( void * pvCtx )
@@ -239,10 +259,10 @@ static void vLwipReadyCallback( void * pvCtx )
 
     if( xNetTaskHandle != NULL )
     {
-        (void) xTaskNotifyIndexed( pxCtx->xNetTaskHandle,
-                                   NET_EVT_IDX,
-                                   NET_LWIP_READY_BIT,
-                                   eSetBits );
+        ( void ) xTaskNotifyIndexed( pxCtx->xNetTaskHandle,
+                                     NET_EVT_IDX,
+                                     NET_LWIP_READY_BIT,
+                                     eSetBits );
     }
 }
 
@@ -254,8 +274,8 @@ static BaseType_t xConnectToAP( MxNetConnectCtx_t * pxCtx )
     IPCError_t xErr = IPC_SUCCESS;
 
 
-    if( pxCtx->xStatus == MX_STATUS_NONE ||
-        pxCtx->xStatus == MX_STATUS_STA_DOWN )
+    if( ( pxCtx->xStatus == MX_STATUS_NONE ) ||
+        ( pxCtx->xStatus == MX_STATUS_STA_DOWN ) )
     {
         xErr |= mx_SetBypassMode( pdTRUE,
                                   pdMS_TO_TICKS( MX_DEFAULT_TIMEOUT_MS ) );
@@ -269,9 +289,9 @@ static BaseType_t xConnectToAP( MxNetConnectCtx_t * pxCtx )
         memset( pcSSID, 0, MX_SSID_BUF_LEN );
         memset( pcPSK, 0, MX_SSID_BUF_LEN );
 
-        if( xErr != IPC_SUCCESS)
+        if( xErr != IPC_SUCCESS )
         {
-            LogError("Failed to connect to access point.");
+            LogError( "Failed to connect to access point." );
         }
         else
         {
@@ -286,7 +306,7 @@ static void vInitializeWifiModule( MxNetConnectCtx_t * pxCtx )
 {
     IPCError_t xErr = IPC_ERROR_INTERNAL;
 
-    vTaskDelay(5000);
+    vTaskDelay( 5000 );
 
     while( xErr != IPC_SUCCESS )
     {
@@ -298,7 +318,7 @@ static void vInitializeWifiModule( MxNetConnectCtx_t * pxCtx )
 
         if( xErr != IPC_SUCCESS )
         {
-            LogError("Error while querying module firmware revision.");
+            LogError( "Error while querying module firmware revision." );
         }
 
         if( xErr == IPC_SUCCESS )
@@ -308,7 +328,7 @@ static void vInitializeWifiModule( MxNetConnectCtx_t * pxCtx )
 
             if( xErr != IPC_SUCCESS )
             {
-                LogError("Error while querying wifi module mac address.");
+                LogError( "Error while querying wifi module mac address." );
             }
         }
 
@@ -320,9 +340,9 @@ static void vInitializeWifiModule( MxNetConnectCtx_t * pxCtx )
         {
             LogInfo( "Firmware Version:   %s", pxCtx->pcFirmwareRevision );
             LogInfo( "HW Address:         %02X:%02X:%02X:%02X:%02X:%02X",
-                    pxCtx->xMacAddress.addr[0], pxCtx->xMacAddress.addr[1],
-                    pxCtx->xMacAddress.addr[2], pxCtx->xMacAddress.addr[3],
-                    pxCtx->xMacAddress.addr[4], pxCtx->xMacAddress.addr[5] );
+                     pxCtx->xMacAddress.addr[ 0 ], pxCtx->xMacAddress.addr[ 1 ],
+                     pxCtx->xMacAddress.addr[ 2 ], pxCtx->xMacAddress.addr[ 3 ],
+                     pxCtx->xMacAddress.addr[ 4 ], pxCtx->xMacAddress.addr[ 5 ] );
         }
     }
 }
@@ -389,7 +409,7 @@ static void vInitializeContexts( MxNetConnectCtx_t * pxCtx )
  */
 void net_main( void * pvParameters )
 {
-	BaseType_t xResult = 0;
+    BaseType_t xResult = 0;
 
 
     MxNetConnectCtx_t xCtx;
@@ -408,142 +428,141 @@ void net_main( void * pvParameters )
                                    NET_LWIP_READY_BIT,
                                    portMAX_DELAY );
 
-	/* Start dataplane thread (does hw reset on initialization) */
-	xResult = xTaskCreate( &vDataplaneThread,
-	                       "MxData",
-	                       4096,
-	                       &xDataPlaneCtx,
-	                       25,
-	                       &xDataPlaneCtx.xDataPlaneTaskHandle );
+    /* Start dataplane thread (does hw reset on initialization) */
+    xResult = xTaskCreate( &vDataplaneThread,
+                           "MxData",
+                           4096,
+                           &xDataPlaneCtx,
+                           25,
+                           &xDataPlaneCtx.xDataPlaneTaskHandle );
 
-	configASSERT( xResult == pdTRUE );
-	xControlPlaneCtx.xDataPlaneTaskHandle = xDataPlaneCtx.xDataPlaneTaskHandle;
-	xCtx.xDataPlaneTaskHandle = xDataPlaneCtx.xDataPlaneTaskHandle;
+    configASSERT( xResult == pdTRUE );
+    xControlPlaneCtx.xDataPlaneTaskHandle = xDataPlaneCtx.xDataPlaneTaskHandle;
+    xCtx.xDataPlaneTaskHandle = xDataPlaneCtx.xDataPlaneTaskHandle;
 
-	/* Start control plane thread */
-	xResult = xTaskCreate( &prvControlPlaneRouter,
-	                       "MxCtrl",
-	                       4096,
-	                       &xControlPlaneCtx,
-	                       24,
-	                       NULL );
+    /* Start control plane thread */
+    xResult = xTaskCreate( &prvControlPlaneRouter,
+                           "MxCtrl",
+                           4096,
+                           &xControlPlaneCtx,
+                           24,
+                           NULL );
 
-	configASSERT( xResult == pdTRUE );
+    configASSERT( xResult == pdTRUE );
 
-	/* vInitializeWifiModule returns after receiving a firmware revision and mac address */
-	vInitializeWifiModule( &xCtx );
+    /* vInitializeWifiModule returns after receiving a firmware revision and mac address */
+    vInitializeWifiModule( &xCtx );
 
 
-	err_t xLwipError = ERR_OK;
+    err_t xLwipError = ERR_OK;
 
     /* Register lwip netif */
-	xLwipError = netifapi_netif_add( pxNetif,
+    xLwipError = netifapi_netif_add( pxNetif,
                                      NULL, NULL, NULL,
                                      &xCtx,
                                      &prvInitNetInterface,
                                      tcpip_input );
 
-	configASSERT( xLwipError == ERR_OK );
+    configASSERT( xLwipError == ERR_OK );
 
-	netifapi_netif_set_default( pxNetif );
+    netifapi_netif_set_default( pxNetif );
 
-	netifapi_netif_set_up( pxNetif );
+    netifapi_netif_set_up( pxNetif );
 
-	( void ) xEventGroupSetBits( xSystemEvents, EVT_MASK_NET_INIT );
+    ( void ) xEventGroupSetBits( xSystemEvents, EVT_MASK_NET_INIT );
 
-	/* If already connected to the AP, bring interface up */
-	if( xCtx.xStatus >= MX_STATUS_STA_UP )
-	{
-	    vSetAdminUp( pxNetif );
-	    vStartDhcp( pxNetif );
-	}
+    /* If already connected to the AP, bring interface up */
+    if( xCtx.xStatus >= MX_STATUS_STA_UP )
+    {
+        vSetAdminUp( pxNetif );
+        vStartDhcp( pxNetif );
+    }
 
-	/* Outer loop. Reinitializing */
-	for( ; ; )
-	{
-	    /* Make a connection attempt */
-	    if( xCtx.xStatus != MX_STATUS_STA_UP &&
-	        xCtx.xStatus != MX_STATUS_STA_GOT_IP )
-	    {
-	        xConnectToAP( &xCtx );
-	    }
+    /* Outer loop. Reinitializing */
+    for( ; ; )
+    {
+        /* Make a connection attempt */
+        if( ( xCtx.xStatus != MX_STATUS_STA_UP ) &&
+            ( xCtx.xStatus != MX_STATUS_STA_GOT_IP ) )
+        {
+            xConnectToAP( &xCtx );
+        }
 
-	    /*
+        /*
          * Wait for any event or timeout after 30 seconds
          */
-	    uint32_t ulNotificationValue = 0x0;
-	    xResult = xTaskNotifyWaitIndexed( NET_EVT_IDX,
-	                                      0x0,
-	                                      0xFFFFFFFF,
-	                                      &ulNotificationValue,
-	                                      pdMS_TO_TICKS( 30 * 1000 ) );
+        uint32_t ulNotificationValue = 0x0;
+        xResult = xTaskNotifyWaitIndexed( NET_EVT_IDX,
+                                          0x0,
+                                          0xFFFFFFFF,
+                                          &ulNotificationValue,
+                                          pdMS_TO_TICKS( 30 * 1000 ) );
 
-	    if( ulNotificationValue != 0 )
-	    {
-	        /* Latch in current flags */
-	        uint8_t ucNetifFlags = pxNetif->flags;
+        if( ulNotificationValue != 0 )
+        {
+            /* Latch in current flags */
+            uint8_t ucNetifFlags = pxNetif->flags;
 
-	        /* Handle state changes from the driver */
-	        if( ( ulNotificationValue & MX_STATUS_UPDATE_BIT ) )
-	        {
-	            vHandleMxStatusUpdate( &xCtx );
-	        }
+            /* Handle state changes from the driver */
+            if( ( ulNotificationValue & MX_STATUS_UPDATE_BIT ) )
+            {
+                vHandleMxStatusUpdate( &xCtx );
+            }
 
-	        if( ulNotificationValue & NET_LWIP_IP_CHANGE_BIT )
-	        {
-	            LogSys( "IP Address Change.");
+            if( ulNotificationValue & NET_LWIP_IP_CHANGE_BIT )
+            {
+                LogSys( "IP Address Change." );
                 vLogAddress( "IP Address:", pxNetif->ip_addr );
                 vLogAddress( "Gateway:", pxNetif->gw );
                 vLogAddress( "Netmask:", pxNetif->netmask );
 
                 lwiperf_start_tcp_server_default( NULL, NULL );
-                LogSys("Started Iperf server");
+                LogSys( "Started Iperf server" );
 
                 ( void ) xEventGroupSetBits( xSystemEvents, EVT_MASK_NET_CONNECTED );
-	        }
+            }
 
-	        if( ulNotificationValue & NET_LWIP_IFUP_BIT )
-	        {
-	            LogInfo( "Administrative UP event.");
+            if( ulNotificationValue & NET_LWIP_IFUP_BIT )
+            {
+                LogInfo( "Administrative UP event." );
 
-	            vStartDhcp( pxNetif );
-	        }
-	        else if( ( ulNotificationValue & NET_LWIP_LINK_UP_BIT ) &&
+                vStartDhcp( pxNetif );
+            }
+            else if( ( ulNotificationValue & NET_LWIP_LINK_UP_BIT ) &&
                      ( ucNetifFlags & NETIF_FLAG_LINK_UP ) )
             {
                 LogInfo( "Link UP event." );
 
                 vSetAdminUp( pxNetif );
                 vStartDhcp( pxNetif );
-                LogSys("Network Link Up.");
+                LogSys( "Network Link Up." );
             }
-	        else if( ulNotificationValue & NET_LWIP_IFDOWN_BIT )
-	        {
-                LogInfo( "Administrative DOWN event.");
+            else if( ulNotificationValue & NET_LWIP_IFDOWN_BIT )
+            {
+                LogInfo( "Administrative DOWN event." );
 
                 vStopDhcp( pxNetif );
                 vClearAddress( pxNetif );
                 ( void ) xEventGroupClearBits( xSystemEvents, EVT_MASK_NET_CONNECTED );
-	        }
-	        else if( ( ulNotificationValue & NET_LWIP_LINK_DOWN_BIT ) &&
-	                 ( ucNetifFlags & NETIF_FLAG_LINK_UP ) == 0 )
-	        {
-	            vSetAdminDown( pxNetif );
+            }
+            else if( ( ulNotificationValue & NET_LWIP_LINK_DOWN_BIT ) &&
+                     ( ( ucNetifFlags & NETIF_FLAG_LINK_UP ) == 0 ) )
+            {
+                vSetAdminDown( pxNetif );
                 vStopDhcp( pxNetif );
                 vClearAddress( pxNetif );
-                LogSys("Network Link Down.");
+                LogSys( "Network Link Down." );
                 ( void ) xEventGroupClearBits( xSystemEvents, EVT_MASK_NET_CONNECTED );
-	        }
+            }
 
-	        /* Reconnect requested by configStore or cli process */
-	        if( ulNotificationValue & ASYNC_REQUEST_RECONNECT_BIT )
-	        {
-	            ( void ) xEventGroupClearBits( xSystemEvents, EVT_MASK_NET_CONNECTED );
-	            ( void ) mx_SetBypassMode( pdFALSE, pdMS_TO_TICKS( 1000 ) );
-	            ( void ) mx_Disconnect( pdMS_TO_TICKS( 1000 ) );
-	            xConnectToAP( &xCtx );
-	        }
-	    }
-	}
-
+            /* Reconnect requested by configStore or cli process */
+            if( ulNotificationValue & ASYNC_REQUEST_RECONNECT_BIT )
+            {
+                ( void ) xEventGroupClearBits( xSystemEvents, EVT_MASK_NET_CONNECTED );
+                ( void ) mx_SetBypassMode( pdFALSE, pdMS_TO_TICKS( 1000 ) );
+                ( void ) mx_Disconnect( pdMS_TO_TICKS( 1000 ) );
+                xConnectToAP( &xCtx );
+            }
+        }
+    }
 }

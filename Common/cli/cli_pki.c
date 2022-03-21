@@ -58,25 +58,25 @@
 
 #if defined( MBEDTLS_TRANSPORT_PKCS11 )
 
-#define LABEL_PUB_IDX               3
-#define LABEL_PRV_IDX               4
-#define LABEL_IDX                   LABEL_PUB_IDX
-#define PEM_CERT_MAX_LEN            2048
+#define LABEL_PUB_IDX          3
+#define LABEL_PRV_IDX          4
+#define LABEL_IDX              LABEL_PUB_IDX
+#define PEM_CERT_MAX_LEN       2048
 
-#define PEM_LINE_ENDING             "\n"
-#define PEM_LINE_ENDING_LEN         1
+#define PEM_LINE_ENDING        "\n"
+#define PEM_LINE_ENDING_LEN    1
 
 
-#define PEM_BEGIN           "-----BEGIN "
-#define PEM_END             "-----END "
-#define PEM_META_SUFFIX     "-----"
+#define PEM_BEGIN              "-----BEGIN "
+#define PEM_END                "-----END "
+#define PEM_META_SUFFIX        "-----"
 
 /* The first three fields of this struct must match mbedtls_ecp_keypair */
 typedef struct
 {
-    mbedtls_ecp_group grp;      /*!<  Elliptic curve and base point     */
-    mbedtls_mpi d;              /*!<  our secret value, Empty for this use case */
-    mbedtls_ecp_point Q;        /*!<  our public value                  */
+    mbedtls_ecp_group grp; /*!<  Elliptic curve and base point     */
+    mbedtls_mpi d;         /*!<  our secret value, Empty for this use case */
+    mbedtls_ecp_point Q;   /*!<  our public value                  */
     mbedtls_entropy_context xEntropyCtx;
     mbedtls_ctr_drbg_context xCtrDrbgCtx;
     mbedtls_pk_context xPkeyCtx;
@@ -89,11 +89,13 @@ typedef struct
 
 
 /* Local static functions */
-static void vCommand_PKI( ConsoleIO_t * pxCIO, uint32_t ulArgc, char * ppcArgv[] );
+static void vCommand_PKI( ConsoleIO_t * pxCIO,
+                          uint32_t ulArgc,
+                          char * ppcArgv[] );
 static CK_RV xExportPubKeyDer( CK_SESSION_HANDLE xSession,
-                                CK_OBJECT_HANDLE xPublicKeyHandle,
-                                uint8_t * * ppucPubKeyDer,
-                                uint32_t * pulPubKeyDerLen );
+                               CK_OBJECT_HANDLE xPublicKeyHandle,
+                               uint8_t ** ppucPubKeyDer,
+                               uint32_t * pulPubKeyDerLen );
 
 static char * pcExportPubKeyPem( CK_SESSION_HANDLE xSession,
                                  CK_OBJECT_HANDLE xPublicKeyHandle );
@@ -101,8 +103,8 @@ static char * pcExportPubKeyPem( CK_SESSION_HANDLE xSession,
 
 const CLI_Command_Definition_t xCommandDef_pki =
 {
-    .pcCommand = "pki",
-    .pcHelpString =
+    .pcCommand            = "pki",
+    .pcHelpString         =
         "pki:\r\n"
         "    Perform public/private key operations on a PKCS11 interface.\r\n"
         "    Usage:\r\n"
@@ -116,140 +118,145 @@ const CLI_Command_Definition_t xCommandDef_pki =
         "        Generates a new Certificate Signing Request using the private key\r\n"
         "        with the specified label.\r\n"
         "        If no label is specified, the default tls private key is used.\r\n\n"
+
 /*        "    pki generate cert <slot>\r\n"
-          "        Generate a new self-signed certificate"
-          "        -- Not yet implemented --\r\n\n" */
+ *         "        Generate a new self-signed certificate"
+ *         "        -- Not yet implemented --\r\n\n" */
         "    pki import cert <label>\r\n"
         "        Import a certificate into the given slot. The certificate should be \r\n"
         "        copied into the terminal in PEM format, ending with two blank lines.\r\n\n"
+
 /*        "    pki import key <label>\r\n"
-          "        -- Not yet implemented --\r\n\n" */
+ *        "        -- Not yet implemented --\r\n\n" */
         "    pki export cert <label>\r\n"
         "        Export the certificate with the given label in pem format.\r\n"
         "        When no label is specified, the default certificate is exported.\r\n\n"
         "    pki export key <label>\r\n"
         "        Export the public portion of the key with the specified label.\r\n\n",
+
 /*          "    pki list\r\n"
-          "        List objects stored in the pkcs11 keystore.\r\n"
-          "        -- Not yet implemented --\r\n\n", */
+ *        "        List objects stored in the pkcs11 keystore.\r\n"
+ *        "        -- Not yet implemented --\r\n\n", */
     .pxCommandInterpreter = vCommand_PKI
 };
 
 
 /* Print a pem file, replacing \n with \r\n */
-static void vPrintPem( ConsoleIO_t * pxCIO, const char * pcPem )
+static void vPrintPem( ConsoleIO_t * pxCIO,
+                       const char * pcPem )
 {
     size_t xLen = strlen( pcPem );
+
     for( size_t i = 0; i < xLen; i++ )
     {
-        if( pcPem[ i ] == '\n' &&
-            ( i == 0 ||
-              pcPem[ i - 1 ] != '\r' ) )
+        if( ( pcPem[ i ] == '\n' ) &&
+            ( ( i == 0 ) ||
+              ( pcPem[ i - 1 ] != '\r' ) ) )
         {
             pxCIO->write( "\r\n", 2 );
         }
         else
         {
-            pxCIO->write( &( pcPem[i] ), 1 );
+            pxCIO->write( &( pcPem[ i ] ), 1 );
         }
     }
 }
 
 
 
- static int privateKeySigningCallback( void * pvContext,
-                                       mbedtls_md_type_t xMdAlg,
-                                       const unsigned char * pucHash,
-                                       size_t xHashLen,
-                                       unsigned char * pucSig,
-									   size_t xSigBufferLen,
-                                       size_t * pxSigLen,
-                                       int ( * piRng )( void *,
-                                                        unsigned char *,
-                                                        size_t ),
-                                       void * pvRng )
- {
-     CK_RV xResult = CKR_OK;
-     int32_t lFinalResult = 0;
-     PrivateKeySigningCtx_t * pxCtx = ( PrivateKeySigningCtx_t * ) pvContext;
-     CK_MECHANISM xMech = { 0 };
-     CK_BYTE xToBeSigned[ 256 ];
-     CK_ULONG xToBeSignedLen = sizeof( xToBeSigned );
+static int privateKeySigningCallback( void * pvContext,
+                                      mbedtls_md_type_t xMdAlg,
+                                      const unsigned char * pucHash,
+                                      size_t xHashLen,
+                                      unsigned char * pucSig,
+                                      size_t xSigBufferLen,
+                                      size_t * pxSigLen,
+                                      int ( * piRng )( void *,
+                                                       unsigned char *,
+                                                       size_t ),
+                                      void * pvRng )
+{
+    CK_RV xResult = CKR_OK;
+    int32_t lFinalResult = 0;
+    PrivateKeySigningCtx_t * pxCtx = ( PrivateKeySigningCtx_t * ) pvContext;
+    CK_MECHANISM xMech = { 0 };
+    CK_BYTE xToBeSigned[ 256 ];
+    CK_ULONG xToBeSignedLen = sizeof( xToBeSigned );
 
-     /* Unreferenced parameters. */
-     ( void ) ( piRng );
-     ( void ) ( pvRng );
-     ( void ) ( xMdAlg );
+    /* Unreferenced parameters. */
+    ( void ) ( piRng );
+    ( void ) ( pvRng );
+    ( void ) ( xMdAlg );
 
-     /* Sanity check buffer length. */
-     if( xHashLen > sizeof( xToBeSigned ) )
-     {
-         xResult = CKR_ARGUMENTS_BAD;
-     }
+    /* Sanity check buffer length. */
+    if( xHashLen > sizeof( xToBeSigned ) )
+    {
+        xResult = CKR_ARGUMENTS_BAD;
+    }
 
-     /* Format the hash data to be signed. */
-     if( CKK_RSA == pxCtx->xKeyType )
-     {
-         xMech.mechanism = CKM_RSA_PKCS;
+    /* Format the hash data to be signed. */
+    if( CKK_RSA == pxCtx->xKeyType )
+    {
+        xMech.mechanism = CKM_RSA_PKCS;
 
-         /* mbedTLS expects hashed data without padding, but PKCS #11 C_Sign function performs a hash
-          * & sign if hash algorithm is specified.  This helper function applies padding
-          * indicating data was hashed with SHA-256 while still allowing pre-hashed data to
-          * be provided. */
-         xResult = vAppendSHA256AlgorithmIdentifierSequence( ( uint8_t * ) pucHash, xToBeSigned );
-         xToBeSignedLen = pkcs11RSA_SIGNATURE_INPUT_LENGTH;
-     }
-     else if( CKK_EC == pxCtx->xKeyType )
-     {
-         xMech.mechanism = CKM_ECDSA;
-         ( void ) memcpy( xToBeSigned, pucHash, xHashLen );
-         xToBeSignedLen = xHashLen;
-     }
-     else
-     {
-         xResult = CKR_ARGUMENTS_BAD;
-     }
+        /* mbedTLS expects hashed data without padding, but PKCS #11 C_Sign function performs a hash
+         * & sign if hash algorithm is specified.  This helper function applies padding
+         * indicating data was hashed with SHA-256 while still allowing pre-hashed data to
+         * be provided. */
+        xResult = vAppendSHA256AlgorithmIdentifierSequence( ( uint8_t * ) pucHash, xToBeSigned );
+        xToBeSignedLen = pkcs11RSA_SIGNATURE_INPUT_LENGTH;
+    }
+    else if( CKK_EC == pxCtx->xKeyType )
+    {
+        xMech.mechanism = CKM_ECDSA;
+        ( void ) memcpy( xToBeSigned, pucHash, xHashLen );
+        xToBeSignedLen = xHashLen;
+    }
+    else
+    {
+        xResult = CKR_ARGUMENTS_BAD;
+    }
 
-     if( CKR_OK == xResult )
-     {
-         /* Use the PKCS#11 module to sign. */
-         xResult = pxCtx->pxP11FunctionList->C_SignInit( pxCtx->xP11Session,
-                                                         &xMech,
-                                                         pxCtx->xP11PrivateKey );
-     }
+    if( CKR_OK == xResult )
+    {
+        /* Use the PKCS#11 module to sign. */
+        xResult = pxCtx->pxP11FunctionList->C_SignInit( pxCtx->xP11Session,
+                                                        &xMech,
+                                                        pxCtx->xP11PrivateKey );
+    }
 
-     if( CKR_OK == xResult )
-     {
-         *pxSigLen = sizeof( xToBeSigned );
-         xResult = pxCtx->pxP11FunctionList->C_Sign( ( CK_SESSION_HANDLE ) pxCtx->xP11Session,
-                                                      xToBeSigned,
-                                                      xToBeSignedLen,
-                                                      pucSig,
-                                                      ( CK_ULONG_PTR ) pxSigLen );
-     }
+    if( CKR_OK == xResult )
+    {
+        *pxSigLen = sizeof( xToBeSigned );
+        xResult = pxCtx->pxP11FunctionList->C_Sign( ( CK_SESSION_HANDLE ) pxCtx->xP11Session,
+                                                    xToBeSigned,
+                                                    xToBeSignedLen,
+                                                    pucSig,
+                                                    ( CK_ULONG_PTR ) pxSigLen );
+    }
 
-     if( ( xResult == CKR_OK ) && ( CKK_EC == pxCtx->xKeyType ) )
-     {
-         /* PKCS #11 for P256 returns a 64-byte signature with 32 bytes for R and 32 bytes for S.
-          * This must be converted to an ASN.1 encoded array. */
-         if( *pxSigLen != pkcs11ECDSA_P256_SIGNATURE_LENGTH )
-         {
-             xResult = CKR_FUNCTION_FAILED;
-         }
+    if( ( xResult == CKR_OK ) && ( CKK_EC == pxCtx->xKeyType ) )
+    {
+        /* PKCS #11 for P256 returns a 64-byte signature with 32 bytes for R and 32 bytes for S.
+         * This must be converted to an ASN.1 encoded array. */
+        if( *pxSigLen != pkcs11ECDSA_P256_SIGNATURE_LENGTH )
+        {
+            xResult = CKR_FUNCTION_FAILED;
+        }
 
-         if( xResult == CKR_OK )
-         {
-             xResult = PKI_pkcs11SignatureTombedTLSSignature( pucSig, pxSigLen );
-         }
-     }
+        if( xResult == CKR_OK )
+        {
+            xResult = PKI_pkcs11SignatureTombedTLSSignature( pucSig, pxSigLen );
+        }
+    }
 
-     if( xResult != CKR_OK )
-     {
-         LogError( "Failed to sign message using PKCS #11 with error code %02X.", xResult );
-     }
+    if( xResult != CKR_OK )
+    {
+        LogError( "Failed to sign message using PKCS #11 with error code %02X.", xResult );
+    }
 
-     return lFinalResult;
- }
+    return lFinalResult;
+}
 
 static CK_RV validatePrivateKeyPKCS11( PrivateKeySigningCtx_t * pxCtx,
                                        const char * pcLabel )
@@ -346,7 +353,7 @@ static CK_RV validatePrivateKeyPKCS11( PrivateKeySigningCtx_t * pxCtx,
         }
     }
 
-    //TODO: Support RSA keys here.
+    /*TODO: Support RSA keys here. */
     if( xResult == CKR_OK )
     {
         unsigned char * pucPubKeyDer = NULL;
@@ -388,7 +395,7 @@ static CK_RV validatePrivateKeyPKCS11( PrivateKeySigningCtx_t * pxCtx,
         /* Override the signing callback */
         pxCtx->xPrivKeyInfo.sign_func = privateKeySigningCallback;
 
-        pxCtx->xPkeyCtx.pk_info = &( pxCtx->xPrivKeyInfo);
+        pxCtx->xPkeyCtx.pk_info = &( pxCtx->xPrivKeyInfo );
         pxCtx->xPkeyCtx.pk_ctx = pxCtx;
     }
 
@@ -398,9 +405,11 @@ static CK_RV validatePrivateKeyPKCS11( PrivateKeySigningCtx_t * pxCtx,
     return xResult;
 }
 
-#define CSR_BUFFER_LEN 2048
+#define CSR_BUFFER_LEN    2048
 
-static void vSubCommand_GenerateCsr( ConsoleIO_t * pxCIO, uint32_t ulArgc, char * ppcArgv[] )
+static void vSubCommand_GenerateCsr( ConsoleIO_t * pxCIO,
+                                     uint32_t ulArgc,
+                                     char * ppcArgv[] )
 {
     const char * pcPrvKeyLabel = pkcs11_TLS_KEY_PRV_LABEL;
     char * pcCsrBuffer = pvPortMalloc( CSR_BUFFER_LEN );
@@ -411,17 +420,17 @@ static void vSubCommand_GenerateCsr( ConsoleIO_t * pxCIO, uint32_t ulArgc, char 
 
     mbedtls_x509write_csr xCsr;
 
-    if( ulArgc > LABEL_IDX &&
-        ppcArgv[ LABEL_IDX ] != NULL )
+    if( ( ulArgc > LABEL_IDX ) &&
+        ( ppcArgv[ LABEL_IDX ] != NULL ) )
     {
         pcPrvKeyLabel = ppcArgv[ LABEL_IDX ];
     }
 
     /* Set the mutex functions for mbed TLS thread safety. */
-//    mbedtls_threading_set_alt( mbedtls_platform_mutex_init,
-//                               mbedtls_platform_mutex_free,
-//                               mbedtls_platform_mutex_lock,
-//                               mbedtls_platform_mutex_unlock );
+/*    mbedtls_threading_set_alt( mbedtls_platform_mutex_init, */
+/*                               mbedtls_platform_mutex_free, */
+/*                               mbedtls_platform_mutex_lock, */
+/*                               mbedtls_platform_mutex_unlock ); */
 
     mbedtls_x509write_csr_init( &xCsr );
     mbedtls_pk_init( &( xPksCtx.xPkeyCtx ) );
@@ -434,8 +443,8 @@ static void vSubCommand_GenerateCsr( ConsoleIO_t * pxCIO, uint32_t ulArgc, char 
                                           NULL,
                                           0 );
 
-    if( mbedtlsError == 0 &&
-        strlen( pcPrvKeyLabel ) > 0 )
+    if( ( mbedtlsError == 0 ) &&
+        ( strlen( pcPrvKeyLabel ) > 0 ) )
     {
         CK_RV xResult = C_GetFunctionList( &( xPksCtx.pxP11FunctionList ) );
 
@@ -510,6 +519,7 @@ static void vSubCommand_GenerateCsr( ConsoleIO_t * pxCIO, uint32_t ulArgc, char 
         mbedtls_x509write_csr_free( &xCsr );
         mbedtls_ctr_drbg_free( &( xPksCtx.xCtrDrbgCtx ) );
         mbedtls_entropy_free( &( xPksCtx.xEntropyCtx ) );
+
         if( pcSubjectName != NULL )
         {
             vPortFree( pcSubjectName );
@@ -527,7 +537,6 @@ static void vSubCommand_GenerateCsr( ConsoleIO_t * pxCIO, uint32_t ulArgc, char 
     {
         xPksCtx.pxP11FunctionList->C_CloseSession( xPksCtx.xP11Session );
     }
-
 }
 
 static CK_RV xGenerateKeyPairEC( CK_SESSION_HANDLE xSession,
@@ -548,10 +557,10 @@ static CK_RV xGenerateKeyPairEC( CK_SESSION_HANDLE xSession,
     CK_BBOOL xTrue = CK_TRUE;
     CK_ATTRIBUTE xPublicKeyTemplate[] =
     {
-        { CKA_KEY_TYPE,  &xKeyType, sizeof( xKeyType )                           },
-        { CKA_VERIFY,    &xTrue,    sizeof( xTrue )                              },
-        { CKA_EC_PARAMS, xEcParams, sizeof( xEcParams )                          },
-        { CKA_LABEL,     pucPublicKeyLabel,    strlen( ( const char * ) pucPublicKeyLabel ) }
+        { CKA_KEY_TYPE,  &xKeyType,         sizeof( xKeyType )                           },
+        { CKA_VERIFY,    &xTrue,            sizeof( xTrue )                              },
+        { CKA_EC_PARAMS, xEcParams,         sizeof( xEcParams )                          },
+        { CKA_LABEL,     pucPublicKeyLabel, strlen( ( const char * ) pucPublicKeyLabel ) }
     };
 
     CK_ATTRIBUTE xPrivateKeyTemplate[] =
@@ -582,7 +591,8 @@ static CK_RV xGenerateKeyPairEC( CK_SESSION_HANDLE xSession,
  * @param[in] pcPubKeyDer Public key In DER format
  * @param[in] ulPubKeyDerLen Length of given
  */
-static char * pcConvertECDerToPem( uint8_t * pcPubKeyDer, uint32_t ulPubKeyDerLen )
+static char * pcConvertECDerToPem( uint8_t * pcPubKeyDer,
+                                   uint32_t ulPubKeyDerLen )
 {
     static const char ecPubKeyHeader[] = "-----BEGIN PUBLIC KEY-----\r\n";
     static const char ecPubKeyFooter[] = "-----END PUBLIC KEY-----\r\n";
@@ -628,17 +638,18 @@ static char * pcConvertECDerToPem( uint8_t * pcPubKeyDer, uint32_t ulPubKeyDerLe
     return pcPubKeyPem;
 }
 
-//TODO: implement CKA_PUBLIC_KEY_INFO on the backend to make this compliant with the standard and reduce unnecessary memory allocation / deallocation.
+/*TODO: implement CKA_PUBLIC_KEY_INFO on the backend to make this compliant with the standard and reduce unnecessary memory allocation / deallocation. */
 /* Caller must free the returned buffer */
 static CK_RV xExportPubKeyDer( CK_SESSION_HANDLE xSession,
                                CK_OBJECT_HANDLE xPublicKeyHandle,
-                               uint8_t * * ppucPubKeyDer,
+                               uint8_t ** ppucPubKeyDer,
                                uint32_t * pulPubKeyDerLen )
 {
     CK_RV xResult;
     /* Query the key size. */
     CK_ATTRIBUTE xTemplate = { 0 };
     CK_FUNCTION_LIST_PTR pxFunctionList;
+
     *ppucPubKeyDer = NULL;
     *pulPubKeyDerLen = 0;
 
@@ -711,6 +722,7 @@ static CK_RV xExportPubKeyDer( CK_SESSION_HANDLE xSession,
             vPortFree( *ppucPubKeyDer );
             *ppucPubKeyDer = NULL;
         }
+
         *pulPubKeyDerLen = 0;
     }
 
@@ -748,7 +760,9 @@ static char * pcExportPubKeyPem( CK_SESSION_HANDLE xSession,
 }
 
 
-static void vSubCommand_GenerateKey( ConsoleIO_t * pxCIO, uint32_t ulArgc, char * ppcArgv[] )
+static void vSubCommand_GenerateKey( ConsoleIO_t * pxCIO,
+                                     uint32_t ulArgc,
+                                     char * ppcArgv[] )
 {
     CK_RV xResult;
     CK_SESSION_HANDLE xSession = 0;
@@ -761,19 +775,19 @@ static void vSubCommand_GenerateKey( ConsoleIO_t * pxCIO, uint32_t ulArgc, char 
     char * pcPrvKeyLabel = pkcs11_TLS_KEY_PRV_LABEL;
     char * pcPubKeyLabel = pkcs11_TLS_KEY_PUB_LABEL;
 
-    if( ulArgc > LABEL_PRV_IDX &&
-        ppcArgv[ LABEL_PRV_IDX ] != NULL &&
-        ppcArgv[ LABEL_PUB_IDX ] != NULL )
+    if( ( ulArgc > LABEL_PRV_IDX ) &&
+        ( ppcArgv[ LABEL_PRV_IDX ] != NULL ) &&
+        ( ppcArgv[ LABEL_PUB_IDX ] != NULL ) )
     {
         pcPrvKeyLabel = ppcArgv[ LABEL_PRV_IDX ];
         pcPubKeyLabel = ppcArgv[ LABEL_PUB_IDX ];
     }
 
     /* Set the mutex functions for mbed TLS thread safety. */
-    // mbedtls_threading_set_alt( mbedtls_platform_mutex_init,
-    //                            mbedtls_platform_mutex_free,
-    //                            mbedtls_platform_mutex_lock,
-    //                            mbedtls_platform_mutex_unlock );
+    /* mbedtls_threading_set_alt( mbedtls_platform_mutex_init, */
+    /*                            mbedtls_platform_mutex_free, */
+    /*                            mbedtls_platform_mutex_lock, */
+    /*                            mbedtls_platform_mutex_unlock ); */
 
     xResult = C_GetFunctionList( &pxFunctionList );
 
@@ -797,8 +811,6 @@ static void vSubCommand_GenerateKey( ConsoleIO_t * pxCIO, uint32_t ulArgc, char 
                                       &xPubKeyHandle );
     }
 
-
-
     /* If successful, print public key in PEM form to terminal. */
     if( xResult == CKR_OK )
     {
@@ -814,7 +826,7 @@ static void vSubCommand_GenerateKey( ConsoleIO_t * pxCIO, uint32_t ulArgc, char 
     }
     else
     {
-        pxCIO->print("ERROR: Failed to generate public/private key pair.\r\n");
+        pxCIO->print( "ERROR: Failed to generate public/private key pair.\r\n" );
     }
 
     /* Print PEM public key */
@@ -832,9 +844,11 @@ static void vSubCommand_GenerateKey( ConsoleIO_t * pxCIO, uint32_t ulArgc, char 
     }
 }
 
-static void vSubCommand_GenerateCertificate( ConsoleIO_t * pxCIO, uint32_t ulArgc, char * ppcArgv[] )
+static void vSubCommand_GenerateCertificate( ConsoleIO_t * pxCIO,
+                                             uint32_t ulArgc,
+                                             char * ppcArgv[] )
 {
-    pxCIO->print("Not Implemented\r\n");
+    pxCIO->print( "Not Implemented\r\n" );
 }
 
 static BaseType_t xImportCertificateIntoP11( const char * pcLabel,
@@ -871,8 +885,8 @@ static BaseType_t xImportCertificateIntoP11( const char * pcLabel,
                                                 &xCertHandle );
     }
 
-    if( xResult == CKR_OK  &&
-        xCertHandle != CK_INVALID_HANDLE )
+    if( ( xResult == CKR_OK ) &&
+        ( xCertHandle != CK_INVALID_HANDLE ) )
     {
         xResult = pxFunctionList->C_DestroyObject( xSession,
                                                    xCertHandle );
@@ -887,31 +901,31 @@ static BaseType_t xImportCertificateIntoP11( const char * pcLabel,
 
         CK_ATTRIBUTE pxTemplate[ 5 ] =
         {
-             {
-                 .type = CKA_CLASS,
-                 .ulValueLen = sizeof( CK_OBJECT_CLASS ),
-                 .pValue = &xObjClass
-             },
-             {
-                 .type = CKA_LABEL,
-                 .ulValueLen = strnlen( pcLabel, pkcs11configMAX_LABEL_LENGTH ),
-                 .pValue = pcLabel
-             },
-             {
-                 .type = CKA_CERTIFICATE_TYPE,
-                 .ulValueLen = sizeof( CK_CERTIFICATE_TYPE ),
-                 .pValue = &xCertType
-             },
-             {
-                 .type = CKA_TOKEN,
-                 .ulValueLen = sizeof( CK_BBOOL ),
-                 .pValue = &xPersistCert
-             },
-             {
-                  .type = CKA_VALUE,
-                  .ulValueLen = ulCertLen,
-                  .pValue = pcCertificate
-              }
+            {
+                .type = CKA_CLASS,
+                .ulValueLen = sizeof( CK_OBJECT_CLASS ),
+                .pValue = &xObjClass
+            },
+            {
+                .type = CKA_LABEL,
+                .ulValueLen = strnlen( pcLabel, pkcs11configMAX_LABEL_LENGTH ),
+                .pValue = pcLabel
+            },
+            {
+                .type = CKA_CERTIFICATE_TYPE,
+                .ulValueLen = sizeof( CK_CERTIFICATE_TYPE ),
+                .pValue = &xCertType
+            },
+            {
+                .type = CKA_TOKEN,
+                .ulValueLen = sizeof( CK_BBOOL ),
+                .pValue = &xPersistCert
+            },
+            {
+                .type = CKA_VALUE,
+                .ulValueLen = ulCertLen,
+                .pValue = pcCertificate
+            }
         };
 
         xResult = pxFunctionList->C_CreateObject( xSession,
@@ -933,7 +947,8 @@ static inline size_t xCopyLine( char * const pcDest,
                                 uint32_t xDestLen )
 {
     size_t xLen;
-    xLen = strlcpy( pcDest ,
+
+    xLen = strlcpy( pcDest,
                     pcSrc,
                     xDestLen );
 
@@ -943,7 +958,7 @@ static inline size_t xCopyLine( char * const pcDest,
                      PEM_LINE_ENDING,
                      xDestLen - xLen );
 
-     configASSERT( xLen < xDestLen );
+    configASSERT( xLen < xDestLen );
 
     return xLen;
 }
@@ -971,9 +986,9 @@ static size_t xReadPemFromCLI( ConsoleIO_t * pxCIO,
                 xErrorFlag = pdTRUE;
             }
             /* Check if this line will overflow the buffer given for the pem file */
-            else if( xErrorFlag == pdFALSE &&
-                     lDataRead > 0 &&
-                     ( xPemDataLen + lDataRead + PEM_LINE_ENDING_LEN ) >= xBufferLen )
+            else if( ( xErrorFlag == pdFALSE ) &&
+                     ( lDataRead > 0 ) &&
+                     ( ( xPemDataLen + lDataRead + PEM_LINE_ENDING_LEN ) >= xBufferLen ) )
             {
                 pxCIO->print( "Error: Out of memory to store the given PEM file.\r\n" );
                 xErrorFlag = pdTRUE;
@@ -986,6 +1001,7 @@ static size_t xReadPemFromCLI( ConsoleIO_t * pxCIO,
                     char * pcLabelEnd = strnstr( &( pcInputBuffer[ strlen( PEM_BEGIN ) ] ),
                                                  PEM_META_SUFFIX,
                                                  lDataRead - strlen( PEM_BEGIN ) );
+
                     if( pcLabelEnd == NULL )
                     {
                         pxCIO->print( "Error: PEM header does not contain the expected ending: '" PEM_META_SUFFIX "'.\r\n" );
@@ -1009,6 +1025,7 @@ static size_t xReadPemFromCLI( ConsoleIO_t * pxCIO,
                     char * pcLabelEnd = strnstr( &( pcInputBuffer[ strlen( PEM_END ) ] ),
                                                  PEM_META_SUFFIX,
                                                  lDataRead - strlen( PEM_END ) );
+
                     if( pcLabelEnd == NULL )
                     {
                         pxCIO->print( "Error: PEM footer does not contain the expected ending: '" PEM_META_SUFFIX "'.\r\n" );
@@ -1049,7 +1066,9 @@ static size_t xReadPemFromCLI( ConsoleIO_t * pxCIO,
 }
 
 
-static void vSubCommand_ImportCertificate( ConsoleIO_t * pxCIO, uint32_t ulArgc, char * ppcArgv[] )
+static void vSubCommand_ImportCertificate( ConsoleIO_t * pxCIO,
+                                           uint32_t ulArgc,
+                                           char * ppcArgv[] )
 {
     BaseType_t xResult = pdTRUE;
 
@@ -1060,8 +1079,8 @@ static void vSubCommand_ImportCertificate( ConsoleIO_t * pxCIO, uint32_t ulArgc,
     size_t xCertDataLen = 0;
 
 
-    if( ulArgc > LABEL_IDX &&
-        ppcArgv[ LABEL_IDX ] != NULL )
+    if( ( ulArgc > LABEL_IDX ) &&
+        ( ppcArgv[ LABEL_IDX ] != NULL ) )
     {
         ( void ) strlcpy( pcCertLabel, ppcArgv[ LABEL_IDX ], pkcs11configMAX_LABEL_LENGTH );
     }
@@ -1083,12 +1102,12 @@ static void vSubCommand_ImportCertificate( ConsoleIO_t * pxCIO, uint32_t ulArgc,
     if( xResult == pdTRUE )
     {
         pcCertData = pvPortMalloc( PEM_CERT_MAX_LEN + 1 );
-        ( void ) memset( pcCertData, 0,  PEM_CERT_MAX_LEN + 1 );
+        ( void ) memset( pcCertData, 0, PEM_CERT_MAX_LEN + 1 );
     }
 
     if( pcCertData == NULL )
     {
-        pxCIO->print("Error: Failed to allocate #PEM_CERT_MAX_LEN bytes to store the given certificate.\r\n");
+        pxCIO->print( "Error: Failed to allocate #PEM_CERT_MAX_LEN bytes to store the given certificate.\r\n" );
         xResult = pdFALSE;
     }
     else
@@ -1096,16 +1115,15 @@ static void vSubCommand_ImportCertificate( ConsoleIO_t * pxCIO, uint32_t ulArgc,
         xCertDataLen = xReadPemFromCLI( pxCIO, pcCertData, PEM_CERT_MAX_LEN );
     }
 
-    //TODO: parse received pem with mbedtls to verify.
+    /*TODO: parse received pem with mbedtls to verify. */
 
     if( xCertDataLen > 0 )
     {
-
         xResult = xImportCertificateIntoP11( pcCertLabel, pcCertData, xCertDataLen + 1 );
     }
     else
     {
-        LogDebug("xReadPemFromCLI returned %ld", xCertDataLen );
+        LogDebug( "xReadPemFromCLI returned %ld", xCertDataLen );
         xResult = pdFALSE;
     }
 
@@ -1123,12 +1141,16 @@ static void vSubCommand_ImportCertificate( ConsoleIO_t * pxCIO, uint32_t ulArgc,
     }
 }
 
-static void vSubCommand_ImportKey( ConsoleIO_t * pxCIO, uint32_t ulArgc, char * ppcArgv[] )
+static void vSubCommand_ImportKey( ConsoleIO_t * pxCIO,
+                                   uint32_t ulArgc,
+                                   char * ppcArgv[] )
 {
-    pxCIO->print("Not Implemented\r\n");
+    pxCIO->print( "Not Implemented\r\n" );
 }
 
-static void vSubCommand_ExportCertificate( ConsoleIO_t * pxCIO, uint32_t ulArgc, char * ppcArgv[] )
+static void vSubCommand_ExportCertificate( ConsoleIO_t * pxCIO,
+                                           uint32_t ulArgc,
+                                           char * ppcArgv[] )
 {
     CK_RV xResult;
     CK_SESSION_HANDLE xSession = 0;
@@ -1141,18 +1163,19 @@ static void vSubCommand_ExportCertificate( ConsoleIO_t * pxCIO, uint32_t ulArgc,
 
     char * pcCertPem = NULL;
 
-    if( ulArgc > LABEL_IDX &&
-        ppcArgv[ LABEL_IDX ] != NULL )
+    if( ( ulArgc > LABEL_IDX ) &&
+        ( ppcArgv[ LABEL_IDX ] != NULL ) )
     {
         pcCertLabel = ppcArgv[ LABEL_PUB_IDX ];
     }
+
     xCertLabelLen = strnlen( pcCertLabel, pkcs11configMAX_LABEL_LENGTH );
 
     /* Set the mutex functions for mbed TLS thread safety. */
-    // mbedtls_threading_set_alt( mbedtls_platform_mutex_init,
-    //                            mbedtls_platform_mutex_free,
-    //                            mbedtls_platform_mutex_lock,
-    //                            mbedtls_platform_mutex_unlock );
+    /* mbedtls_threading_set_alt( mbedtls_platform_mutex_init, */
+    /*                            mbedtls_platform_mutex_free, */
+    /*                            mbedtls_platform_mutex_lock, */
+    /*                            mbedtls_platform_mutex_unlock ); */
 
     xResult = C_GetFunctionList( &pxFunctionList );
 
@@ -1176,9 +1199,8 @@ static void vSubCommand_ExportCertificate( ConsoleIO_t * pxCIO, uint32_t ulArgc,
                                                 &xCertHandle );
     }
 
-
-    if( xResult != CKR_OK ||
-        xCertHandle == CK_INVALID_HANDLE )
+    if( ( xResult != CKR_OK ) ||
+        ( xCertHandle == CK_INVALID_HANDLE ) )
     {
         pxCIO->print( "ERROR: Failed to locate certificate with label: '" );
         pxCIO->write( pcCertLabel, xCertLabelLen );
@@ -1193,9 +1215,9 @@ static void vSubCommand_ExportCertificate( ConsoleIO_t * pxCIO, uint32_t ulArgc,
 
         CK_ATTRIBUTE xTemplate =
         {
-            .type = CKA_VALUE,
+            .type       = CKA_VALUE,
             .ulValueLen = 0,
-            .pValue = NULL
+            .pValue     = NULL
         };
 
         /* Determine the required buffer length */
@@ -1217,8 +1239,8 @@ static void vSubCommand_ExportCertificate( ConsoleIO_t * pxCIO, uint32_t ulArgc,
         }
     }
 
-    if( pcCertPem != NULL &&
-        xResult == CKR_OK )
+    if( ( pcCertPem != NULL ) &&
+        ( xResult == CKR_OK ) )
     {
         vPrintPem( pxCIO, pcCertPem );
 
@@ -1231,10 +1253,11 @@ static void vSubCommand_ExportCertificate( ConsoleIO_t * pxCIO, uint32_t ulArgc,
     {
         pxFunctionList->C_CloseSession( xSession );
     }
-
 }
 
-static void vSubCommand_ExportKey( ConsoleIO_t * pxCIO, uint32_t ulArgc, char * ppcArgv[] )
+static void vSubCommand_ExportKey( ConsoleIO_t * pxCIO,
+                                   uint32_t ulArgc,
+                                   char * ppcArgv[] )
 {
     CK_RV xResult;
 
@@ -1250,8 +1273,8 @@ static void vSubCommand_ExportKey( ConsoleIO_t * pxCIO, uint32_t ulArgc, char * 
     char * pcPubKeyLabel = pkcs11_TLS_KEY_PUB_LABEL;
     size_t xPubKeyLabelLen;
 
-    if( ulArgc > LABEL_IDX &&
-        ppcArgv[ LABEL_IDX ] != NULL )
+    if( ( ulArgc > LABEL_IDX ) &&
+        ( ppcArgv[ LABEL_IDX ] != NULL ) )
     {
         pcPubKeyLabel = ppcArgv[ LABEL_PUB_IDX ];
     }
@@ -1259,10 +1282,10 @@ static void vSubCommand_ExportKey( ConsoleIO_t * pxCIO, uint32_t ulArgc, char * 
     xPubKeyLabelLen = strnlen( pcPubKeyLabel, pkcs11configMAX_LABEL_LENGTH );
 
     /* Set the mutex functions for mbed TLS thread safety. */
-    // mbedtls_threading_set_alt( mbedtls_platform_mutex_init,
-    //                            mbedtls_platform_mutex_free,
-    //                            mbedtls_platform_mutex_lock,
-    //                            mbedtls_platform_mutex_unlock );
+    /* mbedtls_threading_set_alt( mbedtls_platform_mutex_init, */
+    /*                            mbedtls_platform_mutex_free, */
+    /*                            mbedtls_platform_mutex_lock, */
+    /*                            mbedtls_platform_mutex_unlock ); */
 
     xResult = C_GetFunctionList( &pxFunctionList );
 
@@ -1285,7 +1308,6 @@ static void vSubCommand_ExportKey( ConsoleIO_t * pxCIO, uint32_t ulArgc, char * 
                                                 CKO_PUBLIC_KEY,
                                                 &xPubKeyHandle );
     }
-
 
     /* If successful, print public key in PEM form to terminal. */
     if( xResult == CKR_OK )
@@ -1319,8 +1341,8 @@ static void vSubCommand_ExportKey( ConsoleIO_t * pxCIO, uint32_t ulArgc, char * 
     }
 }
 
-#define VERB_ARG_INDEX          1
-#define OBJECT_TYPE_INDEX       2
+#define VERB_ARG_INDEX       1
+#define OBJECT_TYPE_INDEX    2
 
 /*
  * CLI format:
@@ -1347,6 +1369,7 @@ static void vCommand_PKI( ConsoleIO_t * pxCIO,
             if( ulArgc > OBJECT_TYPE_INDEX )
             {
                 const char * pcObject = ppcArgv[ OBJECT_TYPE_INDEX ];
+
                 if( 0 == strcmp( "key", pcObject ) )
                 {
                     vSubCommand_GenerateKey( pxCIO, ulArgc, ppcArgv );
@@ -1363,7 +1386,7 @@ static void vCommand_PKI( ConsoleIO_t * pxCIO,
                 }
                 else
                 {
-                    pxCIO->print( "Error: Invalid object type: '");
+                    pxCIO->print( "Error: Invalid object type: '" );
                     pxCIO->print( pcObject );
                     pxCIO->print( "' specified for generate command.\r\n" );
                     xSuccess = pdFALSE;
@@ -1380,6 +1403,7 @@ static void vCommand_PKI( ConsoleIO_t * pxCIO,
             if( ulArgc > OBJECT_TYPE_INDEX )
             {
                 const char * pcObject = ppcArgv[ OBJECT_TYPE_INDEX ];
+
                 if( 0 == strcmp( "key", pcObject ) )
                 {
                     vSubCommand_ImportKey( pxCIO, ulArgc, ppcArgv );
@@ -1392,7 +1416,7 @@ static void vCommand_PKI( ConsoleIO_t * pxCIO,
                 }
                 else
                 {
-                    pxCIO->print( "Error: Invalid object type: '");
+                    pxCIO->print( "Error: Invalid object type: '" );
                     pxCIO->print( pcObject );
                     pxCIO->print( "' specified for import command.\r\n" );
                     xSuccess = pdFALSE;
@@ -1402,9 +1426,11 @@ static void vCommand_PKI( ConsoleIO_t * pxCIO,
         else if( 0 == strcmp( "export", pcVerb ) )
         {
             xSuccess = pdFALSE;
+
             if( ulArgc > OBJECT_TYPE_INDEX )
             {
                 const char * pcObject = ppcArgv[ OBJECT_TYPE_INDEX ];
+
                 if( 0 == strcmp( "key", pcObject ) )
                 {
                     vSubCommand_ExportKey( pxCIO, ulArgc, ppcArgv );
@@ -1417,7 +1443,7 @@ static void vCommand_PKI( ConsoleIO_t * pxCIO,
                 }
                 else
                 {
-                    pxCIO->print( "Error: Invalid object type: '");
+                    pxCIO->print( "Error: Invalid object type: '" );
                     pxCIO->print( pcObject );
                     pxCIO->print( "' specified for import command.\r\n" );
                     xSuccess = pdFALSE;
@@ -1429,7 +1455,6 @@ static void vCommand_PKI( ConsoleIO_t * pxCIO,
             xSuccess = pdFALSE;
         }
     }
-
 
     if( xSuccess == pdFALSE )
     {

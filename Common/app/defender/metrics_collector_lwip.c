@@ -46,7 +46,7 @@
 #include "lwipopts.h"
 
 #if !defined( LWIP_TCPIP_CORE_LOCKING ) || ( LWIP_TCPIP_CORE_LOCKING == 0 )
-    #error "Network metrics are only supported in core locking mode. Please define LWIP_TCPIP_CORE_LOCKING to 1 in lwipopts.h."
+#error "Network metrics are only supported in core locking mode. Please define LWIP_TCPIP_CORE_LOCKING to 1 in lwipopts.h."
 #endif
 
 #if MIB2_STATS == 0
@@ -57,8 +57,8 @@
 #error "LWIP_BYTES_IN_OUT_UNSUPPORTED must be set to 0."
 #endif
 
-#define UINT16_STR_LEN          5
-#define IPADDR_PORT_STR_LEN     ( IPADDR_STRLEN_MAX + sizeof( ':' ) + UINT16_STR_LEN + sizeof( '\0' ) )
+#define UINT16_STR_LEN         5
+#define IPADDR_PORT_STR_LEN    ( IPADDR_STRLEN_MAX + sizeof( ':' ) + UINT16_STR_LEN + sizeof( '\0' ) )
 
 /* Variables defined in the LWIP source code. */
 extern struct tcp_pcb * tcp_active_pcbs;        /* List of all TCP PCBs that are in a state in which they accept or send data. */
@@ -67,18 +67,24 @@ extern struct udp_pcb * udp_pcbs;               /* List of UDP PCBs. */
 extern struct netif * netif_default;
 /*-----------------------------------------------------------*/
 
-static inline CborError cbor_add_kv_uint( CborEncoder * pxEncoder, const char * pcKey, uint64_t xUInt )
+static inline CborError cbor_add_kv_uint( CborEncoder * pxEncoder,
+                                          const char * pcKey,
+                                          uint64_t xUInt )
 {
     CborError xError = CborNoError;
+
     xError = cbor_encode_text_stringz( pxEncoder, pcKey );
     xError |= cbor_encode_uint( pxEncoder, xUInt );
 
     return xError;
 }
 
-static inline CborError cbor_add_kv_str( CborEncoder * pxEncoder, const char * pcKey, const char * pcValue )
+static inline CborError cbor_add_kv_str( CborEncoder * pxEncoder,
+                                         const char * pcKey,
+                                         const char * pcValue )
 {
     CborError xError = CborNoError;
+
     xError = cbor_encode_text_stringz( pxEncoder, pcKey );
     xError |= cbor_encode_text_stringz( pxEncoder, pcValue );
 
@@ -116,11 +122,11 @@ CborError xGetNetworkStats( CborEncoder * pxEncoder )
 
         LOCK_TCPIP_CORE();
 
-        #if LWIP_SINGLE_NETIF
+#if LWIP_SINGLE_NETIF
         pxNetif = netif_default;
-        #else
+#else
         NETIF_FOREACH( pxNetif )
-        #endif /* LWIP_SINGLE_NETIF */
+#endif /* LWIP_SINGLE_NETIF */
         {
             xBytesIn += pxNetif->mib2_counters.ifinoctets;
             xBytesOut += pxNetif->mib2_counters.ifoutoctets;
@@ -133,7 +139,6 @@ CborError xGetNetworkStats( CborEncoder * pxEncoder )
         }
 
         UNLOCK_TCPIP_CORE();
-
 
         if( xError == CborNoError )
         {
@@ -164,19 +169,22 @@ CborError xGetNetworkStats( CborEncoder * pxEncoder )
 static size_t xCountListeningTcpPorts( void )
 {
     size_t xPortCount = 0;
+
     for( struct tcp_pcb_listen * pxCurPcb = tcp_listen_pcbs.listen_pcbs; pxCurPcb != NULL; pxCurPcb = pxCurPcb->next )
     {
         if( pxCurPcb->state == LISTEN )
         {
-            xPortCount ++;
+            xPortCount++;
         }
     }
+
     return xPortCount;
 }
 
 /*-----------------------------------------------------------*/
 
-static char * pcGetNetifName( uint8_t ucNetifIdx, char * pcNetifBuf )
+static char * pcGetNetifName( uint8_t ucNetifIdx,
+                              char * pcNetifBuf )
 {
     char * pcNetifNameFound = NULL;
 
@@ -196,8 +204,9 @@ static char * pcGetNetifName( uint8_t ucNetifIdx, char * pcNetifBuf )
     }
     else
     {
-        pcNetifNameFound =  netif_index_to_name( ucNetifIdx, pcNetifBuf );
+        pcNetifNameFound = netif_index_to_name( ucNetifIdx, pcNetifBuf );
     }
+
     return pcNetifNameFound;
 }
 
@@ -217,7 +226,7 @@ static CborError xAppendTcpPtsToList( CborEncoder * pxPTSEncoder )
 
         pcNetifNameFound = pcGetNetifName( pxCurPcb->netif_idx, pcNetifBuf );
 
-        if ( pcNetifNameFound != NULL )
+        if( pcNetifNameFound != NULL )
         {
             xError = cbor_encoder_create_map( pxPTSEncoder, &xPTEncoder, 2 );
             configASSERT_CONTINUE( xError == CborNoError );
@@ -338,10 +347,12 @@ CborError xGetListeningTcpPorts( CborEncoder * pxMetricsEncoder )
 static size_t xCountListeningUdpPorts( void )
 {
     size_t xPortCount = 0;
+
     for( struct udp_pcb * pxCurPcb = udp_pcbs; pxCurPcb != NULL; pxCurPcb = pxCurPcb->next )
     {
         xPortCount++;
     }
+
     return xPortCount;
 }
 
@@ -481,10 +492,12 @@ CborError xGetListeningUdpPorts( CborEncoder * pxMetricsEncoder )
 static size_t xCountTcpConnections( void )
 {
     size_t xConnectionCount = 0;
+
     for( struct tcp_pcb * pxCurPcb = tcp_active_pcbs; pxCurPcb != NULL; pxCurPcb = pxCurPcb->next )
     {
         xConnectionCount++;
     }
+
     return xConnectionCount;
 }
 
@@ -494,15 +507,18 @@ static bool xIpAddrPortToString( char * pcBuffer,
                                  uint16_t usPort )
 {
     bool xReturn = false;
+
     if( ipaddr_ntoa_r( pxIpAddr, pcBuffer, xBuffLen ) != NULL )
     {
         size_t xLen = strnlen( pcBuffer, xBuffLen );
-        xLen += snprintf( &( pcBuffer[ xLen ] ), xBuffLen - xLen , ":%hu", usPort);
+        xLen += snprintf( &( pcBuffer[ xLen ] ), xBuffLen - xLen, ":%hu", usPort );
+
         if( xLen <= xBuffLen )
         {
             xReturn = true;
         }
     }
+
     configASSERT_CONTINUE( xReturn );
     return xReturn;
 }

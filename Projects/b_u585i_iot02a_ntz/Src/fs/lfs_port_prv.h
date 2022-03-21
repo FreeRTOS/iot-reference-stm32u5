@@ -31,15 +31,16 @@
 #include "lfs.h"
 
 struct LfsPortCtx
-
 {
     SemaphoreHandle_t xMutex;
     TickType_t xBlockTime;
     OSPI_HandleTypeDef xOSPIHandle;
 };
 
-int lfs_port_lock( const struct lfs_config *c );
+int lfs_port_lock( const struct lfs_config * c );
 
-int lfs_port_unlock( const struct lfs_config *c );
+int lfs_port_unlock( const struct lfs_config * c );
 
-uint32_t lfs_crc(uint32_t crc, const void *buffer, size_t size);
+uint32_t lfs_crc( uint32_t crc,
+                  const void * buffer,
+                  size_t size );

@@ -32,22 +32,22 @@
 #if KV_STORE_NVIMPL_ARM_PSA
 #include "psa/internal_trusted_storage.h"
 
-#define KVSTORE_UID_OFFSET	0x1234
+#define KVSTORE_UID_OFFSET    0x1234
 
 typedef struct
 {
-	KVStoreValueType_t type;
-	size_t length; 	/* Length of value portion (excludes type and length fields */
+    KVStoreValueType_t type;
+    size_t length; /* Length of value portion (excludes type and length fields */
 } KVStoreHeader_t;
 
 static inline psa_storage_uid_t xKeyToUID( KVStoreKey_t xKey )
 {
-	return (KVSTORE_UID_OFFSET + xKey);
+    return( KVSTORE_UID_OFFSET + xKey );
 }
 
 static inline BaseType_t xPSAStatusToBool( psa_status_t xStatus )
 {
-	return( xStatus == PSA_SUCCESS ? pdTRUE : pdFALSE );
+    return( xStatus == PSA_SUCCESS ? pdTRUE : pdFALSE );
 }
 
 /*
@@ -57,15 +57,15 @@ static inline BaseType_t xPSAStatusToBool( psa_status_t xStatus )
  */
 size_t xprvGetValueLengthFromImpl( const KVStoreKey_t xKey )
 {
-	size_t xLength = 0;
-	struct psa_storage_info_t xStorageInfo = { 0 };
+    size_t xLength = 0;
+    struct psa_storage_info_t xStorageInfo = { 0 };
 
-	if( psa_its_get_info( xKeyToUID( xKey ), &xStorageInfo ) == PSA_SUCCESS )
-	{
-		xLength = xStorageInfo.size - sizeof(KVStoreHeader_t);
-	}
+    if( psa_its_get_info( xKeyToUID( xKey ), &xStorageInfo ) == PSA_SUCCESS )
+    {
+        xLength = xStorageInfo.size - sizeof( KVStoreHeader_t );
+    }
 
-	return xLength;
+    return xLength;
 }
 
 /*
@@ -78,75 +78,75 @@ size_t xprvGetValueLengthFromImpl( const KVStoreKey_t xKey )
  * @return pdTRUE on success, otherwise pdFALSE.
  */
 BaseType_t xprvReadValueFromImpl( const KVStoreKey_t xKey,
-								  KVStoreValueType_t * pxType,
-								  size_t * pxLength,
-								  void * pvBuffer,
-							      size_t xBufferSize )
+                                  KVStoreValueType_t * pxType,
+                                  size_t * pxLength,
+                                  void * pvBuffer,
+                                  size_t xBufferSize )
 {
-	size_t uxDataLength = 0;
-	psa_status_t xResult = PSA_SUCCESS;
-	KVStoreHeader_t xHeader = { 0 };
+    size_t uxDataLength = 0;
+    psa_status_t xResult = PSA_SUCCESS;
+    KVStoreHeader_t xHeader = { 0 };
 
-	xHeader.length = 0;
-	xHeader.type = KV_TYPE_NONE;
+    xHeader.length = 0;
+    xHeader.type = KV_TYPE_NONE;
 
-	if( pvBuffer == NULL || xBufferSize == 0 )
-	{
-		xResult = -1;
-	}
+    if( ( pvBuffer == NULL ) || ( xBufferSize == 0 ) )
+    {
+        xResult = -1;
+    }
 
-	/* Read header */
-	if( xResult == PSA_SUCCESS )
-	{
-		xResult = psa_its_get( xKeyToUID( xKey ),
-							   0, 							/* Offset */
-							   sizeof( KVStoreHeader_t ), 	/* read length */
-							   &xHeader,					/* buffer address */
-							   &uxDataLength );
+    /* Read header */
+    if( xResult == PSA_SUCCESS )
+    {
+        xResult = psa_its_get( xKeyToUID( xKey ),
+                               0,                         /* Offset */
+                               sizeof( KVStoreHeader_t ), /* read length */
+                               &xHeader,                  /* buffer address */
+                               &uxDataLength );
 
-		if( uxDataLength != sizeof( KVStoreHeader_t ) )
-		{
-			xResult = -1;
-			uxDataLength = 0;
-		}
-	}
+        if( uxDataLength != sizeof( KVStoreHeader_t ) )
+        {
+            xResult = -1;
+            uxDataLength = 0;
+        }
+    }
 
-	if( xResult == PSA_SUCCESS )
-	{
-		if( xBufferSize < xHeader.length )
-		{
-			xResult = psa_its_get( xKeyToUID( xKey ),
-								   sizeof(KVStoreHeader_t),
-								   xBufferSize,
-								   pvBuffer,
-								   &uxDataLength );
+    if( xResult == PSA_SUCCESS )
+    {
+        if( xBufferSize < xHeader.length )
+        {
+            xResult = psa_its_get( xKeyToUID( xKey ),
+                                   sizeof( KVStoreHeader_t ),
+                                   xBufferSize,
+                                   pvBuffer,
+                                   &uxDataLength );
 
-			configASSERT( uxDataLength == xBufferSize );
-		}
-		else
-		{
-			xResult = psa_its_get( xKeyToUID( xKey ),
-								   sizeof(KVStoreHeader_t),
-								   xHeader.length,
-								   pvBuffer,
-								   &uxDataLength );
-			configASSERT( uxDataLength == xHeader.length );
-		}
-	}
+            configASSERT( uxDataLength == xBufferSize );
+        }
+        else
+        {
+            xResult = psa_its_get( xKeyToUID( xKey ),
+                                   sizeof( KVStoreHeader_t ),
+                                   xHeader.length,
+                                   pvBuffer,
+                                   &uxDataLength );
+            configASSERT( uxDataLength == xHeader.length );
+        }
+    }
 
-	/* Set type if input is not null */
-	if( pxType != NULL )
-	{
-		*pxType = xHeader.type;
-	}
+    /* Set type if input is not null */
+    if( pxType != NULL )
+    {
+        *pxType = xHeader.type;
+    }
 
-	/* Set length if input is not null */
-	if( pxLength != NULL )
-	{
-		*pxLength = uxDataLength;
-	}
+    /* Set length if input is not null */
+    if( pxLength != NULL )
+    {
+        *pxLength = uxDataLength;
+    }
 
-	return xPSAStatusToBool( xResult );
+    return xPSAStatusToBool( xResult );
 }
 
 /*
@@ -158,65 +158,66 @@ BaseType_t xprvReadValueFromImpl( const KVStoreKey_t xKey,
  * The caller must free any heap allocated buffers passed into this function.
  */
 BaseType_t xprvWriteValueToImpl( const KVStoreKey_t xKey,
-								 const KVStoreValueType_t xType,
-								 const size_t xLength,
-								 const void * pvData )
+                                 const KVStoreValueType_t xType,
+                                 const size_t xLength,
+                                 const void * pvData )
 {
-	psa_status_t xResult = PSA_SUCCESS;
-	void * pvBuffer = NULL;
+    psa_status_t xResult = PSA_SUCCESS;
+    void * pvBuffer = NULL;
 
-	if( xKey > CS_NUM_KEYS ||
-		xType == KV_TYPE_NONE ||
-		xLength < 0 ||
-		pvData == NULL )
-	{
-		xResult = -1;
-	}
+    if( ( xKey > CS_NUM_KEYS ) ||
+        ( xType == KV_TYPE_NONE ) ||
+        ( xLength < 0 ) ||
+        ( pvData == NULL ) )
+    {
+        xResult = -1;
+    }
 
-	/* Stage in memory to reduce number of flash writes required */
-	if( xResult == PSA_SUCCESS )
-	{
-		pvBuffer = pvPortMalloc( sizeof( KVStoreHeader_t ) + xLength );
-		if( pvBuffer == NULL )
-		{
-			configASSERT_CONTINUE( pvBuffer != NULL );
-			xResult = -1;
-		}
-	}
+    /* Stage in memory to reduce number of flash writes required */
+    if( xResult == PSA_SUCCESS )
+    {
+        pvBuffer = pvPortMalloc( sizeof( KVStoreHeader_t ) + xLength );
 
-	if( xResult == PSA_SUCCESS )
-	{
-		KVStoreHeader_t * pxHeader = ( KVStoreHeader_t * ) pvBuffer;
+        if( pvBuffer == NULL )
+        {
+            configASSERT_CONTINUE( pvBuffer != NULL );
+            xResult = -1;
+        }
+    }
 
-		pxHeader->length = xLength;
-		pxHeader->type = xType;
+    if( xResult == PSA_SUCCESS )
+    {
+        KVStoreHeader_t * pxHeader = ( KVStoreHeader_t * ) pvBuffer;
 
-		( void ) memcpy( pvBuffer + sizeof( KVStoreHeader_t ), pvData, xLength );
+        pxHeader->length = xLength;
+        pxHeader->type = xType;
 
-		xResult = psa_its_set( xKeyToUID( xKey ),
-							   sizeof( KVStoreHeader_t ) + xLength,
-							   pvBuffer,
-							   0 );
-	}
+        ( void ) memcpy( pvBuffer + sizeof( KVStoreHeader_t ), pvData, xLength );
 
-	/*
-	 * Clear any sensitive data stored in ram temporarily
-	 * Free heap allocated buffer
-	 */
-	if( pvBuffer != NULL )
-	{
-		explicit_bzero( pvBuffer, sizeof( KVStoreHeader_t ) + xLength );
+        xResult = psa_its_set( xKeyToUID( xKey ),
+                               sizeof( KVStoreHeader_t ) + xLength,
+                               pvBuffer,
+                               0 );
+    }
 
-		vPortFree( pvBuffer );
-		pvBuffer = NULL;
-	}
+    /*
+     * Clear any sensitive data stored in ram temporarily
+     * Free heap allocated buffer
+     */
+    if( pvBuffer != NULL )
+    {
+        explicit_bzero( pvBuffer, sizeof( KVStoreHeader_t ) + xLength );
 
-	return xPSAStatusToBool( xResult );
+        vPortFree( pvBuffer );
+        pvBuffer = NULL;
+    }
+
+    return xPSAStatusToBool( xResult );
 }
 
 void vprvNvImplInit( void )
 {
-//	tfm_its_init();
+/*	tfm_its_init(); */
 }
 
 #endif /* KV_STORE_NVIMPL_ARM_PSA */

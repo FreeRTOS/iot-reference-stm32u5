@@ -56,7 +56,8 @@ typedef enum
     MX_STATUS_AP_UP
 } MxStatus_t;
 
-typedef void( * MxEventCallback_t )( MxStatus_t, void * );
+typedef void ( * MxEventCallback_t )( MxStatus_t,
+                                      void * );
 
 IPCError_t mx_RequestVersion( char * pcVersionBuffer,
                               uint32_t ulVersionLength,
@@ -73,8 +74,10 @@ IPCError_t mx_Connect( const char * pcSSID,
 
 IPCError_t mx_Disconnect( TickType_t xTimeout );
 
-IPCError_t mx_SetBypassMode( BaseType_t xEnable, TickType_t xTimeout );
+IPCError_t mx_SetBypassMode( BaseType_t xEnable,
+                             TickType_t xTimeout );
 
-IPCError_t mx_RegisterEventCallback( MxEventCallback_t pvCallback , void * pxCallbackContext );
+IPCError_t mx_RegisterEventCallback( MxEventCallback_t pvCallback,
+                                     void * pxCallbackContext );
 
 #endif /* _MXFREE_IPC_ */

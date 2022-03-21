@@ -27,7 +27,7 @@
 
 
 #include "logging_levels.h"
-#define LOG_LEVEL LOG_DEBUG
+#define LOG_LEVEL    LOG_DEBUG
 #include "logging.h"
 #include "FreeRTOS.h"
 #include "task.h"
@@ -37,7 +37,8 @@
 static TaskHandle_t xTaskHandle = NULL;
 static OSPI_HandleTypeDef * s_pxOSPI = NULL;
 
-static inline void ospi_HandleCallback( OSPI_HandleTypeDef * pxOSPI, HAL_OSPI_CallbackIDTypeDef xCallbackId )
+static inline void ospi_HandleCallback( OSPI_HandleTypeDef * pxOSPI,
+                                        HAL_OSPI_CallbackIDTypeDef xCallbackId )
 {
     configASSERT( pxOSPI != NULL );
     configASSERT( xTaskHandle != NULL );
@@ -84,7 +85,7 @@ static void ospi_AbortCallback( OSPI_HandleTypeDef * pxOSPI )
 }
 
 static BaseType_t ospi_WaitForCallback( HAL_OSPI_CallbackIDTypeDef xCallbackID,
-                                               TickType_t xTicksToWait )
+                                        TickType_t xTicksToWait )
 {
     configASSERT( xCallbackID <= HAL_OSPI_TIMEOUT_CB_ID );
     configASSERT( xCallbackID >= HAL_OSPI_ERROR_CB_ID );
@@ -106,6 +107,7 @@ static BaseType_t ospi_WaitForCallback( HAL_OSPI_CallbackIDTypeDef xCallbackID,
             break;
         }
     }
+
     return( ulNotifyValue == xCallbackID );
 }
 
@@ -128,10 +130,10 @@ static inline void ospi_OpInit( OSPI_HandleTypeDef * pxOSPI )
     xTaskHandle = xTaskGetCurrentTaskHandle();
 }
 
-static void ospi_MspInitCallback( OSPI_HandleTypeDef *pxOSPI )
+static void ospi_MspInitCallback( OSPI_HandleTypeDef * pxOSPI )
 {
-    GPIO_InitTypeDef GPIO_InitStruct = {0};
-    RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
+    GPIO_InitTypeDef GPIO_InitStruct = { 0 };
+    RCC_PeriphCLKInitTypeDef PeriphClkInit = { 0 };
     HAL_StatusTypeDef xHalStatus = HAL_OK;
 
     ( void ) pxOSPI;
@@ -145,47 +147,47 @@ static void ospi_MspInitCallback( OSPI_HandleTypeDef *pxOSPI )
         LogError( "Error while configuring peripheral clock for OSPI2." );
     }
 
-
     /* Peripheral clock enable */
     __HAL_RCC_OSPI2_CLK_ENABLE();
 
     __HAL_RCC_GPIOI_CLK_ENABLE();
     __HAL_RCC_GPIOH_CLK_ENABLE();
     __HAL_RCC_GPIOF_CLK_ENABLE();
+
     /**OCTOSPI2 GPIO Configuration
-    PI5     ------> OCTOSPIM_P2_NCS
-    PH12     ------> OCTOSPIM_P2_IO7
-    PH10     ------> OCTOSPIM_P2_IO5
-    PH11     ------> OCTOSPIM_P2_IO6
-    PF0     ------> OCTOSPIM_P2_IO0
-    PH9     ------> OCTOSPIM_P2_IO4
-    PF1     ------> OCTOSPIM_P2_IO1
-    PF2     ------> OCTOSPIM_P2_IO2
-    PF3     ------> OCTOSPIM_P2_IO3
-    PF4     ------> OCTOSPIM_P2_CLK
-    PF12     ------> OCTOSPIM_P2_DQS
-    */
+     * PI5     ------> OCTOSPIM_P2_NCS
+     * PH12     ------> OCTOSPIM_P2_IO7
+     * PH10     ------> OCTOSPIM_P2_IO5
+     * PH11     ------> OCTOSPIM_P2_IO6
+     * PF0     ------> OCTOSPIM_P2_IO0
+     * PH9     ------> OCTOSPIM_P2_IO4
+     * PF1     ------> OCTOSPIM_P2_IO1
+     * PF2     ------> OCTOSPIM_P2_IO2
+     * PF3     ------> OCTOSPIM_P2_IO3
+     * PF4     ------> OCTOSPIM_P2_CLK
+     * PF12     ------> OCTOSPIM_P2_DQS
+     */
     GPIO_InitStruct.Pin = GPIO_PIN_5;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF5_OCTOSPI2;
-    HAL_GPIO_Init(GPIOI, &GPIO_InitStruct);
+    HAL_GPIO_Init( GPIOI, &GPIO_InitStruct );
 
-    GPIO_InitStruct.Pin = GPIO_PIN_12|GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_9;
+    GPIO_InitStruct.Pin = GPIO_PIN_12 | GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_9;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF5_OCTOSPI2;
-    HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
+    HAL_GPIO_Init( GPIOH, &GPIO_InitStruct );
 
-    GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3
-                          |GPIO_PIN_4|GPIO_PIN_12;
+    GPIO_InitStruct.Pin = GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3
+                          | GPIO_PIN_4 | GPIO_PIN_12;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF5_OCTOSPI2;
-    HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+    HAL_GPIO_Init( GPIOF, &GPIO_InitStruct );
 
     /* Set the vector, requires sram located vector table */
     NVIC_SetVector( OCTOSPI2_IRQn, ( uint32_t ) ospi_IRQHandler );
@@ -195,32 +197,31 @@ static void ospi_MspInitCallback( OSPI_HandleTypeDef *pxOSPI )
     HAL_NVIC_EnableIRQ( OCTOSPI2_IRQn );
 }
 
-static void ospi_MspDeInitCallback( OSPI_HandleTypeDef *pxOSPI )
+static void ospi_MspDeInitCallback( OSPI_HandleTypeDef * pxOSPI )
 {
-
     ( void ) pxOSPI;
 
     __HAL_RCC_OSPI2_CLK_DISABLE();
 
     /**OCTOSPI2 GPIO Configuration
-    PI5     ------> OCTOSPIM_P2_NCS
-    PH12     ------> OCTOSPIM_P2_IO7
-    PH10     ------> OCTOSPIM_P2_IO5
-    PH11     ------> OCTOSPIM_P2_IO6
-    PF0     ------> OCTOSPIM_P2_IO0
-    PH9     ------> OCTOSPIM_P2_IO4
-    PF1     ------> OCTOSPIM_P2_IO1
-    PF2     ------> OCTOSPIM_P2_IO2
-    PF3     ------> OCTOSPIM_P2_IO3
-    PF4     ------> OCTOSPIM_P2_CLK
-    PF12     ------> OCTOSPIM_P2_DQS
-    */
-    HAL_GPIO_DeInit(GPIOI, GPIO_PIN_5);
+     * PI5     ------> OCTOSPIM_P2_NCS
+     * PH12     ------> OCTOSPIM_P2_IO7
+     * PH10     ------> OCTOSPIM_P2_IO5
+     * PH11     ------> OCTOSPIM_P2_IO6
+     * PF0     ------> OCTOSPIM_P2_IO0
+     * PH9     ------> OCTOSPIM_P2_IO4
+     * PF1     ------> OCTOSPIM_P2_IO1
+     * PF2     ------> OCTOSPIM_P2_IO2
+     * PF3     ------> OCTOSPIM_P2_IO3
+     * PF4     ------> OCTOSPIM_P2_CLK
+     * PF12     ------> OCTOSPIM_P2_DQS
+     */
+    HAL_GPIO_DeInit( GPIOI, GPIO_PIN_5 );
 
-    HAL_GPIO_DeInit(GPIOH, GPIO_PIN_12|GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_9);
+    HAL_GPIO_DeInit( GPIOH, GPIO_PIN_12 | GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_9 );
 
-    HAL_GPIO_DeInit(GPIOF, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3
-                          |GPIO_PIN_4|GPIO_PIN_12);
+    HAL_GPIO_DeInit( GPIOF, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3
+                     | GPIO_PIN_4 | GPIO_PIN_12 );
 
     /* OCTOSPI2 interrupt DeInit */
     HAL_NVIC_DisableIRQ( OCTOSPI2_IRQn );
@@ -274,13 +275,14 @@ static BaseType_t ospi_InitDriver( OSPI_HandleTypeDef * pxOSPI )
     xHalStatus &= HAL_OSPI_RegisterCallback( pxOSPI, HAL_OSPI_TIMEOUT_CB_ID, ospi_TimeoutCallback );
     xHalStatus &= HAL_OSPI_RegisterCallback( pxOSPI, HAL_OSPI_ERROR_CB_ID, ospi_ErrorCallback );
     xHalStatus &= HAL_OSPI_RegisterCallback( pxOSPI, HAL_OSPI_ABORT_CB_ID, ospi_AbortCallback );
+
     if( xHalStatus != HAL_OK )
     {
         LogError( "Error while register OSPI driver callbacks." );
         return pdFALSE;
     }
 
-    OSPIM_CfgTypeDef xOspiMCfg = {0};
+    OSPIM_CfgTypeDef xOspiMCfg = { 0 };
 
     xOspiMCfg.ClkPort = 2;
     xOspiMCfg.DQSPort = 2;
@@ -296,7 +298,7 @@ static BaseType_t ospi_InitDriver( OSPI_HandleTypeDef * pxOSPI )
         return pdFALSE;
     }
 
-    HAL_OSPI_DLYB_CfgTypeDef xOspiDlybCfg = {0};
+    HAL_OSPI_DLYB_CfgTypeDef xOspiDlybCfg = { 0 };
 
     xOspiDlybCfg.Units = 56;
     xOspiDlybCfg.PhaseSel = 2;
@@ -309,33 +311,34 @@ static BaseType_t ospi_InitDriver( OSPI_HandleTypeDef * pxOSPI )
     }
 
     __HAL_OSPI_DISABLE( pxOSPI );
-    vTaskDelay(100);
+    vTaskDelay( 100 );
 
     SET_BIT( pxOSPI->Instance->DCR1, OCTOSPI_DCR1_FRCK );
-    vTaskDelay(100);
+    vTaskDelay( 100 );
 
     __HAL_OSPI_ENABLE( pxOSPI );
-    vTaskDelay(100);
+    vTaskDelay( 100 );
 
-    DLYB_OCTOSPI2_NS->CR   = 0U;
-    DLYB_OCTOSPI2_NS->CR   = 0x03;
+    DLYB_OCTOSPI2_NS->CR = 0U;
+    DLYB_OCTOSPI2_NS->CR = 0x03;
     DLYB_OCTOSPI2_NS->CFGR = 0x7A02;
-    DLYB_OCTOSPI2_NS->CR   = 0x01;
-    vTaskDelay(100);
+    DLYB_OCTOSPI2_NS->CR = 0x01;
+    vTaskDelay( 100 );
 
     __HAL_OSPI_DISABLE( pxOSPI );
-    vTaskDelay(100);
+    vTaskDelay( 100 );
 
     CLEAR_BIT( pxOSPI->Instance->DCR1, OCTOSPI_DCR1_FRCK );
-    vTaskDelay(100);
+    vTaskDelay( 100 );
 
     __HAL_OSPI_ENABLE( pxOSPI );
-    vTaskDelay(100);
+    vTaskDelay( 100 );
 
     return pdTRUE;
 }
 
-static void ospi_AbortTransaction( OSPI_HandleTypeDef * pxOSPI, TickType_t xTimeout )
+static void ospi_AbortTransaction( OSPI_HandleTypeDef * pxOSPI,
+                                   TickType_t xTimeout )
 {
     ( void ) HAL_OSPI_Abort_IT( pxOSPI );
     ( void ) ospi_WaitForCallback( HAL_OSPI_ABORT_CB_ID, xTimeout );
@@ -427,11 +430,11 @@ static BaseType_t ospi_OPI_WaitForStatus( OSPI_HandleTypeDef * pxOSPI,
 
     OSPI_AutoPollingTypeDef xPollingCfg =
     {
-        .MatchMode           = HAL_OSPI_MATCH_MODE_AND,
-        .AutomaticStop       = HAL_OSPI_AUTOMATIC_STOP_ENABLE,
-        .Interval            = 0x10,
-        .Match               = ulMatch,
-        .Mask                = ulMask,
+        .MatchMode     = HAL_OSPI_MATCH_MODE_AND,
+        .AutomaticStop = HAL_OSPI_AUTOMATIC_STOP_ENABLE,
+        .Interval      = 0x10,
+        .Match         = ulMatch,
+        .Mask          = ulMask,
     };
 
     /* Clear notification state */
@@ -499,11 +502,11 @@ static BaseType_t ospi_SPI_WaitForStatus( OSPI_HandleTypeDef * pxOSPI,
 
     OSPI_AutoPollingTypeDef xPollingCfg =
     {
-        .MatchMode           = HAL_OSPI_MATCH_MODE_AND,
-        .AutomaticStop       = HAL_OSPI_AUTOMATIC_STOP_ENABLE,
-        .Interval            = 0x10,
-        .Match               = ulMatch,
-        .Mask                = ulMask,
+        .MatchMode     = HAL_OSPI_MATCH_MODE_AND,
+        .AutomaticStop = HAL_OSPI_AUTOMATIC_STOP_ENABLE,
+        .Interval      = 0x10,
+        .Match         = ulMatch,
+        .Mask          = ulMask,
     };
 
     /* Clear notification state */
@@ -536,7 +539,8 @@ static BaseType_t ospi_SPI_WaitForStatus( OSPI_HandleTypeDef * pxOSPI,
 
 
 /* send Write enable command (WREN) in SPI mode */
-static BaseType_t ospi_cmd_SPI_WREN( OSPI_HandleTypeDef * pxOSPI, TickType_t xTimeout )
+static BaseType_t ospi_cmd_SPI_WREN( OSPI_HandleTypeDef * pxOSPI,
+                                     TickType_t xTimeout )
 {
     HAL_StatusTypeDef xHalStatus = HAL_OK;
     OSPI_RegularCmdTypeDef xCmd =
@@ -571,6 +575,7 @@ static BaseType_t ospi_cmd_SPI_WREN( OSPI_HandleTypeDef * pxOSPI, TickType_t xTi
             xHalStatus = -1;
         }
     }
+
     return( xHalStatus == HAL_OK );
 }
 
@@ -578,49 +583,50 @@ static BaseType_t ospi_cmd_SPI_WREN( OSPI_HandleTypeDef * pxOSPI, TickType_t xTi
 /*
  * Switch flash from 1 bit SPI mode to 8 bit STR mode (single bit per clock)
  */
-static BaseType_t ospi_cmd_SPI_8BitSTRMode( OSPI_HandleTypeDef * pxOSPI, TickType_t xTimeout )
+static BaseType_t ospi_cmd_SPI_8BitSTRMode( OSPI_HandleTypeDef * pxOSPI,
+                                            TickType_t xTimeout )
 {
     HAL_StatusTypeDef xHalStatus = HAL_OK;
 
     OSPI_RegularCmdTypeDef xCmd =
     {
-        .OperationType      = HAL_OSPI_OPTYPE_COMMON_CFG,
-        .FlashId            = HAL_OSPI_FLASH_ID_1,
+        .OperationType         = HAL_OSPI_OPTYPE_COMMON_CFG,
+        .FlashId               = HAL_OSPI_FLASH_ID_1,
 
-        .Instruction        = MX25LM_SPI_WRCR2,
-        .InstructionMode    = HAL_OSPI_INSTRUCTION_1_LINE,
-        .InstructionSize    = HAL_OSPI_INSTRUCTION_8_BITS,
-        .InstructionDtrMode = HAL_OSPI_INSTRUCTION_DTR_DISABLE,
+        .Instruction           = MX25LM_SPI_WRCR2,
+        .InstructionMode       = HAL_OSPI_INSTRUCTION_1_LINE,
+        .InstructionSize       = HAL_OSPI_INSTRUCTION_8_BITS,
+        .InstructionDtrMode    = HAL_OSPI_INSTRUCTION_DTR_DISABLE,
 
-        .Address            = 0x0,
-        .AddressMode        = HAL_OSPI_ADDRESS_1_LINE,
-        .AddressSize        = HAL_OSPI_ADDRESS_32_BITS,
-        .AddressDtrMode     = HAL_OSPI_ADDRESS_DTR_DISABLE,
+        .Address               = 0x0,
+        .AddressMode           = HAL_OSPI_ADDRESS_1_LINE,
+        .AddressSize           = HAL_OSPI_ADDRESS_32_BITS,
+        .AddressDtrMode        = HAL_OSPI_ADDRESS_DTR_DISABLE,
 
-        .AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_1_LINE,
-        .AlternateBytesSize = HAL_OSPI_ALTERNATE_BYTES_8_BITS,
-        .AlternateBytes     = MX25LM_REG_CR2_0_SOPI,
+        .AlternateBytesMode    = HAL_OSPI_ALTERNATE_BYTES_1_LINE,
+        .AlternateBytesSize    = HAL_OSPI_ALTERNATE_BYTES_8_BITS,
+        .AlternateBytes        = MX25LM_REG_CR2_0_SOPI,
         .AlternateBytesDtrMode = HAL_OSPI_ALTERNATE_BYTES_DTR_DISABLE,
 
-        .DataMode           = HAL_OSPI_DATA_NONE,
-        .NbData             = 0,
-        .DataDtrMode        = HAL_OSPI_DATA_DTR_DISABLE,
+        .DataMode              = HAL_OSPI_DATA_NONE,
+        .NbData                = 0,
+        .DataDtrMode           = HAL_OSPI_DATA_DTR_DISABLE,
 
-        .DummyCycles        = 0,
-        .DQSMode            = HAL_OSPI_DQS_DISABLE,
-        .SIOOMode           = HAL_OSPI_SIOO_INST_EVERY_CMD
+        .DummyCycles           = 0,
+        .DQSMode               = HAL_OSPI_DQS_DISABLE,
+        .SIOOMode              = HAL_OSPI_SIOO_INST_EVERY_CMD
     };
 
     ( void ) xTaskNotifyStateClearIndexed( NULL, 1 );
 
     xHalStatus = HAL_OSPI_Command_IT( pxOSPI, &xCmd );
 
-    if( xHalStatus == HAL_OK  &&
-        ospi_WaitForCallback( HAL_OSPI_CMD_CPLT_CB_ID, xTimeout ) != pdTRUE )
+    if( ( xHalStatus == HAL_OK ) &&
+        ( ospi_WaitForCallback( HAL_OSPI_CMD_CPLT_CB_ID, xTimeout ) != pdTRUE ) )
     {
         xHalStatus = -1;
-
     }
+
     return( xHalStatus == HAL_OK );
 }
 
@@ -637,7 +643,6 @@ BaseType_t ospi_Init( OSPI_HandleTypeDef * pxOSPI )
 
     xSuccess = ospi_InitDriver( pxOSPI );
 
-
     if( xSuccess != pdTRUE )
     {
         LogError( "Failed to initialize ospi driver." );
@@ -647,7 +652,6 @@ BaseType_t ospi_Init( OSPI_HandleTypeDef * pxOSPI )
         /* Set Write enable bit */
         xSuccess = ospi_cmd_SPI_WREN( pxOSPI, MX25LM_DEFAULT_TIMEOUT_MS );
     }
-
 
     if( xSuccess != pdTRUE )
     {
@@ -698,7 +702,7 @@ BaseType_t ospi_ReadAddr( OSPI_HandleTypeDef * pxOSPI,
 
     ospi_OpInit( pxOSPI );
 
-    if( pxOSPI ==  NULL )
+    if( pxOSPI == NULL )
     {
         xSuccess = pdFALSE;
         LogError( "pxOSPI is NULL." );
@@ -722,7 +726,7 @@ BaseType_t ospi_ReadAddr( OSPI_HandleTypeDef * pxOSPI,
         LogError( "ulBufferLen is 0." );
     }
 
-    //TODO is there a limit to the number of bytes read?
+    /*TODO is there a limit to the number of bytes read? */
 
     /* Wait for idle condition (WIP bit should be 0) */
     xSuccess = ospi_OPI_WaitForStatus( pxOSPI,
@@ -809,13 +813,13 @@ BaseType_t ospi_WriteAddr( OSPI_HandleTypeDef * pxOSPI,
 
     ospi_OpInit( pxOSPI );
 
-    if( pxOSPI ==  NULL )
+    if( pxOSPI == NULL )
     {
         xSuccess = pdFALSE;
     }
 
-    if( ulBufferLen > 256 ||
-        ulBufferLen == 0 )
+    if( ( ulBufferLen > 256 ) ||
+        ( ulBufferLen == 0 ) )
     {
         xSuccess = pdFALSE;
     }
@@ -929,7 +933,7 @@ BaseType_t ospi_EraseSector( OSPI_HandleTypeDef * pxOSPI,
 
     ospi_OpInit( pxOSPI );
 
-    if( pxOSPI ==  NULL )
+    if( pxOSPI == NULL )
     {
         xSuccess = pdFALSE;
     }
@@ -959,7 +963,7 @@ BaseType_t ospi_EraseSector( OSPI_HandleTypeDef * pxOSPI,
     if( xSuccess == pdTRUE )
     {
         xSuccess = ospi_OPI_WaitForStatus( pxOSPI,
-                                           MX25LM_REG_SR_WEL ,
+                                           MX25LM_REG_SR_WEL,
                                            MX25LM_REG_SR_WEL,
                                            xTimeout );
     }

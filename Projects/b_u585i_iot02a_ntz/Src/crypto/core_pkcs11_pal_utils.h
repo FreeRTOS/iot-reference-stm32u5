@@ -50,7 +50,7 @@ enum eObjectHandles
     eAwsHMACSecretKey,        /**< HMAC Secret Key. */
     eAwsCMACSecretKey,        /**< CMAC Secret Key. */
     eAwsClaimPrivateKey,      /**< Provisioning Claim Private Key. */
-    eAwsClaimCertificate,      /**< Provisioning Claim Certificate. */
+    eAwsClaimCertificate,     /**< Provisioning Claim Certificate. */
     eAwsCaCertificate,
 };
 

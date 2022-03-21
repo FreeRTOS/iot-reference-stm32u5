@@ -27,7 +27,7 @@
 
 #include "logging_levels.h"
 
-#define LOG_LEVEL LOG_DEBUG
+#define LOG_LEVEL    LOG_DEBUG
 
 #include "logging.h"
 
@@ -45,13 +45,13 @@
 
 EventGroupHandle_t xSystemEvents = NULL;
 
-typedef void( * VectorTable_t )(void);
+typedef void ( * VectorTable_t )( void );
 
-#define NUM_USER_IRQ                    ( FMAC_IRQn + 1 ) /* MCU specific */
-#define VECTOR_TABLE_SIZE               ( NVIC_USER_IRQ_OFFSET + NUM_USER_IRQ )
-#define VECTOR_TABLE_ALIGN_CM33         0x400U
+#define NUM_USER_IRQ               ( FMAC_IRQn + 1 )      /* MCU specific */
+#define VECTOR_TABLE_SIZE          ( NVIC_USER_IRQ_OFFSET + NUM_USER_IRQ )
+#define VECTOR_TABLE_ALIGN_CM33    0x400U
 
-static VectorTable_t pulVectorTableSRAM[ VECTOR_TABLE_SIZE ] __attribute__(( aligned (VECTOR_TABLE_ALIGN_CM33) ));
+static VectorTable_t pulVectorTableSRAM[ VECTOR_TABLE_SIZE ] __attribute__( ( aligned( VECTOR_TABLE_ALIGN_CM33 ) ) );
 
 extern int32_t ns_interface_lock_init( void );
 
@@ -65,9 +65,9 @@ static void vRelocateVectorTable( void )
     HAL_DCACHE_Disable( pxHndlDCache );
 
     /* Copy vector table to ram */
-    ( void ) memcpy( pulVectorTableSRAM, ( uint32_t * ) SCB->VTOR , sizeof( uint32_t) * VECTOR_TABLE_SIZE );
+    ( void ) memcpy( pulVectorTableSRAM, ( uint32_t * ) SCB->VTOR, sizeof( uint32_t ) * VECTOR_TABLE_SIZE );
 
-    SCB->VTOR = (uint32_t) pulVectorTableSRAM;
+    SCB->VTOR = ( uint32_t ) pulVectorTableSRAM;
 
     __DSB();
     __ISB();
@@ -88,7 +88,7 @@ static void vHeartbeatTask( void * pvParameters )
     HAL_GPIO_WritePin( LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_RESET );
     HAL_GPIO_WritePin( LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET );
 
-    while(1)
+    while( 1 )
     {
         vTaskDelay( pdMS_TO_TICKS( 1000 ) );
         HAL_GPIO_TogglePin( LED_GREEN_GPIO_Port, LED_GREEN_Pin );
@@ -97,12 +97,12 @@ static void vHeartbeatTask( void * pvParameters )
 
 extern void net_main( void * pvParameters );
 extern void vMQTTAgentTask( void * );
-//extern void Task_MotionSensorsPublish( void * );
-//extern void vEnvironmentSensorPublishTask( void * );
+/*extern void Task_MotionSensorsPublish( void * ); */
+/*extern void vEnvironmentSensorPublishTask( void * ); */
 extern void vShadowDeviceTask( void * );
-//extern void vOTAUpdateTask( void * pvParam );
+/*extern void vOTAUpdateTask( void * pvParam ); */
 extern void vDefenderAgentTask( void * );
-//extern void vTimeSyncTask( void * );
+/*extern void vTimeSyncTask( void * ); */
 
 void vInitTask( void * pvArgs )
 {
@@ -123,20 +123,20 @@ void vInitTask( void * pvArgs )
     xResult = xTaskCreate( &net_main, "MxNet", 1024, NULL, 23, NULL );
     configASSERT( xResult == pdTRUE );
 
-//    xResult = xTaskCreate( vMQTTAgentTask, "MQTTAgent", 2048, NULL, tskIDLE_PRIORITY + 1, NULL );
-//
-//    configASSERT( xResult == pdTRUE );
+/*    xResult = xTaskCreate( vMQTTAgentTask, "MQTTAgent", 2048, NULL, tskIDLE_PRIORITY + 1, NULL ); */
+/* */
+/*    configASSERT( xResult == pdTRUE ); */
 
-//    xResult = xTaskCreate( vOTAUpdateTask, "OTAUpdate", 4096, NULL, tskIDLE_PRIORITY + 1, NULL );
-//
-//    configASSERT( xResult == pdTRUE );
+/*    xResult = xTaskCreate( vOTAUpdateTask, "OTAUpdate", 4096, NULL, tskIDLE_PRIORITY + 1, NULL ); */
+/* */
+/*    configASSERT( xResult == pdTRUE ); */
 
-//    xResult = xTaskCreate( vEnvironmentSensorPublishTask, "EnvSense", 1024, NULL, 10, NULL );
-//    configASSERT( xResult == pdTRUE );
-//
-//
-//    xResult = xTaskCreate( Task_MotionSensorsPublish, "MotionS", 1024, NULL, 11, NULL );
-//    configASSERT( xResult == pdTRUE );
+/*    xResult = xTaskCreate( vEnvironmentSensorPublishTask, "EnvSense", 1024, NULL, 10, NULL ); */
+/*    configASSERT( xResult == pdTRUE ); */
+/* */
+/* */
+/*    xResult = xTaskCreate( Task_MotionSensorsPublish, "MotionS", 1024, NULL, 11, NULL ); */
+/*    configASSERT( xResult == pdTRUE ); */
 
     xResult = xTaskCreate( vShadowDeviceTask, "ShadowDevice", 1024, NULL, 5, NULL );
     configASSERT( xResult == pdTRUE );
@@ -144,9 +144,9 @@ void vInitTask( void * pvArgs )
     xResult = xTaskCreate( vDefenderAgentTask, "AWSDefender", 2048, NULL, 5, NULL );
     configASSERT( xResult == pdTRUE );
 
-    while(1)
+    while( 1 )
     {
-        vTaskSuspend(NULL);
+        vTaskSuspend( NULL );
     }
 }
 
@@ -162,7 +162,7 @@ int main( void )
 
     if( ns_interface_lock_init() != 0 )
     {
-        configASSERT(0);
+        configASSERT( 0 );
     }
 
     xSystemEvents = xEventGroupCreate();
@@ -177,7 +177,7 @@ int main( void )
     LogError( "Kernel start returned." );
 
     /* This loop should be inaccessible.*/
-    while(1)
+    while( 1 )
     {
         __NOP();
     }
@@ -189,8 +189,9 @@ UBaseType_t uxRand( void )
 
     if( psa_generate_random( ( uint8_t * ) ( &uxRandVal ), sizeof( UBaseType_t ) ) != PSA_SUCCESS )
     {
-        configASSERT_CONTINUE(0);
+        configASSERT_CONTINUE( 0 );
     }
+
     return uxRandVal;
 }
 
@@ -255,9 +256,10 @@ void vApplicationGetTimerTaskMemory( StaticTask_t ** ppxTimerTaskTCBBuffer,
 void vApplicationMallocFailedHook( void )
 {
     LogError( "Malloc failed" );
-    while(1)
+
+    while( 1 )
     {
-    	__NOP();
+        __NOP();
     }
 }
 /*-----------------------------------------------------------*/

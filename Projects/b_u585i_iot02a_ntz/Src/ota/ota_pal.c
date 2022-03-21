@@ -360,7 +360,7 @@ static HAL_StatusTypeDef prvWriteToFlash( uint32_t destination,
     }
 
     /* Lock the Flash to disable the flash control register access (recommended
-    *  to protect the FLASH memory against possible unwanted operation) *********/
+     *  to protect the FLASH memory against possible unwanted operation) *********/
     HAL_FLASH_Lock();
 
     return status;
@@ -385,7 +385,7 @@ static HAL_StatusTypeDef prvEraseBank( uint32_t bankNumber )
         status = HAL_FLASHEx_Erase( &pEraseInit, &pageError );
 
         /* Lock the Flash to disable the flash control register access (recommended
-        *  to protect the FLASH memory against possible unwanted operation) *********/
+         *  to protect the FLASH memory against possible unwanted operation) *********/
         ( void ) HAL_FLASH_Lock();
 
         if( status != HAL_OK )
@@ -517,21 +517,17 @@ CK_RV prvVerifyImageSignatureUsingPKCS11( CK_SESSION_HANDLE session,
 
     if( result == CKR_OK )
     {
-
         result = functionList->C_DigestUpdate( session,
-                                         pImageContext->ulBaseAddress,
-                                         pImageContext->ulImageSize );
+                                               pImageContext->ulBaseAddress,
+                                               pImageContext->ulImageSize );
     }
 
     if( result == CKR_OK )
     {
-
         result = functionList->C_DigestFinal( session,
                                               digestResult,
                                               &digestLength );
     }
-
-
 
     if( result == CKR_OK )
     {
@@ -568,7 +564,7 @@ BaseType_t prvValidateImageSignature( OtaImageContext_t * pImageContext,
     {
         if( PKI_mbedTLSSignatureToPkcs11Signature( pkcs11Signature, pSignature ) != 0 )
         {
-            LogError(( "Cannot convert signature to PKCS11 format.\r\n" ));
+            LogError( ( "Cannot convert signature to PKCS11 format.\r\n" ) );
             result = pdFALSE;
         }
     }
@@ -593,7 +589,7 @@ BaseType_t prvValidateImageSignature( OtaImageContext_t * pImageContext,
 
         if( xPKCS11Status != CKR_OK )
         {
-            LogError(( "Image verification failed with PKCS11 status: %d\r\n", xPKCS11Status ));
+            LogError( ( "Image verification failed with PKCS11 status: %d\r\n", xPKCS11Status ) );
             result = pdFALSE;
         }
     }
@@ -677,8 +673,7 @@ OtaPalStatus_t xOtaPalFinalizeImage( OtaFileContext_t * const pFileContext )
         ( pContext->state == OTA_PAL_IMAGE_STATE_PROGRAMMING ) )
 
     {
-
-        LogInfo(( "Validating the integrity of OTA image using digital signature.\r\n" ));
+        LogInfo( ( "Validating the integrity of OTA image using digital signature.\r\n" ) );
 
         signatureValidationStatus = prvValidateImageSignature( pContext,
                                                                ( char * ) pFileContext->pCertFilepath,
@@ -687,15 +682,13 @@ OtaPalStatus_t xOtaPalFinalizeImage( OtaFileContext_t * const pFileContext )
 
         if( signatureValidationStatus == pdPASS )
         {
-
             pContext->state = OTA_PAL_IMAGE_STATE_PENDING_COMMIT;
             otaStatus = OtaPalSuccess;
         }
         else
         {
-            otaStatus = OTA_PAL_COMBINE_ERR( OtaPalSignatureCheckFailed,  signatureValidationStatus );
+            otaStatus = OTA_PAL_COMBINE_ERR( OtaPalSignatureCheckFailed, signatureValidationStatus );
         }
-
     }
 
     return otaStatus;

@@ -72,19 +72,19 @@
  * @brief Timeout for receiving CONNACK after sending an MQTT CONNECT packet.
  * Defined in milliseconds.
  */
-#define CONNACK_RECV_TIMEOUT_MS                      ( 2000U )
+#define CONNACK_RECV_TIMEOUT_MS               ( 2000U )
 
 /**
  * @brief The maximum back-off delay (in seconds) for retrying failed operation
  *  with server.
  */
-#define RETRY_MAX_BACKOFF_DELAY_S                    ( 5U * 60U )
+#define RETRY_MAX_BACKOFF_DELAY_S             ( 5U * 60U )
 
 /**
  * @brief The base back-off delay (in seconds) to use for network operation retry
  * attempts.
  */
-#define RETRY_BACKOFF_BASE_S                         ( 10U )
+#define RETRY_BACKOFF_BASE_S                  ( 10U )
 
 /**
  * @brief The maximum time interval in seconds which is allowed to elapse
@@ -95,22 +95,22 @@
  *  absence of sending any other Control Packets, the Client MUST send a
  *  PINGREQ Packet.
  */
-#define KEEP_ALIVE_INTERVAL_S                       ( 1200U )
+#define KEEP_ALIVE_INTERVAL_S                 ( 1200U )
 
-#define MQTT_AGENT_NOTIFY_IDX						( 3 )
+#define MQTT_AGENT_NOTIFY_IDX                 ( 3 )
 
-#define MQTT_AGENT_NOTIFY_FLAG_SOCKET_RECV			( 1 << 31 )
-#define MQTT_AGENT_NOTIFY_FLAG_M_QUEUE				( 1 << 30 )
+#define MQTT_AGENT_NOTIFY_FLAG_SOCKET_RECV    ( 1 << 31 )
+#define MQTT_AGENT_NOTIFY_FLAG_M_QUEUE        ( 1 << 30 )
 
 /**
  * @brief Socket send and receive timeouts to use.
  */
-#define SEND_TIMEOUT_MS                             ( 2000U )
+#define SEND_TIMEOUT_MS                       ( 2000U )
 
-#define AGENT_READY_EVT_MASK                        ( 0b1U )
+#define AGENT_READY_EVT_MASK                  ( 0b1U )
 
-#define MUTEX_IS_OWNED( xHandle ) ( xTaskGetCurrentTaskHandle() == xSemaphoreGetMutexHolder( xHandle ) )
-//#define MUTEX_IS_OWNED( xHandle ) 1
+#define MUTEX_IS_OWNED( xHandle )    ( xTaskGetCurrentTaskHandle() == xSemaphoreGetMutexHolder( xHandle ) )
+/*#define MUTEX_IS_OWNED( xHandle ) 1 */
 
 struct MQTTAgentMessageContext
 {
@@ -120,16 +120,16 @@ struct MQTTAgentMessageContext
 
 typedef struct MQTTAgentSubscriptionManagerCtx
 {
-	MQTTSubscribeInfo_t pxSubscriptions[ MQTT_AGENT_MAX_SUBSCRIPTIONS ];
-	MQTTSubAckStatus_t pxSubAckStatus[ MQTT_AGENT_MAX_SUBSCRIPTIONS ];
-	uint32_t pulSubCbCount[ MQTT_AGENT_MAX_SUBSCRIPTIONS ];
-	SubCallbackElement_t pxCallbacks[ MQTT_AGENT_MAX_CALLBACKS ];
+    MQTTSubscribeInfo_t pxSubscriptions[ MQTT_AGENT_MAX_SUBSCRIPTIONS ];
+    MQTTSubAckStatus_t pxSubAckStatus[ MQTT_AGENT_MAX_SUBSCRIPTIONS ];
+    uint32_t pulSubCbCount[ MQTT_AGENT_MAX_SUBSCRIPTIONS ];
+    SubCallbackElement_t pxCallbacks[ MQTT_AGENT_MAX_CALLBACKS ];
 
-	size_t uxSubscriptionCount;
-	size_t uxCallbackCount;
-	MQTTAgentSubscribeArgs_t xInitialSubscribeArgs;
+    size_t uxSubscriptionCount;
+    size_t uxCallbackCount;
+    MQTTAgentSubscribeArgs_t xInitialSubscribeArgs;
 
-	SemaphoreHandle_t xMutex;
+    SemaphoreHandle_t xMutex;
 } SubMgrCtx_t;
 
 
@@ -138,7 +138,7 @@ typedef struct MQTTAgentTaskCtx
     MQTTAgentContext_t xAgentContext;
 
     MQTTFixedBuffer_t xNetworkFixedBuffer;
-    TransportInterface_t xTransport; //TODO: remove this. Is copied into mqtt context by MQTT_Init
+    TransportInterface_t xTransport; /*TODO: remove this. Is copied into mqtt context by MQTT_Init */
 
     MQTTAgentMessageInterface_t xMessageInterface;
     MQTTAgentMessageContext_t xAgentMessageCtx;
@@ -180,6 +180,7 @@ static MQTTAgentHandle_t xDefaultInstanceHandle = NULL;
 static void prvIncomingPublishCallback( MQTTAgentContext_t * pMqttAgentContext,
                                         uint16_t packetId,
                                         MQTTPublishInfo_t * pxPublishInfo );
+
 /**
  * @brief Function to attempt to resubscribe to the topics already present in the
  * subscription list.
@@ -193,7 +194,7 @@ static void prvIncomingPublishCallback( MQTTAgentContext_t * pMqttAgentContext,
  * appropriate error code from MQTTAgent_Subscribe.
  * */
 static MQTTStatus_t prvHandleResubscribe( MQTTAgentContext_t * pxMqttAgentCtx,
-										  SubMgrCtx_t * pxCtx );
+                                          SubMgrCtx_t * pxCtx );
 
 /*-----------------------------------------------------------*/
 
@@ -218,6 +219,7 @@ static uint32_t ulGlobalEntryTimeMs;
 void vSleepUntilMQTTAgentReady( void )
 {
     configASSERT( xSystemEvents != NULL );
+
     while( 1 )
     {
         EventBits_t uxEvents = xEventGroupWaitBits( xSystemEvents,
@@ -238,10 +240,11 @@ void vSleepUntilMQTTAgentReady( void )
 void vSleepUntilMQTTAgentConnected( void )
 {
     configASSERT( xSystemEvents != NULL );
+
     while( 1 )
     {
         EventBits_t uxEvents = xEventGroupWaitBits( xSystemEvents,
-        											EVT_MASK_MQTT_CONNECTED,
+                                                    EVT_MASK_MQTT_CONNECTED,
                                                     pdFALSE,
                                                     pdTRUE,
                                                     portMAX_DELAY );
@@ -257,178 +260,179 @@ void vSleepUntilMQTTAgentConnected( void )
 
 bool xIsMqttAgentConnected( void )
 {
-	EventBits_t uxEvents = xEventGroupWaitBits( xSystemEvents,
-	                                            EVT_MASK_MQTT_CONNECTED,
-	                                            pdFALSE,
-	                                            pdTRUE,
-	                                            0 );
+    EventBits_t uxEvents = xEventGroupWaitBits( xSystemEvents,
+                                                EVT_MASK_MQTT_CONNECTED,
+                                                pdFALSE,
+                                                pdTRUE,
+                                                0 );
 
-	return( ( bool ) ( uxEvents & EVT_MASK_MQTT_CONNECTED ) );
+    return( ( bool ) ( uxEvents & EVT_MASK_MQTT_CONNECTED ) );
 }
 
 /*-----------------------------------------------------------*/
 
 static inline void prvUpdateCallbackRefs( SubCallbackElement_t * pxCallbacksList,
-										  MQTTSubscribeInfo_t * pxSubList,
-										  size_t uxOldIdx,
-									      size_t uxNewIdx )
+                                          MQTTSubscribeInfo_t * pxSubList,
+                                          size_t uxOldIdx,
+                                          size_t uxNewIdx )
 {
-	configASSERT( pxCallbacksList );
-	configASSERT( pxSubList );
-	configASSERT( uxOldIdx < MQTT_AGENT_MAX_SUBSCRIPTIONS );
-	configASSERT( uxNewIdx < MQTT_AGENT_MAX_SUBSCRIPTIONS );
+    configASSERT( pxCallbacksList );
+    configASSERT( pxSubList );
+    configASSERT( uxOldIdx < MQTT_AGENT_MAX_SUBSCRIPTIONS );
+    configASSERT( uxNewIdx < MQTT_AGENT_MAX_SUBSCRIPTIONS );
 
-	for( size_t uxIdx = 0; uxIdx < MQTT_AGENT_MAX_CALLBACKS; uxIdx++ )
-	{
-		if( pxCallbacksList[ uxIdx ].pxSubInfo == &( pxSubList[ uxOldIdx ] ) )
-		{
-			pxCallbacksList[ uxIdx ].pxSubInfo = &( pxSubList[ uxNewIdx ] );
-		}
-	}
+    for( size_t uxIdx = 0; uxIdx < MQTT_AGENT_MAX_CALLBACKS; uxIdx++ )
+    {
+        if( pxCallbacksList[ uxIdx ].pxSubInfo == &( pxSubList[ uxOldIdx ] ) )
+        {
+            pxCallbacksList[ uxIdx ].pxSubInfo = &( pxSubList[ uxNewIdx ] );
+        }
+    }
 }
 
 /*-----------------------------------------------------------*/
 
 static inline void prvCompressSubscriptionList( MQTTSubscribeInfo_t * pxSubList,
-												SubCallbackElement_t * pxCallbacksList,
-												size_t * puxSubCount )
+                                                SubCallbackElement_t * pxCallbacksList,
+                                                size_t * puxSubCount )
 {
-	size_t uxLastOccupiedIndex = 0;
-	size_t uxSubCount = 0;
+    size_t uxLastOccupiedIndex = 0;
+    size_t uxSubCount = 0;
 
-	configASSERT( pxSubList );
-	configASSERT( pxCallbacksList );
+    configASSERT( pxSubList );
+    configASSERT( pxCallbacksList );
 
-	for( size_t uxIdx = 0U; uxIdx < MQTT_AGENT_MAX_SUBSCRIPTIONS; uxIdx++ )
-	{
-		if( pxSubList[ uxIdx ].topicFilterLength == 0 &&
-			uxLastOccupiedIndex < MQTT_AGENT_MAX_SUBSCRIPTIONS )
-		{
-			if( uxLastOccupiedIndex <= uxIdx )
-			{
-				uxLastOccupiedIndex = uxIdx + 1;
-			}
+    for( size_t uxIdx = 0U; uxIdx < MQTT_AGENT_MAX_SUBSCRIPTIONS; uxIdx++ )
+    {
+        if( ( pxSubList[ uxIdx ].topicFilterLength == 0 ) &&
+            ( uxLastOccupiedIndex < MQTT_AGENT_MAX_SUBSCRIPTIONS ) )
+        {
+            if( uxLastOccupiedIndex <= uxIdx )
+            {
+                uxLastOccupiedIndex = uxIdx + 1;
+            }
 
-			/* Iterate over remainder of list for occupied spots */
-			for( ; uxLastOccupiedIndex < MQTT_AGENT_MAX_CALLBACKS; uxLastOccupiedIndex++ )
-			{
-				if( pxSubList[ uxLastOccupiedIndex ].topicFilterLength != 0 )
-				{
-					/* Move new item into place */
-					pxSubList[ uxIdx ] = pxSubList[ uxLastOccupiedIndex ];
+            /* Iterate over remainder of list for occupied spots */
+            for( ; uxLastOccupiedIndex < MQTT_AGENT_MAX_CALLBACKS; uxLastOccupiedIndex++ )
+            {
+                if( pxSubList[ uxLastOccupiedIndex ].topicFilterLength != 0 )
+                {
+                    /* Move new item into place */
+                    pxSubList[ uxIdx ] = pxSubList[ uxLastOccupiedIndex ];
 
-					/* Clear old location */
-					memset( &( pxSubList[ uxLastOccupiedIndex ] ), 0, sizeof( MQTTSubscribeInfo_t ) );
+                    /* Clear old location */
+                    memset( &( pxSubList[ uxLastOccupiedIndex ] ), 0, sizeof( MQTTSubscribeInfo_t ) );
 
-					prvUpdateCallbackRefs( pxCallbacksList, pxSubList, uxLastOccupiedIndex, uxIdx );
+                    prvUpdateCallbackRefs( pxCallbacksList, pxSubList, uxLastOccupiedIndex, uxIdx );
 
-					/* Increment counter so we don't visit this location again */
-					uxLastOccupiedIndex++;
+                    /* Increment counter so we don't visit this location again */
+                    uxLastOccupiedIndex++;
 
-					break;
-				}
-			}
-		}
-		else if( pxSubList[ uxIdx ].topicFilterLength != 0 )
-		{
-			/* Count number of valid contexts */
-			uxSubCount++;
-		}
-		else
-		{
-			/* Continue iterating */
-		}
-	}
+                    break;
+                }
+            }
+        }
+        else if( pxSubList[ uxIdx ].topicFilterLength != 0 )
+        {
+            /* Count number of valid contexts */
+            uxSubCount++;
+        }
+        else
+        {
+            /* Continue iterating */
+        }
+    }
 
-	*puxSubCount = uxSubCount;
+    *puxSubCount = uxSubCount;
 }
 
 /*-----------------------------------------------------------*/
 
 static inline void prvCompressCallbackList( SubCallbackElement_t * pxCallbackList,
-											size_t * puxCallbackCount )
+                                            size_t * puxCallbackCount )
 {
-	size_t uxLastOccupiedIndex = 0;
-	size_t uxCallbackCount = 0;
+    size_t uxLastOccupiedIndex = 0;
+    size_t uxCallbackCount = 0;
 
-	configASSERT( pxCallbackList );
-	configASSERT( puxCallbackCount );
+    configASSERT( pxCallbackList );
+    configASSERT( puxCallbackCount );
 
-	for( size_t uxIdx = 0U; uxIdx < MQTT_AGENT_MAX_CALLBACKS; uxIdx++ )
-	{
-		if( pxCallbackList[ uxIdx ].pxSubInfo == NULL &&
-			uxLastOccupiedIndex < MQTT_AGENT_MAX_CALLBACKS )
-		{
-			if( uxLastOccupiedIndex <= uxIdx )
-			{
-				uxLastOccupiedIndex = uxIdx + 1;
-			}
+    for( size_t uxIdx = 0U; uxIdx < MQTT_AGENT_MAX_CALLBACKS; uxIdx++ )
+    {
+        if( ( pxCallbackList[ uxIdx ].pxSubInfo == NULL ) &&
+            ( uxLastOccupiedIndex < MQTT_AGENT_MAX_CALLBACKS ) )
+        {
+            if( uxLastOccupiedIndex <= uxIdx )
+            {
+                uxLastOccupiedIndex = uxIdx + 1;
+            }
 
-			/* Iterate over remainder of list for occupied spots */
-			for( ; uxLastOccupiedIndex < MQTT_AGENT_MAX_CALLBACKS; uxLastOccupiedIndex++ )
-			{
-				if( pxCallbackList[ uxLastOccupiedIndex ].pxSubInfo != NULL )
-				{
-					/* Move new item into place */
-					pxCallbackList[ uxIdx ] = pxCallbackList[ uxLastOccupiedIndex ];
+            /* Iterate over remainder of list for occupied spots */
+            for( ; uxLastOccupiedIndex < MQTT_AGENT_MAX_CALLBACKS; uxLastOccupiedIndex++ )
+            {
+                if( pxCallbackList[ uxLastOccupiedIndex ].pxSubInfo != NULL )
+                {
+                    /* Move new item into place */
+                    pxCallbackList[ uxIdx ] = pxCallbackList[ uxLastOccupiedIndex ];
 
-					/* Clear old location */
-					memset( &( pxCallbackList[ uxLastOccupiedIndex ] ), 0, sizeof( SubCallbackElement_t ) );
+                    /* Clear old location */
+                    memset( &( pxCallbackList[ uxLastOccupiedIndex ] ), 0, sizeof( SubCallbackElement_t ) );
 
-					/* Increment counter so we don't visit this location again */
-					uxLastOccupiedIndex++;
+                    /* Increment counter so we don't visit this location again */
+                    uxLastOccupiedIndex++;
 
-					break;
-				}
-			}
-		}
-		else if( pxCallbackList[ uxIdx ].pxSubInfo != NULL )
-		{
-			/* Count number of valid contexts */
-			uxCallbackCount++;
-		}
-		else
-		{
-			/* Continue iterating */
-		}
-	}
-	*puxCallbackCount = uxCallbackCount;
+                    break;
+                }
+            }
+        }
+        else if( pxCallbackList[ uxIdx ].pxSubInfo != NULL )
+        {
+            /* Count number of valid contexts */
+            uxCallbackCount++;
+        }
+        else
+        {
+            /* Continue iterating */
+        }
+    }
+
+    *puxCallbackCount = uxCallbackCount;
 }
 
 /*-----------------------------------------------------------*/
 
 static void prvSocketRecvReadyCallback( void * pvCtx )
 {
-	MQTTAgentMessageContext_t * pxMsgCtx = ( MQTTAgentMessageContext_t * ) pvCtx;
+    MQTTAgentMessageContext_t * pxMsgCtx = ( MQTTAgentMessageContext_t * ) pvCtx;
 
-	if( pxMsgCtx )
-	{
-		( void ) xTaskNotifyIndexed( pxMsgCtx->xAgentTaskHandle ,
-									 MQTT_AGENT_NOTIFY_IDX,
-									 MQTT_AGENT_NOTIFY_FLAG_SOCKET_RECV,
-									 eSetBits );
-	}
+    if( pxMsgCtx )
+    {
+        ( void ) xTaskNotifyIndexed( pxMsgCtx->xAgentTaskHandle,
+                                     MQTT_AGENT_NOTIFY_IDX,
+                                     MQTT_AGENT_NOTIFY_FLAG_SOCKET_RECV,
+                                     eSetBits );
+    }
 }
 
 /*-----------------------------------------------------------*/
 
 static bool prvAgentMessageSend( MQTTAgentMessageContext_t * pxMsgCtx,
-                        		 MQTTAgentCommand_t * const * pxCommandToSend,
-								 uint32_t blockTimeMs )
+                                 MQTTAgentCommand_t * const * pxCommandToSend,
+                                 uint32_t blockTimeMs )
 {
     BaseType_t xQueueStatus = pdFAIL;
 
     if( pxMsgCtx && pxCommandToSend )
     {
-    	xQueueStatus = xQueueSendToBack( pxMsgCtx->xQueue, pxCommandToSend, pdMS_TO_TICKS( blockTimeMs ) );
+        xQueueStatus = xQueueSendToBack( pxMsgCtx->xQueue, pxCommandToSend, pdMS_TO_TICKS( blockTimeMs ) );
 
         /* Notify the agent that a message is waiting */
         if( pxMsgCtx->xAgentTaskHandle )
         {
-    		( void ) xTaskNotifyIndexed( pxMsgCtx->xAgentTaskHandle ,
-    									 MQTT_AGENT_NOTIFY_IDX,
-										 MQTT_AGENT_NOTIFY_FLAG_M_QUEUE,
-										 eSetBits );
+            ( void ) xTaskNotifyIndexed( pxMsgCtx->xAgentTaskHandle,
+                                         MQTT_AGENT_NOTIFY_IDX,
+                                         MQTT_AGENT_NOTIFY_FLAG_M_QUEUE,
+                                         eSetBits );
         }
     }
 
@@ -438,30 +442,30 @@ static bool prvAgentMessageSend( MQTTAgentMessageContext_t * pxMsgCtx,
 /*-----------------------------------------------------------*/
 
 static bool prvAgentMessageReceive( MQTTAgentMessageContext_t * pxMsgCtx,
-                           	   	    MQTTAgentCommand_t ** ppxReceivedCommand,
-									uint32_t blockTimeMs )
+                                    MQTTAgentCommand_t ** ppxReceivedCommand,
+                                    uint32_t blockTimeMs )
 {
     BaseType_t xQueueStatus = pdFAIL;
     uint32_t ulNotifyValue = 0;
 
     if( pxMsgCtx && ppxReceivedCommand )
     {
-    	if( xTaskNotifyWaitIndexed( MQTT_AGENT_NOTIFY_IDX,
-    								0x0,
-    								0xFFFFFFFF,
-    								&ulNotifyValue,
-    								pdMS_TO_TICKS( blockTimeMs ) ) )
-    	{
-    		/* Prioritize processing incoming network packets over local requests */
-    		if( ulNotifyValue & MQTT_AGENT_NOTIFY_FLAG_SOCKET_RECV )
-    		{
-    			*ppxReceivedCommand = NULL;
-    		}
-    		else
-    		{
-    			xQueueStatus = xQueueReceive( pxMsgCtx->xQueue, ppxReceivedCommand, 0 );
-    		}
-    	}
+        if( xTaskNotifyWaitIndexed( MQTT_AGENT_NOTIFY_IDX,
+                                    0x0,
+                                    0xFFFFFFFF,
+                                    &ulNotifyValue,
+                                    pdMS_TO_TICKS( blockTimeMs ) ) )
+        {
+            /* Prioritize processing incoming network packets over local requests */
+            if( ulNotifyValue & MQTT_AGENT_NOTIFY_FLAG_SOCKET_RECV )
+            {
+                *ppxReceivedCommand = NULL;
+            }
+            else
+            {
+                xQueueStatus = xQueueReceive( pxMsgCtx->xQueue, ppxReceivedCommand, 0 );
+            }
+        }
     }
 
     return ( bool ) xQueueStatus;
@@ -473,48 +477,49 @@ static bool prvAgentMessageReceive( MQTTAgentMessageContext_t * pxMsgCtx,
 static void prvResubscribeCommandCallback( MQTTAgentCommandContext_t * pxCommandContext,
                                            MQTTAgentReturnInfo_t * pxReturnInfo )
 {
-	SubMgrCtx_t * pxCtx = ( SubMgrCtx_t * ) pxCommandContext;
+    SubMgrCtx_t * pxCtx = ( SubMgrCtx_t * ) pxCommandContext;
 
-	configASSERT( pxCommandContext != NULL );
-	configASSERT( pxReturnInfo != NULL );
-	configASSERT( MUTEX_IS_OWNED( pxCtx->xMutex ) );
+    configASSERT( pxCommandContext != NULL );
+    configASSERT( pxReturnInfo != NULL );
+    configASSERT( MUTEX_IS_OWNED( pxCtx->xMutex ) );
 
-	/* Ignore pxReturnInfo->returnCode */
+    /* Ignore pxReturnInfo->returnCode */
 
-	for( uint32_t ulSubIdx = 0; ulSubIdx < pxCtx->uxSubscriptionCount; ulSubIdx++ )
-	{
-		/* Update cached SubAck status */
-		pxCtx->pxSubAckStatus[ ulSubIdx ] = pxReturnInfo->pSubackCodes[ ulSubIdx ];
+    for( uint32_t ulSubIdx = 0; ulSubIdx < pxCtx->uxSubscriptionCount; ulSubIdx++ )
+    {
+        /* Update cached SubAck status */
+        pxCtx->pxSubAckStatus[ ulSubIdx ] = pxReturnInfo->pSubackCodes[ ulSubIdx ];
 
-		if( pxReturnInfo->pSubackCodes[ ulSubIdx ] == MQTTSubAckFailure )
-		{
-			MQTTSubscribeInfo_t * const pxSubInfo = &( pxCtx->pxSubscriptions[ ulSubIdx ] );
+        if( pxReturnInfo->pSubackCodes[ ulSubIdx ] == MQTTSubAckFailure )
+        {
+            MQTTSubscribeInfo_t * const pxSubInfo = &( pxCtx->pxSubscriptions[ ulSubIdx ] );
 
-			LogError( "Failed to re-subscribe to topic filter \"%.*s\".",
-					  pxSubInfo->topicFilterLength,
-					  pxSubInfo->pTopicFilter );
+            LogError( "Failed to re-subscribe to topic filter \"%.*s\".",
+                      pxSubInfo->topicFilterLength,
+                      pxSubInfo->pTopicFilter );
 
-			for( uint32_t ulCbIdx = 0; ulCbIdx < MQTT_AGENT_MAX_CALLBACKS; ulCbIdx++ )
-			{
-				SubCallbackElement_t * const pxCbInfo = &( pxCtx->pxCallbacks[ ulCbIdx ] );
+            for( uint32_t ulCbIdx = 0; ulCbIdx < MQTT_AGENT_MAX_CALLBACKS; ulCbIdx++ )
+            {
+                SubCallbackElement_t * const pxCbInfo = &( pxCtx->pxCallbacks[ ulCbIdx ] );
 
-				if( pxCbInfo->pxSubInfo == pxSubInfo &&
-					pxCbInfo->xTaskHandle != NULL )
-				{
-					LogWarn( "Detected orphaned callback for task: %s due to failed re-subscribe operation.",
-							 pcTaskGetName( pxCbInfo->xTaskHandle ) );
-				}
-			}
-		}
-	}
-	( void ) xSemaphoreGive( pxCtx->xMutex );
-	LogDebug( " <<<< Semaphore Give <<<<" );
+                if( ( pxCbInfo->pxSubInfo == pxSubInfo ) &&
+                    ( pxCbInfo->xTaskHandle != NULL ) )
+                {
+                    LogWarn( "Detected orphaned callback for task: %s due to failed re-subscribe operation.",
+                             pcTaskGetName( pxCbInfo->xTaskHandle ) );
+                }
+            }
+        }
+    }
+
+    ( void ) xSemaphoreGive( pxCtx->xMutex );
+    LogDebug( " <<<< Semaphore Give <<<<" );
 }
 
 /*-----------------------------------------------------------*/
 
 static MQTTStatus_t prvHandleResubscribe( MQTTAgentContext_t * pxMqttAgentCtx,
-										  SubMgrCtx_t * pxCtx )
+                                          SubMgrCtx_t * pxCtx )
 {
     MQTTStatus_t xStatus = MQTTBadParameter;
 
@@ -522,74 +527,75 @@ static MQTTStatus_t prvHandleResubscribe( MQTTAgentContext_t * pxMqttAgentCtx,
     configASSERT( pxCtx->xMutex );
     configASSERT( MUTEX_IS_OWNED( pxCtx->xMutex ) );
 
-	prvCompressSubscriptionList( pxCtx->pxSubscriptions,
-								 pxCtx->pxCallbacks,
-								 &( pxCtx->uxSubscriptionCount ) );
+    prvCompressSubscriptionList( pxCtx->pxSubscriptions,
+                                 pxCtx->pxCallbacks,
+                                 &( pxCtx->uxSubscriptionCount ) );
 
-	if( xStatus == MQTTSuccess && pxCtx->uxSubscriptionCount > 0U )
-	{
-		MQTTAgentCommandInfo_t xCommandParams =
-		{
-			.blockTimeMs = 0U,
-			.cmdCompleteCallback = prvResubscribeCommandCallback,
-			.pCmdCompleteCallbackContext = ( void * ) pxCtx,
-		};
+    if( ( xStatus == MQTTSuccess ) && ( pxCtx->uxSubscriptionCount > 0U ) )
+    {
+        MQTTAgentCommandInfo_t xCommandParams =
+        {
+            .blockTimeMs                 = 0U,
+            .cmdCompleteCallback         = prvResubscribeCommandCallback,
+            .pCmdCompleteCallbackContext = ( void * ) pxCtx,
+        };
 
-		pxCtx->xInitialSubscribeArgs.pSubscribeInfo = pxCtx->pxSubscriptions;
-		pxCtx->xInitialSubscribeArgs.numSubscriptions = pxCtx->uxSubscriptionCount;
+        pxCtx->xInitialSubscribeArgs.pSubscribeInfo = pxCtx->pxSubscriptions;
+        pxCtx->xInitialSubscribeArgs.numSubscriptions = pxCtx->uxSubscriptionCount;
 
-		/* Enqueue the subscribe command */
-		xStatus = MQTTAgent_Subscribe( pxMqttAgentCtx,
-									   &( pxCtx->xInitialSubscribeArgs ),
-									   &xCommandParams );
+        /* Enqueue the subscribe command */
+        xStatus = MQTTAgent_Subscribe( pxMqttAgentCtx,
+                                       &( pxCtx->xInitialSubscribeArgs ),
+                                       &xCommandParams );
 
-		/* prvResubscribeCommandCallback handles giving the mutex */
+        /* prvResubscribeCommandCallback handles giving the mutex */
 
-		if( xStatus != MQTTSuccess )
-		{
-			LogError( "Failed to enqueue the MQTT subscribe command. xStatus=%s.",
-					  MQTT_Status_strerror( xStatus ) );
-		}
-	}
-	else
-	{
-		( void ) xSemaphoreGive( pxCtx->xMutex );
-		LogDebug( " <<<< Semaphore Give <<<<" );
+        if( xStatus != MQTTSuccess )
+        {
+            LogError( "Failed to enqueue the MQTT subscribe command. xStatus=%s.",
+                      MQTT_Status_strerror( xStatus ) );
+        }
+    }
+    else
+    {
+        ( void ) xSemaphoreGive( pxCtx->xMutex );
+        LogDebug( " <<<< Semaphore Give <<<<" );
 
-		/* Mark the resubscribe as success if there is nothing to be subscribed to. */
-		xStatus = MQTTSuccess;
-	}
+        /* Mark the resubscribe as success if there is nothing to be subscribed to. */
+        xStatus = MQTTSuccess;
+    }
+
     return xStatus;
 }
 
 /*-----------------------------------------------------------*/
 
 static inline bool prvMatchTopic( MQTTSubscribeInfo_t * pxSubscribeInfo,
-								  const char * pcTopicName,
-								  const uint16_t usTopicLen )
+                                  const char * pcTopicName,
+                                  const uint16_t usTopicLen )
 {
-	MQTTStatus_t xStatus = MQTTSuccess;
+    MQTTStatus_t xStatus = MQTTSuccess;
     bool isMatched = false;
 
     xStatus = MQTT_MatchTopic( pcTopicName,
-    						   usTopicLen,
-							   pxSubscribeInfo->pTopicFilter,
-							   pxSubscribeInfo->topicFilterLength,
-							   &isMatched );
+                               usTopicLen,
+                               pxSubscribeInfo->pTopicFilter,
+                               pxSubscribeInfo->topicFilterLength,
+                               &isMatched );
     return ( xStatus == MQTTSuccess ) && isMatched;
 }
 
 /*-----------------------------------------------------------*/
 
 static inline bool prvMatchCbCtx( SubCallbackElement_t * pxCbCtx,
-								  MQTTSubscribeInfo_t * pxSubInfo,
-								  IncomingPubCallback_t pxCallback,
-								  void * pvCallbackCtx )
+                                  MQTTSubscribeInfo_t * pxSubInfo,
+                                  IncomingPubCallback_t pxCallback,
+                                  void * pvCallbackCtx )
 {
-	return ( pxCbCtx->pxSubInfo == pxSubInfo &&
-			 pxCbCtx->pvIncomingPublishCallbackContext == pvCallbackCtx &&
-			 pxCbCtx->pxIncomingPublishCallback == pxCallback &&
-			 pxCbCtx->xTaskHandle == xTaskGetCurrentTaskHandle() );
+    return( pxCbCtx->pxSubInfo == pxSubInfo &&
+            pxCbCtx->pvIncomingPublishCallbackContext == pvCallbackCtx &&
+            pxCbCtx->pxIncomingPublishCallback == pxCallback &&
+            pxCbCtx->xTaskHandle == xTaskGetCurrentTaskHandle() );
 }
 
 /*-----------------------------------------------------------*/
@@ -598,7 +604,7 @@ static void prvIncomingPublishCallback( MQTTAgentContext_t * pMqttAgentContext,
                                         uint16_t packetId,
                                         MQTTPublishInfo_t * pxPublishInfo )
 {
-	SubMgrCtx_t * pxCtx = NULL;
+    SubMgrCtx_t * pxCtx = NULL;
     bool xPublishHandled = false;
 
     ( void ) packetId;
@@ -607,48 +613,50 @@ static void prvIncomingPublishCallback( MQTTAgentContext_t * pMqttAgentContext,
     configASSERT( pMqttAgentContext->pIncomingCallbackContext );
     configASSERT( pxPublishInfo );
 
-    pxCtx = ( SubMgrCtx_t * )pMqttAgentContext->pIncomingCallbackContext;
+    pxCtx = ( SubMgrCtx_t * ) pMqttAgentContext->pIncomingCallbackContext;
 
     LogDebug( ">> waiting for xSemaphoreTake" );
 
     if( xSemaphoreTake( pxCtx->xMutex, portMAX_DELAY ) == pdTRUE )
     {
-    	LogDebug( ">>>> xSemaphoreTake complete." );
-    	/* Iterate over pxCtx->pxCallbacks list */
+        LogDebug( ">>>> xSemaphoreTake complete." );
+
+        /* Iterate over pxCtx->pxCallbacks list */
         for( uint32_t ulCbIdx = 0; ulCbIdx < MQTT_AGENT_MAX_CALLBACKS; ulCbIdx++ )
         {
-        	MQTTSubscribeInfo_t * const pxSubInfo = pxCtx->pxCallbacks[ ulCbIdx ].pxSubInfo;
+            MQTTSubscribeInfo_t * const pxSubInfo = pxCtx->pxCallbacks[ ulCbIdx ].pxSubInfo;
 
-            if( pxSubInfo != NULL &&
+            if( ( pxSubInfo != NULL ) &&
                 prvMatchTopic( pxSubInfo,
-            				   pxPublishInfo->pTopicName,
-            				   pxPublishInfo->topicNameLength ) )
+                               pxPublishInfo->pTopicName,
+                               pxPublishInfo->topicNameLength ) )
             {
-				SubCallbackElement_t * const pxCallback = &( pxCtx->pxCallbacks[ ulCbIdx ] );
+                SubCallbackElement_t * const pxCallback = &( pxCtx->pxCallbacks[ ulCbIdx ] );
 
-				if( pxCallback->pxSubInfo == pxSubInfo )
-				{
-					pxCallback->pxIncomingPublishCallback( pxCallback->pvIncomingPublishCallbackContext,
-														   pxPublishInfo );
-					xPublishHandled = true;
-				}
+                if( pxCallback->pxSubInfo == pxSubInfo )
+                {
+                    pxCallback->pxIncomingPublishCallback( pxCallback->pvIncomingPublishCallbackContext,
+                                                           pxPublishInfo );
+                    xPublishHandled = true;
+                }
             }
         }
+
         ( void ) xSemaphoreGive( pxCtx->xMutex );
         LogDebug( " <<<< Semaphore Give <<<<" );
     }
 
     if( !xPublishHandled )
     {
-    	LogWarn( "Incoming publish with topic: \"%.*s\" does not match any callback functions.",
-    			 pxPublishInfo->topicNameLength,
-				 pxPublishInfo->pTopicName );
+        LogWarn( "Incoming publish with topic: \"%.*s\" does not match any callback functions.",
+                 pxPublishInfo->topicNameLength,
+                 pxPublishInfo->pTopicName );
     }
     else
     {
-    	LogDebug( "Incoming publish with topic: \"%.*s\" was handled successfully.",
-   			      pxPublishInfo->topicNameLength,
-				  pxPublishInfo->pTopicName );
+        LogDebug( "Incoming publish with topic: \"%.*s\" was handled successfully.",
+                  pxPublishInfo->topicNameLength,
+                  pxPublishInfo->pTopicName );
     }
 }
 
@@ -656,82 +664,83 @@ static void prvIncomingPublishCallback( MQTTAgentContext_t * pMqttAgentContext,
 
 static void prvSubscriptionManagerCtxFree( SubMgrCtx_t * pxSubMgrCtx )
 {
-	configASSERT( pxSubMgrCtx );
-	configASSERT( MUTEX_IS_OWNED( pxSubMgrCtx->xMutex ) );
+    configASSERT( pxSubMgrCtx );
+    configASSERT( MUTEX_IS_OWNED( pxSubMgrCtx->xMutex ) );
 
-	if( pxSubMgrCtx->xMutex )
-	{
-		vSemaphoreDelete( pxSubMgrCtx->xMutex );
-	}
+    if( pxSubMgrCtx->xMutex )
+    {
+        vSemaphoreDelete( pxSubMgrCtx->xMutex );
+    }
 }
 
 /*-----------------------------------------------------------*/
 
 static void prvSubscriptionManagerCtxReset( SubMgrCtx_t * pxSubMgrCtx )
 {
-	configASSERT( pxSubMgrCtx );
-	configASSERT( MUTEX_IS_OWNED( pxSubMgrCtx->xMutex ) );
+    configASSERT( pxSubMgrCtx );
+    configASSERT( MUTEX_IS_OWNED( pxSubMgrCtx->xMutex ) );
 
-	memset( pxSubMgrCtx->pxSubscriptions, 0, sizeof( pxSubMgrCtx->pxSubscriptions ) );
+    memset( pxSubMgrCtx->pxSubscriptions, 0, sizeof( pxSubMgrCtx->pxSubscriptions ) );
 
-	memset( pxSubMgrCtx->pxSubAckStatus, MQTTSubAckFailure,
-			sizeof( pxSubMgrCtx->pxSubAckStatus ) );
+    memset( pxSubMgrCtx->pxSubAckStatus, MQTTSubAckFailure,
+            sizeof( pxSubMgrCtx->pxSubAckStatus ) );
 
-	memset( pxSubMgrCtx->pulSubCbCount, 0, sizeof( pxSubMgrCtx->pulSubCbCount ) );
-	memset( pxSubMgrCtx->pxCallbacks, 0, sizeof( pxSubMgrCtx->pxCallbacks ) );
-	pxSubMgrCtx->uxSubscriptionCount = 0;
-	pxSubMgrCtx->uxCallbackCount = 0;
-	memset( &( pxSubMgrCtx->xInitialSubscribeArgs ), 0, sizeof( pxSubMgrCtx->xInitialSubscribeArgs ) );
+    memset( pxSubMgrCtx->pulSubCbCount, 0, sizeof( pxSubMgrCtx->pulSubCbCount ) );
+    memset( pxSubMgrCtx->pxCallbacks, 0, sizeof( pxSubMgrCtx->pxCallbacks ) );
+    pxSubMgrCtx->uxSubscriptionCount = 0;
+    pxSubMgrCtx->uxCallbackCount = 0;
+    memset( &( pxSubMgrCtx->xInitialSubscribeArgs ), 0, sizeof( pxSubMgrCtx->xInitialSubscribeArgs ) );
 }
 
 /*-----------------------------------------------------------*/
 
 static MQTTStatus_t prvSubscriptionManagerCtxInit( SubMgrCtx_t * pxSubMgrCtx )
 {
-	MQTTStatus_t xStatus = MQTTSuccess;
+    MQTTStatus_t xStatus = MQTTSuccess;
 
-	configASSERT( pxSubMgrCtx );
+    configASSERT( pxSubMgrCtx );
 
-	pxSubMgrCtx->xMutex = xSemaphoreCreateMutex();
+    pxSubMgrCtx->xMutex = xSemaphoreCreateMutex();
 
-	if( pxSubMgrCtx->xMutex )
-	{
-		LogDebug( "Creating MqttAgent Mutex." );
-		( void )xSemaphoreTake( pxSubMgrCtx->xMutex, portMAX_DELAY );
-		prvSubscriptionManagerCtxReset( pxSubMgrCtx );
-	}
-	else
-	{
-		xStatus = MQTTNoMemory;
-	}
-	return xStatus;
+    if( pxSubMgrCtx->xMutex )
+    {
+        LogDebug( "Creating MqttAgent Mutex." );
+        ( void ) xSemaphoreTake( pxSubMgrCtx->xMutex, portMAX_DELAY );
+        prvSubscriptionManagerCtxReset( pxSubMgrCtx );
+    }
+    else
+    {
+        xStatus = MQTTNoMemory;
+    }
+
+    return xStatus;
 }
 
 /*-----------------------------------------------------------*/
 
 static void prvFreeAgentTaskCtx( MQTTAgentTaskCtx_t * pxCtx )
 {
-	if( pxCtx )
-	{
-		if( pxCtx->xAgentMessageCtx.xQueue != NULL )
-		{
-			vQueueDelete( pxCtx->xAgentMessageCtx.xQueue );
-		}
+    if( pxCtx )
+    {
+        if( pxCtx->xAgentMessageCtx.xQueue != NULL )
+        {
+            vQueueDelete( pxCtx->xAgentMessageCtx.xQueue );
+        }
 
-		if( pxCtx->xConnectInfo.pClientIdentifier != NULL )
-		{
-			vPortFree( ( void * ) pxCtx->xConnectInfo.pClientIdentifier );
-		}
+        if( pxCtx->xConnectInfo.pClientIdentifier != NULL )
+        {
+            vPortFree( ( void * ) pxCtx->xConnectInfo.pClientIdentifier );
+        }
 
-		if( pxCtx->pcMqttEndpoint != NULL )
-		{
-			vPortFree( pxCtx->pcMqttEndpoint );
-		}
+        if( pxCtx->pcMqttEndpoint != NULL )
+        {
+            vPortFree( pxCtx->pcMqttEndpoint );
+        }
 
-		prvSubscriptionManagerCtxFree( &( pxCtx->xSubMgrCtx ) );
+        prvSubscriptionManagerCtxFree( &( pxCtx->xSubMgrCtx ) );
 
-		vPortFree( ( void * ) pxCtx );
-	}
+        vPortFree( ( void * ) pxCtx );
+    }
 }
 
 /*-----------------------------------------------------------*/
@@ -787,9 +796,10 @@ static MQTTStatus_t prvConfigureAgentTaskCtx( MQTTAgentTaskCtx_t * pxCtx,
         pxCtx->xConnectInfo.passwordLength = 0U;
 
         pxCtx->xConnectInfo.pClientIdentifier = KVStore_getStringHeap( CS_CORE_THING_NAME, &uxTempSize );
-        if( pxCtx->xConnectInfo.pClientIdentifier != NULL &&
-            uxTempSize > 0 &&
-            uxTempSize <= UINT16_MAX )
+
+        if( ( pxCtx->xConnectInfo.pClientIdentifier != NULL ) &&
+            ( uxTempSize > 0 ) &&
+            ( uxTempSize <= UINT16_MAX ) )
         {
             pxCtx->xConnectInfo.clientIdentifierLength = uxTempSize;
         }
@@ -803,7 +813,8 @@ static MQTTStatus_t prvConfigureAgentTaskCtx( MQTTAgentTaskCtx_t * pxCtx,
     if( xStatus == MQTTSuccess )
     {
         pxCtx->xAgentMessageCtx.xQueue = xQueueCreate( MQTT_AGENT_COMMAND_QUEUE_LENGTH,
-                                                      sizeof( MQTTAgentCommand_t * ) );
+                                                       sizeof( MQTTAgentCommand_t * ) );
+
         if( pxCtx->xAgentMessageCtx.xQueue == NULL )
         {
             xStatus = MQTTNoMemory;
@@ -828,8 +839,8 @@ static MQTTStatus_t prvConfigureAgentTaskCtx( MQTTAgentTaskCtx_t * pxCtx,
         pxCtx->pcMqttEndpoint = KVStore_getStringHeap( CS_CORE_MQTT_ENDPOINT,
                                                        &( pxCtx->uxMqttEndpointLen ) );
 
-        if( pxCtx->uxMqttEndpointLen == 0 ||
-            pxCtx->pcMqttEndpoint == NULL )
+        if( ( pxCtx->uxMqttEndpointLen == 0 ) ||
+            ( pxCtx->pcMqttEndpoint == NULL ) )
         {
             LogError( "Invalid mqtt endpoint read from KVStore." );
             xStatus = MQTTNoMemory;
@@ -839,8 +850,9 @@ static MQTTStatus_t prvConfigureAgentTaskCtx( MQTTAgentTaskCtx_t * pxCtx,
     if( xStatus == MQTTSuccess )
     {
         pxCtx->ulMqttPort = KVStore_getUInt32( CS_CORE_MQTT_PORT, &( xSuccess ) );
-        if( pxCtx->ulMqttPort == 0 ||
-            xSuccess == pdFALSE )
+
+        if( ( pxCtx->ulMqttPort == 0 ) ||
+            ( xSuccess == pdFALSE ) )
         {
             LogError( "Invalid mqtt port number read from KVStore." );
             xStatus = MQTTNoMemory;
@@ -849,12 +861,12 @@ static MQTTStatus_t prvConfigureAgentTaskCtx( MQTTAgentTaskCtx_t * pxCtx,
 
     if( xStatus == MQTTSuccess )
     {
-    	xStatus = prvSubscriptionManagerCtxInit( &( pxCtx->xSubMgrCtx ) );
+        xStatus = prvSubscriptionManagerCtxInit( &( pxCtx->xSubMgrCtx ) );
 
-    	if( xStatus != MQTTSuccess )
-    	{
-    		LogError( "Failed to initialize Subscription Manager Context." );
-    	}
+        if( xStatus != MQTTSuccess )
+        {
+            LogError( "Failed to initialize Subscription Manager Context." );
+        }
     }
 
     return xStatus;
@@ -864,14 +876,14 @@ static MQTTStatus_t prvConfigureAgentTaskCtx( MQTTAgentTaskCtx_t * pxCtx,
 
 MQTTAgentHandle_t xGetMqttAgentHandle( void )
 {
-	vSleepUntilMQTTAgentReady();
+    vSleepUntilMQTTAgentReady();
 
-	while( xDefaultInstanceHandle == NULL )
-	{
-		vTaskDelay(1);
-	}
+    while( xDefaultInstanceHandle == NULL )
+    {
+        vTaskDelay( 1 );
+    }
 
-	return xDefaultInstanceHandle;
+    return xDefaultInstanceHandle;
 }
 
 /*-----------------------------------------------------------*/
@@ -894,9 +906,10 @@ void vMQTTAgentTask( void * pvParameters )
 
     /* Memory Allocation */
     pucNetworkBuffer = ( uint8_t * ) pvPortMalloc( MQTT_AGENT_NETWORK_BUFFER_SIZE );
+
     if( pucNetworkBuffer == NULL )
     {
-        LogError( "Failed to allocate %d bytes for pucNetworkBuffer." , MQTT_AGENT_NETWORK_BUFFER_SIZE );
+        LogError( "Failed to allocate %d bytes for pucNetworkBuffer.", MQTT_AGENT_NETWORK_BUFFER_SIZE );
         xMQTTStatus = MQTTNoMemory;
     }
 
@@ -919,6 +932,7 @@ void vMQTTAgentTask( void * pvParameters )
                                                   &xClientCertificate,
                                                   pxRootCaChain,
                                                   1 );
+
         if( xTlsStatus != TLS_TRANSPORT_SUCCESS )
         {
             LogError( "Failed to configure mbedtls transport." );
@@ -938,7 +952,7 @@ void vMQTTAgentTask( void * pvParameters )
         }
         else
         {
-            LogError( "Failed to allocate %d bytes for MQTTAgentTaskCtx_t." , sizeof( MQTTAgentTaskCtx_t ) );
+            LogError( "Failed to allocate %d bytes for MQTTAgentTaskCtx_t.", sizeof( MQTTAgentTaskCtx_t ) );
             xMQTTStatus = MQTTNoMemory;
         }
     }
@@ -957,7 +971,7 @@ void vMQTTAgentTask( void * pvParameters )
                                       &( pxCtx->xTransport ),
                                       prvGetTimeMs,
                                       prvIncomingPublishCallback,
-									  ( void * ) &( pxCtx->xSubMgrCtx ) );
+                                      ( void * ) &( pxCtx->xSubMgrCtx ) );
 
         if( xMQTTStatus != MQTTSuccess )
         {
@@ -972,9 +986,9 @@ void vMQTTAgentTask( void * pvParameters )
 
     if( xMQTTStatus == MQTTSuccess )
     {
-    	xTlsStatus = mbedtls_transport_setrecvcallback( pxNetworkContext,
-    													prvSocketRecvReadyCallback,
-    												    &( pxCtx->xAgentMessageCtx ) );
+        xTlsStatus = mbedtls_transport_setrecvcallback( pxNetworkContext,
+                                                        prvSocketRecvReadyCallback,
+                                                        &( pxCtx->xAgentMessageCtx ) );
 
         if( xTlsStatus != TLS_TRANSPORT_SUCCESS )
         {
@@ -982,7 +996,6 @@ void vMQTTAgentTask( void * pvParameters )
             xMQTTStatus = MQTTBadParameter;
         }
     }
-
 
     if( xMQTTStatus != MQTTSuccess )
     {
@@ -1019,7 +1032,7 @@ void vMQTTAgentTask( void * pvParameters )
 
             xTlsStatus = mbedtls_transport_connect( pxNetworkContext,
                                                     pxCtx->pcMqttEndpoint,
-													( uint16_t ) pxCtx->ulMqttPort,
+                                                    ( uint16_t ) pxCtx->ulMqttPort,
                                                     0, 0 );
 
             if( xTlsStatus != TLS_TRANSPORT_SUCCESS )
@@ -1059,23 +1072,23 @@ void vMQTTAgentTask( void * pvParameters )
             LogInfo( "Session present: %d", xSessionPresent );
 
             /* Resume a session if desired. */
-            if( xMQTTStatus == MQTTSuccess && pxCtx->xConnectInfo.cleanSession == false )
+            if( ( xMQTTStatus == MQTTSuccess ) && ( pxCtx->xConnectInfo.cleanSession == false ) )
             {
                 xMQTTStatus = MQTTAgent_ResumeSession( &( pxCtx->xAgentContext ), xSessionPresent );
 
                 /* Resubscribe to all the subscribed topics. */
-                if( xMQTTStatus == MQTTSuccess &&
-                	xSessionPresent == false )
+                if( ( xMQTTStatus == MQTTSuccess ) &&
+                    ( xSessionPresent == false ) )
                 {
                     xMQTTStatus = prvHandleResubscribe( &( pxCtx->xAgentContext ),
-                    									&( pxCtx->xSubMgrCtx ) );
+                                                        &( pxCtx->xSubMgrCtx ) );
                 }
             }
             else
             {
-            	prvSubscriptionManagerCtxReset( &( pxCtx->xSubMgrCtx ) );
-            	( void ) xSemaphoreGive( pxCtx->xSubMgrCtx.xMutex );
-            	LogDebug( " <<<< Semaphore Give <<<<" );
+                prvSubscriptionManagerCtxReset( &( pxCtx->xSubMgrCtx ) );
+                ( void ) xSemaphoreGive( pxCtx->xSubMgrCtx.xMutex );
+                LogDebug( " <<<< Semaphore Give <<<<" );
             }
 
             /* Further reconnects will include a session resume operation */
@@ -1095,15 +1108,15 @@ void vMQTTAgentTask( void * pvParameters )
             xReconnectParams.attemptsDone = 0;
             xReconnectParams.nextJitterMax = RETRY_BACKOFF_BASE_S;
 
-			/* MQTTAgent_CommandLoop() is effectively the agent implementation.  It
-			 * will manage the MQTT protocol until such time that an error occurs,
-			 * which could be a disconnect.  If an error occurs the MQTT context on
-			 * which the error happened is returned so there can be an attempt to
-			 * clean up and reconnect however the application writer prefers. */
-			xMQTTStatus = MQTTAgent_CommandLoop( &( pxCtx->xAgentContext ) );
+            /* MQTTAgent_CommandLoop() is effectively the agent implementation.  It
+             * will manage the MQTT protocol until such time that an error occurs,
+             * which could be a disconnect.  If an error occurs the MQTT context on
+             * which the error happened is returned so there can be an attempt to
+             * clean up and reconnect however the application writer prefers. */
+            xMQTTStatus = MQTTAgent_CommandLoop( &( pxCtx->xAgentContext ) );
 
             LogDebug( "MQTTAgent_CommandLoop returned with status: %s.",
-            		  MQTT_Status_strerror( xMQTTStatus ) );
+                      MQTT_Status_strerror( xMQTTStatus ) );
 
             ( void ) MQTTAgent_CancelAll( &( pxCtx->xAgentContext ) );
 
@@ -1118,42 +1131,42 @@ void vMQTTAgentTask( void * pvParameters )
 
             /* Reset subscription status */
             memset( pxCtx->xSubMgrCtx.pxSubAckStatus,
-            		MQTTSubAckFailure,
-					sizeof( pxCtx->xSubMgrCtx.pxSubAckStatus ) );
+                    MQTTSubAckFailure,
+                    sizeof( pxCtx->xSubMgrCtx.pxSubAckStatus ) );
         }
 
         if( !xExitFlag )
         {
-			/* Get back-off value (in seconds) for the next connection retry. */
-			xBackoffAlgStatus = BackoffAlgorithm_GetNextBackoff( &xReconnectParams,
-																 uxRand(),
-																 &usNextRetryBackOff );
+            /* Get back-off value (in seconds) for the next connection retry. */
+            xBackoffAlgStatus = BackoffAlgorithm_GetNextBackoff( &xReconnectParams,
+                                                                 uxRand(),
+                                                                 &usNextRetryBackOff );
 
-			if( xBackoffAlgStatus == BackoffAlgorithmSuccess )
-			{
-				LogWarn( "Disconnected from the MQTT Broker. Retrying in %hu seconds.",
-						   usNextRetryBackOff );
-				vTaskDelay( pdMS_TO_TICKS( 1000 * usNextRetryBackOff ) );
-			}
-			else
-			{
-				LogError( "Reconnect limit reached. Will exit..." );
-				xExitFlag = pdTRUE;
-			}
+            if( xBackoffAlgStatus == BackoffAlgorithmSuccess )
+            {
+                LogWarn( "Disconnected from the MQTT Broker. Retrying in %hu seconds.",
+                         usNextRetryBackOff );
+                vTaskDelay( pdMS_TO_TICKS( 1000 * usNextRetryBackOff ) );
+            }
+            else
+            {
+                LogError( "Reconnect limit reached. Will exit..." );
+                xExitFlag = pdTRUE;
+            }
         }
     }
 
     if( pxCtx != NULL )
     {
-		prvFreeAgentTaskCtx( pxCtx );
-		pxCtx = NULL;
+        prvFreeAgentTaskCtx( pxCtx );
+        pxCtx = NULL;
     }
 
     if( pxNetworkContext != NULL )
     {
-		mbedtls_transport_disconnect( pxNetworkContext );
-		mbedtls_transport_free( pxNetworkContext );
-		pxNetworkContext = NULL;
+        mbedtls_transport_disconnect( pxNetworkContext );
+        mbedtls_transport_free( pxNetworkContext );
+        pxNetworkContext = NULL;
     }
 
     ( void ) xEventGroupClearBits( xSystemEvents, EVT_MASK_MQTT_INIT | EVT_MASK_MQTT_CONNECTED );
@@ -1178,28 +1191,28 @@ static uint32_t prvGetTimeMs( void )
 /*-----------------------------------------------------------*/
 
 static inline MQTTQoS_t prvGetNewQoS( MQTTQoS_t xCurrentQoS,
-							     	  MQTTQoS_t xRequestedQoS )
+                                      MQTTQoS_t xRequestedQoS )
 {
-	MQTTQoS_t xNewQoS;
+    MQTTQoS_t xNewQoS;
 
-	if( xCurrentQoS == xRequestedQoS )
-	{
-		xNewQoS = xCurrentQoS;
-	}
-	/* Otherwise, upgrade to QoS1 */
-	else
-	{
-		xNewQoS = MQTTQoS1;
-	}
+    if( xCurrentQoS == xRequestedQoS )
+    {
+        xNewQoS = xCurrentQoS;
+    }
+    /* Otherwise, upgrade to QoS1 */
+    else
+    {
+        xNewQoS = MQTTQoS1;
+    }
 
-	return xNewQoS;
+    return xNewQoS;
 }
 
 /*-----------------------------------------------------------*/
 
 static inline bool prvValidateQoS( MQTTQoS_t xQoS )
 {
-	return ( xQoS == MQTTQoS0 || xQoS == MQTTQoS1 || xQoS == MQTTQoS2 );
+    return( xQoS == MQTTQoS0 || xQoS == MQTTQoS1 || xQoS == MQTTQoS2 );
 }
 
 
@@ -1208,235 +1221,232 @@ static inline bool prvValidateQoS( MQTTQoS_t xQoS )
 static void prvSubscribeRqCallback( MQTTAgentCommandContext_t * pxCommandContext,
                                     MQTTAgentReturnInfo_t * pxReturnInfo )
 {
-	TaskHandle_t xTaskHandle = ( TaskHandle_t )pxCommandContext;
+    TaskHandle_t xTaskHandle = ( TaskHandle_t ) pxCommandContext;
 
-	configASSERT( pxReturnInfo );
+    configASSERT( pxReturnInfo );
 
-	if( xTaskHandle != NULL )
-	{
-		uint32_t ulNotifyValue = ( pxReturnInfo->returnCode & 0xFFFFFF );
+    if( xTaskHandle != NULL )
+    {
+        uint32_t ulNotifyValue = ( pxReturnInfo->returnCode & 0xFFFFFF );
 
-		if( pxReturnInfo->pSubackCodes )
-		{
-			ulNotifyValue += ( pxReturnInfo->pSubackCodes[ 0 ] << 24 );
-		}
+        if( pxReturnInfo->pSubackCodes )
+        {
+            ulNotifyValue += ( pxReturnInfo->pSubackCodes[ 0 ] << 24 );
+        }
 
-
-		( void ) xTaskNotifyIndexed( xTaskHandle,
-									 MQTT_AGENT_NOTIFY_IDX,
-									 ulNotifyValue,
-									 eSetValueWithOverwrite );
-	}
-
+        ( void ) xTaskNotifyIndexed( xTaskHandle,
+                                     MQTT_AGENT_NOTIFY_IDX,
+                                     ulNotifyValue,
+                                     eSetValueWithOverwrite );
+    }
 }
 
 /*-----------------------------------------------------------*/
 
 static inline MQTTStatus_t prvSendSubRequest( MQTTAgentContext_t * pxAgentCtx,
-										      MQTTSubscribeInfo_t * pxSubInfo,
-											  MQTTSubAckStatus_t * pxSubAckStatus,
-											  TickType_t xTimeout )
+                                              MQTTSubscribeInfo_t * pxSubInfo,
+                                              MQTTSubAckStatus_t * pxSubAckStatus,
+                                              TickType_t xTimeout )
 {
-	MQTTStatus_t xStatus;
+    MQTTStatus_t xStatus;
 
-	MQTTAgentSubscribeArgs_t xSubscribeArgs =
-	{
-		.numSubscriptions = 1,
-		.pSubscribeInfo = pxSubInfo,
-	};
+    MQTTAgentSubscribeArgs_t xSubscribeArgs =
+    {
+        .numSubscriptions = 1,
+        .pSubscribeInfo   = pxSubInfo,
+    };
 
-	MQTTAgentCommandInfo_t xCommandInfo =
-	{
-		.blockTimeMs = xTimeout,
-		.cmdCompleteCallback = prvSubscribeRqCallback,
-		.pCmdCompleteCallbackContext = ( void * ) ( xTaskGetCurrentTaskHandle() ),
-	};
+    MQTTAgentCommandInfo_t xCommandInfo =
+    {
+        .blockTimeMs                 = xTimeout,
+        .cmdCompleteCallback         = prvSubscribeRqCallback,
+        .pCmdCompleteCallbackContext = ( void * ) ( xTaskGetCurrentTaskHandle() ),
+    };
 
-	configASSERT( pxAgentCtx );
-	configASSERT( pxSubInfo );
-	configASSERT( pxSubAckStatus );
+    configASSERT( pxAgentCtx );
+    configASSERT( pxSubInfo );
+    configASSERT( pxSubAckStatus );
 
-	( void ) xTaskNotifyStateClearIndexed( NULL, MQTT_AGENT_NOTIFY_IDX );
+    ( void ) xTaskNotifyStateClearIndexed( NULL, MQTT_AGENT_NOTIFY_IDX );
 
-	xStatus = MQTTAgent_Subscribe( pxAgentCtx, &xSubscribeArgs, &xCommandInfo );
+    xStatus = MQTTAgent_Subscribe( pxAgentCtx, &xSubscribeArgs, &xCommandInfo );
 
-	if( xStatus == MQTTSuccess )
-	{
-		uint32_t ulNotifyValue = 0;
-    	if( xTaskNotifyWaitIndexed( MQTT_AGENT_NOTIFY_IDX,
-    							    0x0,
-								    0xFFFFFFFF,
-								    &ulNotifyValue,
-									xTimeout ) )
-    	{
-    		*pxSubAckStatus = ( ulNotifyValue >> 24 );
-    		xStatus = ( ulNotifyValue & 0x00FFFFFF );
-    	}
-    	else
-    	{
-    		xStatus = MQTTKeepAliveTimeout;
-    	}
-	}
+    if( xStatus == MQTTSuccess )
+    {
+        uint32_t ulNotifyValue = 0;
 
-	return xStatus;
+        if( xTaskNotifyWaitIndexed( MQTT_AGENT_NOTIFY_IDX,
+                                    0x0,
+                                    0xFFFFFFFF,
+                                    &ulNotifyValue,
+                                    xTimeout ) )
+        {
+            *pxSubAckStatus = ( ulNotifyValue >> 24 );
+            xStatus = ( ulNotifyValue & 0x00FFFFFF );
+        }
+        else
+        {
+            xStatus = MQTTKeepAliveTimeout;
+        }
+    }
+
+    return xStatus;
 }
 
 /*-----------------------------------------------------------*/
 
 MQTTStatus_t MqttAgent_SubscribeSync( MQTTAgentHandle_t xHandle,
-								      const char * pcTopicFilter,
-								      MQTTQoS_t xRequestedQoS,
-								      IncomingPubCallback_t pxCallback,
-								      void * pvCallbackCtx )
+                                      const char * pcTopicFilter,
+                                      MQTTQoS_t xRequestedQoS,
+                                      IncomingPubCallback_t pxCallback,
+                                      void * pvCallbackCtx )
 {
-	MQTTStatus_t xStatus = MQTTSuccess;
-	size_t xTopicFilterLen = 0;
-	MQTTAgentTaskCtx_t * pxTaskCtx = ( MQTTAgentTaskCtx_t * )xHandle;
-	SubMgrCtx_t * pxCtx = &( pxTaskCtx->xSubMgrCtx );
+    MQTTStatus_t xStatus = MQTTSuccess;
+    size_t xTopicFilterLen = 0;
+    MQTTAgentTaskCtx_t * pxTaskCtx = ( MQTTAgentTaskCtx_t * ) xHandle;
+    SubMgrCtx_t * pxCtx = &( pxTaskCtx->xSubMgrCtx );
 
-    if( pxCtx == NULL ||
-    	pcTopicFilter == NULL ||
-        pxCallback == NULL ||
-		!prvValidateQoS( xRequestedQoS ) )
+    if( ( pxCtx == NULL ) ||
+        ( pcTopicFilter == NULL ) ||
+        ( pxCallback == NULL ) ||
+        !prvValidateQoS( xRequestedQoS ) )
     {
         xStatus = MQTTBadParameter;
     }
     else /* pcTopicFilter != NULL */
     {
-    	xTopicFilterLen = strnlen( pcTopicFilter, UINT16_MAX );
+        xTopicFilterLen = strnlen( pcTopicFilter, UINT16_MAX );
     }
 
-    if( xTopicFilterLen == 0 || xTopicFilterLen >= UINT16_MAX )
+    if( ( xTopicFilterLen == 0 ) || ( xTopicFilterLen >= UINT16_MAX ) )
     {
-    	xStatus = MQTTBadParameter;
+        xStatus = MQTTBadParameter;
     }
 
     if( xStatus == MQTTSuccess )
-    	LogDebug( ">> waiting for xSemaphoreTake" );
+    {
+        LogDebug( ">> waiting for xSemaphoreTake" );
+    }
 
     /* Acquire mutex */
-    if( xStatus == MQTTSuccess &&
-    	xSemaphoreTake( pxCtx->xMutex, portMAX_DELAY ) == pdTRUE )
+    if( ( xStatus == MQTTSuccess ) &&
+        ( xSemaphoreTake( pxCtx->xMutex, portMAX_DELAY ) == pdTRUE ) )
     {
-    	size_t uxTargetSubIdx = MQTT_AGENT_MAX_SUBSCRIPTIONS;
-    	size_t uxTargetCbIdx = MQTT_AGENT_MAX_CALLBACKS;
+        size_t uxTargetSubIdx = MQTT_AGENT_MAX_SUBSCRIPTIONS;
+        size_t uxTargetCbIdx = MQTT_AGENT_MAX_CALLBACKS;
 
-    	LogDebug( ">>>> xSemaphoreTake complete." );
+        LogDebug( ">>>> xSemaphoreTake complete." );
 
-    	/* If no slot is found, return MQTTNoMemory */
-    	xStatus = MQTTNoMemory;
+        /* If no slot is found, return MQTTNoMemory */
+        xStatus = MQTTNoMemory;
 
-    	for( size_t uxSubIdx = 0U; uxSubIdx < MQTT_AGENT_MAX_SUBSCRIPTIONS; uxSubIdx++ )
-		{
-			MQTTSubscribeInfo_t * const pxSubInfo = &( pxCtx->pxSubscriptions[ uxSubIdx ] );
+        for( size_t uxSubIdx = 0U; uxSubIdx < MQTT_AGENT_MAX_SUBSCRIPTIONS; uxSubIdx++ )
+        {
+            MQTTSubscribeInfo_t * const pxSubInfo = &( pxCtx->pxSubscriptions[ uxSubIdx ] );
 
-			if( pxCtx->pulSubCbCount[ uxSubIdx ] == 0 &&
-				uxTargetSubIdx == MQTT_AGENT_MAX_SUBSCRIPTIONS )
-			{
-				configASSERT( pxCtx->pxSubscriptions[ uxSubIdx ].topicFilterLength == 0 );
-				configASSERT( pxCtx->pxSubscriptions[ uxSubIdx ].pTopicFilter == NULL );
+            if( ( pxCtx->pulSubCbCount[ uxSubIdx ] == 0 ) &&
+                ( uxTargetSubIdx == MQTT_AGENT_MAX_SUBSCRIPTIONS ) )
+            {
+                configASSERT( pxCtx->pxSubscriptions[ uxSubIdx ].topicFilterLength == 0 );
+                configASSERT( pxCtx->pxSubscriptions[ uxSubIdx ].pTopicFilter == NULL );
 
-				uxTargetSubIdx = uxSubIdx;
-				xStatus = MQTTSuccess;
+                uxTargetSubIdx = uxSubIdx;
+                xStatus = MQTTSuccess;
 
-				/* Reset SubAckStatus to trigger a subscribe op */
-				pxCtx->pxSubAckStatus[ uxTargetSubIdx ] = MQTTSubAckFailure;
+                /* Reset SubAckStatus to trigger a subscribe op */
+                pxCtx->pxSubAckStatus[ uxTargetSubIdx ] = MQTTSubAckFailure;
+            }
+            else if( strncmp( pxSubInfo->pTopicFilter, pcTopicFilter, pxSubInfo->topicFilterLength ) == 0 )
+            {
+                xRequestedQoS = prvGetNewQoS( pxSubInfo->qos, xRequestedQoS );
+                xStatus = MQTTSuccess;
+                uxTargetSubIdx = uxSubIdx;
 
-			}
-			else if( strncmp( pxSubInfo->pTopicFilter, pcTopicFilter, pxSubInfo->topicFilterLength ) == 0 )
-			{
-				xRequestedQoS = prvGetNewQoS( pxSubInfo->qos, xRequestedQoS );
-				xStatus = MQTTSuccess;
-				uxTargetSubIdx = uxSubIdx;
+                /* If QoS differs, trigger a subscribe op */
+                if( pxSubInfo->qos != xRequestedQoS )
+                {
+                    pxCtx->pxSubAckStatus[ uxTargetSubIdx ] = MQTTSubAckFailure;
+                }
 
-				/* If QoS differs, trigger a subscribe op */
-				if( pxSubInfo->qos != xRequestedQoS )
-				{
-					pxCtx->pxSubAckStatus[ uxTargetSubIdx ] = MQTTSubAckFailure;
-				}
-				break;
-			}
-			else
-			{
-				/* Empty */
-			}
-		}
+                break;
+            }
+            else
+            {
+                /* Empty */
+            }
+        }
 
+        /* Add Callback to list */
+        if( xStatus == MQTTSuccess )
+        {
+            /* If no slot is found, return MQTTNoMemory */
+            xStatus = MQTTNoMemory;
 
-    	/* Add Callback to list */
-    	if( xStatus == MQTTSuccess )
-    	{
-    		/* If no slot is found, return MQTTNoMemory */
-    		xStatus = MQTTNoMemory;
+            /* Find matching or empty callback context */
+            for( size_t uxCbIdx = 0U; uxCbIdx < MQTT_AGENT_MAX_CALLBACKS; uxCbIdx++ )
+            {
+                if( ( uxTargetCbIdx == MQTT_AGENT_MAX_CALLBACKS ) &&
+                    ( pxCtx->pxCallbacks[ uxCbIdx ].pxSubInfo == NULL ) )
+                {
+                    uxTargetCbIdx = uxCbIdx;
+                    xStatus = MQTTSuccess;
+                }
+                else if( prvMatchCbCtx( &( pxCtx->pxCallbacks[ uxCbIdx ] ),
+                                        &( pxCtx->pxSubscriptions[ uxTargetSubIdx ] ),
+                                        pxCallback,
+                                        pvCallbackCtx ) )
+                {
+                    uxTargetCbIdx = uxCbIdx;
+                    xStatus = MQTTSuccess;
+                    break;
+                }
+            }
+        }
 
-    		/* Find matching or empty callback context */
-    		for( size_t uxCbIdx = 0U; uxCbIdx < MQTT_AGENT_MAX_CALLBACKS; uxCbIdx++ )
-    		{
-    			if( uxTargetCbIdx == MQTT_AGENT_MAX_CALLBACKS &&
-    				pxCtx->pxCallbacks[ uxCbIdx ].pxSubInfo == NULL )
-    			{
-    				uxTargetCbIdx = uxCbIdx;
-    				xStatus = MQTTSuccess;
-    			}
-    			else if( prvMatchCbCtx( &( pxCtx->pxCallbacks[ uxCbIdx ] ),
-    							        &( pxCtx->pxSubscriptions[ uxTargetSubIdx ] ),
-    							        pxCallback,
-								        pvCallbackCtx ) )
-    			{
-    				uxTargetCbIdx = uxCbIdx;
-    				xStatus = MQTTSuccess;
-    				break;
-    			}
-    		}
-    	}
+        /*
+         * Populate the subscription entry.
+         */
+        if( ( xStatus == MQTTSuccess ) &&
+            ( pxCtx->pxSubAckStatus[ uxTargetSubIdx ] == MQTTSubAckFailure ) )
+        {
+            pxCtx->pxSubscriptions[ uxTargetSubIdx ].pTopicFilter = pcTopicFilter;
+            pxCtx->pxSubscriptions[ uxTargetSubIdx ].topicFilterLength = xTopicFilterLen;
+            pxCtx->pxSubscriptions[ uxTargetSubIdx ].qos = xRequestedQoS;
+        }
 
-    	/*
-    	 * Populate the subscription entry.
-    	 */
-    	if( xStatus == MQTTSuccess &&
-    		pxCtx->pxSubAckStatus[ uxTargetSubIdx ] == MQTTSubAckFailure )
-    	{
-    		pxCtx->pxSubscriptions[ uxTargetSubIdx ].pTopicFilter = pcTopicFilter;
-    		pxCtx->pxSubscriptions[ uxTargetSubIdx ].topicFilterLength = xTopicFilterLen;
-    		pxCtx->pxSubscriptions[ uxTargetSubIdx ].qos = xRequestedQoS;
-    	}
+        /*
+         * Populate the callback entry
+         */
+        if( ( xStatus == MQTTSuccess ) &&
+            ( pxCtx->pxCallbacks[ uxTargetCbIdx ].pxSubInfo == NULL ) )
+        {
+            pxCtx->pxCallbacks[ uxTargetCbIdx ].pxSubInfo = &( pxCtx->pxSubscriptions[ uxTargetSubIdx ] );
+            pxCtx->pxCallbacks[ uxTargetCbIdx ].xTaskHandle = xTaskGetCurrentTaskHandle();
+            pxCtx->pxCallbacks[ uxTargetCbIdx ].pxIncomingPublishCallback = pxCallback;
+            pxCtx->pxCallbacks[ uxTargetCbIdx ].pvIncomingPublishCallbackContext = pvCallbackCtx;
 
-    	/*
-		 * Populate the callback entry
-		 */
-    	if( xStatus == MQTTSuccess &&
-    		pxCtx->pxCallbacks[ uxTargetCbIdx ].pxSubInfo == NULL )
-    	{
-    		pxCtx->pxCallbacks[ uxTargetCbIdx ].pxSubInfo = &( pxCtx->pxSubscriptions[ uxTargetSubIdx ] );
-    		pxCtx->pxCallbacks[ uxTargetCbIdx ].xTaskHandle = xTaskGetCurrentTaskHandle();
-    		pxCtx->pxCallbacks[ uxTargetCbIdx ].pxIncomingPublishCallback = pxCallback;
-    		pxCtx->pxCallbacks[ uxTargetCbIdx ].pvIncomingPublishCallbackContext = pvCallbackCtx;
+            /* Increment subscription reference count. */
+            pxCtx->pulSubCbCount[ uxTargetSubIdx ]++;
+        }
 
-    		/* Increment subscription reference count. */
-    		pxCtx->pulSubCbCount[ uxTargetSubIdx ]++;
-    	}
+        ( void ) xSemaphoreGive( pxCtx->xMutex );
+        LogDebug( " <<<< Semaphore Give <<<<" );
 
-    	( void )xSemaphoreGive( pxCtx->xMutex );
-    	LogDebug( " <<<< Semaphore Give <<<<" );
-
-
-    	if( xStatus == MQTTSuccess &&
-    	    pxCtx->pxSubAckStatus[ uxTargetSubIdx ] == MQTTSubAckFailure )
-    	{
-    		xStatus = prvSendSubRequest( &( pxTaskCtx->xAgentContext ),
-										 &( pxCtx->pxSubscriptions[ uxTargetSubIdx ] ),
-										 &( pxCtx->pxSubAckStatus[ uxTargetSubIdx ] ),
-										 portMAX_DELAY );
-    	}
-
-
-
+        if( ( xStatus == MQTTSuccess ) &&
+            ( pxCtx->pxSubAckStatus[ uxTargetSubIdx ] == MQTTSubAckFailure ) )
+        {
+            xStatus = prvSendSubRequest( &( pxTaskCtx->xAgentContext ),
+                                         &( pxCtx->pxSubscriptions[ uxTargetSubIdx ] ),
+                                         &( pxCtx->pxSubAckStatus[ uxTargetSubIdx ] ),
+                                         portMAX_DELAY );
+        }
     }
     else
     {
-    	xStatus = MQTTIllegalState;
-    	LogError( "Failed to acquire MQTTAgent mutex." );
+        xStatus = MQTTIllegalState;
+        LogError( "Failed to acquire MQTTAgent mutex." );
     }
+
     return xStatus;
 }
 
@@ -1445,174 +1455,174 @@ MQTTStatus_t MqttAgent_SubscribeSync( MQTTAgentHandle_t xHandle,
 static void prvAgentRequestCallback( MQTTAgentCommandContext_t * pxCommandContext,
                                      MQTTAgentReturnInfo_t * pxReturnInfo )
 {
-	TaskHandle_t xTaskHandle = ( TaskHandle_t )pxCommandContext;
+    TaskHandle_t xTaskHandle = ( TaskHandle_t ) pxCommandContext;
 
-	configASSERT( pxReturnInfo );
+    configASSERT( pxReturnInfo );
 
-	if( xTaskHandle != NULL )
-	{
-		uint32_t ulNotifyValue = pxReturnInfo->returnCode;
-		( void ) xTaskNotifyIndexed( xTaskHandle,
-									 MQTT_AGENT_NOTIFY_IDX,
-									 ulNotifyValue,
-									 eSetValueWithOverwrite );
-	}
+    if( xTaskHandle != NULL )
+    {
+        uint32_t ulNotifyValue = pxReturnInfo->returnCode;
+        ( void ) xTaskNotifyIndexed( xTaskHandle,
+                                     MQTT_AGENT_NOTIFY_IDX,
+                                     ulNotifyValue,
+                                     eSetValueWithOverwrite );
+    }
 }
 
 /*-----------------------------------------------------------*/
 
 static inline MQTTStatus_t prvSendUnsubRequest( MQTTAgentContext_t * pxAgentCtx,
-										        MQTTSubscribeInfo_t * pxSubInfo,
-												TickType_t xTimeout )
+                                                MQTTSubscribeInfo_t * pxSubInfo,
+                                                TickType_t xTimeout )
 {
-	MQTTStatus_t xStatus = MQTTSuccess;
+    MQTTStatus_t xStatus = MQTTSuccess;
 
-	MQTTAgentSubscribeArgs_t xSubscribeArgs =
-	{
-		.numSubscriptions = 1,
-		.pSubscribeInfo = pxSubInfo,
-	};
+    MQTTAgentSubscribeArgs_t xSubscribeArgs =
+    {
+        .numSubscriptions = 1,
+        .pSubscribeInfo   = pxSubInfo,
+    };
 
-	MQTTAgentCommandInfo_t xCommandInfo =
-	{
-		.blockTimeMs = xTimeout,
-		.cmdCompleteCallback = prvAgentRequestCallback,
-		.pCmdCompleteCallbackContext = ( void * ) xTaskGetCurrentTaskHandle(),
-	};
+    MQTTAgentCommandInfo_t xCommandInfo =
+    {
+        .blockTimeMs                 = xTimeout,
+        .cmdCompleteCallback         = prvAgentRequestCallback,
+        .pCmdCompleteCallbackContext = ( void * ) xTaskGetCurrentTaskHandle(),
+    };
 
-	( void ) xTaskNotifyStateClearIndexed( NULL, MQTT_AGENT_NOTIFY_IDX );
+    ( void ) xTaskNotifyStateClearIndexed( NULL, MQTT_AGENT_NOTIFY_IDX );
 
-	xStatus = MQTTAgent_Unsubscribe( pxAgentCtx, &xSubscribeArgs, &xCommandInfo );
+    xStatus = MQTTAgent_Unsubscribe( pxAgentCtx, &xSubscribeArgs, &xCommandInfo );
 
-	if( xStatus == MQTTSuccess )
-	{
-		uint32_t ulNotifyValue = 0;
-    	if( xTaskNotifyWaitIndexed( MQTT_AGENT_NOTIFY_IDX,
-    							    0x0,
-								    0xFFFFFFFF,
-								    &ulNotifyValue,
-									xTimeout ) )
-    	{
-    		xStatus = ulNotifyValue;
-    	}
-    	else
-    	{
-    		xStatus = MQTTKeepAliveTimeout;
-    	}
-	}
+    if( xStatus == MQTTSuccess )
+    {
+        uint32_t ulNotifyValue = 0;
 
-	return xStatus;
+        if( xTaskNotifyWaitIndexed( MQTT_AGENT_NOTIFY_IDX,
+                                    0x0,
+                                    0xFFFFFFFF,
+                                    &ulNotifyValue,
+                                    xTimeout ) )
+        {
+            xStatus = ulNotifyValue;
+        }
+        else
+        {
+            xStatus = MQTTKeepAliveTimeout;
+        }
+    }
+
+    return xStatus;
 }
 
 /*-----------------------------------------------------------*/
 
 MQTTStatus_t MqttAgent_UnSubscribeSync( MQTTAgentHandle_t xHandle,
-										const char * pcTopicFilter,
-										IncomingPubCallback_t pxCallback,
-										void * pvCallbackCtx )
+                                        const char * pcTopicFilter,
+                                        IncomingPubCallback_t pxCallback,
+                                        void * pvCallbackCtx )
 {
-	MQTTStatus_t xStatus = MQTTSuccess;
-	size_t xTopicFilterLen = 0;
-	MQTTAgentTaskCtx_t * pxTaskCtx = ( MQTTAgentTaskCtx_t * )xHandle;
-	SubMgrCtx_t * pxCtx = &( pxTaskCtx->xSubMgrCtx );
+    MQTTStatus_t xStatus = MQTTSuccess;
+    size_t xTopicFilterLen = 0;
+    MQTTAgentTaskCtx_t * pxTaskCtx = ( MQTTAgentTaskCtx_t * ) xHandle;
+    SubMgrCtx_t * pxCtx = &( pxTaskCtx->xSubMgrCtx );
 
-    if( pxCtx == NULL ||
-    	pcTopicFilter == NULL ||
-        pxCallback == NULL )
+    if( ( pxCtx == NULL ) ||
+        ( pcTopicFilter == NULL ) ||
+        ( pxCallback == NULL ) )
     {
         xStatus = MQTTBadParameter;
     }
     else /* pcTopicFilter != NULL */
     {
-    	xTopicFilterLen = strnlen( pcTopicFilter, UINT16_MAX );
+        xTopicFilterLen = strnlen( pcTopicFilter, UINT16_MAX );
     }
 
-    if( xTopicFilterLen == 0 || xTopicFilterLen >= UINT16_MAX )
+    if( ( xTopicFilterLen == 0 ) || ( xTopicFilterLen >= UINT16_MAX ) )
     {
-    	xStatus = MQTTBadParameter;
+        xStatus = MQTTBadParameter;
     }
 
     if( xStatus == MQTTSuccess )
-    	LogDebug( ">> waiting for xSemaphoreTake" );
+    {
+        LogDebug( ">> waiting for xSemaphoreTake" );
+    }
 
     /* Acquire mutex */
-	if( xStatus == MQTTSuccess &&
-		xSemaphoreTake( pxCtx->xMutex, portMAX_DELAY ) == pdTRUE )
-	{
-		MQTTSubscribeInfo_t * pxSubInfo = NULL;
-		size_t uxSubInfoIdx = MQTT_AGENT_MAX_SUBSCRIPTIONS;
+    if( ( xStatus == MQTTSuccess ) &&
+        ( xSemaphoreTake( pxCtx->xMutex, portMAX_DELAY ) == pdTRUE ) )
+    {
+        MQTTSubscribeInfo_t * pxSubInfo = NULL;
+        size_t uxSubInfoIdx = MQTT_AGENT_MAX_SUBSCRIPTIONS;
 
-		LogDebug( ">>>> xSemaphoreTake complete." );
+        LogDebug( ">>>> xSemaphoreTake complete." );
 
-		xStatus = MQTTNoDataAvailable;
+        xStatus = MQTTNoDataAvailable;
 
-		/* Find matching subscription context */
-		for( size_t uxIdx = 0U; uxIdx < MQTT_AGENT_MAX_SUBSCRIPTIONS; uxIdx++ )
-		{
-			if( strncmp( pxCtx->pxSubscriptions[ uxIdx ].pTopicFilter,
-						 pcTopicFilter,
-						 pxCtx->pxSubscriptions[ uxIdx ].topicFilterLength ) == 0 )
-			{
-				uxSubInfoIdx = uxIdx;
-				xStatus = MQTTSuccess;
-				pxSubInfo = &( pxCtx->pxSubscriptions[ uxIdx ] );
-				break;
-			}
-		}
+        /* Find matching subscription context */
+        for( size_t uxIdx = 0U; uxIdx < MQTT_AGENT_MAX_SUBSCRIPTIONS; uxIdx++ )
+        {
+            if( strncmp( pxCtx->pxSubscriptions[ uxIdx ].pTopicFilter,
+                         pcTopicFilter,
+                         pxCtx->pxSubscriptions[ uxIdx ].topicFilterLength ) == 0 )
+            {
+                uxSubInfoIdx = uxIdx;
+                xStatus = MQTTSuccess;
+                pxSubInfo = &( pxCtx->pxSubscriptions[ uxIdx ] );
+                break;
+            }
+        }
 
-		if( xStatus == MQTTSuccess )
-		{
-			xStatus = MQTTNoDataAvailable;
+        if( xStatus == MQTTSuccess )
+        {
+            xStatus = MQTTNoDataAvailable;
 
-			/* Find matching callback context, and remove it. */
-			for( size_t uxIdx = 0U; uxIdx < MQTT_AGENT_MAX_CALLBACKS; uxIdx++ )
-			{
-				SubCallbackElement_t * pxCbCtx = &( pxCtx->pxCallbacks[ uxIdx ] );
+            /* Find matching callback context, and remove it. */
+            for( size_t uxIdx = 0U; uxIdx < MQTT_AGENT_MAX_CALLBACKS; uxIdx++ )
+            {
+                SubCallbackElement_t * pxCbCtx = &( pxCtx->pxCallbacks[ uxIdx ] );
 
-				if( prvMatchCbCtx( pxCbCtx, pxSubInfo, pxCallback, pvCallbackCtx ) )
-				{
-					xStatus = MQTTSuccess;
-					pxCbCtx->pvIncomingPublishCallbackContext = NULL;
-					pxCbCtx->pxIncomingPublishCallback = NULL;
-					pxCbCtx->pxSubInfo = NULL;
-					pxCbCtx->xTaskHandle = NULL;
+                if( prvMatchCbCtx( pxCbCtx, pxSubInfo, pxCallback, pvCallbackCtx ) )
+                {
+                    xStatus = MQTTSuccess;
+                    pxCbCtx->pvIncomingPublishCallbackContext = NULL;
+                    pxCbCtx->pxIncomingPublishCallback = NULL;
+                    pxCbCtx->pxSubInfo = NULL;
+                    pxCbCtx->xTaskHandle = NULL;
 
-					if( pxCtx->pulSubCbCount[ uxSubInfoIdx ] > 0 )
-					{
-						pxCtx->pulSubCbCount[ uxSubInfoIdx ]--;
-					}
+                    if( pxCtx->pulSubCbCount[ uxSubInfoIdx ] > 0 )
+                    {
+                        pxCtx->pulSubCbCount[ uxSubInfoIdx ]--;
+                    }
 
-					pxCtx->uxCallbackCount--;
+                    pxCtx->uxCallbackCount--;
 
-					prvCompressCallbackList( pxCtx->pxCallbacks, &( pxCtx->uxCallbackCount ) );
-					break;
-				}
-			}
-		}
+                    prvCompressCallbackList( pxCtx->pxCallbacks, &( pxCtx->uxCallbackCount ) );
+                    break;
+                }
+            }
+        }
 
-		( void ) xSemaphoreGive( pxCtx->xMutex );
-		LogDebug( " <<<< Semaphore Give <<<<" );
+        ( void ) xSemaphoreGive( pxCtx->xMutex );
+        LogDebug( " <<<< Semaphore Give <<<<" );
 
-		if( xStatus == MQTTSuccess &&
-			pxCtx->pulSubCbCount[ uxSubInfoIdx ] == 0 )
-		{
-			xStatus = prvSendUnsubRequest( &( pxTaskCtx->xAgentContext ),
-										   pxSubInfo, portMAX_DELAY );
+        if( ( xStatus == MQTTSuccess ) &&
+            ( pxCtx->pulSubCbCount[ uxSubInfoIdx ] == 0 ) )
+        {
+            xStatus = prvSendUnsubRequest( &( pxTaskCtx->xAgentContext ),
+                                           pxSubInfo, portMAX_DELAY );
 
-			pxSubInfo->topicFilterLength = 0;
-			pxSubInfo->pTopicFilter = NULL;
-			pxSubInfo->qos = 0;
-			pxCtx->pxSubAckStatus[ uxSubInfoIdx ] = MQTTSubAckFailure;
+            pxSubInfo->topicFilterLength = 0;
+            pxSubInfo->pTopicFilter = NULL;
+            pxSubInfo->qos = 0;
+            pxCtx->pxSubAckStatus[ uxSubInfoIdx ] = MQTTSubAckFailure;
 
-			if( pxCtx->uxSubscriptionCount > 0 )
-			{
-				pxCtx->uxSubscriptionCount--;
-			}
-		}
+            if( pxCtx->uxSubscriptionCount > 0 )
+            {
+                pxCtx->uxSubscriptionCount--;
+            }
+        }
+    }
 
-
-	}
-	return xStatus;
+    return xStatus;
 }
-
-

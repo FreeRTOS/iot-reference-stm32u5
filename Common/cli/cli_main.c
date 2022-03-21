@@ -134,7 +134,7 @@ static const CLI_Definition_List_Item_t * prvFindMatchingCommand( const char * c
         size_t xCommandStringLength = strlen( pcRegisteredCommandString );
 
         /* Match the provided command string to members of our list of commands */
-        if( strncmp( pcCommandInput, pcRegisteredCommandString, xCommandStringLength ) == 0 &&
+        if( ( strncmp( pcCommandInput, pcRegisteredCommandString, xCommandStringLength ) == 0 ) &&
             ( ( pcCommandInput[ xCommandStringLength ] == ' ' ) || ( pcCommandInput[ xCommandStringLength ] == '\x00' ) ) )
         {
             break;
@@ -144,6 +144,7 @@ static const CLI_Definition_List_Item_t * prvFindMatchingCommand( const char * c
             pxCommand = pxCommand->pxNext;
         }
     }
+
     return pxCommand;
 }
 
@@ -163,7 +164,7 @@ void FreeRTOS_CLIProcessCommand( ConsoleIO_t * const pxCIO,
         uint32_t ulArgC = prvGetNumberOfArgs( pcCommandInput );
 
         /* Tokenize into ulArgC / pcArgv */
-        char * pcArgv[ ulArgC ]; // TODO fix const
+        char * pcArgv[ ulArgC ]; /* TODO fix const */
 
         char * pcTokenizerCtx = NULL;
 
@@ -262,12 +263,13 @@ static void prvHelpCommand( ConsoleIO_t * const pxConsoleIO,
     static const CLI_Definition_List_Item_t * pxCommand = NULL;
 
     /* Check for an argument containing a recognized command */
-    if( ulArgc > 1 &&
-        ppcArgv[ 1 ] != NULL )
+    if( ( ulArgc > 1 ) &&
+        ( ppcArgv[ 1 ] != NULL ) )
     {
         BaseType_t xFound = pdFALSE;
         pxCommand = &xRegisteredCommands;
-        while( pxCommand!= NULL &&
+
+        while( pxCommand != NULL &&
                xFound == pdFALSE )
         {
             if( strncmp( pxCommand->pxCommandLineDefinition->pcCommand,
@@ -292,6 +294,7 @@ static void prvHelpCommand( ConsoleIO_t * const pxConsoleIO,
     else
     {
         pxCommand = &xRegisteredCommands;
+
         while( pxCommand != NULL )
         {
             pxConsoleIO->print( pxCommand->pxCommandLineDefinition->pcHelpString );
@@ -316,12 +319,13 @@ static uint32_t prvGetNumberOfArgs( const char * pcCommandString )
          * If the current character is not a space and
          * the next character is a space or null
          */
-        if( pcCurrentChar[ 0 ] != ' ' &&
-            ( pcCurrentChar[ 1 ] == ' ' ||
-              pcCurrentChar[ 1 ] == '\x00' ) )
+        if( ( pcCurrentChar[ 0 ] != ' ' ) &&
+            ( ( pcCurrentChar[ 1 ] == ' ' ) ||
+              ( pcCurrentChar[ 1 ] == '\x00' ) ) )
         {
             luArgCount++;
         }
+
         pcCurrentChar++;
     }
 
@@ -350,8 +354,9 @@ void Task_CLI( void * pvParameters )
         {
             /* Read a line of input */
             int32_t lLen = xConsoleIO.readline( &pcCommandBuffer );
-            if( pcCommandBuffer != NULL &&
-                lLen > 0 )
+
+            if( ( pcCommandBuffer != NULL ) &&
+                ( lLen > 0 ) )
             {
                 FreeRTOS_CLIProcessCommand( &xConsoleIO, pcCommandBuffer );
             }

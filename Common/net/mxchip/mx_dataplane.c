@@ -24,7 +24,7 @@
  */
 
 #include "logging_levels.h"
-#define LOG_LEVEL LOG_WARN
+#define LOG_LEVEL    LOG_WARN
 
 #include "logging.h"
 
@@ -40,13 +40,13 @@
 #include "mx_ipc.h"
 #include "mx_prv.h"
 
-#define EVT_SPI_DONE            0x8
-#define EVT_SPI_ERROR           0x10
+#define EVT_SPI_DONE        0x8
+#define EVT_SPI_ERROR       0x10
 
-#define EVT_SPI_FLOW            0x2
+#define EVT_SPI_FLOW        0x2
 
-#define SPI_EVT_DMA_IDX         1
-#define SPI_EVT_FLOW_IDX        2
+#define SPI_EVT_DMA_IDX     1
+#define SPI_EVT_FLOW_IDX    2
 
 static MxDataplaneCtx_t * volatile pxSpiCtx = NULL;
 
@@ -56,7 +56,7 @@ uint32_t prvGetNextRequestID( void )
 
     if( pxSpiCtx != NULL )
     {
-        ulRequestId= Atomic_Increment_u32( &( pxSpiCtx->ulLastRequestId ) );
+        ulRequestId = Atomic_Increment_u32( &( pxSpiCtx->ulLastRequestId ) );
 
         /* Avoid ulRequestId == 0 */
         if( ulRequestId == 0 )
@@ -70,7 +70,7 @@ uint32_t prvGetNextRequestID( void )
 
 
 /* Callback functions */
-static void spi_transfer_done_callback( SPI_HandleTypeDef *hspi )
+static void spi_transfer_done_callback( SPI_HandleTypeDef * hspi )
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     BaseType_t rslt = pdFALSE;
@@ -88,7 +88,7 @@ static void spi_transfer_done_callback( SPI_HandleTypeDef *hspi )
     }
 }
 
-static void spi_transfer_error_callback( SPI_HandleTypeDef *hspi )
+static void spi_transfer_error_callback( SPI_HandleTypeDef * hspi )
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
@@ -152,7 +152,7 @@ static inline void vGpioSet( const IotMappedPin_t * gpio )
 
 static inline BaseType_t xGpioGet( const IotMappedPin_t * gpio )
 {
-    return (BaseType_t) HAL_GPIO_ReadPin( gpio->xPort, gpio->xPinMask );
+    return ( BaseType_t ) HAL_GPIO_ReadPin( gpio->xPort, gpio->xPinMask );
 }
 
 static inline void vDoHardReset( MxDataplaneCtx_t * pxCtx )
@@ -165,8 +165,8 @@ static inline void vDoHardReset( MxDataplaneCtx_t * pxCtx )
 }
 
 /* SPI protocol definitions */
-#define MX_SPI_WRITE        ( 0x0A )
-#define MX_SPI_READ         ( 0x0B )
+#define MX_SPI_WRITE    ( 0x0A )
+#define MX_SPI_READ     ( 0x0B )
 
 static inline BaseType_t xWaitForSPIEvent( TickType_t xTimeout )
 {
@@ -182,7 +182,7 @@ static inline BaseType_t xWaitForSPIEvent( TickType_t xTimeout )
     {
         if( ulNotifiedValue & EVT_SPI_DONE )
         {
-            LogDebug("SPI done event received.");
+            LogDebug( "SPI done event received." );
             xReturnValue = pdTRUE;
         }
 
@@ -198,6 +198,7 @@ static inline BaseType_t xWaitForSPIEvent( TickType_t xTimeout )
             xReturnValue = pdFALSE;
         }
     }
+
     return xReturnValue;
 }
 
@@ -224,36 +225,37 @@ static inline BaseType_t xDoSpiHeaderTransfer( MxDataplaneCtx_t * pxCtx,
                                               ( uint8_t * ) &xRxHeader,
                                               sizeof( SPIHeader_t ) );
 
-   /* Exchange headers with the module */
-   if( xHalStatus != HAL_OK )
-   {
-       LogError( "Error returned by HAL_SPI_TransmitReceive_DMA call during transfer. xHalStatus=%d", xHalStatus );
-   }
-   else
-   {
-       xHalStatus = ( xWaitForSPIEvent( MX_SPI_EVENT_TIMEOUT ) == pdTRUE ) ? HAL_OK : HAL_ERROR;
-   }
-
-   if( xHalStatus == HAL_OK &&
-       xRxHeader.len < MX_MAX_MESSAGE_LEN &&
-       xRxHeader.type == MX_SPI_READ &&
-       ( ( xRxHeader.len ) ^ ( xRxHeader.lenx ) ) == 0xFFFF )
+    /* Exchange headers with the module */
+    if( xHalStatus != HAL_OK )
     {
-       *psRxLen = xRxHeader.len;
+        LogError( "Error returned by HAL_SPI_TransmitReceive_DMA call during transfer. xHalStatus=%d", xHalStatus );
     }
     else
     {
-        if( xRxHeader.type == MX_SPI_READ &&
-            xRxHeader.len != 0 )
+        xHalStatus = ( xWaitForSPIEvent( MX_SPI_EVENT_TIMEOUT ) == pdTRUE ) ? HAL_OK : HAL_ERROR;
+    }
+
+    if( ( xHalStatus == HAL_OK ) &&
+        ( xRxHeader.len < MX_MAX_MESSAGE_LEN ) &&
+        ( xRxHeader.type == MX_SPI_READ ) &&
+        ( ( ( xRxHeader.len ) ^ ( xRxHeader.lenx ) ) == 0xFFFF ) )
+    {
+        *psRxLen = xRxHeader.len;
+    }
+    else
+    {
+        if( ( xRxHeader.type == MX_SPI_READ ) &&
+            ( xRxHeader.len != 0 ) )
         {
             LogError( "RX header validation failed. len: %d, lenx: %d, xord: %d, type: %d, xHalStatus: %d",
-                       xRxHeader.len, xRxHeader.lenx,  ( xRxHeader.len ) ^ ( xRxHeader.lenx ), xRxHeader.type, xHalStatus );
+                      xRxHeader.len, xRxHeader.lenx, ( xRxHeader.len ) ^ ( xRxHeader.lenx ), xRxHeader.type, xHalStatus );
         }
+
         *psRxLen = 0;
         *psTxLen = 0;
     }
 
-   return( xHalStatus == HAL_OK );
+    return( xHalStatus == HAL_OK );
 }
 
 static inline BaseType_t xReceiveMessage( MxDataplaneCtx_t * pxCtx,
@@ -261,6 +263,7 @@ static inline BaseType_t xReceiveMessage( MxDataplaneCtx_t * pxCtx,
                                           uint32_t ulRxDataLen )
 {
     HAL_StatusTypeDef xHalStatus;
+
     configASSERT( pxCtx != NULL );
     configASSERT( pucRxBuffer != NULL );
     configASSERT( ulRxDataLen > 0 );
@@ -281,6 +284,7 @@ static inline BaseType_t xTransmitMessage( MxDataplaneCtx_t * pxCtx,
                                            uint32_t usTxDataLen )
 {
     HAL_StatusTypeDef xHalStatus;
+
     configASSERT( pxCtx != NULL );
     configASSERT( pucTxBuffer != NULL );
     configASSERT( usTxDataLen > 0 );
@@ -304,6 +308,7 @@ static inline BaseType_t xTransmitReceiveMessage( MxDataplaneCtx_t * pxCtx,
                                                   uint32_t usRxDataLen )
 {
     HAL_StatusTypeDef xHalStatus;
+
     configASSERT( pxCtx != NULL );
     configASSERT( pucTxBuffer != NULL );
     configASSERT( usTxDataLen > 0 );
@@ -324,8 +329,7 @@ static inline BaseType_t xTransmitReceiveMessage( MxDataplaneCtx_t * pxCtx,
 
         xHalStatus |= xTransmitMessage( pxCtx,
                                         &pucTxBuffer[ usRxDataLen ],
-                                        usTxDataLen - usRxDataLen  );
-
+                                        usTxDataLen - usRxDataLen );
     }
     else if( usTxDataLen < usRxDataLen )
     {
@@ -341,7 +345,6 @@ static inline BaseType_t xTransmitReceiveMessage( MxDataplaneCtx_t * pxCtx,
         xHalStatus |= xReceiveMessage( pxCtx,
                                        &pucRxBuffer[ usTxDataLen ],
                                        usRxDataLen - usTxDataLen );
-
     }
     else /* usTxDataLen == usRxDataLen */
     {
@@ -359,16 +362,16 @@ static inline BaseType_t xTransmitReceiveMessage( MxDataplaneCtx_t * pxCtx,
 
 static void vProcessRxPacket( MessageBufferHandle_t * xControlPlaneResponseBuff,
                               NetInterface_t * pxNetif,
-                              PacketBuffer_t * * ppxRxPacket )
+                              PacketBuffer_t ** ppxRxPacket )
 {
     BaseType_t xResult = pdFALSE;
 
     /* Read header */
-    IPCHeader_t * pxRxPktHeader = ( IPCHeader_t * ) ( * ppxRxPacket )->payload;
+    IPCHeader_t * pxRxPktHeader = ( IPCHeader_t * ) ( *ppxRxPacket )->payload;
 
     /* Fast path: bypass in packets */
-    if( pxRxPktHeader->usIPCApiId == IPC_WIFI_EVT_BYPASS_IN &&
-        ( *ppxRxPacket )->len > sizeof( BypassInOut_t ) )
+    if( ( pxRxPktHeader->usIPCApiId == IPC_WIFI_EVT_BYPASS_IN ) &&
+        ( ( *ppxRxPacket )->len > sizeof( BypassInOut_t ) ) )
     {
         /* adjust header */
         pbuf_remove_header( ( *ppxRxPacket ), sizeof( BypassInOut_t ) );
@@ -379,13 +382,15 @@ static void vProcessRxPacket( MessageBufferHandle_t * xControlPlaneResponseBuff,
             /* Free packet on failure */
             PBUF_FREE( *ppxRxPacket );
         }
+
         /* Clear pointer */
         ( *ppxRxPacket ) = NULL;
     }
     /* Drop bypass out ACK packets */
     else if( pxRxPktHeader->usIPCApiId == IPC_WIFI_BYPASS_OUT )
     {
-        IPCResponsBypassOut_t * pxBypassOutResponse = ( * ppxRxPacket )->payload + ( ptrdiff_t ) sizeof( IPCHeader_t );
+        IPCResponsBypassOut_t * pxBypassOutResponse = ( *ppxRxPacket )->payload + ( ptrdiff_t ) sizeof( IPCHeader_t );
+
         if( pxBypassOutResponse->status == IPC_SUCCESS )
         {
             LogDebug( "Dropping bypass response for request id: %d.", pxRxPktHeader->ulIPCRequestId );
@@ -426,7 +431,7 @@ static void vProcessRxPacket( MessageBufferHandle_t * xControlPlaneResponseBuff,
 }
 
 
-void vInitCallbacks( MxDataplaneCtx_t *pxCtx )
+void vInitCallbacks( MxDataplaneCtx_t * pxCtx )
 {
     HAL_StatusTypeDef xHalResult = HAL_ERROR;
 
@@ -438,7 +443,6 @@ void vInitCallbacks( MxDataplaneCtx_t *pxCtx )
     GPIO_EXTI_Register_Callback( pxCtx->gpio_flow->xPinMask,
                                  spi_flow_callback,
                                  pxCtx );
-
 
 
 
@@ -509,15 +513,15 @@ void vDataplaneThread( void * pvParameters )
 
         if( pxCtx->ulTxPacketsWaiting == 0 )
         {
-            LogDebug("Starting wait for DATA_WAITING_IDX event");
+            LogDebug( "Starting wait for DATA_WAITING_IDX event" );
             ulTaskNotifyTakeIndexed( DATA_WAITING_IDX,
                                      pdFALSE,
                                      500 );
         }
 
         /* Skip this transaction if IRQ pin is low and there are no pending tx packets */
-        if( xGpioGet( pxCtx->gpio_notify ) == pdFALSE &&
-            pxCtx->ulTxPacketsWaiting == 0 )
+        if( ( xGpioGet( pxCtx->gpio_notify ) == pdFALSE ) &&
+            ( pxCtx->ulTxPacketsWaiting == 0 ) )
         {
             continue;
         }
@@ -545,7 +549,7 @@ void vDataplaneThread( void * pvParameters )
                 configASSERT( pxTxBuff->ref > 0 );
                 usTxLen = pxTxBuff->tot_len;
                 xSourceQueue = pxCtx->xControlPlaneSendQueue;
-                LogDebug("Preparing controlplane message for transmission");
+                LogDebug( "Preparing controlplane message for transmission" );
             }
             else if( xQueuePeek( pxCtx->xDataPlaneSendQueue, &pxTxBuff, 0 ) == pdTRUE )
             {
@@ -553,18 +557,18 @@ void vDataplaneThread( void * pvParameters )
                 configASSERT( pxTxBuff->ref > 0 );
                 usTxLen = pxTxBuff->tot_len;
                 xSourceQueue = pxCtx->xDataPlaneSendQueue;
-                LogDebug("Preparing dataplane message for transmission");
+                LogDebug( "Preparing dataplane message for transmission" );
             }
             else
             {
                 /* Empty, no TX packets */
             }
 
-            if( pxTxBuff == NULL &&
-                pxCtx->ulTxPacketsWaiting != 0 )
+            if( ( pxTxBuff == NULL ) &&
+                ( pxCtx->ulTxPacketsWaiting != 0 ) )
             {
-                LogWarn("Mismatch between ulTxPacketsWaiting and queue contents. Resetting ulTxPacketsWaiting");
-                pxSpiCtx->ulTxPacketsWaiting=0;
+                LogWarn( "Mismatch between ulTxPacketsWaiting and queue contents. Resetting ulTxPacketsWaiting" );
+                pxSpiCtx->ulTxPacketsWaiting = 0;
             }
 
             if( xResult == pdTRUE )
@@ -580,13 +584,14 @@ void vDataplaneThread( void * pvParameters )
                 {
                     pxRxBuff = PBUF_ALLOC_RX( usRxLen );
                 }
+
                 /* Wait for flow pin to go high */
                 xResult = xWaitForFlow( pxCtx );
             }
 
             /* Read from the queue */
-            if( xResult == pdTRUE &&
-                xSourceQueue != NULL )
+            if( ( xResult == pdTRUE ) &&
+                ( xSourceQueue != NULL ) )
             {
                 xResult = xQueueReceive( xSourceQueue, &pxTxBuff, 0 );
                 configASSERT( pxTxBuff != NULL );
@@ -601,20 +606,20 @@ void vDataplaneThread( void * pvParameters )
             if( xResult == pdTRUE )
             {
                 /* Transmit case */
-                if( usTxLen > 0 &&
-                    usRxLen == 0 )
+                if( ( usTxLen > 0 ) &&
+                    ( usRxLen == 0 ) )
                 {
                     configASSERT( pxTxBuff );
                     xResult = xTransmitMessage( pxCtx, pxTxBuff->payload, usTxLen );
                 }
-                else if( usRxLen > 0 &&
-                         usTxLen == 0 )
+                else if( ( usRxLen > 0 ) &&
+                         ( usTxLen == 0 ) )
                 {
                     configASSERT( pxRxBuff );
                     xResult = xReceiveMessage( pxCtx, pxRxBuff->payload, usRxLen );
                 }
-                else if( usRxLen > 0 &&
-                        usTxLen > 0 )
+                else if( ( usRxLen > 0 ) &&
+                         ( usTxLen > 0 ) )
                 {
                     configASSERT( pxRxBuff );
                     configASSERT( pxTxBuff );
@@ -647,8 +652,8 @@ void vDataplaneThread( void * pvParameters )
             pxTxBuff = NULL;
         }
 
-        if( xResult == pdTRUE &&
-            pxRxBuff != NULL )
+        if( ( xResult == pdTRUE ) &&
+            ( pxRxBuff != NULL ) )
         {
             vProcessRxPacket( pxCtx->xControlPlaneResponseBuff, pxCtx->pxNetif, &pxRxBuff );
         }
@@ -661,7 +666,5 @@ void vDataplaneThread( void * pvParameters )
 
         configASSERT( pxTxBuff == NULL );
         configASSERT( pxRxBuff == NULL );
-
-
     }
 }

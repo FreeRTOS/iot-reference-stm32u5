@@ -147,6 +147,11 @@
 			<locationURI>PARENT-2-PROJECT_LOC/Middleware/AWS/OTA/source</locationURI>
 		</link>
 		<link>
+			<name>Libraries/pkcs11</name>
+			<type>2</type>
+			<location>/Volumes/workplace/testing/tfm-stm32u5/IoT-Reference-STM32U5/Middleware/pkcs11</location>
+		</link>
+		<link>
 			<name>Libraries/stm32u5_mbedtls_accel</name>
 			<type>2</type>
 			<locationURI>WORKSPACE_LOC/Drivers/stm32u5_mbedtls_accel</locationURI>

@@ -33,21 +33,26 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define MODE_ARG_IDX    1
-#define KEY_ARG_IDX     2
-#define VALUE_ARG_IDX   3
+#define MODE_ARG_IDX     1
+#define KEY_ARG_IDX      2
+#define VALUE_ARG_IDX    3
 
 /* Local static functions */
 static void vSubCommand_CommitConfig( ConsoleIO_t * pxCIO );
-static void vSubCommand_GetConfig( ConsoleIO_t * pxCIO, const char * const pcKey );
+static void vSubCommand_GetConfig( ConsoleIO_t * pxCIO,
+                                   const char * const pcKey );
 static void vSubCommand_GetConfigAll( ConsoleIO_t * pxCIO );
-static void vSubCommand_SetConfig( ConsoleIO_t * pxCIO, uint32_t ulArgc, char * ppcArgv[] );
-static void vCommand_Configure( ConsoleIO_t * pxCIO, uint32_t ulArgc, char * ppcArgv[] );
+static void vSubCommand_SetConfig( ConsoleIO_t * pxCIO,
+                                   uint32_t ulArgc,
+                                   char * ppcArgv[] );
+static void vCommand_Configure( ConsoleIO_t * pxCIO,
+                                uint32_t ulArgc,
+                                char * ppcArgv[] );
 
 const CLI_Command_Definition_t xCommandDef_conf =
 {
-    .pcCommand = "conf",
-    .pcHelpString =
+    .pcCommand            = "conf",
+    .pcHelpString         =
         "conf:\r\n"
         "    Get/ Set/ Commit runtime configuration values\r\n"
         "    Usage:\r\n"
@@ -77,7 +82,8 @@ static void vSubCommand_CommitConfig( ConsoleIO_t * pxCIO )
     }
 }
 
-static void vSubCommand_GetConfig( ConsoleIO_t * pxCIO, const char * const pcKey )
+static void vSubCommand_GetConfig( ConsoleIO_t * pxCIO,
+                                   const char * const pcKey )
 {
     KVStoreKey_t xKey = kvStringToKey( pcKey );
     KVStoreValueType_t xKvType = KVStore_getType( xKey );
@@ -86,85 +92,89 @@ static void vSubCommand_GetConfig( ConsoleIO_t * pxCIO, const char * const pcKey
 
     switch( xKvType )
     {
-    case KV_TYPE_BASE_T:
-    {
-        BaseType_t xValue = KVStore_getBase( xKey, NULL );
-        lResponseLen = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN, "%s=%ld\r\n",
-                                 pcKey, xValue );
-        break;
+        case KV_TYPE_BASE_T:
+           {
+               BaseType_t xValue = KVStore_getBase( xKey, NULL );
+               lResponseLen = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN, "%s=%ld\r\n",
+                                        pcKey, xValue );
+               break;
+           }
+
+        case KV_TYPE_UBASE_T:
+           {
+               UBaseType_t xValue = KVStore_getUBase( xKey, NULL );
+               lResponseLen = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN, "%s=%lu\r\n",
+                                        pcKey, xValue );
+               break;
+           }
+
+        case KV_TYPE_INT32:
+           {
+               int32_t lValue = KVStore_getInt32( xKey, NULL );
+               lResponseLen = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN, "%s=%ld\r\n",
+                                        pcKey, lValue );
+               break;
+           }
+
+        case KV_TYPE_UINT32:
+           {
+               uint32_t ulValue = KVStore_getUInt32( xKey, NULL );
+               lResponseLen = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN, "%s=%lu\r\n",
+                                        pcKey, ulValue );
+               break;
+           }
+
+        case KV_TYPE_STRING:
+        case KV_TYPE_BLOB:
+           {
+               char * pcWorkPtr = pcCliScratchBuffer;
+               pcWorkPtr = stpncpy( pcWorkPtr, pcKey, CLI_OUTPUT_SCRATCH_BUF_LEN );
+
+               lResponseLen = ( ( uintptr_t ) pcWorkPtr - ( uintptr_t ) pcCliScratchBuffer );
+
+               if( lResponseLen < CLI_OUTPUT_SCRATCH_BUF_LEN )
+               {
+                   *pcWorkPtr = '=';
+                   pcWorkPtr++;
+                   lResponseLen++;
+                   *pcWorkPtr = '"';
+                   pcWorkPtr++;
+                   lResponseLen++;
+               }
+
+               if( lResponseLen < CLI_OUTPUT_SCRATCH_BUF_LEN )
+               {
+                   lResponseLen += KVStore_getString( xKey, pcWorkPtr,
+                                                      CLI_OUTPUT_SCRATCH_BUF_LEN - lResponseLen );
+                   pcWorkPtr = &( pcCliScratchBuffer[ lResponseLen ] );
+               }
+
+               if( ( lResponseLen + 3 ) > CLI_OUTPUT_SCRATCH_BUF_LEN )
+               {
+                   pcWorkPtr = &( pcCliScratchBuffer[ CLI_OUTPUT_SCRATCH_BUF_LEN - 3 ] );
+                   lResponseLen = CLI_OUTPUT_SCRATCH_BUF_LEN - 3;
+               }
+
+               *pcWorkPtr = '"';
+               pcWorkPtr++;
+               *pcWorkPtr = '\r';
+               pcWorkPtr++;
+               *pcWorkPtr = '\n';
+               pcWorkPtr++;
+               lResponseLen += 3;
+               break;
+           }
+
+        case KV_TYPE_LAST:
+        case KV_TYPE_NONE:
+        default:
+            lResponseLen = 0;
+            break;
     }
-    case KV_TYPE_UBASE_T:
+
+    if( ( xKey == CS_NUM_KEYS ) ||
+        ( xKvType == KV_TYPE_LAST ) )
     {
-        UBaseType_t xValue = KVStore_getUBase( xKey, NULL );
-        lResponseLen = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN, "%s=%lu\r\n",
-                                 pcKey, xValue );
-        break;
-    }
-    case KV_TYPE_INT32:
-    {
-        int32_t lValue = KVStore_getInt32( xKey, NULL );
-        lResponseLen = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN, "%s=%ld\r\n",
-                                 pcKey, lValue );
-        break;
-    }
-    case KV_TYPE_UINT32:
-    {
-        uint32_t ulValue = KVStore_getUInt32( xKey, NULL );
-        lResponseLen = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN, "%s=%lu\r\n",
-                                 pcKey, ulValue );
-        break;
-    }
-    case KV_TYPE_STRING:
-    case KV_TYPE_BLOB:
-    {
-        char * pcWorkPtr = pcCliScratchBuffer;
-        pcWorkPtr = stpncpy( pcWorkPtr, pcKey, CLI_OUTPUT_SCRATCH_BUF_LEN );
-
-        lResponseLen = ( ( uintptr_t ) pcWorkPtr - ( uintptr_t ) pcCliScratchBuffer );
-
-        if( lResponseLen < CLI_OUTPUT_SCRATCH_BUF_LEN )
-        {
-            *pcWorkPtr = '=';
-            pcWorkPtr++;
-            lResponseLen++;
-            *pcWorkPtr = '"';
-            pcWorkPtr++;
-            lResponseLen++;
-        }
-
-        if( lResponseLen < CLI_OUTPUT_SCRATCH_BUF_LEN )
-        {
-            lResponseLen += KVStore_getString( xKey, pcWorkPtr,
-                                               CLI_OUTPUT_SCRATCH_BUF_LEN - lResponseLen );
-            pcWorkPtr = & ( pcCliScratchBuffer[ lResponseLen ] );
-        }
-
-        if( ( lResponseLen + 3 ) > CLI_OUTPUT_SCRATCH_BUF_LEN )
-        {
-            pcWorkPtr = & ( pcCliScratchBuffer[ CLI_OUTPUT_SCRATCH_BUF_LEN - 3 ] );
-            lResponseLen = CLI_OUTPUT_SCRATCH_BUF_LEN - 3;
-        }
-
-        *pcWorkPtr = '"';
-        pcWorkPtr++;
-        *pcWorkPtr = '\r';
-        pcWorkPtr++;
-        *pcWorkPtr = '\n';
-        pcWorkPtr++;
-        lResponseLen += 3;
-        break;
-    }
-    case KV_TYPE_LAST:
-    case KV_TYPE_NONE:
-    default:
-        lResponseLen = 0;
-        break;
-    }
-
-    if( xKey == CS_NUM_KEYS ||
-        xKvType == KV_TYPE_LAST )
-    {
-
     }
 
     /* Ensure null terminated */
@@ -184,8 +194,8 @@ static void vSubCommand_GetConfig( ConsoleIO_t * pxCIO, const char * const pcKey
     }
     else
     {
-        if( xKey == CS_NUM_KEYS ||
-            xKvType == KV_TYPE_NONE )
+        if( ( xKey == CS_NUM_KEYS ) ||
+            ( xKvType == KV_TYPE_NONE ) )
         {
             lResponseLen = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN,
                                      "Error: key: %s was not recognized.\r\n",
@@ -196,6 +206,7 @@ static void vSubCommand_GetConfig( ConsoleIO_t * pxCIO, const char * const pcKey
             lResponseLen = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN,
                                      "Error: An unknown error occurred.\r\n" );
         }
+
         pxCIO->print( pcCliScratchBuffer );
     }
 }
@@ -230,81 +241,88 @@ static void vSubCommand_SetConfig( ConsoleIO_t * pxCIO,
         KVStoreValueType_t xKvType = KVStore_getType( xKey );
         char * pcEndPtr = NULL;
 
-
         switch( xKvType )
         {
-        case KV_TYPE_BASE_T:
-        {
-            BaseType_t xValue = strtol( pcValue, &pcEndPtr, 10 );
+            case KV_TYPE_BASE_T:
+               {
+                   BaseType_t xValue = strtol( pcValue, &pcEndPtr, 10 );
 
-            if( pcEndPtr != pcValue || xValue == 0 )
-            {
-                ( void ) KVStore_setBase( xKey, xValue );
-                xParseResult = pdTRUE;
-                lCharsPrinted = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN,
-                                          "%s=%ld\r\n",
-                                          pcKey, xValue );
-            }
-            break;
-        }
-        case KV_TYPE_INT32:
-        {
-            int32_t lValue = strtol( pcValue, &pcEndPtr, 10 );
+                   if( ( pcEndPtr != pcValue ) || ( xValue == 0 ) )
+                   {
+                       ( void ) KVStore_setBase( xKey, xValue );
+                       xParseResult = pdTRUE;
+                       lCharsPrinted = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN,
+                                                 "%s=%ld\r\n",
+                                                 pcKey, xValue );
+                   }
 
-            if( pcEndPtr != pcValue || lValue == 0 )
-            {
-                ( void ) KVStore_setInt32( xKey, lValue );
-                xParseResult = pdTRUE;
+                   break;
+               }
+
+            case KV_TYPE_INT32:
+               {
+                   int32_t lValue = strtol( pcValue, &pcEndPtr, 10 );
+
+                   if( ( pcEndPtr != pcValue ) || ( lValue == 0 ) )
+                   {
+                       ( void ) KVStore_setInt32( xKey, lValue );
+                       xParseResult = pdTRUE;
+                       lCharsPrinted = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN,
+                                                 "%s=%ld\r\n",
+                                                 pcKey, lValue );
+                   }
+
+                   break;
+               }
+
+            case KV_TYPE_UBASE_T:
+               {
+                   UBaseType_t uxValue = strtoul( pcValue, &pcEndPtr, 10 );
+
+                   if( ( pcEndPtr != pcValue ) || ( uxValue == 0 ) )
+                   {
+                       ( void ) KVStore_setUBase( xKey, uxValue );
+                       xParseResult = pdTRUE;
+                       lCharsPrinted = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN,
+                                                 "%s=%lu\r\n",
+                                                 pcKey, uxValue );
+                   }
+
+                   break;
+               }
+
+            case KV_TYPE_UINT32:
+               {
+                   uint32_t ulValue = strtoul( pcValue, &pcEndPtr, 10 );
+
+                   if( ( pcEndPtr != pcValue ) || ( ulValue == 0 ) )
+                   {
+                       ( void ) KVStore_setUInt32( xKey, ulValue );
+                       xParseResult = pdTRUE;
+                       lCharsPrinted = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN,
+                                                 "%s=%lu\r\n",
+                                                 pcKey, ulValue );
+                   }
+
+                   break;
+               }
+
+            case KV_TYPE_STRING:
+                xParseResult = KVStore_setString( xKey, pcValue );
                 lCharsPrinted = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN,
-                                          "%s=%ld\r\n",
-                                          pcKey, lValue );
-            }
-            break;
-        }
-        case KV_TYPE_UBASE_T:
-        {
-            UBaseType_t uxValue = strtoul( pcValue, &pcEndPtr, 10 );
-            if( pcEndPtr != pcValue || uxValue == 0 )
-            {
-                ( void ) KVStore_setUBase( xKey, uxValue );
-                xParseResult = pdTRUE;
+                                          "%s=\"%s\"\r\n",
+                                          pcKey, pcValue );
+                break;
+
+            case KV_TYPE_BLOB:
+                xParseResult = KVStore_setBlob( xKey, strlen( pcValue ), pcValue );
                 lCharsPrinted = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN,
-                                          "%s=%lu\r\n",
-                                          pcKey, uxValue );
-            }
-            break;
-        }
-        case KV_TYPE_UINT32:
-        {
-            uint32_t ulValue = strtoul( pcValue, &pcEndPtr, 10 );
-            if( pcEndPtr != pcValue || ulValue == 0 )
-            {
-                ( void ) KVStore_setUInt32( xKey, ulValue );
-                xParseResult = pdTRUE;
-                lCharsPrinted = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN,
-                                          "%s=%lu\r\n",
-                                          pcKey, ulValue );
-            }
-            break;
-        }
-        case KV_TYPE_STRING:
-        {
-            xParseResult = KVStore_setString( xKey, pcValue );
-            lCharsPrinted = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN,
-                                      "%s=\"%s\"\r\n",
-                                      pcKey, pcValue );
-            break;
-        }
-        case KV_TYPE_BLOB:
-        {
-            xParseResult = KVStore_setBlob( xKey, strlen( pcValue ), pcValue );
-            lCharsPrinted = snprintf( pcCliScratchBuffer, CLI_OUTPUT_SCRATCH_BUF_LEN,
-                                      "%s=\"%s\"\r\n",
-                                      pcKey, pcValue );
-            break;
-        }
-        default:
-            break;
+                                          "%s=\"%s\"\r\n",
+                                          pcKey, pcValue );
+                break;
+
+            default:
+                break;
         }
 
         if( xParseResult == pdFALSE )
@@ -372,6 +390,7 @@ static void vCommand_Configure( ConsoleIO_t * pxCIO,
             {
                 vSubCommand_GetConfigAll( pxCIO );
             }
+
             xSuccess = pdTRUE;
         }
         else if( 0 == strcmp( "set", pcMode ) )
@@ -389,7 +408,6 @@ static void vCommand_Configure( ConsoleIO_t * pxCIO,
             xSuccess = pdFALSE;
         }
     }
-
 
     if( xSuccess == pdFALSE )
     {

@@ -41,7 +41,7 @@ typedef struct mbedtls_threading_mutex
     StaticSemaphore_t mutexStorage;
 } mbedtls_threading_mutex_t;
 
-#if defined(MBEDTLS_THREADING_ALT)
+#if defined( MBEDTLS_THREADING_ALT )
 int mbedtls_platform_threading_init( void );
 #endif
 

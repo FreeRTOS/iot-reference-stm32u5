@@ -23,7 +23,7 @@
  */
 #include "logging_levels.h"
 
-#define LOG_LEVEL LOG_ERROR
+#define LOG_LEVEL    LOG_ERROR
 
 #include "logging.h"
 
@@ -72,12 +72,12 @@ static void vLwipStatusCallback( struct netif * pxNetif )
 
     MxNetConnectCtx_t * pxCtx = ( MxNetConnectCtx_t * ) pxNetif->state;
 
-    LogDebug("vLwipStatusCallback called");
+    LogDebug( "vLwipStatusCallback called" );
 
     uint32_t ulNotifyValue = 0;
 
     /* Check for change in flags */
-    if( ( pxNetif->flags ^ xLastFlags ) & NETIF_FLAG_UP  )
+    if( ( pxNetif->flags ^ xLastFlags ) & NETIF_FLAG_UP )
     {
         if( pxNetif->flags & NETIF_FLAG_UP )
         {
@@ -107,10 +107,10 @@ static void vLwipStatusCallback( struct netif * pxNetif )
 
     if( ulNotifyValue > 0 )
     {
-        (void) xTaskNotifyIndexed( pxCtx->xNetTaskHandle,
-                                   NET_EVT_IDX,
-                                   ulNotifyValue,
-                                   eSetBits );
+        ( void ) xTaskNotifyIndexed( pxCtx->xNetTaskHandle,
+                                     NET_EVT_IDX,
+                                     ulNotifyValue,
+                                     eSetBits );
     }
 
     xLastAddr = pxNetif->ip_addr;
@@ -118,25 +118,28 @@ static void vLwipStatusCallback( struct netif * pxNetif )
 }
 
 /* Network output function for lwip */
-err_t prvxLinkOutput( NetInterface_t * pxNetif, PacketBuffer_t * pxPbuf )
+err_t prvxLinkOutput( NetInterface_t * pxNetif,
+                      PacketBuffer_t * pxPbuf )
 {
     err_t xError = ERR_OK;
     BaseType_t xReturn = pdFALSE;
     struct pbuf * pxPbufToSend = pxPbuf;
 
-    if( pxPbuf == NULL || pxNetif == NULL )
+    if( ( pxPbuf == NULL ) || ( pxNetif == NULL ) )
     {
         xError = ERR_VAL;
     }
     /* Handle any chained packets */
-    else if( pxPbuf->len != pxPbuf->tot_len ||
-             pxPbuf->next != NULL )
+    else if( ( pxPbuf->len != pxPbuf->tot_len ) ||
+             ( pxPbuf->next != NULL ) )
     {
         pxPbufToSend = pbuf_clone( PBUF_RAW, PBUF_RAM, pxPbuf );
+
         if( pxPbufToSend == NULL )
         {
             xError = ERR_MEM;
         }
+
         /* Input buffer will be freed by lwip after the current function returns */
         /* pbuf_clone sets the refcount = 1 upon creation */
     }
@@ -146,7 +149,7 @@ err_t prvxLinkOutput( NetInterface_t * pxNetif, PacketBuffer_t * pxPbuf )
         pbuf_ref( pxPbufToSend );
     }
 
-//    vPrintBuffer("ETH_TX", pxPbuf->payload, pxPbuf->tot_len );
+/*    vPrintBuffer("ETH_TX", pxPbuf->payload, pxPbuf->tot_len ); */
 
     /* Get context from netif struct */
     MxNetConnectCtx_t * pxCtx = ( MxNetConnectCtx_t * ) pxNetif->state;
@@ -187,57 +190,59 @@ err_t prvxLinkOutput( NetInterface_t * pxNetif, PacketBuffer_t * pxPbuf )
     return xError;
 }
 
-BaseType_t prvxLinkInput( NetInterface_t * pxNetif, PacketBuffer_t * pxPbufIn )
+BaseType_t prvxLinkInput( NetInterface_t * pxNetif,
+                          PacketBuffer_t * pxPbufIn )
 {
     BaseType_t xReturn;
 
     if( pxNetif == NULL )
     {
-        LogError("pxNetif is null.");
+        LogError( "pxNetif is null." );
         xReturn = pdFALSE;
     }
     else if( pxPbufIn == NULL )
     {
-        LogError("pxPbufIn is null.");
+        LogError( "pxPbufIn is null." );
         xReturn = pdFALSE;
     }
-    else if( ( pxNetif->flags & NETIF_FLAG_UP ) > 0 &&
-               pxNetif->input != NULL )
+    else if( ( ( pxNetif->flags & NETIF_FLAG_UP ) > 0 ) &&
+             ( pxNetif->input != NULL ) )
     {
-
-
-
-        struct eth_hdr * pxEthHeader = (struct eth_hdr *) pxPbufIn->payload;
+        struct eth_hdr * pxEthHeader = ( struct eth_hdr * ) pxPbufIn->payload;
 
         /* Filter by ethertype */
         uint16_t usEthertype = lwip_htons( pxEthHeader->type );
 
         switch( usEthertype )
         {
-        case ETHTYPE_IP:
-//            vPrintBuffer("ETH_RX", pxPbufIn->payload, pxPbufIn->tot_len );
+            case ETHTYPE_IP:
+/*            vPrintBuffer("ETH_RX", pxPbufIn->payload, pxPbufIn->tot_len ); */
             /* intentional fall through */
-        case ETHTYPE_IPV6:
-        case ETHTYPE_ARP:
-            if( pxNetif->input( pxPbufIn, pxNetif ) != ERR_OK )
-            {
+            case ETHTYPE_IPV6:
+            case ETHTYPE_ARP:
+
+                if( pxNetif->input( pxPbufIn, pxNetif ) != ERR_OK )
+                {
+                    xReturn = pdFALSE;
+                }
+                else
+                {
+                    xReturn = pdTRUE;
+                }
+
+                break;
+
+            default:
+                LogDebug( "Dropping input packet with ethertype %d", usEthertype );
                 xReturn = pdFALSE;
-            }
-            else
-            {
-                xReturn = pdTRUE;
-            }
-            break;
-        default:
-            LogDebug( "Dropping input packet with ethertype %d", usEthertype );
-            xReturn = pdFALSE;
-            break;
+                break;
         }
     }
     else
     {
         xReturn = pdFALSE;
     }
+
     return xReturn;
 }
 

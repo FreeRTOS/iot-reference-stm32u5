@@ -58,23 +58,24 @@ typedef struct sys_mbox sys_mbox_t;
 #define sys_sem_set_invalid( x )     ( ( * x ) = NULL )
 
 
-#define sys_assert( pcMessage )      do { \
-                                         if( ( x ) == 0 ) { \
-                                             LogAssert( "LWIP Assertion failed: %s". pcMessage ); \
-                                             portDISABLE_INTERRUPTS(); \
-                                             while( 1 ) { \
-                                                 __NOP(); \
-                                             } \
-                                         } \
-                                     } while(0)
+#define sys_assert( pcMessage )                                 \
+    do {                                                        \
+        if( ( x ) == 0 ) {                                      \
+            LogAssert( "LWIP Assertion failed: %s".pcMessage ); \
+            portDISABLE_INTERRUPTS();                           \
+            while( 1 ) {                                        \
+                __NOP();                                        \
+            }                                                   \
+        }                                                       \
+    } while( 0 )
 
 
 
 #if LWIP_NETCONN_SEM_PER_THREAD
-    sys_sem_t * sys_arch_netconn_sem_get( void );
-    #define LWIP_NETCONN_THREAD_SEM_GET()    sys_arch_netconn_sem_get()
-    #define LWIP_NETCONN_THREAD_SEM_ALLOC()
-    #define LWIP_NETCONN_THREAD_SEM_FREE()
+sys_sem_t * sys_arch_netconn_sem_get( void );
+#define LWIP_NETCONN_THREAD_SEM_GET()    sys_arch_netconn_sem_get()
+#define LWIP_NETCONN_THREAD_SEM_ALLOC()
+#define LWIP_NETCONN_THREAD_SEM_FREE()
 #endif /* LWIP_NETCONN_SEM_PER_THREAD */
 
 #endif /* __ARCH_SYS_ARCH_H__ */

@@ -26,7 +26,7 @@
  */
 
 #include "logging_levels.h"
-#define LOG_LEVEL LOG_ERROR
+#define LOG_LEVEL    LOG_ERROR
 #include "logging.h"
 
 #include "FreeRTOS.h"
@@ -42,36 +42,37 @@
  */
 
 #ifdef LFS_NO_MALLOC
-    static uint8_t __ALIGN_BEGIN ucReadBuffer[CONFIG_SIZE_CACHE_BUFFER] __ALIGN_END = { 0 };
-    static uint8_t __ALIGN_BEGIN ucProgBuffer[CONFIG_SIZE_CACHE_BUFFER] __ALIGN_END = { 0 };
-    static uint8_t __ALIGN_BEGIN ucLookAheadBuffer[CONFIG_SIZE_LOOKAHEAD_BUFFER] __ALIGN_END = { 0 };
-    static struct lfs_config xLfsCfg = { 0 };
-    static struct LfsPortCtx xLfsCtx = { 0 };
-    static StaticSemaphore_t xMutexStatic;
+static uint8_t __ALIGN_BEGIN ucReadBuffer[ CONFIG_SIZE_CACHE_BUFFER ] __ALIGN_END = { 0 };
+static uint8_t __ALIGN_BEGIN ucProgBuffer[ CONFIG_SIZE_CACHE_BUFFER ] __ALIGN_END = { 0 };
+static uint8_t __ALIGN_BEGIN ucLookAheadBuffer[ CONFIG_SIZE_LOOKAHEAD_BUFFER ] __ALIGN_END = { 0 };
+static struct lfs_config xLfsCfg = { 0 };
+static struct LfsPortCtx xLfsCtx = { 0 };
+static StaticSemaphore_t xMutexStatic;
 #endif
 
 
 /* Forward declarations */
-static int lfs_port_read( const struct lfs_config *c,
+static int lfs_port_read( const struct lfs_config * c,
                           lfs_block_t block,
                           lfs_off_t off,
-                          void *pvBuffer,
+                          void * pvBuffer,
                           lfs_size_t size );
 
-static int lfs_port_prog( const struct lfs_config *pxCfg,
+static int lfs_port_prog( const struct lfs_config * pxCfg,
                           lfs_block_t block,
                           lfs_off_t off,
-                          const void *pvBuffer,
+                          const void * pvBuffer,
                           lfs_size_t size );
 
-static int lfs_port_erase( const struct lfs_config *pxCfg,
+static int lfs_port_erase( const struct lfs_config * pxCfg,
                            lfs_block_t block );
 
-static int lfs_port_sync( const struct lfs_config *c );
+static int lfs_port_sync( const struct lfs_config * c );
 
 
 
-static void vPopulateConfig( struct lfs_config * pxCfg, struct LfsPortCtx * pxCtx )
+static void vPopulateConfig( struct lfs_config * pxCfg,
+                             struct LfsPortCtx * pxCtx )
 {
     /* Read size is one word */
     pxCfg->read_size = 1;
@@ -119,6 +120,7 @@ static void vPopulateConfig( struct lfs_config * pxCfg, struct LfsPortCtx * pxCt
 #endif
 
 #ifdef LFS_NO_MALLOC
+
 /*
  * Initializes littlefs on the internal storage of the STM32U5 without heap allocation.
  * @param xBlockTime Amount of time to wait for the flash interface lock
@@ -127,15 +129,16 @@ const struct lfs_config * pxInitializeOSPIFlashFsStatic( TickType_t xBlockTime )
 {
     xLfsCfg.context = ( void * ) &xLfsCtx;
 
-    xLfsCtx.xMutex = xSemaphoreCreateMutexStatic(& ( &xMutexStatic ) );
-    (void) xSemaphoreGive( xLfsCtx.xMutex );
+    xLfsCtx.xMutex = xSemaphoreCreateMutexStatic( &( &xMutexStatic ) );
+    ( void ) xSemaphoreGive( xLfsCtx.xMutex );
     xLfsCtx.xBlockTime = xBlockTime;
 
     configASSERT( xLfsCtx.xMutex != NULL );
 
     vPopulateConfig( &xLfsCfg, &xLfsCtx );
 }
-#else
+#else /* ifdef LFS_NO_MALLOC */
+
 /*
  * Initializes littlefs on the internal storage of the STM32U5.
  * @param xBlockTime Amount of time to wait for the flash interface lock
@@ -144,6 +147,7 @@ const struct lfs_config * pxInitializeOSPIFlashFs( TickType_t xBlockTime )
 {
     /* Allocate space for lfs_config struct */
     struct lfs_config * pxCfg = ( struct lfs_config * ) pvPortMalloc( sizeof( struct lfs_config ) );
+
     configASSERT( pxCfg != NULL );
 
     struct LfsPortCtx * pxCtx = ( struct LfsPortCtx * ) ( pvPortMalloc( sizeof( struct LfsPortCtx ) ) );
@@ -160,7 +164,7 @@ const struct lfs_config * pxInitializeOSPIFlashFs( TickType_t xBlockTime )
     BaseType_t xSuccess = ospi_Init( &( pxCtx->xOSPIHandle ) );
     configASSERT( xSuccess == pdTRUE );
 
-    (void) xSemaphoreGive( pxCtx->xMutex );
+    ( void ) xSemaphoreGive( pxCtx->xMutex );
 
     return pxCfg;
 }
@@ -175,13 +179,13 @@ const struct lfs_config * pxInitializeOSPIFlashFs( TickType_t xBlockTime )
  * @param buffer Pointer to a buffer in which to store the resulting data
  * @param size Size of data to read and store in buffer
  */
-static int lfs_port_read( const struct lfs_config *c,
+static int lfs_port_read( const struct lfs_config * c,
                           lfs_block_t block,
                           lfs_off_t off,
                           void * pvBuffer,
                           lfs_size_t size )
 {
-    struct LfsPortCtx * pxCtx = (struct LfsPortCtx * ) c->context;
+    struct LfsPortCtx * pxCtx = ( struct LfsPortCtx * ) c->context;
 
     configASSERT( c != NULL );
     configASSERT( block < c->block_count );
@@ -207,11 +211,11 @@ static int lfs_port_read( const struct lfs_config *c,
 }
 
 
-static int lfs_port_prog( const struct lfs_config *pxCfg,
+static int lfs_port_prog( const struct lfs_config * pxCfg,
                           lfs_block_t block,
-                           lfs_off_t off,
-                           const void *pvBuffer,
-                           lfs_size_t size )
+                          lfs_off_t off,
+                          const void * pvBuffer,
+                          lfs_size_t size )
 {
     /* validate arguments */
     configASSERT( pxCfg != NULL );
@@ -219,7 +223,7 @@ static int lfs_port_prog( const struct lfs_config *pxCfg,
     configASSERT( pvBuffer != NULL );
     configASSERT( size > 0 );
 
-    struct LfsPortCtx * pxCtx = (struct LfsPortCtx * ) pxCfg->context;
+    struct LfsPortCtx * pxCtx = ( struct LfsPortCtx * ) pxCfg->context;
 
     int32_t lReturnValue = 0;
 
@@ -236,9 +240,10 @@ static int lfs_port_prog( const struct lfs_config *pxCfg,
     for( uint32_t ulWriteAddr = ulStartAddr; ulWriteAddr <= ulLastAddr; ulWriteAddr += MX25LM_PROGRAM_FIFO_LEN )
     {
         LogDebug( "Writing block at addr: 0x%010lX, len: %lu", ulWriteAddr, MX25LM_PROGRAM_FIFO_LEN );
+
         if( ospi_WriteAddr( &( pxCtx->xOSPIHandle ),
                             ulWriteAddr,
-                            &( ( ( uint8_t * ) pvBuffer )[ ulWriteAddr - ulStartAddr] ),
+                            &( ( ( uint8_t * ) pvBuffer )[ ulWriteAddr - ulStartAddr ] ),
                             MX25LM_PROGRAM_FIFO_LEN,
                             pdMS_TO_TICKS( MX25LM_WRITE_TIMEOUT_MS ) ) != pdTRUE )
         {
@@ -250,16 +255,17 @@ static int lfs_port_prog( const struct lfs_config *pxCfg,
     return lReturnValue;
 }
 
-static int lfs_port_erase( const struct lfs_config *pxCfg, lfs_block_t block )
+static int lfs_port_erase( const struct lfs_config * pxCfg,
+                           lfs_block_t block )
 {
     configASSERT( pxCfg != NULL );
     configASSERT( block < pxCfg->block_count );
 
     int32_t lReturnValue = 0;
-    struct LfsPortCtx * pxCtx = (struct LfsPortCtx * ) pxCfg->context;
+    struct LfsPortCtx * pxCtx = ( struct LfsPortCtx * ) pxCfg->context;
 
     /* Determine the 4-byte erase address */
-    uint32_t ulEraseAddr =  OPI_START_ADDRESS + ( block * pxCfg->block_size );
+    uint32_t ulEraseAddr = OPI_START_ADDRESS + ( block * pxCfg->block_size );
 
     LogDebug( "Starting erase operation addr: 0x%010lX ", ulEraseAddr );
 
@@ -275,7 +281,7 @@ static int lfs_port_erase( const struct lfs_config *pxCfg, lfs_block_t block )
     return lReturnValue;
 }
 
-static int lfs_port_sync( const struct lfs_config *c )
+static int lfs_port_sync( const struct lfs_config * c )
 {
     return 0;
 }

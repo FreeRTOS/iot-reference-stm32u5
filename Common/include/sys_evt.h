@@ -30,11 +30,11 @@
 #include "FreeRTOS.h"
 #include "event_groups.h"
 
-#define EVT_MASK_FS_READY           0x01
-#define EVT_MASK_NET_INIT           0x02
-#define EVT_MASK_NET_CONNECTED      0x04
-#define EVT_MASK_MQTT_INIT          0x08
-#define EVT_MASK_MQTT_CONNECTED     0x10
+#define EVT_MASK_FS_READY          0x01
+#define EVT_MASK_NET_INIT          0x02
+#define EVT_MASK_NET_CONNECTED     0x04
+#define EVT_MASK_MQTT_INIT         0x08
+#define EVT_MASK_MQTT_CONNECTED    0x10
 
 extern EventGroupHandle_t xSystemEvents;
 

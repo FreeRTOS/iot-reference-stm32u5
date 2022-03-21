@@ -43,31 +43,35 @@ void * malloc( size_t xLen )
     return pvPortMalloc( xLen );
 }
 
-void * _malloc_r( struct _reent * pxReent, size_t xLen )
+void * _malloc_r( struct _reent * pxReent,
+                  size_t xLen )
 {
-	( void ) pxReent;
-	return pvPortMalloc( xLen );
+    ( void ) pxReent;
+    return pvPortMalloc( xLen );
 }
 
-void * calloc( size_t xNum, size_t xLen )
+void * calloc( size_t xNum,
+               size_t xLen )
 {
-	void * pvBuffer = pvPortMalloc( xNum * xLen );
+    void * pvBuffer = pvPortMalloc( xNum * xLen );
 
-	if( pvBuffer != NULL )
-	{
-		( void ) memset( pvBuffer, 0, xNum * xLen );
-	}
+    if( pvBuffer != NULL )
+    {
+        ( void ) memset( pvBuffer, 0, xNum * xLen );
+    }
 
     return pvBuffer;
 }
 
-void * _calloc_r( struct _reent * pxReent, size_t xNum, size_t xLen )
+void * _calloc_r( struct _reent * pxReent,
+                  size_t xNum,
+                  size_t xLen )
 {
-	( void ) pxReent;
-	return calloc( xNum, xLen );
+    ( void ) pxReent;
+    return calloc( xNum, xLen );
 }
 
-#define SIZE_MASK  ( ~( 0b1 << 31 ) )
+#define SIZE_MASK    ( ~( 0b1 << 31 ) )
 static const uintptr_t xHeapStructSize = ( sizeof( BlockLink_t ) + ( ( size_t ) ( portBYTE_ALIGNMENT - 1 ) ) ) & ~( ( size_t ) portBYTE_ALIGNMENT_MASK );
 
 size_t malloc_usable_size( void * pvPtr )
@@ -86,11 +90,13 @@ size_t malloc_usable_size( void * pvPtr )
         xLen = ( SIZE_MASK & pxLink->xBlockSize ) - xHeapStructSize;
         configASSERT( xLen >= 0 );
     }
+
     return xLen;
 }
 
 /* non-optimized realloc implementation */
-void * realloc( void * pvPtr, size_t xNewLen )
+void * realloc( void * pvPtr,
+                size_t xNewLen )
 {
     void * pvNewBuff = NULL;
     size_t xCurLen = 0;
@@ -102,6 +108,7 @@ void * realloc( void * pvPtr, size_t xNewLen )
     else /* pvPtr is not NULL */
     {
         xCurLen = malloc_usable_size( pvPtr );
+
         /* New length is zero, free the block and return null */
         if( xNewLen == 0 )
         {
@@ -116,44 +123,52 @@ void * realloc( void * pvPtr, size_t xNewLen )
         {
             if( xCurLen >= xNewLen )
             {
-                ( void )memcpy( pvNewBuff, pvPtr, xNewLen );
+                ( void ) memcpy( pvNewBuff, pvPtr, xNewLen );
             }
-            else  /* xCurLen < xNewLen */
+            else /* xCurLen < xNewLen */
             {
-                ( void )memcpy( pvNewBuff, pvPtr, xCurLen );
+                ( void ) memcpy( pvNewBuff, pvPtr, xCurLen );
             }
+
             /* Free the original buffer */
             vPortFree( pvPtr );
         }
     }
+
     /* Return the new buffer with copied data */
     return pvNewBuff;
 }
 
-void * _realloc_r( struct _reent * pxReent, void * pvPtr, size_t xNewLen )
+void * _realloc_r( struct _reent * pxReent,
+                   void * pvPtr,
+                   size_t xNewLen )
 {
-	( void ) pxReent;
-	return realloc( pvPtr, xNewLen );
+    ( void ) pxReent;
+    return realloc( pvPtr, xNewLen );
 }
 
 
-void * reallocf( void * pvPtr, size_t xNewLen )
+void * reallocf( void * pvPtr,
+                 size_t xNewLen )
 {
     void * pvNewBuff = realloc( pvPtr, xNewLen );
 
-    if( pvPtr != NULL &&
-        xNewLen > 0 &&
-        pvNewBuff == NULL )
+    if( ( pvPtr != NULL ) &&
+        ( xNewLen > 0 ) &&
+        ( pvNewBuff == NULL ) )
     {
         vPortFree( pvPtr );
     }
+
     return pvNewBuff;
 }
 
-void * _reallocf_r( struct _reent * pxReent, void * pvPtr, size_t xNewLen )
+void * _reallocf_r( struct _reent * pxReent,
+                    void * pvPtr,
+                    size_t xNewLen )
 {
-	( void ) pxReent;
-	return reallocf( pvPtr, xNewLen );
+    ( void ) pxReent;
+    return reallocf( pvPtr, xNewLen );
 }
 
 void free( void * pvPtr )
@@ -161,44 +176,46 @@ void free( void * pvPtr )
     return vPortFree( pvPtr );
 }
 
-void _free_r( struct _reent * pxReent, void * pvPtr )
+void _free_r( struct _reent * pxReent,
+              void * pvPtr )
 {
-	( void ) pxReent;
-	return free( pvPtr );
+    ( void ) pxReent;
+    return free( pvPtr );
 }
 
 /* Not supported */
-void * memalign( size_t xAlignment, size_t xLen )
+void * memalign( size_t xAlignment,
+                 size_t xLen )
 {
-	( void ) xAlignment;
-	( void ) xLen;
+    ( void ) xAlignment;
+    ( void ) xLen;
 
     return NULL;
 }
 
 /* Not supported */
-void * _memalign_r( struct _reent * pxReent, size_t xAlignment, size_t xLen )
+void * _memalign_r( struct _reent * pxReent,
+                    size_t xAlignment,
+                    size_t xLen )
 {
-	( void ) pxReent;
-	( void ) xAlignment;
-	( void ) xLen;
+    ( void ) pxReent;
+    ( void ) xAlignment;
+    ( void ) xLen;
     return NULL;
 }
 
 /* Not supported */
-void * _sbrk ( intptr_t xIncrement )
+void * _sbrk( intptr_t xIncrement )
 {
-	return NULL;
+    return NULL;
 }
 
-void __malloc_lock(struct _reent *re)
+void __malloc_lock( struct _reent * re )
 {
-	vTaskSuspendAll();
+    vTaskSuspendAll();
 }
 
-void __malloc_unlock(struct _reent *re)
+void __malloc_unlock( struct _reent * re )
 {
-	( void ) xTaskResumeAll();
-};
-
-
+    ( void ) xTaskResumeAll();
+}

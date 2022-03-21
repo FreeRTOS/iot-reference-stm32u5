@@ -35,7 +35,7 @@
 #include "logging_levels.h"
 
 #ifndef LOG_LEVEL
-#define LOG_LEVEL LOG_ERROR
+#define LOG_LEVEL    LOG_ERROR
 #endif
 
 #include "logging.h"
@@ -44,7 +44,7 @@
 #include <string.h>
 #include <stdlib.h> /* abort */
 #if ( !defined( __CC_ARM ) ) && ( !defined( __ICCARM__ ) ) && ( !defined( __ARMCC_VERSION ) )
-    #include <sys/time.h>
+#include <sys/time.h>
 #endif
 
 #include <stdint.h>
@@ -52,7 +52,7 @@
 #include "FreeRTOS.h"
 
 #ifndef BYTE_ORDER
-    #define BYTE_ORDER            LITTLE_ENDIAN
+#define BYTE_ORDER                LITTLE_ENDIAN
 #endif
 
 #define LWIP_PLATFORM_BYTESWAP    0
@@ -60,11 +60,11 @@
 /** @todo fix some warnings: don't use #pragma if compiling with cygwin gcc */
 /*#ifndef __GNUC__ */
 #if ( !defined( __ICCARM__ ) ) && ( !defined( __GNUC__ ) ) && ( !defined( __CC_ARM ) )
-    #include <limits.h>
-    #pragma warning (disable: 4244) /* disable conversion warning (implicit integer promotion!) */
-    #pragma warning (disable: 4127) /* conditional expression is constant */
-    #pragma warning (disable: 4996) /* 'strncpy' was declared deprecated */
-    #pragma warning (disable: 4103) /* structure packing changed by including file */
+#include <limits.h>
+#pragma warning (disable: 4244) /* disable conversion warning (implicit integer promotion!) */
+#pragma warning (disable: 4127) /* conditional expression is constant */
+#pragma warning (disable: 4996) /* 'strncpy' was declared deprecated */
+#pragma warning (disable: 4103) /* structure packing changed by including file */
 #endif
 
 /* User errno from newlibc */
@@ -73,44 +73,44 @@
 /* Define generic types used in lwIP */
 #define LWIP_NO_STDINT_H    1
 
-typedef uint8_t          u8_t;
-typedef int8_t           s8_t;
-typedef uint16_t         u16_t;
-typedef int16_t          s16_t;
-typedef uint32_t         u32_t;
-typedef int32_t          s32_t;
+typedef uint8_t    u8_t;
+typedef int8_t     s8_t;
+typedef uint16_t   u16_t;
+typedef int16_t    s16_t;
+typedef uint32_t   u32_t;
+typedef int32_t    s32_t;
 
-typedef size_t           mem_ptr_t;
-typedef u32_t            sys_prot_t;
+typedef size_t     mem_ptr_t;
+typedef u32_t      sys_prot_t;
 
 /* Define (sn)printf formatters for these lwIP types */
-#define X8_F     "02x"
-#define U16_F    "hu"
-#define S16_F    "hd"
-#define X16_F    "hx"
-#define U32_F    "lu"
-#define S32_F    "ld"
-#define X32_F    "lx"
-#define SZT_F    U32_F
+#define X8_F                  "02x"
+#define U16_F                 "hu"
+#define S16_F                 "hd"
+#define X16_F                 "hx"
+#define U32_F                 "lu"
+#define S32_F                 "ld"
+#define X32_F                 "lx"
+#define SZT_F                 U32_F
 
 /* Compiler hints for packing structures */
 #define PACK_STRUCT_STRUCT    __attribute__( ( packed ) )
 
-#define LWIP_PLATFORM_DIAG( message ) do { vLoggingPrintf( "L", NULL, 0, REMOVE_PARENS message ); } while( 0 )
+#define LWIP_PLATFORM_DIAG( message )    do { vLoggingPrintf( "L", NULL, 0, REMOVE_PARENS message ); } while( 0 )
 
 #define LWIP_PLATFORM_ASSERT( message ) \
     do { LogAssert( "Assertion \"%s\" failed.", message ); portDISABLE_INTERRUPTS(); while( 1 ) { __NOP(); } } while( 0 )
 
 
-#define LWIP_ERROR( message, expression, handler ) \
-    do \
-    { \
-        if( !( expression ) ) \
-        { \
-             LogError( "Assert_Continue \"%s\" failed.", message ); \
-             handler; \
-        } \
-    } \
+#define LWIP_ERROR( message, expression, handler )                 \
+    do                                                             \
+    {                                                              \
+        if( !( expression ) )                                      \
+        {                                                          \
+            LogError( "Assert_Continue \"%s\" failed.", message ); \
+            handler;                                               \
+        }                                                          \
+    }                                                              \
     while( 0 )
 
 
