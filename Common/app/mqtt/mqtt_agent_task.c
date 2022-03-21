@@ -153,9 +153,16 @@ typedef struct MQTTAgentTaskCtx
 
 /* ALPN protocols must be a NULL-terminated list of strings. */
 static const char * pcAlpnProtocols[] = { AWS_IOT_MQTT_ALPN, NULL };
+
+#if defined( MBEDTLS_TRANSPORT_PKCS11 )
 static const PkiObject_t xPrivateKey = PKI_OBJ_PKCS11( pkcs11_TLS_KEY_PRV_LABEL );
 static const PkiObject_t xClientCertificate = PKI_OBJ_PKCS11( pkcs11_TLS_CERT_LABEL );
 static const PkiObject_t pxRootCaChain[] = { PKI_OBJ_PKCS11( pkcs11_ROOT_CA_CERT_LABEL ) };
+#elif defined( MBEDTLS_TRANSPORT_PSA )
+static const PkiObject_t xPrivateKey = PKI_OBJ_PSA_CRYPTO( 0x1234 );
+static const PkiObject_t xClientCertificate = PKI_OBJ_PSA_PS( 0x1234 );
+static const PkiObject_t pxRootCaChain[] = { PKI_OBJ_PSA_PS( 0x1234 ) };
+#endif
 
 static MQTTAgentHandle_t xDefaultInstanceHandle = NULL;
 

@@ -56,6 +56,8 @@
 #include "mbedtls/ecp.h"
 #include "core_pki_utils.h"
 
+#if defined( MBEDTLS_TRANSPORT_PKCS11 )
+
 #define LABEL_PUB_IDX               3
 #define LABEL_PRV_IDX               4
 #define LABEL_IDX                   LABEL_PUB_IDX
@@ -1440,3 +1442,5 @@ static void vCommand_PKI( ConsoleIO_t * pxCIO,
         pxCIO->print( xCommandDef_pki.pcHelpString );
     }
 }
+
+#endif /* defined( MBEDTLS_TRANSPORT_PKCS11 ) */

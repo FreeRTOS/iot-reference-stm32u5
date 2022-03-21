@@ -39,7 +39,7 @@
 
 /* mbedTLS includes. */
 #include "mbedtls/error.h"
-#include "mbedtls_config_ntz.h"
+#include MBEDTLS_CONFIG_FILE
 #include "mbedtls/debug.h"
 #include "mbedtls/net_sockets.h"
 #include "mbedtls/pk.h"
@@ -199,6 +199,7 @@ static void vSocketNotifyThread( void * pvParameters )
 }
 
 /*-----------------------------------------------------------*/
+#ifdef MBEDTLS_TRANSPORT_PKCS11
 
 static int32_t lP11ErrToTransportError( CK_RV xError )
 {
@@ -220,6 +221,7 @@ static int32_t lP11ErrToTransportError( CK_RV xError )
 	}
 	return lError;
 }
+#endif /* MBEDTLS_TRANSPORT_PKCS11 */
 
 /*-----------------------------------------------------------*/
 

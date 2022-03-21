@@ -118,11 +118,13 @@ typedef struct PkiObject
 /* Convenience initializers */
 #define PKI_OBJ_PEM( buffer, len ) 		{ .xForm = OBJ_FORM_PEM, 			.uxLen = len, 					.pucBuffer = buffer }
 #define PKI_OBJ_DER( buffer, len ) 		{ .xForm = OBJ_FORM_DER, 			.uxLen = len, 					.pucBuffer = buffer }
+#if defined( MBEDTLS_TRANSPORT_PKCS11 )
 #define PKI_OBJ_PKCS11( label ) 		{ .xForm = OBJ_FORM_PKCS11_LABEL, 	.uxLen = strlen( label ), 		.pcPkcs11Label = label }
+#elif defined( MBEDTLS_TRANSPORT_PSA ) /* MBEDTLS_TRANSPORT_PKCS11 */
 #define PKI_OBJ_PSA_CRYPTO( key_id ) 	{ .xForm = OBJ_FORM_PSA_CRYPTO, 	.xPsaCryptoId = key_id }
 #define PKI_OBJ_PSA_ITS( storage_id ) 	{ .xForm = OBJ_FORM_PSA_ITS, 		.xPsaStorageId = storage_id }
 #define PKI_OBJ_PSA_PS( storage_id ) 	{ .xForm = OBJ_FORM_PSA_PS, 		.xPsaStorageId = storage_id }
-
+#endif /* MBEDTLS_TRANSPORT_PSA */
 /*-----------------------------------------------------------*/
 
 /* Lwip related definitions */

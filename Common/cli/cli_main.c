@@ -37,7 +37,9 @@ extern BaseType_t xInitConsoleUart( void );
 void Task_CLI( void * pvParameters )
 {
     FreeRTOS_CLIRegisterCommand( &xCommandDef_conf );
+#if defined( MBEDTLS_TRANSPORT_PKCS11 )
     FreeRTOS_CLIRegisterCommand( &xCommandDef_pki );
+#endif /* defined( MBEDTLS_TRANSPORT_PKCS11 ) */
     FreeRTOS_CLIRegisterCommand( &xCommandDef_ps );
     FreeRTOS_CLIRegisterCommand( &xCommandDef_kill );
     FreeRTOS_CLIRegisterCommand( &xCommandDef_killAll );
