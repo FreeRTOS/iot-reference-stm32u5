@@ -1,69 +1,235 @@
 #!/bin/bash
-# NB: If the WRP, SECWM and HDP were not activated by the FW, no regression would be needed to update the secure binaries.
 
-# # Environment settings
-# if [ "$OS" = "Windows_NT" ]; then
-#     PROG="/c/Progra~1/STMicroelectronics/STM32Cube/STM32CubeProgrammer/bin/STM32_Programmer_CLI.exe -q -c port=SWD"
-# else
-#     PROG="${HOME}/st/STM32CubeProgrammer/bin/STM32_Programmer_CLI -c port=SWD"
-# fi
-
-[ -z ${CUBEIDE_PATH} ] && {
-    echo "Error: CUBEIDE_PATH must be defined to continue."
+# Find STM32_Programmer_CLI
+if [ -n "${cubeide_cubeprogrammer_path}" ]; then
+    PROG_BIN_DIR="${cubeide_cubeprogrammer_path}"
+    PROG_BIN_PATH=$(find "${cubeide_cubeprogrammer_path}" -name 'STM32_Programmer_CLI*' -type f)
+    PROG_BIN=$(basename "${PROG_BIN_PATH}")
+    export PATH="${PROG_BIN_DIR}:${PATH}"
+elif which -s STM32_Programmer_CLI; then
+    PROG_BIN="STM32_Programmer_CLI"
+else
+    echo "Error: cubeide_cubeprogrammer_path environment variable was not defined."
+    echo "STM32_Programmer_CLI could not be found."
     exit 1
-}
-
-PROG_DIR=$( find ${CUBEIDE_PATH} -name 'com.st.stm32cube.ide.mcu.externaltools.cubeprogrammer*' -type d )
-PROG_BIN_DIR="${PROG_DIR}/tools/bin"
-PROG_BIN=$( find ${PROG_BIN_DIR} -name 'STM32_Programmer_CLI*' -type f )
-PROG_BIN=$( basename ${PROG_BIN} )
+fi
 
 PROG="${PROG_BIN} --quietMode -c port=SWD"
 
-echo "Project name:             ${PROJECT_NAME:="b_u585i_iot02a_tfm"}"
-echo "Build path:               ${BUILD_PATH:="../Debug"}"
+# Locate project build directory and store it in BUILD_PATH
+# Assume pwd is project main directory.
+if [ -n "${ProjDirPath}" ]; then
+    ProjDirPath="${PWD}"
+fi
 
-export PATH="${PROG_BIN_DIR}:${PATH}"
+if [ -d "${ProjDirPath}" ]; then
+    if [ -n "${ConfigName}" ] && [ -d "${ProjDirPath}/${ConfigName}" ]; then
+        BUILD_PATH="${ProjDirPath}/${ConfigName}"
+    elif [ -d "${ProjDirPath}/Debug" ]; then
+        BUILD_PATH="${ProjDirPath}/Debug"
+    elif [ -d "${ProjDirPath}/Release" ]; then
+        BUILD_PATH="${ProjDirPath}/Release"
+    else
+        BUILD_PATH="${ProjDirPath}"
+    fi
+fi
+
+# Determine build artifact name
+if [ -n "${BuildArtifactFileBaseName}" ]; then
+    PROJECT_NAME="${ProjName}"
+elif [ -n "${ProjName}" ]; then
+    PROJECT_NAME="${ProjName}"
+else
+    PROJECT_NAME=$(basename "${PWD}")
+fi
 
 # Project settings
-# source "${BUILD_PATH}/image_defs.sh"
-# SECBOOTADD0=$(printf "0x%x" $((RE_BL2_BOOT_ADDRESS>>7)))
-NSBOOTADD0=$(printf "0x%x" $((0x08000000>>7)))
+if [ -e "${BUILD_PATH}/image_defs.sh" ]; then
+    source "${BUILD_PATH}/image_defs.sh"
+    SECBOOTADD0=$(printf "0x%x" $((RE_BL2_BOOT_ADDRESS>>7)))
+fi
+
+NSBOOTADD0_DFLT=$(printf "0x%x" $((0x08000000>>7)))
 FP=0x7f
+
+check_ntz_vars() {
+    echo "Project name:     ${PROJECT_NAME}"
+    echo "Build path:       ${BUILD_PATH}"
+    echo "Firmware binary:  ${TARGET_HEX}"
+    echo "NSBOOTADD0:       ${NSBOOTADD0:=$NSBOOTADD0_DFLT}"
+
+    if [ ! -d "${BUILD_PATH}" ]; then
+        echo "Error: Failed to determine build directory path."
+        echo "Please define BUILD_PATH, ProjDirPath, or run this script from the build or project directory."
+        exit 1
+    fi
+
+    if [ ! -e "${BUILD_PATH}/${TARGET_HEX}" ]; then
+        echo "Error: target firmware binary does not exist: ${BUILD_PATH}/${TARGET_HEX}"
+        exit 1
+    fi
+}
+
+check_tzen_vars() {
+    echo "Project name:     ${PROJECT_NAME}"
+    echo "Build path:       ${BUILD_PATH}"
+    echo "Firmware binary:  ${TARGET_HEX}"
+    echo "SECBOOTADD0:      ${SECBOOTADD0:=${SECBOOTADD0_DFLT}}"
+
+    if [ ! -d "${BUILD_PATH}" ]; then
+        echo "Error: Failed to determine build directory path."
+        echo "Please define BUILD_PATH, ProjDirPath, or run this script from the build or project directory."
+        exit 1
+    fi
+
+    if [ ! -e "${BUILD_PATH}/image_defs.sh" ]; then
+        echo "Error: Failed to locate images_defs.sh include file."
+        echo "Please build the target image and verify that your build path is correct."
+        exit 1
+    fi
+}
 
 ######################################################################
 case "$1" in
-    "NTZ")
-        echo "Writing NonTrustZone image, setting NSBOOTADD0 and clearing SWAP_BANK."
-        $PROG speed=fast mode=UR -d "${BUILD_PATH}/${PROJECT_NAME}.hex" -ob NSBOOTADD0=${NSBOOTADD0} SWAP_BANK=0
+    "flash_ntz")
+        if [ -z "${TARGET_HEX}" ]; then
+            TARGET_HEX="${PROJECT_NAME}.hex"
+        fi
+
+        check_ntz_vars
+        echo "Writing Non-TrustZone image, setting NSBOOTADD0 and clearing SWAP_BANK."
+        $PROG speed=fast mode=UR -d "${BUILD_PATH}/${TARGET_HEX}" -ob NSBOOTADD0="${NSBOOTADD0}" SWAP_BANK=0 || {
+            echo "Error: Failed to program non-trustzone firmware image."
+            exit 1
+        }
         ;;
-    "NS")
-        echo "Writing Non-Secure Image, setting N"
-        $PROG speed=fast mode=UR -d "${BUILD_PATH}/${PROJECT_NAME}_ns_signed.bin" ${RE_IMAGE_FLASH_ADDRESS_NON_SECURE} -v
+    "flash_ns")
+        if [ -z "${TARGET_HEX}" ]; then
+            TARGET_HEX="${PROJECT_NAME}_ns_signed.hex"
+        fi
+
+        check_tzen_vars
+        echo "Writing Non-Secure Image."
+        $PROG speed=fast mode=UR -d "${BUILD_PATH}/${TARGET_HEX}" -v || {
+            echo "Error: Failed to program ${TARGET_HEX}."
+            exit 1
+        }
         ;;
-    "REG")
-        echo "Regressing the chip and disabling TZ"
-        $PROG mode=UR -ob UNLOCK_1A=1 UNLOCK_1B=1 UNLOCK_2A=1 UNLOCK_2B=1 SECWM1_PSTRT=${FP} SECWM1_PEND=0 HDP1EN=0 HDP1_PEND=0 WRP1A_PSTRT=${FP} WRP1A_PEND=0 SECWM2_PSTRT=${FP} SECWM2_PEND=0 WRP2A_PSTRT=${FP} WRP2A_PEND=0 HDP2EN=0 HDP2_PEND=0
-        $PROG mode=UR -ob nSWBOOT0=0 nBOOT0=0 RDP=0xDC
-        $PROG mode=HOTPLUG -ob TZEN=0 RDP=0xAA nSWBOOT0=1 nBOOT0=1
+    "flash_s")
+        if [ -z "${TARGET_HEX}" ]; then
+            TARGET_HEX="${PROJECT_NAME}_s_signed.hex"
+        fi
+
+        check_tzen_vars
+        echo "Writing Non-Secure Image."
+        $PROG speed=fast mode=UR -d "${BUILD_PATH}/${TARGET_HEX}" -v || {
+            echo "Error: Failed to program ${TARGET_HEX}."
+            exit 1
+        }
         ;;
-    "TZ")
+    "flash_s_ns")
+        if [ -z "${TARGET_HEX}" ]; then
+            TARGET_HEX="${PROJECT_NAME}_s_ns_signed.hex"
+        fi
+
+        check_tzen_vars
+        echo "Writing combined secure and non-secure Image."
+        $PROG speed=fast mode=UR -d "${BUILD_PATH}/${TARGET_HEX}" -v || {
+            echo "Error: Failed to program ${TARGET_HEX}."
+            exit 1
+        }
+        ;;
+    "flash_ns_update")
+        if [ -z "${TARGET_HEX}" ]; then
+            TARGET_HEX="${PROJECT_NAME}_ns_update.hex"
+        fi
+
+        check_tzen_vars
+        echo "Writing Non-Secure update Image."
+        $PROG speed=fast mode=UR -d "${BUILD_PATH}/${TARGET_HEX}" -v || {
+            echo "Error: Failed to program ${TARGET_HEX}."
+            exit 1
+        }
+        ;;
+    "tz_regression")
+        echo "Erasing and unlocking internal NOR flash..."
+        $PROG mode=UR -ob UNLOCK_1A=1 UNLOCK_1B=1 UNLOCK_2A=1 UNLOCK_2B=1 SECWM1_PSTRT=${FP} SECWM1_PEND=0 HDP1EN=0 HDP1_PEND=0 WRP1A_PSTRT=${FP} WRP1A_PEND=0 SECWM2_PSTRT=${FP} SECWM2_PEND=0 WRP2A_PSTRT=${FP} WRP2A_PEND=0 HDP2EN=0 HDP2_PEND=0 -e all || {
+            echo "Error: Failed to perform unlock operation"
+            exit 1
+        }
+
+        echo "Setting RDP to level 1 and entering bootloader..."
+        $PROG mode=UR -ob nSWBOOT0=0 nBOOT0=0 RDP=0xDC || {
+            echo "Error: Failed to set RDP=0xDC and enter bootloader."
+            exit 1
+        }
+
+        echo "Regressing to RDP level 0, disabling TrustZone, and leaving bootloader."
+        $PROG mode=HOTPLUG -ob TZEN=0 RDP=0xAA nSWBOOT0=1 nBOOT0=1 || {
+            echo "Error: Failed to regress to RDP level 0 and disable trustzone."
+            exit 1
+        }
+        ;;
+    "tz_enable")
         echo "Enabling TZ"
-        $PROG mode=UR -ob TZEN=1
-	      ;;
-    "RM")
-        echo "Removing the static protections and erasing the user flash"
-        $PROG mode=UR -ob UNLOCK_1A=1 UNLOCK_1B=1 UNLOCK_2A=1 UNLOCK_2B=1 SECWM1_PSTRT=${FP} SECWM1_PEND=0 HDP1EN=0 HDP1_PEND=0 WRP1A_PSTRT=${FP} WRP1A_PEND=0 SECWM2_PSTRT=${FP} SECWM2_PEND=0 WRP2A_PSTRT=${FP} WRP2A_PEND=0 HDP2EN=0 HDP2_PEND=0 -e all
+        $PROG mode=HOTPLUG -ob TZEN=1 || {
+            echo "Error: Trustzone enable operation failed."
+            exit 1
+        }
         ;;
-    "FULL")
-        echo "Enabling SECWM, setting SECBOOTADD0"
-        $PROG mode=UR -ob SECWM1_PSTRT=0 SECWM1_PEND=${FP} SECBOOTADD0=${SECBOOTADD0}
+
+    "unlock")
+        echo "Removing SECWM and erasing the user flash"
+        $PROG mode=UR -ob UNLOCK_1A=1 UNLOCK_1B=1 UNLOCK_2A=1 UNLOCK_2B=1 SECWM1_PSTRT=${FP} SECWM1_PEND=0 HDP1EN=0 HDP1_PEND=0 WRP1A_PSTRT=${FP} WRP1A_PEND=0 SECWM2_PSTRT=${FP} SECWM2_PEND=0 WRP2A_PSTRT=${FP} WRP2A_PEND=0 HDP2EN=0 HDP2_PEND=0 -e all || {
+            echo "Error: Flash unlock operation failed."
+            exit 1
+        }
+        ;;
+    "flash_tzen_all")
+        if [ -z "${TARGET_HEX}" ]; then
+            TARGET_HEX="${PROJECT_NAME}_bl2_s_ns_factory.hex"
+        fi
+
+        check_tzen_vars
+
+        echo "Enabling TZ"
+        $PROG mode=UR -ob TZEN=1 || {
+            echo "Error: Trustzone enable operation failed."
+            exit 1
+        }
+
+        echo "Removing SECWM and erasing the user flash"
+        $PROG mode=UR -ob UNLOCK_1A=1 UNLOCK_1B=1 UNLOCK_2A=1 UNLOCK_2B=1 SECWM1_PSTRT=${FP} SECWM1_PEND=0 HDP1EN=0 HDP1_PEND=0 WRP1A_PSTRT=${FP} WRP1A_PEND=0 SECWM2_PSTRT=${FP} SECWM2_PEND=0 WRP2A_PSTRT=${FP} WRP2A_PEND=0 HDP2EN=0 HDP2_PEND=0 -e all || {
+            echo "Error: Flash unlock operation failed."
+            exit 1
+        }
+
+        echo "Enabling SECWM, TZ, setting SECBOOTADD0"
+        $PROG mode=UR -ob SECWM1_PSTRT=0 SECWM1_PEND=${FP} SECBOOTADD0="${SECBOOTADD0}" TZEN=1 || {
+            echo "Error: Flash unlock operation failed."
+            exit 1
+        }
 
         echo "Writing all images (NS, S, BL2)"
-        $PROG speed=fast mode=UR -d "${BUILD_PATH}/${PROJECT_NAME}_ns_signed.bin" ${RE_IMAGE_FLASH_ADDRESS_NON_SECURE} -v -d "${BUILD_PATH}/${PROJECT_NAME}_s_signed.bin" ${RE_IMAGE_FLASH_ADDRESS_SECURE} -v -d "${BUILD_PATH}/${PROJECT_NAME}_bl2.bin" ${RE_BL2_BIN_ADDRESS} -v
+        $PROG speed=fast mode=UR -d "${BUILD_PATH}/${TARGET_HEX}" -v || {
+            echo "Error: Failed to program ${TARGET_HEX}."
+            exit 1
+        }
+        ;;
+    "flash_tzen_update")
+        if [ -z "${TARGET_HEX}" ]; then
+            TARGET_HEX="${PROJECT_NAME}_s_ns_update.hex"
+        fi
+
+        $PROG speed=fast mode=UR -d "${BUILD_PATH}/${TARGET_HEX}" -v || {
+            echo "Error: Failed to program ${TARGET_HEX}."
+            exit 1
+        }
         ;;
     *)
         echo "No valid option was specified: '$1'"
         exit 1
         ;;
 esac
+
+echo && echo "Operation Completed Successfully." && echo

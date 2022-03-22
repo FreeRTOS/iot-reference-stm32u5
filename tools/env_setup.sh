@@ -37,8 +37,8 @@ TOOLS_PATH=$WORKSPACE_PATH/tools
 VENV_PATH=$(realpath "${TOOLS_PATH}/..")/.venv
 [ -n "${DEBUG}" ] && echo "VENV_PATH:          ${VENV_PATH}"
 
-MUCBOOT_PATH=$(realpath "${TOOLS_PATH}/..")/Middleware/ARM/mcuboot
-[ -n "${DEBUG}" ] && echo "MCUBOOT_PATH:       ${MUCBOOT_PATH}"
+MCUBOOT_PATH=$(realpath "${TOOLS_PATH}/..")/Middleware/ARM/mcuboot
+[ -n "${DEBUG}" ] && echo "MCUBOOT_PATH:       ${MCUBOOT_PATH}"
 [ -n "${DEBUG}" ] && echo
 
 which python > /dev/null 2>&1 || alias python=python3
@@ -77,17 +77,17 @@ if [[ ! -e "${VENV_PATH}"/.initialized ]] || \
 		return 1
 	}
 
-	SITE_PACKAGES_PATH=$(find ${VENV_PATH} -name site-packages -type d)
+	SITE_PACKAGES_PATH=$(find "${VENV_PATH}" -name site-packages -type d)
 	echo "SITE_PACKAGES_PATH: ${SITE_PACKAGES_PATH}"
 
 	echo "Adding workspace directory to package path."
-	echo ${WORKSPACE_PATH} > ${SITE_PACKAGES_PATH}/workspace.pth
+	echo "${WORKSPACE_PATH}" > "${SITE_PACKAGES_PATH}"/workspace.pth
 
 	echo "Adding tools directory to package path."
-	echo ${TOOLS_PATH} > ${SITE_PACKAGES_PATH}/tools.pth
+	echo "${TOOLS_PATH}" > "${SITE_PACKAGES_PATH}"/tools.pth
 
 	echo "Adding mcuboot scripts directory to package path."
-	echo ${MCUBOOT_PATH}/scripts > ${SITE_PACKAGES_PATH}/mcuboot.pth
+	echo "${MCUBOOT_PATH}"/scripts > "${SITE_PACKAGES_PATH}"/mcuboot.pth
 
 	touch "${VENV_PATH}"/.initialized
 fi
