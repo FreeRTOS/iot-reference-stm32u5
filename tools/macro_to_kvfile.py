@@ -28,34 +28,40 @@ import ast
 import operator as op
 from argparse import ArgumentParser
 
+
 class MacroParser(object):
     # supported operators for our safe parser
     _operators = {
         # binary arithmetic operators
-        ast.Add : op.add,
-        ast.Sub : op.sub,
-        ast.Mult : op.mul,
-        ast.Div : op.floordiv,
-        ast.Mod : op.mod,
+        ast.Add: op.add,
+        ast.Sub: op.sub,
+        ast.Mult: op.mul,
+        ast.Div: op.floordiv,
+        ast.Mod: op.mod,
         # binary bitwise operators
-        ast.BitAnd : op.and_,
-        ast.BitOr : op.or_,
-        ast.BitXor : op.xor,
+        ast.BitAnd: op.and_,
+        ast.BitOr: op.or_,
+        ast.BitXor: op.xor,
         # unary bitwise operators
-        ast.Invert : op.invert,
-        ast.LShift : op.lshift,
-        ast.RShift : op.rshift
+        ast.Invert: op.invert,
+        ast.LShift: op.lshift,
+        ast.RShift: op.rshift,
     }
 
     # Recursively parse the tree
     def evaluate_macro_recur(node):
-        if(isinstance(node, ast.Num)):
+        if isinstance(node, ast.Num):
             return node.n
-        elif(isinstance(node, ast.BinOp)):
-            return MacroParser._operators[type(node.op)](MacroParser.evaluate_macro_recur(node.left), MacroParser.evaluate_macro_recur(node.right))
-        elif(isinstance(node, ast.UnaryOp)):
-            return MacroParser._operators[type(node.op)](MacroParser.evaluate_macro_recur(node.operand))
-        elif(isinstance(node, ast.Tuple) and len(node.elts) == 1):
+        elif isinstance(node, ast.BinOp):
+            return MacroParser._operators[type(node.op)](
+                MacroParser.evaluate_macro_recur(node.left),
+                MacroParser.evaluate_macro_recur(node.right),
+            )
+        elif isinstance(node, ast.UnaryOp):
+            return MacroParser._operators[type(node.op)](
+                MacroParser.evaluate_macro_recur(node.operand)
+            )
+        elif isinstance(node, ast.Tuple) and len(node.elts) == 1:
             return MacroParser.evaluate_macro_recur(node.elts[0])
         else:
             print(type(node))
@@ -63,32 +69,40 @@ class MacroParser(object):
 
     def evaluate_macro(node):
         # Base case, is a number
-        name = ''
-        if(isinstance(node, ast.Assign)):
+        name = ""
+        if isinstance(node, ast.Assign):
             if len(node.targets) == 1:
                 name = node.targets[0].id
                 value = MacroParser.evaluate_macro_recur(node.value)
-                return (name,value)
+                return (name, value)
             else:
                 raise TypeError
         else:
             print(type(node))
             raise TypeError
 
+
 def cleanup_lines(lines, prefix):
     lines_out = []
     for line in lines:
         if prefix in line:
             # Remove beginning and trailing tabs, spaces, and commas
-            line = line.strip('\t, ')
+            line = line.strip("\t, ")
             lines_out.append(line)
     return lines_out
 
+
 def main():
     argparser = ArgumentParser()
-    argparser.add_argument("--prefix", "-p", help='Prefix for each valid macro.',default='RE_')
-    argparser.add_argument("output_file", help="Output file to store key=value pairs in.")
-    argparser.add_argument("input_files", help="Preprocessed input file(s) to parse.", nargs="*")
+    argparser.add_argument(
+        "--prefix", "-p", help="Prefix for each valid macro.", default="RE_"
+    )
+    argparser.add_argument(
+        "output_file", help="Output file to store key=value pairs in."
+    )
+    argparser.add_argument(
+        "input_files", help="Preprocessed input file(s) to parse.", nargs="*"
+    )
     args = argparser.parse_args()
 
     input_files = args.input_files
@@ -98,19 +112,20 @@ def main():
     output_dict = dict()
 
     for file_name in input_files:
-        with open(file_name, 'r') as f:
+        with open(file_name, "r") as f:
             lines = cleanup_lines(f.readlines(), prefix)
             filtered_file = "\n".join(lines)
             parsed_file = ast.parse(filtered_file)
             for statemnt in parsed_file.body:
                 rslt = MacroParser.evaluate_macro(statemnt)
                 if isinstance(rslt, tuple):
-                    (key,value)=rslt
+                    (key, value) = rslt
                     output_dict[key] = value
 
-    with open(output_file,'w') as f:
-        for k,v in output_dict.items():
-            f.write('{}=0x{:X}\n'.format(k,v))
+    with open(output_file, "w") as f:
+        for k, v in output_dict.items():
+            f.write("{}=0x{:X}\n".format(k, v))
+
 
 if __name__ == "__main__":
     main()
