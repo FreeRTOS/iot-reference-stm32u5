@@ -47,13 +47,17 @@ case "$1" in
         $PROG mode=UR -ob nSWBOOT0=0 nBOOT0=0 RDP=0xDC
         $PROG mode=HOTPLUG -ob TZEN=0 RDP=0xAA nSWBOOT0=1 nBOOT0=1
         ;;
+    "TZ")
+        echo "Enabling TZ"
+        $PROG mode=UR -ob TZEN=1
+	      ;;
     "RM")
         echo "Removing the static protections and erasing the user flash"
         $PROG mode=UR -ob UNLOCK_1A=1 UNLOCK_1B=1 UNLOCK_2A=1 UNLOCK_2B=1 SECWM1_PSTRT=${FP} SECWM1_PEND=0 HDP1EN=0 HDP1_PEND=0 WRP1A_PSTRT=${FP} WRP1A_PEND=0 SECWM2_PSTRT=${FP} SECWM2_PEND=0 WRP2A_PSTRT=${FP} WRP2A_PEND=0 HDP2EN=0 HDP2_PEND=0 -e all
         ;;
     "FULL")
-        echo "Enabling SECWM, TZ, setting SECBOOTADD0"
-        $PROG mode=UR -ob SECWM1_PSTRT=0 SECWM1_PEND=${FP} SECBOOTADD0=${SECBOOTADD0} TZEN=1
+        echo "Enabling SECWM, setting SECBOOTADD0"
+        $PROG mode=UR -ob SECWM1_PSTRT=0 SECWM1_PEND=${FP} SECBOOTADD0=${SECBOOTADD0}
 
         echo "Writing all images (NS, S, BL2)"
         $PROG speed=fast mode=UR -d "${BUILD_PATH}/${PROJECT_NAME}_ns_signed.bin" ${RE_IMAGE_FLASH_ADDRESS_NON_SECURE} -v -d "${BUILD_PATH}/${PROJECT_NAME}_s_signed.bin" ${RE_IMAGE_FLASH_ADDRESS_SECURE} -v -d "${BUILD_PATH}/${PROJECT_NAME}_bl2.bin" ${RE_BL2_BIN_ADDRESS} -v
