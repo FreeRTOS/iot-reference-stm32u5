@@ -51,7 +51,7 @@ repos:
     rev: 7cc5848088fd8412905ab79feea6c8edc3ac76c6 # 2.1.5
     hooks:
     -   id: forbid-binary
-    -   id: git-dirty
-    -   id: markdownlint
+    # -   id: git-dirty
+    # -   id: markdownlint
     -   id: protect-first-parent
     -   id: shellcheck
