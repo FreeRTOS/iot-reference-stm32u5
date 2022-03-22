@@ -20,12 +20,15 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include "tls_transport_config.h"
+
+#ifdef MBEDTLS_TRANSPORT_PKCS11
+
 /**
  * @file mbedtls_pk_pkcs11.c
  * @brief mbedtls_pk implementation for pkcs11 ECDSA and RSA keys.
  *           Exports a mbedtls_pk_info_t type.
  */
-
 
 #include <string.h>
 
@@ -33,7 +36,6 @@
 #define MBEDTLS_ALLOW_PRIVATE_ACCESS
 
 #include "mbedtls/private_access.h"
-
 #include "mbedtls/pk.h"
 #include "mbedtls/asn1.h"
 #include "mbedtls/x509_crt.h"
@@ -1316,3 +1318,5 @@ static void p11_rsa_debug( const void * pvCtx,
 
     return mbedtls_rsa_info.debug_func( &( pxP11RsaCtx->xMbedRsaCtx ), pxItems );
 }
+
+#endif /* MBEDTLS_TRANSPORT_PKCS11 */
