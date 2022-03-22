@@ -27,8 +27,8 @@
 #
 import argparse
 import io
-import os
 import logging
+import os
 import random
 import string
 from time import monotonic

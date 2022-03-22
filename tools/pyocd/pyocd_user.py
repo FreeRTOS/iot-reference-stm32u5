@@ -26,8 +26,9 @@
 
 # This user script adds the STM32U5 target to pyocd.
 
-from tools.pyocd import target_STM32U585xx
 from pyocd import target
+
+from tools.pyocd import target_STM32U585xx
 
 target.TARGET["stm32u585xx"] = target_STM32U585xx.STM32U585xx
 target.TARGET["stm32u585aiix"] = target_STM32U585xx.STM32U585xx
