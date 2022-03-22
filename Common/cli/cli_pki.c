@@ -39,6 +39,10 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "tls_transport_config.h"
+
+#if defined( MBEDTLS_TRANSPORT_PKCS11 )
+
 /* PKCS11 */
 #include "pkcs11.h"
 #include "core_pkcs11_config.h"
@@ -56,7 +60,6 @@
 #include "mbedtls/ecp.h"
 #include "core_pki_utils.h"
 
-#if defined( MBEDTLS_TRANSPORT_PKCS11 )
 
 #define LABEL_PUB_IDX          3
 #define LABEL_PRV_IDX          4
