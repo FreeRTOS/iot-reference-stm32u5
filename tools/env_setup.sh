@@ -30,7 +30,7 @@
 	WORKSPACE_PATH="${PWD}"
 }
 
-TOOLS_PATH=$WORKSPACE_PATH/tools
+TOOLS_PATH="${WORKSPACE_PATH}/tools"
 
 [ -n "${DEBUG}" ] && echo "TOOLS_PATH:         ${TOOLS_PATH}"
 
@@ -41,8 +41,8 @@ MCUBOOT_PATH=$(realpath "${TOOLS_PATH}/..")/Middleware/ARM/mcuboot
 [ -n "${DEBUG}" ] && echo "MCUBOOT_PATH:       ${MCUBOOT_PATH}"
 [ -n "${DEBUG}" ] && echo
 
-which python > /dev/null 2>&1 || alias python=python3
-which python > /dev/null 2>&1 || {
+command -v python > /dev/null 2>&1 || alias python=python3
+command -v python > /dev/null 2>&1 || {
 	echo "Error: Failed to find a valid python installation."
 	return 1
 }
@@ -50,14 +50,46 @@ which python > /dev/null 2>&1 || {
 load_venv()
 {
 	if [ -e "${VENV_PATH}"/Scripts ]; then
+		# shellcheck disable=SC1091
 		source "${VENV_PATH}"/Scripts/activate
 	elif [ -e "${VENV_PATH}"/bin ]; then
+		# shellcheck disable=SC1091
 		source "${VENV_PATH}"/bin/activate
 	else
 		echo "Error. Could not find python virtual environment activation script."
 		return 1
 	fi
 }
+
+# Find location of STM32_Programmer_CLI
+if command -v STM32_Programmer_CLI > /dev/null 2>&1; then
+	cli_path=$(command -v STM32_Programmer_CLI)
+	echo "Found STM32_Programmer_CLI in PATH at ${cli_path} ."
+elif [ -n "${cubeide_cubeprogrammer_path}" ] && [ -e "${cubeide_cubeprogrammer_path}/STM32_Programmer_CLI" ]; then
+		PATH="${cubeide_cubeprogrammer_path}:${PATH}"
+		echo "Added ${cubeide_cubeprogrammer_path} to PATH for STM32_Programmer_CLI."
+else
+	case "${OSTYPE}" in
+		darwin*)  search_path=(/Applications/STM32CubeIDE*) ;;
+		linux*)   search_path=(/opt/st/stm32cubeide*) ;;
+		msys*)	  search_path=(/c/ST/STM32CubeIDE*) ;;
+		cygwin*)  search_path=(/c/ST/STM32CubeIDE*) ;;
+		*)        search_path=(); echo "Unknown OSTYPE=${OSTYPE}" ;;
+	esac
+
+	if [ -z "${search_path[*]}" ]; then
+		echo "Error: Failed to determine search path for STM32_Programmer_CLI."
+	else
+		# Word-splitting is intentional.
+		# shellcheck disable=SC2086
+		cli_path=$(find ${search_path[*]} -name "STM32_Programmer_CLI*" -type f -exec ls -1t {} + | head -1)
+		cli_dir=$(dirname "${cli_path}")
+		if [ -e "${cli_path}" ] && [ -d "${cli_dir}" ]; then
+			export PATH="${cli_dir}:${PATH}"
+			echo "Added ${cli_dir} to PATH for STM32_Programmer_CLI."
+		fi
+	fi
+fi
 
 if [ ! -d "${VENV_PATH}" ]; then
 	echo "Setting up python virtual environment"
