@@ -1,28 +1,31 @@
 #!/bin/bash
 
 # Find STM32_Programmer_CLI
+# shellcheck disable=SC2154
 if [ -n "${cubeide_cubeprogrammer_path}" ]; then
     PROG_BIN_DIR="${cubeide_cubeprogrammer_path}"
     PROG_BIN_PATH=$(find "${cubeide_cubeprogrammer_path}" -name 'STM32_Programmer_CLI*' -type f)
     PROG_BIN=$(basename "${PROG_BIN_PATH}")
     export PATH="${PROG_BIN_DIR}:${PATH}"
-elif which -s STM32_Programmer_CLI; then
+elif command -v STM32_Programmer_CLI; then
     PROG_BIN="STM32_Programmer_CLI"
 else
-    echo "Error: cubeide_cubeprogrammer_path environment variable was not defined."
-    echo "STM32_Programmer_CLI could not be found."
+    echo "Error: STM32_Programmer_CLI could not be found."
+    echo "STM32_Programmer_CLI in not in your path and the cubeide_cubeprogrammer_path environment variable was not defined."
     exit 1
 fi
 
 PROG="${PROG_BIN} --quietMode -c port=SWD"
 
 # Locate project build directory and store it in BUILD_PATH
-# Assume pwd is project main directory.
+# Assume pwd is project main directory if not specified.
+# shellcheck disable=SC2154
 if [ -n "${ProjDirPath}" ]; then
     ProjDirPath="${PWD}"
 fi
 
 if [ -d "${ProjDirPath}" ]; then
+    # shellcheck disable=SC2154
     if [ -n "${ConfigName}" ] && [ -d "${ProjDirPath}/${ConfigName}" ]; then
         BUILD_PATH="${ProjDirPath}/${ConfigName}"
     elif [ -d "${ProjDirPath}/Debug" ]; then
@@ -35,7 +38,9 @@ if [ -d "${ProjDirPath}" ]; then
 fi
 
 # Determine build artifact name
+# shellcheck disable=SC2154
 if [ -n "${BuildArtifactFileBaseName}" ]; then
+    # shellcheck disable=SC2154
     PROJECT_NAME="${ProjName}"
 elif [ -n "${ProjName}" ]; then
     PROJECT_NAME="${ProjName}"
@@ -45,6 +50,7 @@ fi
 
 # Project settings
 if [ -e "${BUILD_PATH}/image_defs.sh" ]; then
+    # shellcheck disable=SC1091
     source "${BUILD_PATH}/image_defs.sh"
     SECBOOTADD0=$(printf "0x%x" $((RE_BL2_BOOT_ADDRESS>>7)))
 fi
@@ -74,7 +80,7 @@ check_tzen_vars() {
     echo "Project name:     ${PROJECT_NAME}"
     echo "Build path:       ${BUILD_PATH}"
     echo "Firmware binary:  ${TARGET_HEX}"
-    echo "SECBOOTADD0:      ${SECBOOTADD0:=${SECBOOTADD0_DFLT}}"
+    echo "SECBOOTADD0:      ${SECBOOTADD0}"
 
     if [ ! -d "${BUILD_PATH}" ]; then
         echo "Error: Failed to determine build directory path."
@@ -85,6 +91,11 @@ check_tzen_vars() {
     if [ ! -e "${BUILD_PATH}/image_defs.sh" ]; then
         echo "Error: Failed to locate images_defs.sh include file."
         echo "Please build the target image and verify that your build path is correct."
+        exit 1
+    fi
+
+    if [ -z "${SECBOOTADD0}" ]; then
+        echo "Error: Failed to determine SECBOOTADD0 setting."
         exit 1
     fi
 }
@@ -153,7 +164,7 @@ case "$1" in
         ;;
     "tz_regression")
         echo "Erasing and unlocking internal NOR flash..."
-        $PROG mode=UR -ob UNLOCK_1A=1 UNLOCK_1B=1 UNLOCK_2A=1 UNLOCK_2B=1 SECWM1_PSTRT=${FP} SECWM1_PEND=0 HDP1EN=0 HDP1_PEND=0 WRP1A_PSTRT=${FP} WRP1A_PEND=0 SECWM2_PSTRT=${FP} SECWM2_PEND=0 WRP2A_PSTRT=${FP} WRP2A_PEND=0 HDP2EN=0 HDP2_PEND=0 -e all || {
+        $PROG mode=UR -ob UNLOCK_1A=1 UNLOCK_1B=1 UNLOCK_2A=1 UNLOCK_2B=1 SECWM1_PSTRT=${FP} SECWM1_PEND=0 HDP1EN=0 HDP1_PEND=0 WRP1A_PSTRT=${FP} WRP1A_PEND=0 SECWM2_PSTRT=${FP} SECWM2_PEND=0 WRP2A_PSTRT=${FP} WRP2A_PEND=0 HDP2EN=0 HDP2_PEND=0 || {
             echo "Error: Failed to perform unlock operation"
             exit 1
         }
@@ -191,10 +202,14 @@ case "$1" in
         fi
 
         check_tzen_vars
-
         echo "Enabling TZ"
         $PROG mode=UR -ob TZEN=1 || {
             echo "Error: Trustzone enable operation failed."
+            exit 1
+        }
+
+        $PROG -hardRst || {
+            echo "Error: Failed to perform hard reset."
             exit 1
         }
 
@@ -204,13 +219,13 @@ case "$1" in
             exit 1
         }
 
-        echo "Enabling SECWM, TZ, setting SECBOOTADD0"
-        $PROG mode=UR -ob SECWM1_PSTRT=0 SECWM1_PEND=${FP} SECBOOTADD0="${SECBOOTADD0}" TZEN=1 || {
+        echo "Enabling SECWM, setting SECBOOTADD0"
+        $PROG mode=UR -ob SECWM1_PSTRT=0 SECWM1_PEND=${FP} SECBOOTADD0="${SECBOOTADD0}" || {
             echo "Error: Flash unlock operation failed."
             exit 1
         }
 
-        echo "Writing all images (NS, S, BL2)"
+        echo "Writing all images (BL2, S, NS)"
         $PROG speed=fast mode=UR -d "${BUILD_PATH}/${TARGET_HEX}" -v || {
             echo "Error: Failed to program ${TARGET_HEX}."
             exit 1
@@ -227,9 +242,15 @@ case "$1" in
         }
         ;;
     *)
-        echo "No valid option was specified: '$1'"
+        echo "Error: No valid option was specified: '$1'"
         exit 1
         ;;
 esac
 
-echo && echo "Operation Completed Successfully." && echo
+echo "Performing hard reset."
+$PROG -hardRst || {
+    echo "Error: Failed to perform hard reset."
+    exit 1
+}
+
+echo && echo "Operation Completed." && echo
