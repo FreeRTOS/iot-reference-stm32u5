@@ -2,9 +2,17 @@ name: CI Checks
 
 on:
   push:
-    branches: ["**"]
-  # pull_request:
-  #   branches: ["**"]
+    branches:
+      - dev
+      - main
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - closed
+    branches:
+      - dev
+      - main
   workflow_dispatch:
 
 jobs:
@@ -60,6 +68,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Fetch HEAD revision
+        run: git fetch origin
       - name: Install python pip
         run:  sudo apt-get install python3-pip
       - name: Install virtualenv
@@ -67,7 +77,17 @@ jobs:
       - name: create virtual environment
         run: |
           virtualenv venv
-          . venv/bin/activate
+          source venv/bin/activate
+      - name: install pre-commit package via pip
+        run: |
+          source venv/bin/activate
           pip install pre-commit
-          pre-commit install
-          pre-commit run --all-files
+      - name: Run pre-commit hooks
+        run: |
+          source venv/bin/activate
+          if [ -n "${GITHUB_BASE_REF}" ]; then
+            BASE_REF="origin/${GITHUB_BASE_REF}"
+          else
+            BASE_REF="$(git symbolic-ref --short refs/remotes/origin/HEAD)"
+          fi
+          pre-commit run --from-ref "${BASE_REF}" --to-ref "${GITHUB_SHA}" --show-diff
