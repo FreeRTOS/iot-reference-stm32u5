@@ -121,6 +121,10 @@ static void SystemClock_Config( void )
         .PLL.PLLFRACN        = 0,
     };
 
+    /* Switching from one PLL configuration to another requires to temporarily restore the default RCC configuration. */
+    xResult = HAL_RCC_DeInit();
+    configASSERT( xResult == HAL_OK );
+
     xResult = HAL_RCC_OscConfig( &xRccOscInit );
     configASSERT( xResult == HAL_OK );
 
