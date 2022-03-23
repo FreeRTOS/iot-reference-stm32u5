@@ -11,5 +11,3 @@ cbor>=1.0.0
 imgtool>=1.6.0
 click
 jinja2
-pyocd
-git+https://github.com/pyocd/pyOCD.git@main
