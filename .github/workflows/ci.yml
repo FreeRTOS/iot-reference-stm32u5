@@ -87,7 +87,13 @@ jobs:
           source venv/bin/activate
           if [ -n "${GITHUB_BASE_REF}" ]; then
             BASE_REF="origin/${GITHUB_BASE_REF}"
+          elif [ "${GITHUB_REF_NAME}" == "main" ] || [ "${GITHUB_REF_NAME}" == "dev" ]; then
+            BASE_REF=""
           else
             BASE_REF="$(git symbolic-ref --short refs/remotes/origin/HEAD)"
           fi
-          pre-commit run --from-ref "${BASE_REF}" --to-ref "${GITHUB_SHA}" --show-diff
+          if [ -n "${BASE_REF}" ]; then
+            pre-commit run --from-ref "${BASE_REF}" --to-ref "${GITHUB_SHA}" --show-diff
+          else
+            pre-commit run --all --show-diff
+          fi
