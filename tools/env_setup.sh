@@ -50,10 +50,10 @@ command -v python > /dev/null 2>&1 || {
 load_venv()
 {
 	if [ -e "${VENV_PATH}"/Scripts ]; then
-		# shellcheck disable=SC1091
+		# shellcheck disable=SC1090,SC1091
 		source "${VENV_PATH}"/Scripts/activate
 	elif [ -e "${VENV_PATH}"/bin ]; then
-		# shellcheck disable=SC1091
+		# shellcheck disable=SC1090,SC1091
 		source "${VENV_PATH}"/bin/activate
 	else
 		echo "Error. Could not find python virtual environment activation script."
@@ -62,6 +62,7 @@ load_venv()
 }
 
 # Find location of STM32_Programmer_CLI
+# shellcheck disable=SC2154
 if command -v STM32_Programmer_CLI > /dev/null 2>&1; then
 	cli_path=$(command -v STM32_Programmer_CLI)
 	echo "Found STM32_Programmer_CLI in PATH at ${cli_path} ."
