@@ -15,7 +15,11 @@ else
     exit 1
 fi
 
-PROG="${PROG_BIN} --quietMode -c port=SWD"
+# Run STM32_Programmer_CLI and remove color codes.
+prog_cli()
+{
+    ${PROG_BIN} --quietMode -c port=SWD "$@" | sed 's/\x1b\[[0-9;]*m//g'
+}
 
 # Locate project build directory and store it in BUILD_PATH
 # Assume pwd is project main directory if not specified.
@@ -109,7 +113,7 @@ case "$1" in
 
         check_ntz_vars
         echo "Writing Non-TrustZone image, setting NSBOOTADD0 and clearing SWAP_BANK."
-        $PROG speed=fast mode=UR -d "${BUILD_PATH}/${TARGET_HEX}" -ob NSBOOTADD0="${NSBOOTADD0}" SWAP_BANK=0 || {
+        prog_cli speed=fast mode=UR -d "${BUILD_PATH}/${TARGET_HEX}" -ob NSBOOTADD0="${NSBOOTADD0}" SWAP_BANK=0 || {
             echo "Error: Failed to program non-trustzone firmware image."
             exit 1
         }
@@ -121,7 +125,7 @@ case "$1" in
 
         check_tzen_vars
         echo "Writing Non-Secure Image."
-        $PROG speed=fast mode=UR -d "${BUILD_PATH}/${TARGET_HEX}" -v || {
+        prog_cli speed=fast mode=UR -d "${BUILD_PATH}/${TARGET_HEX}" -v || {
             echo "Error: Failed to program ${TARGET_HEX}."
             exit 1
         }
@@ -133,7 +137,7 @@ case "$1" in
 
         check_tzen_vars
         echo "Writing Non-Secure Image."
-        $PROG speed=fast mode=UR -d "${BUILD_PATH}/${TARGET_HEX}" -v || {
+        prog_cli speed=fast mode=UR -d "${BUILD_PATH}/${TARGET_HEX}" -v || {
             echo "Error: Failed to program ${TARGET_HEX}."
             exit 1
         }
@@ -145,7 +149,7 @@ case "$1" in
 
         check_tzen_vars
         echo "Writing combined secure and non-secure Image."
-        $PROG speed=fast mode=UR -d "${BUILD_PATH}/${TARGET_HEX}" -v || {
+        prog_cli speed=fast mode=UR -d "${BUILD_PATH}/${TARGET_HEX}" -v || {
             echo "Error: Failed to program ${TARGET_HEX}."
             exit 1
         }
@@ -157,33 +161,33 @@ case "$1" in
 
         check_tzen_vars
         echo "Writing Non-Secure update Image."
-        $PROG speed=fast mode=UR -d "${BUILD_PATH}/${TARGET_HEX}" -v || {
+        prog_cli speed=fast mode=UR -d "${BUILD_PATH}/${TARGET_HEX}" -v || {
             echo "Error: Failed to program ${TARGET_HEX}."
             exit 1
         }
         ;;
     "tz_regression")
         echo "Erasing and unlocking internal NOR flash..."
-        $PROG mode=UR -ob UNLOCK_1A=1 UNLOCK_1B=1 UNLOCK_2A=1 UNLOCK_2B=1 SECWM1_PSTRT=${FP} SECWM1_PEND=0 HDP1EN=0 HDP1_PEND=0 WRP1A_PSTRT=${FP} WRP1A_PEND=0 SECWM2_PSTRT=${FP} SECWM2_PEND=0 WRP2A_PSTRT=${FP} WRP2A_PEND=0 HDP2EN=0 HDP2_PEND=0 || {
+        prog_cli mode=UR -ob UNLOCK_1A=1 UNLOCK_1B=1 UNLOCK_2A=1 UNLOCK_2B=1 SECWM1_PSTRT=${FP} SECWM1_PEND=0 HDP1EN=0 HDP1_PEND=0 WRP1A_PSTRT=${FP} WRP1A_PEND=0 SECWM2_PSTRT=${FP} SECWM2_PEND=0 WRP2A_PSTRT=${FP} WRP2A_PEND=0 HDP2EN=0 HDP2_PEND=0 || {
             echo "Error: Failed to perform unlock operation"
             exit 1
         }
 
         echo "Setting RDP to level 1 and entering bootloader..."
-        $PROG mode=UR -ob nSWBOOT0=0 nBOOT0=0 RDP=0xDC || {
+        prog_cli mode=UR -ob nSWBOOT0=0 nBOOT0=0 RDP=0xDC || {
             echo "Error: Failed to set RDP=0xDC and enter bootloader."
             exit 1
         }
 
         echo "Regressing to RDP level 0, disabling TrustZone, and leaving bootloader."
-        $PROG mode=HOTPLUG -ob TZEN=0 RDP=0xAA nSWBOOT0=1 nBOOT0=1 || {
+        prog_cli mode=HOTPLUG -ob TZEN=0 RDP=0xAA nSWBOOT0=1 nBOOT0=1 || {
             echo "Error: Failed to regress to RDP level 0 and disable trustzone."
             exit 1
         }
         ;;
     "tz_enable")
         echo "Enabling TZ"
-        $PROG mode=HOTPLUG -ob TZEN=1 || {
+        prog_cli mode=HOTPLUG -ob TZEN=1 || {
             echo "Error: Trustzone enable operation failed."
             exit 1
         }
@@ -191,7 +195,7 @@ case "$1" in
 
     "unlock")
         echo "Removing SECWM and erasing the user flash"
-        $PROG mode=UR -ob UNLOCK_1A=1 UNLOCK_1B=1 UNLOCK_2A=1 UNLOCK_2B=1 SECWM1_PSTRT=${FP} SECWM1_PEND=0 HDP1EN=0 HDP1_PEND=0 WRP1A_PSTRT=${FP} WRP1A_PEND=0 SECWM2_PSTRT=${FP} SECWM2_PEND=0 WRP2A_PSTRT=${FP} WRP2A_PEND=0 HDP2EN=0 HDP2_PEND=0 -e all || {
+        prog_cli mode=UR -ob UNLOCK_1A=1 UNLOCK_1B=1 UNLOCK_2A=1 UNLOCK_2B=1 SECWM1_PSTRT=${FP} SECWM1_PEND=0 HDP1EN=0 HDP1_PEND=0 WRP1A_PSTRT=${FP} WRP1A_PEND=0 SECWM2_PSTRT=${FP} SECWM2_PEND=0 WRP2A_PSTRT=${FP} WRP2A_PEND=0 HDP2EN=0 HDP2_PEND=0 -e all || {
             echo "Error: Flash unlock operation failed."
             exit 1
         }
@@ -203,30 +207,30 @@ case "$1" in
 
         check_tzen_vars
         echo "Enabling TZ"
-        $PROG mode=UR -ob TZEN=1 || {
+        prog_cli mode=UR -ob TZEN=1 || {
             echo "Error: Trustzone enable operation failed."
             exit 1
         }
 
-        $PROG -hardRst || {
+        prog_cli -hardRst || {
             echo "Error: Failed to perform hard reset."
             exit 1
         }
 
         echo "Removing SECWM and erasing the user flash"
-        $PROG mode=UR -ob UNLOCK_1A=1 UNLOCK_1B=1 UNLOCK_2A=1 UNLOCK_2B=1 SECWM1_PSTRT=${FP} SECWM1_PEND=0 HDP1EN=0 HDP1_PEND=0 WRP1A_PSTRT=${FP} WRP1A_PEND=0 SECWM2_PSTRT=${FP} SECWM2_PEND=0 WRP2A_PSTRT=${FP} WRP2A_PEND=0 HDP2EN=0 HDP2_PEND=0 -e all || {
+        prog_cli mode=UR -ob UNLOCK_1A=1 UNLOCK_1B=1 UNLOCK_2A=1 UNLOCK_2B=1 SECWM1_PSTRT=${FP} SECWM1_PEND=0 HDP1EN=0 HDP1_PEND=0 WRP1A_PSTRT=${FP} WRP1A_PEND=0 SECWM2_PSTRT=${FP} SECWM2_PEND=0 WRP2A_PSTRT=${FP} WRP2A_PEND=0 HDP2EN=0 HDP2_PEND=0 -e all || {
             echo "Error: Flash unlock operation failed."
             exit 1
         }
 
         echo "Enabling SECWM, setting SECBOOTADD0"
-        $PROG mode=UR -ob SECWM1_PSTRT=0 SECWM1_PEND=${FP} SECBOOTADD0="${SECBOOTADD0}" || {
+        prog_cli mode=UR -ob SECWM1_PSTRT=0 SECWM1_PEND=${FP} SECBOOTADD0="${SECBOOTADD0}" || {
             echo "Error: Flash unlock operation failed."
             exit 1
         }
 
         echo "Writing all images (BL2, S, NS)"
-        $PROG speed=fast mode=UR -d "${BUILD_PATH}/${TARGET_HEX}" -v || {
+        prog_cli speed=fast mode=UR -d "${BUILD_PATH}/${TARGET_HEX}" -v || {
             echo "Error: Failed to program ${TARGET_HEX}."
             exit 1
         }
@@ -236,7 +240,7 @@ case "$1" in
             TARGET_HEX="${PROJECT_NAME}_s_ns_update.hex"
         fi
 
-        $PROG speed=fast mode=UR -d "${BUILD_PATH}/${TARGET_HEX}" -v || {
+        prog_cli speed=fast mode=UR -d "${BUILD_PATH}/${TARGET_HEX}" -v || {
             echo "Error: Failed to program ${TARGET_HEX}."
             exit 1
         }
@@ -248,7 +252,7 @@ case "$1" in
 esac
 
 echo "Performing hard reset."
-$PROG -hardRst || {
+prog_cli -hardRst || {
     echo "Error: Failed to perform hard reset."
     exit 1
 }
