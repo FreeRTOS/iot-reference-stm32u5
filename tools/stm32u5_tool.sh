@@ -54,7 +54,7 @@ fi
 
 # Project settings
 if [ -e "${BUILD_PATH}/image_defs.sh" ]; then
-    # shellcheck disable=SC1091
+    # shellcheck disable=SC1090,SC1091
     source "${BUILD_PATH}/image_defs.sh"
     SECBOOTADD0=$(printf "0x%x" $((RE_BL2_BOOT_ADDRESS>>7)))
 fi
