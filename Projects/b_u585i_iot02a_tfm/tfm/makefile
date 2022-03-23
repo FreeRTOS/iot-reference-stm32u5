@@ -159,6 +159,8 @@ ${TFM_BUILD_PATH}/Makefile : ${MBEDTLS_PATCH_FLAGS} ${MCUBOOT_PATCH_FLAGS}
 		-DTFM_PARTITION_FIRMWARE_UPDATE=ON \
 		-DMCUBOOT_DATA_SHARING=ON \
 		-G"Unix Makefiles" \
+		-DCONFIG_TFM_FP=hard \
+		-DTFM_EXCEPTION_INFO_DUMP=on \
 		-DNS=1
 	sleep 1
 
@@ -260,6 +262,7 @@ ${BUILD_PATH}/stm32u5xx_ns.ld : ${TFM_SRC_PATH}/platform/ext/target/stm/common/h
 		-DTFM_PSA_API \
 		-DTFM_SP_LOG_RAW_ENABLED \
 		-DUSE_HAL_DRIVER  \
+		-DCONFIG_TFM_FP=hard \
 		-I ${TFM_BUILD_PATH} -include ${TFM_BUILD_PATH}/tfm_config_export.h \
 		-o $@ $<
 
@@ -285,6 +288,7 @@ ${BUILD_PATH}/image_macros_preprocessed_bl2.c : ${TFM_BUILD_PATH}/image_macros_t
 		-DTFM_PSA_API \
 		-DTFM_SP_LOG_RAW_ENABLED \
 		-DUSE_HAL_DRIVER \
+		-DCONFIG_TFM_FP=hard \
 		-include ${TFM_BUILD_PATH}/tfm_config_export.h \
 		-o $@ \
 		${TFM_BUILD_PATH}/image_macros_to_preprocess_bl2.c
