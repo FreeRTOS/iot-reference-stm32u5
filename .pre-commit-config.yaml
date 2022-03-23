@@ -53,5 +53,5 @@ repos:
     -   id: forbid-binary
     # -   id: git-dirty
     # -   id: markdownlint
-    -   id: protect-first-parent
+    # -   id: protect-first-parent
     -   id: shellcheck
