@@ -72,19 +72,28 @@
  * @brief Timeout for receiving CONNACK after sending an MQTT CONNECT packet.
  * Defined in milliseconds.
  */
-#define CONNACK_RECV_TIMEOUT_MS               ( 2000U )
+#define CONNACK_RECV_TIMEOUT_MS     ( 2000U )
 
 /**
- * @brief The maximum back-off delay (in seconds) for retrying failed operation
- *  with server.
- */
-#define RETRY_MAX_BACKOFF_DELAY_S             ( 5U * 60U )
-
-/**
- * @brief The base back-off delay (in seconds) to use for network operation retry
+ * @brief The minimum back-off delay to use for network operation retry
  * attempts.
  */
-#define RETRY_BACKOFF_BASE_S                  ( 10U )
+#define RETRY_BACKOFF_BASE          ( 10U )
+
+/**
+ * @brief The maximum back-off delay for retrying failed operation
+ *  with server.
+ */
+#define RETRY_MAX_BACKOFF_DELAY     ( 5U * 60U )
+
+/**
+ * @brief Multiplier to apply to the bacoff delay to convert arbitrary units to milliseconds.
+ */
+#define RETRY_BACKOFF_MULTIPLIER    ( 100U )
+
+static_assert( RETRY_BACKOFF_BASE < UINT16_MAX );
+static_assert( RETRY_MAX_BACKOFF_DELAY < UINT16_MAX );
+static_assert( ( ( uint64_t ) RETRY_BACKOFF_MULTIPLIER * ( uint64_t ) RETRY_MAX_BACKOFF_DELAY ) < UINT32_MAX );
 
 /**
  * @brief The maximum time interval in seconds which is allowed to elapse
@@ -110,7 +119,6 @@
 #define AGENT_READY_EVT_MASK                  ( 0b1U )
 
 #define MUTEX_IS_OWNED( xHandle )    ( xTaskGetCurrentTaskHandle() == xSemaphoreGetMutexHolder( xHandle ) )
-/*#define MUTEX_IS_OWNED( xHandle ) 1 */
 
 struct MQTTAgentMessageContext
 {
@@ -214,6 +222,56 @@ static uint32_t prvGetTimeMs( void );
  * of overflow for the 32 bit unsigned integer used for holding the timestamp.
  */
 static uint32_t ulGlobalEntryTimeMs;
+
+/*-----------------------------------------------------------*/
+
+static inline BaseType_t xLockSubCtx( SubMgrCtx_t * pxSubCtx )
+{
+    BaseType_t xResult = pdFALSE;
+
+    configASSERT( pxSubCtx );
+    configASSERT( pxSubCtx->xMutex );
+
+    configASSERT_CONTINUE( !MUTEX_IS_OWNED( pxSubCtx->xMutex ) );
+
+    LogDebug( ">>   LOCK begin wait." );
+    xResult = xSemaphoreTake( pxSubCtx->xMutex, portMAX_DELAY );
+
+    if( xResult )
+    {
+        LogDebug( ">>>> LOCK complete." );
+    }
+    else
+    {
+        LogError( "**** LOCK request failed, xResult=%d.", xResult );
+    }
+
+    return xResult;
+}
+
+/*-----------------------------------------------------------*/
+
+static inline BaseType_t xUnlockSubCtx( SubMgrCtx_t * pxSubCtx )
+{
+    BaseType_t xResult = pdFALSE;
+
+    configASSERT( pxSubCtx );
+    configASSERT( pxSubCtx->xMutex );
+    configASSERT_CONTINUE( MUTEX_IS_OWNED( pxSubCtx->xMutex ) );
+
+    xResult = xSemaphoreGive( pxSubCtx->xMutex );
+
+    if( xResult )
+    {
+        LogDebug( "<<<< UNLOCK." );
+    }
+    else
+    {
+        LogError( "**** UNLOCK request failed, xResult=%d.", xResult );
+    }
+
+    return xResult;
+}
 
 /*-----------------------------------------------------------*/
 void vSleepUntilMQTTAgentReady( void )
@@ -512,8 +570,7 @@ static void prvResubscribeCommandCallback( MQTTAgentCommandContext_t * pxCommand
         }
     }
 
-    ( void ) xSemaphoreGive( pxCtx->xMutex );
-    LogDebug( " <<<< Semaphore Give <<<<" );
+    ( void ) xUnlockSubCtx( pxCtx );
 }
 
 /*-----------------------------------------------------------*/
@@ -558,8 +615,7 @@ static MQTTStatus_t prvHandleResubscribe( MQTTAgentContext_t * pxMqttAgentCtx,
     }
     else
     {
-        ( void ) xSemaphoreGive( pxCtx->xMutex );
-        LogDebug( " <<<< Semaphore Give <<<<" );
+        ( void ) xUnlockSubCtx( pxCtx );
 
         /* Mark the resubscribe as success if there is nothing to be subscribed to. */
         xStatus = MQTTSuccess;
@@ -615,12 +671,8 @@ static void prvIncomingPublishCallback( MQTTAgentContext_t * pMqttAgentContext,
 
     pxCtx = ( SubMgrCtx_t * ) pMqttAgentContext->pIncomingCallbackContext;
 
-    LogDebug( ">> waiting for xSemaphoreTake" );
-
-    if( xSemaphoreTake( pxCtx->xMutex, portMAX_DELAY ) == pdTRUE )
+    if( xLockSubCtx( pxCtx ) )
     {
-        LogDebug( ">>>> xSemaphoreTake complete." );
-
         /* Iterate over pxCtx->pxCallbacks list */
         for( uint32_t ulCbIdx = 0; ulCbIdx < MQTT_AGENT_MAX_CALLBACKS; ulCbIdx++ )
         {
@@ -642,8 +694,7 @@ static void prvIncomingPublishCallback( MQTTAgentContext_t * pMqttAgentContext,
             }
         }
 
-        ( void ) xSemaphoreGive( pxCtx->xMutex );
-        LogDebug( " <<<< Semaphore Give <<<<" );
+        ( void ) xUnlockSubCtx( pxCtx );
     }
 
     if( !xPublishHandled )
@@ -665,7 +716,7 @@ static void prvIncomingPublishCallback( MQTTAgentContext_t * pMqttAgentContext,
 static void prvSubscriptionManagerCtxFree( SubMgrCtx_t * pxSubMgrCtx )
 {
     configASSERT( pxSubMgrCtx );
-    configASSERT( MUTEX_IS_OWNED( pxSubMgrCtx->xMutex ) );
+    configASSERT_CONTINUE( MUTEX_IS_OWNED( pxSubMgrCtx->xMutex ) );
 
     if( pxSubMgrCtx->xMutex )
     {
@@ -678,7 +729,7 @@ static void prvSubscriptionManagerCtxFree( SubMgrCtx_t * pxSubMgrCtx )
 static void prvSubscriptionManagerCtxReset( SubMgrCtx_t * pxSubMgrCtx )
 {
     configASSERT( pxSubMgrCtx );
-    configASSERT( MUTEX_IS_OWNED( pxSubMgrCtx->xMutex ) );
+    configASSERT_CONTINUE( MUTEX_IS_OWNED( pxSubMgrCtx->xMutex ) );
 
     memset( pxSubMgrCtx->pxSubscriptions, 0, sizeof( pxSubMgrCtx->pxSubscriptions ) );
 
@@ -705,7 +756,7 @@ static MQTTStatus_t prvSubscriptionManagerCtxInit( SubMgrCtx_t * pxSubMgrCtx )
     if( pxSubMgrCtx->xMutex )
     {
         LogDebug( "Creating MqttAgent Mutex." );
-        ( void ) xSemaphoreTake( pxSubMgrCtx->xMutex, portMAX_DELAY );
+        ( void ) xLockSubCtx( pxSubMgrCtx );
         prvSubscriptionManagerCtxReset( pxSubMgrCtx );
     }
     else
@@ -1010,8 +1061,8 @@ void vMQTTAgentTask( void * pvParameters )
 
         /* Initialize backoff algorithm with jitter */
         BackoffAlgorithm_InitializeParams( &xReconnectParams,
-                                           RETRY_BACKOFF_BASE_S,
-                                           RETRY_MAX_BACKOFF_DELAY_S,
+                                           RETRY_BACKOFF_BASE,
+                                           RETRY_MAX_BACKOFF_DELAY,
                                            BACKOFF_ALGORITHM_RETRY_FOREVER );
 
         xTlsStatus = TLS_TRANSPORT_UNKNOWN_ERROR;
@@ -1045,9 +1096,9 @@ void vMQTTAgentTask( void * pvParameters )
                 if( xBackoffAlgStatus == BackoffAlgorithmSuccess )
                 {
                     LogWarn( "Connecting to the mqtt broker failed. "
-                             "Retrying connection in %hu seconds.",
-                             usNextRetryBackOff );
-                    vTaskDelay( pdMS_TO_TICKS( 1000 * usNextRetryBackOff ) );
+                             "Retrying connection in %lu ms.",
+                             RETRY_BACKOFF_MULTIPLIER * usNextRetryBackOff );
+                    vTaskDelay( pdMS_TO_TICKS( RETRY_BACKOFF_MULTIPLIER * usNextRetryBackOff ) );
                 }
                 else
                 {
@@ -1061,6 +1112,8 @@ void vMQTTAgentTask( void * pvParameters )
         {
             bool xSessionPresent = false;
 
+            configASSERT_CONTINUE( MUTEX_IS_OWNED( pxCtx->xSubMgrCtx.xMutex ) );
+
             ( void ) MQTTAgent_CancelAll( &( pxCtx->xAgentContext ) );
 
             xMQTTStatus = MQTT_Connect( &( pxCtx->xAgentContext.mqttContext ),
@@ -1069,10 +1122,13 @@ void vMQTTAgentTask( void * pvParameters )
                                         CONNACK_RECV_TIMEOUT_MS,
                                         &xSessionPresent );
 
+            configASSERT_CONTINUE( MUTEX_IS_OWNED( pxCtx->xSubMgrCtx.xMutex ) );
+
             LogInfo( "Session present: %d", xSessionPresent );
 
             /* Resume a session if desired. */
-            if( ( xMQTTStatus == MQTTSuccess ) && ( pxCtx->xConnectInfo.cleanSession == false ) )
+            if( ( xMQTTStatus == MQTTSuccess ) &&
+                ( pxCtx->xConnectInfo.cleanSession == false ) )
             {
                 xMQTTStatus = MQTTAgent_ResumeSession( &( pxCtx->xAgentContext ), xSessionPresent );
 
@@ -1084,11 +1140,17 @@ void vMQTTAgentTask( void * pvParameters )
                                                         &( pxCtx->xSubMgrCtx ) );
                 }
             }
+            else if( xMQTTStatus == MQTTSuccess )
+            {
+                configASSERT_CONTINUE( MUTEX_IS_OWNED( pxCtx->xSubMgrCtx.xMutex ) );
+
+                prvSubscriptionManagerCtxReset( &( pxCtx->xSubMgrCtx ) );
+
+                ( void ) xUnlockSubCtx( &( pxCtx->xSubMgrCtx ) );
+            }
             else
             {
-                prvSubscriptionManagerCtxReset( &( pxCtx->xSubMgrCtx ) );
-                ( void ) xSemaphoreGive( pxCtx->xSubMgrCtx.xMutex );
-                LogDebug( " <<<< Semaphore Give <<<<" );
+                LogError( "Failed to connect to mqtt broker." );
             }
 
             /* Further reconnects will include a session resume operation */
@@ -1105,8 +1167,12 @@ void vMQTTAgentTask( void * pvParameters )
         if( xMQTTStatus == MQTTSuccess )
         {
             ( void ) xEventGroupSetBits( xSystemEvents, EVT_MASK_MQTT_CONNECTED );
-            xReconnectParams.attemptsDone = 0;
-            xReconnectParams.nextJitterMax = RETRY_BACKOFF_BASE_S;
+
+            /* Reset backoff timer */
+            BackoffAlgorithm_InitializeParams( &xReconnectParams,
+                                               RETRY_BACKOFF_BASE,
+                                               RETRY_MAX_BACKOFF_DELAY,
+                                               BACKOFF_ALGORITHM_RETRY_FOREVER );
 
             /* MQTTAgent_CommandLoop() is effectively the agent implementation.  It
              * will manage the MQTT protocol until such time that an error occurs,
@@ -1117,23 +1183,24 @@ void vMQTTAgentTask( void * pvParameters )
 
             LogDebug( "MQTTAgent_CommandLoop returned with status: %s.",
                       MQTT_Status_strerror( xMQTTStatus ) );
-
-            ( void ) MQTTAgent_CancelAll( &( pxCtx->xAgentContext ) );
-
-            mbedtls_transport_disconnect( pxNetworkContext );
-
-            ( void ) xEventGroupClearBits( xSystemEvents, EVT_MASK_MQTT_CONNECTED );
-
-            /* Wait for any subscription related calls to complete */
-            LogDebug( ">> waiting for xSemaphoreTake" );
-            ( void ) xSemaphoreTake( pxCtx->xSubMgrCtx.xMutex, portMAX_DELAY );
-            LogDebug( ">>>> xSemaphoreTake complete." );
-
-            /* Reset subscription status */
-            memset( pxCtx->xSubMgrCtx.pxSubAckStatus,
-                    MQTTSubAckFailure,
-                    sizeof( pxCtx->xSubMgrCtx.pxSubAckStatus ) );
         }
+
+        ( void ) MQTTAgent_CancelAll( &( pxCtx->xAgentContext ) );
+
+        mbedtls_transport_disconnect( pxNetworkContext );
+
+        ( void ) xEventGroupClearBits( xSystemEvents, EVT_MASK_MQTT_CONNECTED );
+
+        /* Wait for any subscription related calls to complete */
+        if( !MUTEX_IS_OWNED( pxCtx->xSubMgrCtx.xMutex ) )
+        {
+            ( void ) xLockSubCtx( &( pxCtx->xSubMgrCtx ) );
+        }
+
+        /* Reset subscription status */
+        memset( pxCtx->xSubMgrCtx.pxSubAckStatus,
+                MQTTSubAckFailure,
+                sizeof( pxCtx->xSubMgrCtx.pxSubAckStatus ) );
 
         if( !xExitFlag )
         {
@@ -1144,9 +1211,10 @@ void vMQTTAgentTask( void * pvParameters )
 
             if( xBackoffAlgStatus == BackoffAlgorithmSuccess )
             {
-                LogWarn( "Disconnected from the MQTT Broker. Retrying in %hu seconds.",
-                         usNextRetryBackOff );
-                vTaskDelay( pdMS_TO_TICKS( 1000 * usNextRetryBackOff ) );
+                LogWarn( "Disconnected from the MQTT Broker. Retrying in %lu ms.",
+                         RETRY_BACKOFF_MULTIPLIER * usNextRetryBackOff );
+
+                vTaskDelay( pdMS_TO_TICKS( RETRY_BACKOFF_MULTIPLIER * usNextRetryBackOff ) );
             }
             else
             {
@@ -1323,19 +1391,12 @@ MQTTStatus_t MqttAgent_SubscribeSync( MQTTAgentHandle_t xHandle,
         xStatus = MQTTBadParameter;
     }
 
-    if( xStatus == MQTTSuccess )
-    {
-        LogDebug( ">> waiting for xSemaphoreTake" );
-    }
-
     /* Acquire mutex */
     if( ( xStatus == MQTTSuccess ) &&
-        ( xSemaphoreTake( pxCtx->xMutex, portMAX_DELAY ) == pdTRUE ) )
+        xLockSubCtx( pxCtx ) )
     {
         size_t uxTargetSubIdx = MQTT_AGENT_MAX_SUBSCRIPTIONS;
         size_t uxTargetCbIdx = MQTT_AGENT_MAX_CALLBACKS;
-
-        LogDebug( ">>>> xSemaphoreTake complete." );
 
         /* If no slot is found, return MQTTNoMemory */
         xStatus = MQTTNoMemory;
@@ -1429,8 +1490,7 @@ MQTTStatus_t MqttAgent_SubscribeSync( MQTTAgentHandle_t xHandle,
             pxCtx->pulSubCbCount[ uxTargetSubIdx ]++;
         }
 
-        ( void ) xSemaphoreGive( pxCtx->xMutex );
-        LogDebug( " <<<< Semaphore Give <<<<" );
+        ( void ) xUnlockSubCtx( pxCtx );
 
         if( ( xStatus == MQTTSuccess ) &&
             ( pxCtx->pxSubAckStatus[ uxTargetSubIdx ] == MQTTSubAckFailure ) )
@@ -1543,19 +1603,12 @@ MQTTStatus_t MqttAgent_UnSubscribeSync( MQTTAgentHandle_t xHandle,
         xStatus = MQTTBadParameter;
     }
 
-    if( xStatus == MQTTSuccess )
-    {
-        LogDebug( ">> waiting for xSemaphoreTake" );
-    }
-
     /* Acquire mutex */
     if( ( xStatus == MQTTSuccess ) &&
-        ( xSemaphoreTake( pxCtx->xMutex, portMAX_DELAY ) == pdTRUE ) )
+        xLockSubCtx( pxCtx ) )
     {
         MQTTSubscribeInfo_t * pxSubInfo = NULL;
         size_t uxSubInfoIdx = MQTT_AGENT_MAX_SUBSCRIPTIONS;
-
-        LogDebug( ">>>> xSemaphoreTake complete." );
 
         xStatus = MQTTNoDataAvailable;
 
@@ -1603,8 +1656,7 @@ MQTTStatus_t MqttAgent_UnSubscribeSync( MQTTAgentHandle_t xHandle,
             }
         }
 
-        ( void ) xSemaphoreGive( pxCtx->xMutex );
-        LogDebug( " <<<< Semaphore Give <<<<" );
+        ( void ) xUnlockSubCtx( pxCtx );
 
         if( ( xStatus == MQTTSuccess ) &&
             ( pxCtx->pulSubCbCount[ uxSubInfoIdx ] == 0 ) )
