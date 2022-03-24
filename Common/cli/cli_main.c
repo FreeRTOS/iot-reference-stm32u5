@@ -28,6 +28,8 @@
 #include "cli_prv.h"
 #include "stream_buffer.h"
 
+#include "tls_transport_config.h"
+
 #include <string.h>
 
 typedef struct xCOMMAND_INPUT_LIST
