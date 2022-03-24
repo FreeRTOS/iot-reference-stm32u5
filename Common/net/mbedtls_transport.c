@@ -164,6 +164,9 @@ static void vSocketNotifyThread( void * pvParameters )
     fd_set xReadSet;
     fd_set xErrorSet;
     int lRslt;
+    uint32_t ulNotifyValue = 0;
+
+    ( void ) xTaskNotifyStateClear( NULL );
 
     if( pxCtx->pxRecvReadyCallback == NULL )
     {
@@ -176,6 +179,7 @@ static void vSocketNotifyThread( void * pvParameters )
         FD_ZERO( &xErrorSet );
         FD_SET( xSockHandle, &xReadSet );
         FD_SET( xSockHandle, &xErrorSet );
+
         lRslt = lwip_select( xSockHandle + 1, &xReadSet, NULL, &xErrorSet, NULL );
 
         xExitFlag |= ( lRslt == 0 );
@@ -194,7 +198,13 @@ static void vSocketNotifyThread( void * pvParameters )
             }
         }
 
-        ( void ) ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
+        if( xTaskNotifyWait( 0x0, 0xFFFFFFFF, &ulNotifyValue, portMAX_DELAY ) )
+        {
+            if( ulNotifyValue == 0xFFFFFFFF )
+            {
+                xExitFlag = pdTRUE;
+            }
+        }
     }
 
     /* Delete thread error */
@@ -695,34 +705,30 @@ static int mbedtls_ssl_send( void * pvCtx,
                     LogError( "Got Error code: %ld", lError );
                 }
 
-/*				/ * force use of newlibc errno * / */
-/*				switch( lError ) */
-/*				{ */
-/*		#if EAGAIN != EWOULDBLOCK */
-/*					case EAGAIN: */
-/*		#endif */
-/*					case EINTR: */
-/*					case EWOULDBLOCK: */
-/*						lError = MBEDTLS_ERR_SSL_WANT_WRITE; */
-/*						break; */
-/*					case EPIPE: */
-/*					case ECONNRESET: */
-/*						lError = MBEDTLS_ERR_NET_CONN_RESET; */
-/*						break; */
-/*					default: */
-/*						lError = MBEDTLS_ERR_NET_SEND_FAILED; */
-/*						break; */
-/*				} */
+                switch( lError )
+                {
+#if EAGAIN != EWOULDBLOCK
+                    case EAGAIN:
+#endif
+                    case EINTR:
+                    case EWOULDBLOCK:
+                        break;
+
+                    case EPIPE:
+                    case ECONNRESET:
+                        lError = MBEDTLS_ERR_NET_CONN_RESET;
+                        break;
+
+                    default:
+                        lError = MBEDTLS_ERR_NET_SEND_FAILED;
+                        break;
+                }
 
                 if( lError == EWOULDBLOCK )
                 {
                     vTaskDelay( ulBackofftimeMs );
                     ulBackofftimeMs = ulBackofftimeMs * 2;
                     lError = 0;
-                }
-                else
-                {
-                    LogError( "Got Error code: %ld", lError );
                 }
             }
         }
@@ -1803,11 +1809,11 @@ static inline void vStopSocketNotifyTask( NotifyThreadCtx_t * pxNotifyThreadCtx 
 {
     configASSERT( pxNotifyThreadCtx );
 
-    if( pxNotifyThreadCtx->xTaskHandle &&
-        ( eTaskGetState( pxNotifyThreadCtx->xTaskHandle ) != eDeleted ) )
+    while( ( pxNotifyThreadCtx->xTaskHandle != NULL ) &&
+           ( eTaskGetState( pxNotifyThreadCtx->xTaskHandle ) != eDeleted ) )
     {
-        vTaskDelete( pxNotifyThreadCtx->xTaskHandle );
-        pxNotifyThreadCtx->xTaskHandle = NULL;
+        ( void ) xTaskNotify( pxNotifyThreadCtx->xTaskHandle, 0xFFFFFFFF, eSetValueWithOverwrite );
+        vTaskDelay( 1 );
     }
 }
 
@@ -1890,7 +1896,7 @@ int32_t mbedtls_transport_setrecvcallback( NetworkContext_t * pxNetworkContext,
     else if( ( pxTLSCtx->xConnectionState == STATE_CONNECTED ) &&
              pxNotifyThreadCtx->xTaskHandle )
     {
-        vTaskDelete( pxNotifyThreadCtx->xTaskHandle );
+        vStopSocketNotifyTask( pxNotifyThreadCtx );
     }
     else
     {
@@ -2051,11 +2057,10 @@ int32_t mbedtls_transport_recv( NetworkContext_t * pxNetworkContext,
     }
     else
     {
-        /* Empty else marker. */
         if( pxTLSCtx->pxNotifyThreadCtx &&
             pxTLSCtx->pxNotifyThreadCtx->xTaskHandle )
         {
-            ( void ) xTaskNotifyGive( pxTLSCtx->pxNotifyThreadCtx->xTaskHandle );
+            ( void ) xTaskNotify( pxTLSCtx->pxNotifyThreadCtx->xTaskHandle, 0x0, eSetValueWithOverwrite );
         }
     }
 
