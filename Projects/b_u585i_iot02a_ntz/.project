@@ -34,7 +34,7 @@
 		<link>
 			<name>Common</name>
 			<type>2</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Common</locationURI>
+			<locationURI>WORKSPACE_LOC/Common</locationURI>
 		</link>
 		<link>
 			<name>Libraries</name>
@@ -84,7 +84,7 @@
 		<link>
 			<name>Libraries/CommonIO</name>
 			<type>2</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Drivers/CommonIO</locationURI>
+			<locationURI>WORKSPACE_LOC/Drivers/CommonIO</locationURI>
 		</link>
 		<link>
 			<name>Libraries/LittleFS</name>
@@ -99,22 +99,22 @@
 		<link>
 			<name>Libraries/backoffAlgorithm</name>
 			<type>2</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Middleware/FreeRTOS/backoffAlgorithm/source</locationURI>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/backoffAlgorithm/source</locationURI>
 		</link>
 		<link>
 			<name>Libraries/coreJSON</name>
 			<type>2</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Middleware/FreeRTOS/coreJSON/source</locationURI>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/coreJSON/source</locationURI>
 		</link>
 		<link>
 			<name>Libraries/coreMQTT</name>
 			<type>2</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Middleware/FreeRTOS/coreMQTT/source</locationURI>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/coreMQTT/source</locationURI>
 		</link>
 		<link>
 			<name>Libraries/coreMQTTAgent</name>
 			<type>2</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Middleware/FreeRTOS/coreMQTT-Agent/source</locationURI>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/coreMQTT-Agent/source</locationURI>
 		</link>
 		<link>
 			<name>Libraries/corePKCS11</name>
@@ -124,12 +124,12 @@
 		<link>
 			<name>Libraries/deviceDefender</name>
 			<type>2</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Middleware/AWS/IoTDeviceDefender/source</locationURI>
+			<locationURI>WORKSPACE_LOC/Middleware/AWS/IoTDeviceDefender/source</locationURI>
 		</link>
 		<link>
 			<name>Libraries/deviceShadow</name>
 			<type>2</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Middleware/AWS/IoTDeviceShadow/source</locationURI>
+			<locationURI>WORKSPACE_LOC/Middleware/AWS/IoTDeviceShadow/source</locationURI>
 		</link>
 		<link>
 			<name>Libraries/freertos_kernel</name>
@@ -139,22 +139,22 @@
 		<link>
 			<name>Libraries/lwip</name>
 			<type>2</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Middleware/lwip/src</locationURI>
+			<locationURI>WORKSPACE_LOC/Middleware/lwip/src</locationURI>
 		</link>
 		<link>
 			<name>Libraries/mbedtls</name>
 			<type>2</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Middleware/ARM/mbedtls</locationURI>
+			<locationURI>WORKSPACE_LOC/Middleware/ARM/mbedtls</locationURI>
 		</link>
 		<link>
 			<name>Libraries/ota</name>
 			<type>2</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Middleware/AWS/OTA/source</locationURI>
+			<locationURI>WORKSPACE_LOC/Middleware/AWS/OTA/source</locationURI>
 		</link>
 		<link>
 			<name>Libraries/pkcs11</name>
 			<type>2</type>
-			<location>/Volumes/workplace/testing/tfm-stm32u5/IoT-Reference-STM32U5/Middleware/pkcs11</location>
+			<location>WORKSPACE_LOC/Middleware/pkcs11</location>
 		</link>
 		<link>
 			<name>Libraries/stm32u5_mbedtls_accel</name>
@@ -164,7 +164,7 @@
 		<link>
 			<name>Libraries/tinycbor</name>
 			<type>2</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Middleware/tinycbor/src</locationURI>
+			<locationURI>WORKSPACE_LOC/Middleware/tinycbor/src</locationURI>
 		</link>
 		<link>
 			<name>Libraries/CMSIS/core</name>
@@ -174,57 +174,57 @@
 		<link>
 			<name>Libraries/CMSIS/stm32u5xx</name>
 			<type>2</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Drivers/CMSIS/Device/ST/STM32U5xx/Include</locationURI>
+			<locationURI>WORKSPACE_LOC/Drivers/CMSIS/Device/ST/STM32U5xx/Include</locationURI>
 		</link>
 		<link>
 			<name>Libraries/STM32U5_HAL/Inc</name>
 			<type>2</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Drivers/STM32U5xx_HAL/Inc</locationURI>
+			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Inc</locationURI>
 		</link>
 		<link>
 			<name>Libraries/STM32U5_HAL/stm32u5xx_hal.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_cortex.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_cortex.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_cortex.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_dcache.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_dcache.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_dcache.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_dma.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_dma.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_dma.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_dma_ex.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_dma_ex.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_dma_ex.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_exti.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_exti.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_exti.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_flash.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_flash.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_flash.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_flash_ex.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_flash_ex.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_flash_ex.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_gpio.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_gpio.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_gpio.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_i2c.c</name>
@@ -239,7 +239,7 @@
 		<link>
 			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_icache.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_icache.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_icache.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_ospi.c</name>
@@ -249,17 +249,17 @@
 		<link>
 			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_pwr_ex.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_pwr_ex.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_pwr_ex.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_rcc.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_rcc.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_rcc.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_rcc_ex.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_rcc_ex.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_rcc_ex.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_rng.c</name>
@@ -274,42 +274,42 @@
 		<link>
 			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_rtc.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_rtc.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_rtc.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_rtc_ex.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_rtc_ex.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_rtc_ex.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_spi.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_spi.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_spi.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_spi_ex.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_spi_ex.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_spi_ex.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_tim.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_tim.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_tim.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_tim_ex.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_tim_ex.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_tim_ex.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_uart.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_uart.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_uart.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_uart_ex.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_uart_ex.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_uart_ex.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/STM32U5_HAL/stm32u5xx_ll_dlyb.c</name>
@@ -324,7 +324,7 @@
 		<link>
 			<name>Libraries/corePKCS11/core_pkcs11.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Middleware/FreeRTOS/corePKCS11/source/core_pkcs11.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/corePKCS11/source/core_pkcs11.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/corePKCS11/core_pkcs11_mbedtls.c</name>
@@ -334,37 +334,37 @@
 		<link>
 			<name>Libraries/corePKCS11/core_pki_utils.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Middleware/FreeRTOS/corePKCS11/source/core_pki_utils.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/corePKCS11/source/core_pki_utils.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/corePKCS11/include</name>
 			<type>2</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Middleware/FreeRTOS/corePKCS11/source/include</locationURI>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/corePKCS11/source/include</locationURI>
 		</link>
 		<link>
 			<name>Libraries/corePKCS11/mbedtls_utils</name>
 			<type>2</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Middleware/FreeRTOS/corePKCS11/source/dependency/3rdparty/mbedtls_utils</locationURI>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/corePKCS11/source/dependency/3rdparty/mbedtls_utils</locationURI>
 		</link>
 		<link>
 			<name>Libraries/freertos_kernel/event_groups.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Middleware/FreeRTOS/kernel/event_groups.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/kernel/event_groups.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/freertos_kernel/heap_4.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Middleware/FreeRTOS/kernel/portable/MemMang/heap_4.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/kernel/portable/MemMang/heap_4.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/freertos_kernel/include</name>
 			<type>2</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Middleware/FreeRTOS/kernel/include</locationURI>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/kernel/include</locationURI>
 		</link>
 		<link>
 			<name>Libraries/freertos_kernel/list.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Middleware/FreeRTOS/kernel/list.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/kernel/list.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/freertos_kernel/port</name>
@@ -374,22 +374,22 @@
 		<link>
 			<name>Libraries/freertos_kernel/queue.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Middleware/FreeRTOS/kernel/queue.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/kernel/queue.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/freertos_kernel/stream_buffer.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Middleware/FreeRTOS/kernel/stream_buffer.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/kernel/stream_buffer.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/freertos_kernel/tasks.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Middleware/FreeRTOS/kernel/tasks.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/kernel/tasks.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/freertos_kernel/timers.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Middleware/FreeRTOS/kernel/timers.c</locationURI>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/kernel/timers.c</locationURI>
 		</link>
 	</linkedResources>
 	<filteredResources>
