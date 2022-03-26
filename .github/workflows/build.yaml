@@ -1,0 +1,189 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - closed
+    branches:
+      - dev
+      - main
+  workflow_dispatch:
+
+jobs:
+  ubuntu:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project: [b_u585i_iot02a_ntz, b_u585i_iot02a_tfm]
+        include:
+          - os: ubuntu-latest
+            ide_pkg_name: "st-stm32cubeide_1.9.0_12015_20220302_0855_amd64"
+            ide_pkg_url: "https://www.st.com/content/ccc/resource/technical/software/sw_development_suite/group0/6c/ed/b5/05/5d/2f/44/f3/stm32cubeide_lnx/files/st-stm32cubeide_1.9.0_12015_20220302_0855_amd64.sh.zip/jcr:content/translations/en.st-stm32cubeide_1.9.0_12015_20220302_0855_amd64.sh.zip"
+            ide_bin: "stm32cubeide"
+            apt_pkg_deps: "unzip wget cmake ninja-build python3 python3-pip python3-virtualenv rsync"
+    env:
+      IDE_PKG_NAME: ${{ matrix.ide_pkg_name }}
+      IDE_BIN: ${{ matrix.ide_bin }}
+      PROJECT_PATH: ${{ github.workspace }}/Projects/${{ matrix.project }}
+    steps:
+      - name: Checkout Target Project
+        uses: actions/checkout@v2
+        with:
+          path: ${{ github.workspace }}
+      - name: Checkout submodules
+        shell: bash
+        run: git -C ${GITHUB_WORKSPACE} submodule update --init --depth 1
+      - name: Fetch package cache
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: ~/cache
+          key: ${{ matrix.os }}-${{ matrix.ide_pkg_name }}-1328
+      - name: Fetch Packages
+        shell: bash
+        run: sudo apt install -y ${{ matrix.apt_pkg_deps }}
+      - name: Download and unzip IDE
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        run: |
+          mkdir -p ~/cache
+          wget --no-verbose ${{ matrix.ide_pkg_url }}
+          unzip en.${IDE_PKG_NAME}.sh.zip
+          chmod +x ${IDE_PKG_NAME}.sh
+          ./${IDE_PKG_NAME}.sh --tar -xf ./${IDE_PKG_NAME}.tar.gz
+          mv ${IDE_PKG_NAME}.tar.gz ~/cache/
+      - name: Extract IDE
+        run: |
+          mkdir -p STM32CubeIDE
+          tar -xzf ~/cache/st-stm32cubeide_1.9.0_12015_20220302_0855_amd64.tar.gz --directory STM32CubeIDE
+      - name: Import Projects into STM32CubeIDE
+        shell: bash
+        run: |
+          CUBEIDE="STM32CubeIDE/${IDE_BIN} --launcher.suppressErrors -nosplash -application org.eclipse.cdt.managedbuilder.core.headlessbuild -data ${GITHUB_WORKSPACE} -verbose"
+          ${CUBEIDE} -import "${GITHUB_WORKSPACE}/Projects/${{ matrix.project }}"
+      - name: Build
+        shell: bash
+        run: |
+          CUBEIDE="STM32CubeIDE/${IDE_BIN} --launcher.suppressErrors -nosplash -application org.eclipse.cdt.managedbuilder.core.headlessbuild -data ${GITHUB_WORKSPACE} -verbose"
+          $CUBEIDE -build ${{ matrix.project }}
+          echo "Listing artifacts: "
+          ls -1 "${{ github.workspace }}/Projects/${{ matrix.project }}/Debug/${{ matrix.project }}"*
+      - name: Copy Artifacts
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          rsync -avzh --ignore-missing-args Projects/${{ matrix.project }}/Debug/*.{hex,bin,elf,map,list,sh,ld} artifacts/
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: linux_${{ matrix.project }}
+          path: |
+            ${{ github.workspace }}/artifacts
+          retention-days: 5
+
+  windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        project: [b_u585i_iot02a_ntz, b_u585i_iot02a_tfm]
+        include:
+          - os: windows-latest
+            ide_pkg_name: "st-stm32cubeide_1.9.0_12015_20220302_0855_x86_64"
+            ide_pkg_url: "https://www.st.com/content/ccc/resource/technical/software/sw_development_suite/group0/1e/53/08/15/0f/e2/4c/a6/stm32cubeide_win/files/st-stm32cubeide_1.9.0_12015_20220302_0855_x86_64.exe.zip/jcr:content/translations/en.st-stm32cubeide_1.9.0_12015_20220302_0855_x86_64.exe.zip"
+            ide_bin: "stm32cubeidec.exe"
+            choco_pkg_deps: "cmake wget git python3 7zip ninja rsync"
+            scoop_pkg_deps: "cmake wget git python 7zip ninja"
+            pip_pkg_deps: "virtualenv"
+    env:
+      IDE_PKG_NAME: ${{ matrix.ide_pkg_name }}
+      IDE_BIN: ${{ matrix.ide_bin }}
+    steps:
+      - name: Enable windows long path
+        shell: bash
+        run: git config --system core.longpaths true
+      - name: Checkout Target Project
+        uses: actions/checkout@v2
+        with:
+          path: ${{ github.workspace }}
+      - name: Checkout submodules
+        shell: bash
+        run: git -C ${GITHUB_WORKSPACE} submodule update --init --depth 1
+      - name: Check cache for IDE package
+        id: cache-ide
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/cache
+            ~/scoop/cache
+          key: ${{ matrix.os }}-${{ matrix.ide_pkg_name }}-1057
+      - name: Install Scoop package manager
+        shell: pwsh
+        run: |
+          Set-ExecutionPolicy RemoteSigned -scope CurrentUser
+          iwr -useb get.scoop.sh -outfile 'install.ps1'
+          .\install.ps1 -RunAsAdmin
+      - name: Fetch Packages
+        shell: bash
+        run: |
+          export PATH="~/scoop/shims:${PATH}"
+          echo "~/scoop/shims" >> $GITHUB_PATH
+          for pkg in "${{ matrix.scoop_pkg_deps }}"; do
+            scoop install $pkg
+          done
+          pip install ${{ matrix.pip_pkg_deps }}
+      # - name: Fetch Packages
+      #   shell: bash
+      #   run: |
+      #     choco install -y ${{ matrix.choco_pkg_deps }}
+      #     pip install ${{ matrix.pip_pkg_deps }}
+      - name: Download and unzip IDE
+        shell: bash
+        if: ${{ steps.cache-ide.outputs.cache-hit != 'true' }}
+        run: |
+          mkdir -p ~/cache
+          wget --no-verbose ${{ matrix.ide_pkg_url }}
+          7z x en.${{ matrix.ide_pkg_name }}.exe.zip
+          mv ${{ matrix.ide_pkg_name }}.exe ~/cache/${{ matrix.ide_pkg_name }}.exe
+      - name: Extract IDE
+        shell: bash
+        run: |
+          # cd "${GITHUB_WORKSPACE}"
+          7z x ~/cache/${{ matrix.ide_pkg_name }}.exe
+      - name: Import Projects into STM32CubeIDE
+        shell: bash
+        run: |
+          # cd "${GITHUB_WORKSPACE}"
+          CUBEIDE="STM32CubeIDE/${IDE_BIN} --launcher.suppressErrors -nosplash -application org.eclipse.cdt.managedbuilder.core.headlessbuild -data ${GITHUB_WORKSPACE} -verbose"
+          echo "CUBEIDE=${CUBEIDE}"
+          echo "GITHUB_WORKSPACE=${GITHUB_WORKSPACE}"
+          ${CUBEIDE} -removeAll "${GITHUB_WORKSPACE}\Projects"
+          ${CUBEIDE} -import "${GITHUB_WORKSPACE}\Projects\${{ matrix.project }}"
+          ${CUBEIDE} -import "${GITHUB_WORKSPACE}\Projects\${{ matrix.project }}"
+      - name: Build
+        shell: bash
+        run: |
+          # cd "${GITHUB_WORKSPACE}"
+          CUBEIDE="STM32CubeIDE/${IDE_BIN} --launcher.suppressErrors -nosplash -application org.eclipse.cdt.managedbuilder.core.headlessbuild -data ${GITHUB_WORKSPACE} -verbose -no-indexer"
+          ${CUBEIDE} -build ${{ matrix.project }}
+          ${CUBEIDE} -build ${{ matrix.project }}
+      - name: Copy Artifacts
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          file_names=$(ls -1 Projects/${{ matrix.project }}/Debug | grep -E '${{ matrix.project }}.*\.(hex|bin|elf|map|list|sh|ld)' | xargs)
+          for file_name in ${file_names}; do
+            cp "Projects/${{ matrix.project }}/Debug/${file_name}" artifacts/
+          done
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows_${{ matrix.project }}
+          path: |
+            ${{ github.workspace }}\artifacts
+          retention-days: 5
