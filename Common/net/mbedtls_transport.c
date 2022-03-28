@@ -30,11 +30,14 @@
 
 #include "logging.h"
 
+#define MBEDTLS_ALLOW_PRIVATE_ACCESS
+
 #include "mbedtls_transport.h"
 #include <string.h>
 
 /* FreeRTOS includes. */
 #include "FreeRTOS.h"
+
 
 /* mbedTLS includes. */
 #include "mbedtls/error.h"
