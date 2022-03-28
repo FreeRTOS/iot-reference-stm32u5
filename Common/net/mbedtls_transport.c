@@ -311,7 +311,7 @@ static const char * pcGetVerifyInfoString( int flag )
 static void vLogCertificateVerifyResult( int flags )
 {
 #ifndef MBEDTLS_X509_REMOVE_INFO
-    for( uint32_t mask = 1; mask != ( 1 << 31 ); mask = mask << 1 )
+    for( uint32_t mask = 1; mask != ( 1U << 31 ); mask = mask << 1 )
     {
         if( ( flags & mask ) > 0 )
         {
