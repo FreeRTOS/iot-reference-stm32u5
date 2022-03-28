@@ -35,7 +35,7 @@
 
 /* Dimensions the arrays into which print messages are created. */
 
-#define dlMAX_PRINT_STRING_LENGTH    1024        /* maximum length of any single log line */
+#define dlMAX_PRINT_STRING_LENGTH    1024 - CLI_OUTPUT_EOL_LEN       /* maximum length of any single log line */
 #define dlLOGGING_STREAM_LENGTH      4096
 #define dlMAX_LOG_LINE_LENGTH        ( dlMAX_PRINT_STRING_LENGTH + CLI_OUTPUT_EOL_LEN )
 

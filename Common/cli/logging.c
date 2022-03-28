@@ -51,7 +51,7 @@ volatile StreamBufferHandle_t xLogMBuf = NULL;
 
 UART_HandleTypeDef * pxEarlyUart = NULL;
 
-static char pcPrintBuff[ dlMAX_PRINT_STRING_LENGTH ];
+static char pcPrintBuff[ dlMAX_LOG_LINE_LENGTH ];
 
 /* Should only be called during an assert with the scheduler suspended. */
 void vDyingGasp( void )
@@ -198,7 +198,7 @@ void vLoggingPrintf( const char * const pcLogLevel,
 
     pcPrintBuff[ 0 ] = '\0';
     lLenPart = snprintf( pcPrintBuff,
-                         dlMAX_LOG_LINE_LENGTH,
+                         dlMAX_PRINT_STRING_LENGTH,
                          "<%-3.3s> %8lu [%-10.10s] ",
                          pcLogLevel,
                          ( ( unsigned long ) xTaskGetTickCount() / portTICK_PERIOD_MS ) & 0xFFFFFF,
@@ -206,32 +206,35 @@ void vLoggingPrintf( const char * const pcLogLevel,
 
     configASSERT( lLenPart > 0 );
 
-    if( lLenPart < dlMAX_LOG_LINE_LENGTH )
+    if( lLenPart < dlMAX_PRINT_STRING_LENGTH )
     {
         ulLenTotal = lLenPart;
     }
     else
     {
-        ulLenTotal = dlMAX_LOG_LINE_LENGTH;
+        ulLenTotal = dlMAX_PRINT_STRING_LENGTH;
     }
 
-    /* There are a variable number of parameters. */
-    va_start( args, pcFormat );
-    lLenPart = vsnprintf( &pcPrintBuff[ ulLenTotal ],
-                          ( dlMAX_LOG_LINE_LENGTH - ulLenTotal ),
-                          pcFormat,
-                          args );
-    va_end( args );
-
-    configASSERT( lLenPart > 0 );
-
-    if( lLenPart + ulLenTotal < dlMAX_LOG_LINE_LENGTH )
+    if( ulLenTotal < dlMAX_PRINT_STRING_LENGTH )
     {
-        ulLenTotal += lLenPart;
-    }
-    else
-    {
-        ulLenTotal = dlMAX_LOG_LINE_LENGTH;
+        /* There are a variable number of parameters. */
+        va_start( args, pcFormat );
+        lLenPart = vsnprintf( &pcPrintBuff[ ulLenTotal ],
+                            ( dlMAX_PRINT_STRING_LENGTH - ulLenTotal ),
+                            pcFormat,
+                            args );
+        va_end( args );
+
+        configASSERT( lLenPart > 0 );
+
+        if( lLenPart + ulLenTotal < dlMAX_PRINT_STRING_LENGTH )
+        {
+            ulLenTotal += lLenPart;
+        }
+        else
+        {
+            ulLenTotal = dlMAX_PRINT_STRING_LENGTH;
+        }
     }
 
     /* remove any \r\n\0 characters at the end of the message */
