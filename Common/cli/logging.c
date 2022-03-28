@@ -220,9 +220,9 @@ void vLoggingPrintf( const char * const pcLogLevel,
         /* There are a variable number of parameters. */
         va_start( args, pcFormat );
         lLenPart = vsnprintf( &pcPrintBuff[ ulLenTotal ],
-                            ( dlMAX_PRINT_STRING_LENGTH - ulLenTotal ),
-                            pcFormat,
-                            args );
+                              ( dlMAX_PRINT_STRING_LENGTH - ulLenTotal ),
+                              pcFormat,
+                              args );
         va_end( args );
 
         configASSERT( lLenPart > 0 );
