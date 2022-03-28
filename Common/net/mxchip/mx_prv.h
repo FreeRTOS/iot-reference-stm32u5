@@ -108,7 +108,7 @@ typedef struct
 
 typedef struct
 {
-    char pcFirmwareRevision[ MX_FIRMWARE_REVISION_SIZE ];
+    char pcFirmwareRevision[ MX_FIRMWARE_REVISION_SIZE + 1 ];
     MacAddress_t xMacAddress;
     NetInterface_t xNetif;
     volatile MxStatus_t xStatus;
