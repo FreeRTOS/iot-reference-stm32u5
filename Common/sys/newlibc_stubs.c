@@ -71,7 +71,7 @@ void * _calloc_r( struct _reent * pxReent,
     return calloc( xNum, xLen );
 }
 
-#define SIZE_MASK    ( ~( 0b1 << 31 ) )
+#define SIZE_MASK    ( ~( 1U << 31 ) )
 static const uintptr_t xHeapStructSize = ( sizeof( BlockLink_t ) + ( ( size_t ) ( portBYTE_ALIGNMENT - 1 ) ) ) & ~( ( size_t ) portBYTE_ALIGNMENT_MASK );
 
 size_t malloc_usable_size( void * pvPtr )
