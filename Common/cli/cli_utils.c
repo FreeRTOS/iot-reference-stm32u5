@@ -29,7 +29,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-
 /* FreeRTOS includes. */
 #include "FreeRTOS.h"
 #include "task.h"

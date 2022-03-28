@@ -209,9 +209,9 @@ static uint8_t puxRxBufferB[ CLI_UART_RX_READ_SZ_10MS ] = { 0 };
 
 static uint8_t * pucNextBuffer = NULL;
 
-#define ERROR_FLAG       ( 0b1 << 31 )
-#define BUFFER_A_FLAG    ( 0b1 << 30 )
-#define BUFFER_B_FLAG    ( 0b1 << 29 )
+#define ERROR_FLAG       ( 1U << 31 )
+#define BUFFER_A_FLAG    ( 1U << 30 )
+#define BUFFER_B_FLAG    ( 1U << 29 )
 #define FLAGS_MASK       ( ERROR_FLAG | BUFFER_A_FLAG | BUFFER_B_FLAG )
 #define READ_LEN_MASK    ( ~FLAGS_MASK )
 
