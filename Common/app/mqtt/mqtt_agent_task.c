@@ -106,17 +106,17 @@ static_assert( ( ( uint64_t ) RETRY_BACKOFF_MULTIPLIER * ( uint64_t ) RETRY_MAX_
  */
 #define KEEP_ALIVE_INTERVAL_S                 ( 1200U )
 
-#define MQTT_AGENT_NOTIFY_IDX                 ( 3 )
+#define MQTT_AGENT_NOTIFY_IDX                 ( 3U )
 
-#define MQTT_AGENT_NOTIFY_FLAG_SOCKET_RECV    ( 1 << 31 )
-#define MQTT_AGENT_NOTIFY_FLAG_M_QUEUE        ( 1 << 30 )
+#define MQTT_AGENT_NOTIFY_FLAG_SOCKET_RECV    ( 1U << 31 )
+#define MQTT_AGENT_NOTIFY_FLAG_M_QUEUE        ( 1U << 30 )
 
 /**
  * @brief Socket send and receive timeouts to use.
  */
 #define SEND_TIMEOUT_MS                       ( 2000U )
 
-#define AGENT_READY_EVT_MASK                  ( 0b1U )
+#define AGENT_READY_EVT_MASK                  ( 1U )
 
 #define MUTEX_IS_OWNED( xHandle )    ( xTaskGetCurrentTaskHandle() == xSemaphoreGetMutexHolder( xHandle ) )
 
