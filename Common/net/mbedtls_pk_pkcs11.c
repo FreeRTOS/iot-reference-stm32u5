@@ -370,7 +370,7 @@ int32_t lWriteCertificateToPKCS11( mbedtls_x509_crt * pxCertificateContext,
                                                   &xCertHandle );
     }
 
-    return( xResult == CKR_OK );
+    return( ( xResult == CKR_OK ) ? 0 : -1 );
 }
 
 /*-----------------------------------------------------------*/
