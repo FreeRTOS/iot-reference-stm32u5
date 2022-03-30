@@ -136,11 +136,6 @@ jobs:
             scoop install $pkg
           done
           pip install ${{ matrix.pip_pkg_deps }}
-      # - name: Fetch Packages
-      #   shell: bash
-      #   run: |
-      #     choco install -y ${{ matrix.choco_pkg_deps }}
-      #     pip install ${{ matrix.pip_pkg_deps }}
       - name: Download and unzip IDE
         shell: bash
         if: ${{ steps.cache-ide.outputs.cache-hit != 'true' }}
@@ -152,12 +147,10 @@ jobs:
       - name: Extract IDE
         shell: bash
         run: |
-          # cd "${GITHUB_WORKSPACE}"
           7z x ~/cache/${{ matrix.ide_pkg_name }}.exe
       - name: Import Projects into STM32CubeIDE
         shell: bash
         run: |
-          # cd "${GITHUB_WORKSPACE}"
           CUBEIDE="STM32CubeIDE/${IDE_BIN} --launcher.suppressErrors -nosplash -application org.eclipse.cdt.managedbuilder.core.headlessbuild -data ${GITHUB_WORKSPACE} -verbose"
           echo "CUBEIDE=${CUBEIDE}"
           echo "GITHUB_WORKSPACE=${GITHUB_WORKSPACE}"
@@ -167,7 +160,6 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          # cd "${GITHUB_WORKSPACE}"
           CUBEIDE="STM32CubeIDE/${IDE_BIN} --launcher.suppressErrors -nosplash -application org.eclipse.cdt.managedbuilder.core.headlessbuild -data ${GITHUB_WORKSPACE} -verbose -no-indexer"
           ${CUBEIDE} -build ${{ matrix.project }}
           ${CUBEIDE} -build ${{ matrix.project }}
