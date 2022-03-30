@@ -35,6 +35,7 @@
 
 /* mbed TLS includes. */
 #include "mbedtls/ctr_drbg.h"
+#include "mbedtls/error.h"
 #include "mbedtls/entropy.h"
 #include "mbedtls/ssl.h"
 #include "mbedtls/threading.h"
@@ -297,6 +298,11 @@ int32_t lReadCertificateFromPKCS11( mbedtls_x509_crt * pxCertificateContext,
                                     const char * pcCertificateLabel,
                                     size_t xLabelLen );
 
+int32_t lWriteCertificateToPKCS11( mbedtls_x509_crt * pxCertificateContext,
+                                   CK_SESSION_HANDLE xP11SessionHandle,
+                                   const char * pcCertificateLabel,
+                                   size_t uxCertificateLabelLen );
+
 int32_t lPKCS11_initMbedtlsPkContext( mbedtls_pk_context * pxMbedtlsPkCtx,
                                       CK_SESSION_HANDLE xSessionHandle,
                                       CK_OBJECT_HANDLE xPkHandle );
@@ -306,6 +312,9 @@ const char * pcPKCS11StrError( CK_RV xError );
 int lPKCS11RandomCallback( void * pvCtx,
                            unsigned char * pucOutput,
                            size_t uxLen );
+
+int lPKCS11PkMbedtlsCloseSessionAndFree( mbedtls_pk_context * pxMbedtlsPkCtx );
+
 #endif /* MBEDTLS_TRANSPORT_PKCS11 */
 
 #ifdef MBEDTLS_TRANSPORT_PSA

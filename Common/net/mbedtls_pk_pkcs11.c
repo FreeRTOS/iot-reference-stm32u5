@@ -117,7 +117,7 @@ static int prvASN1WriteBigIntFromOctetStr( unsigned char ** ppucPosition,
 
 mbedtls_pk_info_t mbedtls_pkcs11_pk_ecdsa =
 {
-    .type            = MBEDTLS_PK_OPAQUE,
+    .type            = MBEDTLS_PK_ECKEY,
     .name            = "PKCS#11",
     .get_bitlen      = p11_ecdsa_get_bitlen,
     .can_do          = p11_ecdsa_can_do,
@@ -180,7 +180,7 @@ static void p11_rsa_debug( const void * pvCtx,
 
 mbedtls_pk_info_t mbedtls_pkcs11_pk_rsa =
 {
-    .type            = MBEDTLS_PK_OPAQUE,
+    .type            = MBEDTLS_PK_RSA,
     .name            = "PKCS#11",
     .get_bitlen      = p11_rsa_get_bitlen,
     .can_do          = p11_rsa_can_do,
@@ -290,6 +290,90 @@ int32_t lReadCertificateFromPKCS11( mbedtls_x509_crt * pxCertificateContext,
 
     return lResult;
 }
+
+/*-----------------------------------------------------------*/
+
+int32_t lWriteCertificateToPKCS11( mbedtls_x509_crt * pxCertificateContext,
+                                   CK_SESSION_HANDLE xP11SessionHandle,
+                                   const char * pcCertificateLabel,
+                                   size_t uxCertificateLabelLen )
+{
+    CK_RV xResult;
+    CK_OBJECT_HANDLE xCertHandle = 0;
+    CK_FUNCTION_LIST_PTR pxFunctionList;
+
+    configASSERT( pxCertificateContext );
+    configASSERT( pxCertificateContext->raw.p );
+    configASSERT( pxCertificateContext->raw.len > 0 );
+    configASSERT( xP11SessionHandle );
+    configASSERT( pcCertificateLabel );
+    configASSERT( pcCertificateLabel > 0 );
+
+    xResult = C_GetFunctionList( &pxFunctionList );
+
+    if( xResult == CKR_OK )
+    {
+        /* Look for an existing object that we may need to overwrite */
+        xResult = xFindObjectWithLabelAndClass( xP11SessionHandle,
+                                                pcCertificateLabel,
+                                                uxCertificateLabelLen,
+                                                CKO_CERTIFICATE,
+                                                &xCertHandle );
+    }
+
+    if( ( xResult == CKR_OK ) &&
+        ( xCertHandle != CK_INVALID_HANDLE ) )
+    {
+        xResult = pxFunctionList->C_DestroyObject( xP11SessionHandle,
+                                                   xCertHandle );
+    }
+
+    if( xResult == CKR_OK )
+    {
+        CK_OBJECT_CLASS xObjClass = CKO_CERTIFICATE;
+        CK_CERTIFICATE_TYPE xCertType = CKC_X_509;
+        CK_BBOOL xPersistCert = CK_TRUE;
+
+
+        CK_ATTRIBUTE pxTemplate[ 5 ] =
+        {
+            {
+                .type = CKA_CLASS,
+                .ulValueLen = sizeof( CK_OBJECT_CLASS ),
+                .pValue = &xObjClass,
+            },
+            {
+                .type = CKA_LABEL,
+                .ulValueLen = uxCertificateLabelLen,
+                .pValue = pcCertificateLabel,
+            },
+            {
+                .type = CKA_CERTIFICATE_TYPE,
+                .ulValueLen = sizeof( CK_CERTIFICATE_TYPE ),
+                .pValue = &xCertType,
+            },
+            {
+                .type = CKA_TOKEN,
+                .ulValueLen = sizeof( CK_BBOOL ),
+                .pValue = &xPersistCert,
+            },
+            {
+                .type = CKA_VALUE,
+                .ulValueLen = pxCertificateContext->raw.len,
+                .pValue = pxCertificateContext->raw.p,
+            }
+        };
+
+        xResult = pxFunctionList->C_CreateObject( xP11SessionHandle,
+                                                  pxTemplate,
+                                                  5,
+                                                  &xCertHandle );
+    }
+
+    return( xResult == CKR_OK );
+}
+
+/*-----------------------------------------------------------*/
 
 const char * pcPKCS11StrError( CK_RV xError )
 {
@@ -585,7 +669,6 @@ const char * pcPKCS11StrError( CK_RV xError )
     }
 }
 
-
 int32_t lPKCS11_initMbedtlsPkContext( mbedtls_pk_context * pxMbedtlsPkCtx,
                                       CK_SESSION_HANDLE xSessionHandle,
                                       CK_OBJECT_HANDLE xPkHandle )
@@ -636,57 +719,93 @@ int32_t lPKCS11_initMbedtlsPkContext( mbedtls_pk_context * pxMbedtlsPkCtx,
         switch( xKeyType )
         {
             case CKK_ECDSA:
-                pxMbedtlsPkCtx->MBEDTLS_PRIVATE( pk_ctx ) = p11_ecdsa_ctx_alloc();
+                pxMbedtlsPkCtx->pk_ctx = p11_ecdsa_ctx_alloc();
 
-                if( pxMbedtlsPkCtx->MBEDTLS_PRIVATE( pk_ctx ) != NULL )
+                if( pxMbedtlsPkCtx->pk_ctx != NULL )
                 {
-                    xResult = p11_ecdsa_ctx_init( pxMbedtlsPkCtx->MBEDTLS_PRIVATE( pk_ctx ),
+                    xResult = p11_ecdsa_ctx_init( pxMbedtlsPkCtx->pk_ctx,
                                                   pxFunctionList, xSessionHandle, xPkHandle );
                 }
 
                 if( xResult == CKR_OK )
                 {
-                    pxMbedtlsPkCtx->MBEDTLS_PRIVATE( pk_info ) = &mbedtls_pkcs11_pk_ecdsa;
+                    pxMbedtlsPkCtx->pk_info = &mbedtls_pkcs11_pk_ecdsa;
                 }
                 else
                 {
-                    p11_ecdsa_ctx_free( pxMbedtlsPkCtx->MBEDTLS_PRIVATE( pk_ctx ) );
-                    pxMbedtlsPkCtx->MBEDTLS_PRIVATE( pk_ctx ) = NULL;
-                    pxMbedtlsPkCtx->MBEDTLS_PRIVATE( pk_info ) = NULL;
+                    p11_ecdsa_ctx_free( pxMbedtlsPkCtx->pk_ctx );
+                    pxMbedtlsPkCtx->pk_ctx = NULL;
+                    pxMbedtlsPkCtx->pk_info = NULL;
                 }
 
                 break;
 
             case CKK_RSA:
-                pxMbedtlsPkCtx->MBEDTLS_PRIVATE( pk_ctx ) = p11_rsa_ctx_alloc();
+                pxMbedtlsPkCtx->pk_ctx = p11_rsa_ctx_alloc();
 
-                if( pxMbedtlsPkCtx->MBEDTLS_PRIVATE( pk_ctx ) != NULL )
+                if( pxMbedtlsPkCtx->pk_ctx != NULL )
                 {
-                    xResult = p11_rsa_ctx_init( pxMbedtlsPkCtx->MBEDTLS_PRIVATE( pk_ctx ),
+                    xResult = p11_rsa_ctx_init( pxMbedtlsPkCtx->pk_ctx,
                                                 pxFunctionList, xSessionHandle, xPkHandle );
                 }
 
                 if( xResult == CKR_OK )
                 {
-                    pxMbedtlsPkCtx->MBEDTLS_PRIVATE( pk_info ) = &mbedtls_pkcs11_pk_rsa;
+                    pxMbedtlsPkCtx->pk_info = &mbedtls_pkcs11_pk_rsa;
                 }
                 else
                 {
-                    p11_rsa_ctx_free( pxMbedtlsPkCtx->MBEDTLS_PRIVATE( pk_ctx ) );
-                    pxMbedtlsPkCtx->MBEDTLS_PRIVATE( pk_ctx ) = NULL;
-                    pxMbedtlsPkCtx->MBEDTLS_PRIVATE( pk_info ) = NULL;
+                    p11_rsa_ctx_free( pxMbedtlsPkCtx->pk_ctx );
+                    pxMbedtlsPkCtx->pk_ctx = NULL;
+                    pxMbedtlsPkCtx->pk_info = NULL;
                 }
 
                 break;
 
             default:
-                pxMbedtlsPkCtx->MBEDTLS_PRIVATE( pk_ctx ) = NULL;
-                pxMbedtlsPkCtx->MBEDTLS_PRIVATE( pk_info ) = NULL;
+                pxMbedtlsPkCtx->pk_ctx = NULL;
+                pxMbedtlsPkCtx->pk_info = NULL;
                 break;
         }
     }
 
     return xResult;
+}
+
+int lPKCS11PkMbedtlsCloseSessionAndFree( mbedtls_pk_context * pxMbedtlsPkCtx )
+{
+    CK_RV xResult = CKR_OK;
+    P11PkCtx_t * pxP11Ctx = NULL;
+    CK_FUNCTION_LIST_PTR pxFunctionList = NULL;
+
+    configASSERT( pxMbedtlsPkCtx );
+
+    if( pxMbedtlsPkCtx )
+    {
+        pxP11Ctx = &( ( ( P11EcDsaCtx_t * ) ( pxMbedtlsPkCtx->pk_ctx ) )->xP11PkCtx );
+    }
+    else
+    {
+        xResult = CKR_FUNCTION_FAILED;
+    }
+
+    if( xResult == CKR_OK )
+    {
+        xResult = C_GetFunctionList( &pxFunctionList );
+    }
+
+    if( xResult == CKR_OK )
+    {
+        configASSERT( pxFunctionList );
+        xResult = pxFunctionList->C_CloseSession( pxP11Ctx->xSessionHandle );
+    }
+
+    if( xResult == CKR_OK )
+    {
+        pxP11Ctx->xSessionHandle = NULL;
+    }
+
+    return( xResult == CKR_OK ? 0 : -1 );
 }
 
 int lPKCS11RandomCallback( void * pvCtx,
@@ -817,7 +936,7 @@ static CK_RV p11_ecdsa_ctx_init( void * pvCtx,
     if( xResult == CKR_OK )
     {
         /*TODO: Parse the ECParameters object */
-        int lResult = mbedtls_ecp_group_load( &( pxMbedEcDsaCtx->MBEDTLS_PRIVATE( grp ) ), MBEDTLS_ECP_DP_SECP256R1 );
+        int lResult = mbedtls_ecp_group_load( &( pxMbedEcDsaCtx->grp ), MBEDTLS_ECP_DP_SECP256R1 );
 
         if( lResult != 0 )
         {
@@ -840,8 +959,8 @@ static CK_RV p11_ecdsa_ctx_init( void * pvCtx,
         }
         else
         {
-            lResult = mbedtls_ecp_point_read_binary( &( pxMbedEcDsaCtx->MBEDTLS_PRIVATE( grp ) ),
-                                                     &( pxMbedEcDsaCtx->MBEDTLS_PRIVATE( Q ) ),
+            lResult = mbedtls_ecp_point_read_binary( &( pxMbedEcDsaCtx->grp ),
+                                                     &( pxMbedEcDsaCtx->Q ),
                                                      pucIterator,
                                                      uxLen );
         }
