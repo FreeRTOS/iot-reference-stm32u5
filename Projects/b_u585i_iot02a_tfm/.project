@@ -42,11 +42,6 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
-			<name>launch_scripts</name>
-			<type>2</type>
-			<locationURI>WORKSPACE_LOC/tools/launch_scripts</locationURI>
-		</link>
-		<link>
 			<name>Libraries/CMSIS</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
@@ -318,6 +313,15 @@
 		</link>
 	</linkedResources>
 	<filteredResources>
+		<filter>
+			<id>1648684986207</id>
+			<name></name>
+			<type>6</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-true-false-b_u585i_iot02a_tfm_debug*.cfg</arguments>
+			</matcher>
+		</filter>
 		<filter>
 			<id>1634612303185</id>
 			<name>Libraries/CommonIO</name>
