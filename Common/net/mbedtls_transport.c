@@ -1766,14 +1766,14 @@ TlsTransportStatus_t mbedtls_transport_connect( NetworkContext_t * pxNetworkCont
         }
         else
         {
-            LogInfo( "(Network connection %p) TLS handshake successful.",
+            LogInfo( "Network connection %p: TLS handshake successful.",
                      pxTLSCtx );
         }
     }
 
     if( xStatus == TLS_TRANSPORT_SUCCESS )
     {
-        LogInfo( "(Network connection %p) Connection to %s:%u established.",
+        LogInfo( "Network connection %p: Connection to %s:%u established.",
                  pxNetworkContext, pcHostName, usPort );
 
         if( ( xStatus == TLS_TRANSPORT_SUCCESS ) &&
@@ -1798,7 +1798,7 @@ TlsTransportStatus_t mbedtls_transport_connect( NetworkContext_t * pxNetworkCont
         /* Reset SSL session context for reconnect attempt */
         mbedtls_ssl_session_reset( pxSslCtx );
 
-        LogInfo( "(Network connection %p) to %s:%u failed.",
+        LogInfo( "Network connection %p: to %s:%u failed.",
                  pxNetworkContext,
                  pcHostName, usPort );
     }
@@ -1967,12 +1967,12 @@ void mbedtls_transport_disconnect( NetworkContext_t * pxNetworkContext )
             {
                 if( tlsStatus == 0 )
                 {
-                    LogInfo( "(Network connection %p) TLS close-notify sent.",
+                    LogInfo( "Network connection %p: TLS close-notify sent.",
                              pxNetworkContext );
                 }
                 else
                 {
-                    LogError( "(Network connection %p) Failed to send TLS close-notify: Error: %s : %s.",
+                    LogError( "Network connection %p: Failed to send TLS close-notify: Error: %s : %s.",
                               pxNetworkContext,
                               mbedtlsHighLevelCodeOrDefault( tlsStatus ),
                               mbedtlsLowLevelCodeOrDefault( tlsStatus ) );
@@ -2097,11 +2097,6 @@ int32_t mbedtls_transport_send( NetworkContext_t * pxNetworkContext,
         ( tlsStatus == MBEDTLS_ERR_SSL_WANT_READ ) ||
         ( tlsStatus == MBEDTLS_ERR_SSL_WANT_WRITE ) )
     {
-/*        LogDebug( "Failed to send data. However, send can be retried on this error. " */
-/*                    "Error: %s : %s.", */
-/*                    mbedtlsHighLevelCodeOrDefault( tlsStatus ), */
-/*                    mbedtlsLowLevelCodeOrDefault( tlsStatus ) ); */
-
         /* Mark these set of errors as a timeout. The libraries may retry send
          * on these errors. */
         tlsStatus = 0;
