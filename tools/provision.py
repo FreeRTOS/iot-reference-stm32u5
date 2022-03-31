@@ -27,6 +27,7 @@
 #
 import argparse
 import io
+import json
 import logging
 import os
 import random
@@ -66,29 +67,25 @@ class TargetDevice:
 
         pass
 
-    """Connect to a target device"""
-
     def __init__(self, device, baud):
+        """Connect to a target device"""
         self.ser = serial.Serial(device, baud, timeout=0.1, rtscts=False)
         self.ser.reset_input_buffer()
         self.ser.reset_output_buffer()
-
         self.sio = io.BufferedRWPair(self.ser, self.ser)
         self.sio._CHUNK_SIZE = 2
         self._sync()
         self._config_read_from_target()
         self._staged_config = {}
 
-    """Send Control+C (0x03) conntrol code to clear the current line."""
-
     def _sync(self):
+        """Send Control+C (0x03) conntrol code to clear the current line."""
         self.sio.write(b"\x03")
         self.sio.flush()
         self._read_response()
 
-    """Send a single command to the target and return True if the readback matches."""
-
     def _send_cmd(self, *args, timeout=_timeout):
+        """Send a single command to the target and return True if the readback matches."""
         cmd = b" ".join(args)
         cmdstr = cmd + b"\r\n"
 
@@ -109,9 +106,8 @@ class TargetDevice:
         if cmd not in cmd_readback:
             raise TargetDevice.ReadbackError()
 
-    """Read the response to a command"""
-
     def _read_response(self, timeout=_timeout):
+        """Read the response to a command"""
         response = []
         errorFlag = False
         timeoutFlag = True
@@ -141,9 +137,8 @@ class TargetDevice:
 
         return response
 
-    """Read a pem file from a command response and return it as a byte string"""
-
     def _read_pem(self, timeout=_timeout):
+        """Read a pem file from a command response and return it as a byte string"""
         beginStr = b"-----BEGIN "
         endStr = b"-----END "
 
@@ -197,9 +192,8 @@ class TargetDevice:
         combined = b"".join(pem)
         return combined
 
-    """Write a pem bytestring to the target and raise an error if the readback does not match."""
-
     def _write_pem(self, pem):
+        """Write a pem bytestring to the target and raise an error if the readback does not match."""
         # Remove any existing CR
         pem = pem.replace(b"\r\n", b"\n")
         for line in pem.split(b"\n"):
@@ -217,22 +211,20 @@ class TargetDevice:
                 "Readback does not match provided pem file."
             )
 
-    """Write a certificate in pem format to the specified label."""
+    def reset(self):
+        self._send_cmd(b"reset")
 
     def write_cert(self, cert, label=None):
+        """Write a certificate in pem format to the specified label."""
         if label:
             self._send_cmd(b"pki import cert", bytes(label, "ascii"))
         else:
             self._send_cmd(b"pki import cert")
 
         self._write_pem(cert)
-        # self.sio.flush()
-
-        # self._read_response()
-
-    """Returns a byte string containing the public key of a newly generated keypair on the target"""
 
     def generate_key(self, label=None):
+        """Returns a byte string containing the public key of a newly generated keypair on the target"""
         if label:
             self._send_cmd(b"pki generate key", bytes(label, "ascii"))
         else:
@@ -242,12 +234,16 @@ class TargetDevice:
 
         return pubkey
 
-    """Return a byte string containing a newly generated certificate signing request from the target."""
-
     def generate_csr(self):
+        """Return a byte string containing a newly generated certificate signing request from the target."""
         self._send_cmd(b"pki generate csr")
         csr = self._read_pem()
         return csr
+
+    def generate_cert(self):
+        self._send_cmd(b"pki generate cert")
+        cert = self._read_pem()
+        return cert
 
     def _config_read_from_target(self):
         conf = {}
@@ -333,6 +329,9 @@ class AwsHelper:
     session_valid = False
     iot_client = None
     thing = None
+    userId = None
+    account = None
+    arn = None
 
     def __init__(self, args):
         profile = "default"
@@ -362,8 +361,12 @@ class AwsHelper:
     def check_credentials(self):
         if not self.session_valid and self.session:
             sts = self.session.client("sts")
-            if sts.get_caller_identity():
+            caller_id = sts.get_caller_identity()
+            if caller_id:
                 self.session_valid = True
+                self.userId = caller_id["UserId"]
+                self.account = caller_id["Account"]
+                self.arn = caller_id["Arn"]
         return self.session_valid
 
     def get_session(self):
@@ -400,22 +403,65 @@ class AwsHelper:
         policyFound = False
         for policy in policies["policies"]:
             logger.debug("Found Policy: {}".format(policy["policyName"]))
-            if policy["policyName"] == "AllowAllDev":
+            if policy["policyName"] == "ProvisioningScriptPolicy":
                 policyFound = True
 
         if policyFound:
-            logger.debug('Found existing "AllowAllDev" IoT core policy.')
+            logger.debug('Found existing "ProvisioningScriptPolicy" IoT core policy.')
         else:
-            logger.info('Existing policy "AllowAllDev" was not found. Creating it...')
+            logger.info(
+                'Existing policy "ProvisioningScriptPolicy" was not found. Creating it...'
+            )
+
+        arn_base = "arn:aws:iot:{region}:{account_id}".format(
+            region=self.session.region_name, account_id=self.account
+        )
+        policyDocument = {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Action": "iot:Connect",
+                    "Resource": arn_base + ":client/${iot:Connection.Thing.ThingName}",
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "iot:GetPendingJobExecutions",
+                        "iot:GetThingShadow",
+                        "iot:StartNextPendingJobExecution",
+                        "iot:UpdateJobExecution",
+                        "iot:UpdateThingShadow",
+                    ],
+                    "Resource": arn_base + ":thing/${iot:Connection.Thing.ThingName}",
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "iot:GetRetainedMessage",
+                        "iot:Publish",
+                        "iot:Receive",
+                        "iot:RetainPublish",
+                    ],
+                    "Resource": arn_base + ":topic/${iot:Connection.Thing.ThingName}/*",
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": "iot:Subscribe",
+                    "Resource": arn_base
+                    + ":topicfilter/${iot:Connection.Thing.ThingName}/*",
+                },
+            ],
+        }
 
         if not policyFound:
             policy = self.iot_client.create_policy(
-                policyName="AllowAllDev",
-                policyDocument='{"Version": "2012-10-17","Statement": [ { "Effect": "Allow", "Action": "iot:*", "Resource": "*" } ] }',
+                policyName="ProvisioningScriptPolicy",
+                policyDocument=json.dumps(policyDocument),
             )
 
     # Register a device with IoT core and return the certificate
-    def register_thing(self, thing_name, csr):
+    def register_thing_csr(self, thing_name, csr):
         if not self.iot_client:
             self.iot_client = self.get_client("iot")
 
@@ -456,13 +502,62 @@ class AwsHelper:
         self.create_policy()
 
         # Attach the policy to the principal.
-        print('Attaching the "AllowAllDev" policy to the device certificate.')
+        print(
+            'Attaching the "ProvisioningScriptPolicy" policy to the device certificate.'
+        )
         self.iot_client.attach_policy(
-            policyName="AllowAllDev", target=self.thing["certificateArn"]
+            policyName="ProvisioningScriptPolicy", target=self.thing["certificateArn"]
         )
 
         self.thing["certificatePem"] = bytes(
             self.thing["certificatePem"].replace("\\n", "\n"), "ascii"
+        )
+
+        return self.thing.copy()
+
+    # Register a device with IoT core with a given certificate
+    def register_thing_cert(self, thing_name, cert):
+        if not self.iot_client:
+            self.iot_client = self.get_client("iot")
+
+        assert self.iot_client
+
+        self.thing = {}
+
+        cli = self.iot_client
+
+        cert_response = cli.register_certificate_without_ca(
+            certificatePem=cert, status="ACTIVE"
+        )
+        logging.debug("RegisterCertificateWithoutCA response: {}".format(cert_response))
+        self.thing.update(cert_response)
+
+        create_thing_resp = cli.create_thing(thingName=thing_name)
+        logging.debug("CreateThing response: {}".format(create_thing_resp))
+        self.thing.update(create_thing_resp)
+
+        if not ("certificateArn" in self.thing and "thingName" in self.thing):
+            logging.error("Error: Certificate creation failed.")
+        else:
+            print(
+                "Attaching thing: {} to principal: {}".format(
+                    self.thing["thingName"], self.thing["certificateArn"]
+                )
+            )
+            cli.attach_thing_principal(
+                thingName=self.thing["thingName"],
+                principal=self.thing["certificateArn"],
+            )
+
+        # Check for / create Policy
+        self.create_policy()
+
+        # Attach the policy to the principal.
+        print(
+            'Attaching the "ProvisioningScriptPolicy" policy to the device certificate.'
+        )
+        self.iot_client.attach_policy(
+            policyName="ProvisioningScriptPolicy", target=self.thing["certificateArn"]
         )
 
         return self.thing.copy()
@@ -535,6 +630,58 @@ def validate_pubkey(pub_key):
         logging.error("Error: Public keys must be either RSA or EC type")
         result = False
 
+    return result
+
+
+def validate_certificate(cert_pem, pub_key_pem, thing_name):
+    result = True
+    pubkey = None
+    cert = None
+    try:
+        pubkey = load_pem_public_key(pub_key_pem)
+    except ValueError:
+        result = False
+
+    try:
+        cert = x509.load_pem_x509_certificate(cert_pem)
+    except ValueError:
+        result = False
+
+    if result:
+        # Check that public key matches
+        if not cert.public_key().public_numbers() == pubkey.public_numbers():
+            logging.error(
+                "Error: Certificate does not match public key: {}, {}".format(
+                    cert.public_key(), pubkey
+                )
+            )
+            result = False
+
+    if result:
+        thingNameFound = False
+        # Check that subject CN is the thing name
+        for attr in cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME):
+            rfc4514_str = attr.rfc4514_string()
+            logging.debug("Parsed Certificate Attribute: {}".format(rfc4514_str))
+            if attr.value == thing_name:
+                thingNameFound = True
+
+        if not thingNameFound:
+            logging.error("Error: Did not find thing name in Certificate subject.")
+            result = False
+
+    if result:
+        thingNameFound = False
+        # Check that issuer CN is the thing name
+        for attr in cert.issuer.get_attributes_for_oid(NameOID.COMMON_NAME):
+            rfc4514_str = attr.rfc4514_string()
+            logging.debug("Parsed Certificate Attribute: {}".format(rfc4514_str))
+            if attr.value == thing_name:
+                thingNameFound = True
+
+        if not thingNameFound:
+            logging.error("Error: Did not find thing name in Certificate Issuer")
+            result = False
     return result
 
 
@@ -670,7 +817,60 @@ def get_amazon_rootca_certs():
     return AmazonTrustRootCAs
 
 
-def main():
+def provision_pki(target, aws, cert_issuer):
+    thing_name = target.conf_get("thing_name")
+
+    # Generate a key
+    print("Generating a new public/private key pair")
+    pub_key = target.generate_key()
+
+    if not validate_pubkey(pub_key):
+        print("Error: Could not parse public key.")
+        raise SystemExit
+
+    if cert_issuer == "aws":
+        print("Generating a Certificate Signing Request")
+
+        # Generate a csr (returned in byte-string form)
+        csr = target.generate_csr()
+
+        if not validate_csr(csr, pub_key, thing_name):
+            print("Error: CSR is invalid.")
+            raise SystemExit
+
+        # aws api requires csr in utf-8 string form.
+        thing_data = aws.register_thing_csr(thing_name, csr.decode("utf-8"))
+
+        if "certificatePem" in thing_data:
+            target.write_cert(thing_data["certificatePem"])
+        else:
+            print("Error: No certificate returned from register_thing_csr call.")
+            raise SystemExit
+    elif cert_issuer == "self":
+        print("Generating a self-signed Certificate")
+
+        # Generate a cert (returned in byte-string form)
+        cert = target.generate_cert()
+
+        if not validate_certificate(cert, pub_key, thing_name):
+            print("Error: Certificate is invalid.")
+            raise SystemExit
+
+        # aws api requires csr in utf-8 string form.
+        thing_data = aws.register_thing_cert(thing_name, cert.decode("utf-8"))
+    else:
+        print("Error: Unknown certificate issuer.")
+        raise SystemExit
+
+    ca_certs = get_amazon_rootca_certs()
+    if ca_certs:
+        for cert in ca_certs:
+            if cert["label"] == "SFSRootCAG2":
+                print('Importing root ca certificate: "{}"'.format(cert["CN"]))
+                target.write_cert(cert["pem"], label="root_ca_cert")
+
+
+def process_args():
     parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS)
 
     # "Interactive mode" for asking about config details.
@@ -687,33 +887,21 @@ def main():
     # User specified device name (random otherwise)
     parser.add_argument("--thing-name", type=str)
 
+    # User specified certificate issuer (self-signed or aws issued via CSR)
+    parser.add_argument(
+        "--cert-issuer", default="self", choices=("self", "aws"), type=str
+    )
+
     # Use defaults from aws config, but allow user to override
     parser.add_argument("--aws-profile", type=str, default="default")
     parser.add_argument("--aws-region", type=str)
     parser.add_argument("--aws-access-key-id", type=str)
     parser.add_argument("--aws-access-key-secret", type=str)
 
-    args = parser.parse_args()
+    return parser.parse_args()
 
-    if "verbose" in args:
-        logging.getLogger().setLevel(logging.DEBUG)
 
-    devpath = find_serial_port()
-    if "device" in args:
-        devpath = args.device
-
-    if not devpath or len(devpath) == 0:
-        logging.error(
-            'Target device path could not be determined. Please call this script with the "device" argument'
-        )
-        raise SystemExit
-    else:
-        print("Target device path: {}".format(devpath))
-
-    print("Connecting to target...")
-
-    target = TargetDevice(devpath, 115200)
-
+def configure_target(args, target):
     # Override current config with cli provided config
     if "wifi_ssid" in args:
         target.conf_set("wifi_ssid", args.wifi_ssid)
@@ -735,6 +923,31 @@ def main():
     timestamp = get_unix_timestamp()
     target.conf_set("time_hwm", str(timestamp))
 
+
+def main():
+    args = process_args()
+
+    if "verbose" in args:
+        logging.getLogger().setLevel(logging.DEBUG)
+
+    devpath = find_serial_port()
+    if "device" in args:
+        devpath = args.device
+
+    if not devpath or len(devpath) == 0:
+        logging.error(
+            'Target device path could not be determined automatically. Please call this script with the "device" argument'
+        )
+        raise SystemExit
+    else:
+        print("Target device path: {}".format(devpath))
+
+    print("Connecting to target...")
+
+    target = TargetDevice(devpath, 115200)
+
+    configure_target(args, target)
+
     # Initialize a connection to AWS IoT
     aws = AwsHelper(args=args)
     if not aws.check_credentials():
@@ -746,40 +959,14 @@ def main():
     # Allow user to modify configuration if interactive mode was selected.
     if "interactive" in args:
         interactive_config(target)
-        thing_name = target.conf_get("thing_name")
 
     print("Commiting target configuration...")
     target.conf_commit()
 
-    # Generate a key
-    print("Generating a new public/private key pair")
-    pub_key = target.generate_key()
+    provision_pki(target, aws, args.cert_issuer)
 
-    if not validate_pubkey(pub_key):
-        print("Error: Could not parse public key.")
-        raise SystemExit
-
-    print("Generating a Certificate Signing Request")
-
-    # Generate a csr (returned in byte-string form)
-    csr = target.generate_csr()
-
-    if not validate_csr(csr, pub_key, thing_name):
-        print("Error: CSR is invalid.")
-        raise SystemExit
-
-    # aws api requires csr in utf-8 string form.
-    thing_data = aws.register_thing(thing_name, csr.decode("utf-8"))
-
-    if "certificatePem" in thing_data:
-        target.write_cert(thing_data["certificatePem"])
-
-    ca_certs = get_amazon_rootca_certs()
-    if ca_certs:
-        for cert in ca_certs:
-            if cert["label"] == "SFSRootCAG2":
-                print('Importing root ca certificate: "{}"'.format(cert["CN"]))
-                target.write_cert(cert["pem"], label="root_ca_cert")
+    print("Provisioning process complete. Resetting target device...")
+    target.reset()
 
 
 if __name__ == "__main__":
