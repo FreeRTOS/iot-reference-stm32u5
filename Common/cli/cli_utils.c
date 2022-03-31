@@ -613,6 +613,8 @@ static void vResetCommand( ConsoleIO_t * const pxCIO,
                            uint32_t ulArgc,
                            char * ppcArgv[] )
 {
+    pxCIO->print( "Resetting device." );
+    vTaskDelay( pdMS_TO_TICKS( 100 ) );
     NVIC_SystemReset();
 }
 
