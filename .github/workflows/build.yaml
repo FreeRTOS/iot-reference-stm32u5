@@ -151,18 +151,18 @@ jobs:
       - name: Import Projects into STM32CubeIDE
         shell: bash
         run: |
-          CUBEIDE="STM32CubeIDE/${IDE_BIN} --launcher.suppressErrors -nosplash -application org.eclipse.cdt.managedbuilder.core.headlessbuild -data ${GITHUB_WORKSPACE} -verbose"
+          CUBEIDE="STM32CubeIDE/${IDE_BIN} --launcher.suppressErrors -nosplash -application org.eclipse.cdt.managedbuilder.core.headlessbuild -data ${GITHUB_WORKSPACE} -verbose -no-indexer"
           echo "CUBEIDE=${CUBEIDE}"
           echo "GITHUB_WORKSPACE=${GITHUB_WORKSPACE}"
           ${CUBEIDE} -removeAll "${GITHUB_WORKSPACE}\Projects"
           ${CUBEIDE} -import "${GITHUB_WORKSPACE}\Projects\${{ matrix.project }}"
-          ${CUBEIDE} -import "${GITHUB_WORKSPACE}\Projects\${{ matrix.project }}"
+          # ${CUBEIDE} -import "${GITHUB_WORKSPACE}\Projects\${{ matrix.project }}"
       - name: Build
         shell: bash
         run: |
           CUBEIDE="STM32CubeIDE/${IDE_BIN} --launcher.suppressErrors -nosplash -application org.eclipse.cdt.managedbuilder.core.headlessbuild -data ${GITHUB_WORKSPACE} -verbose -no-indexer"
           ${CUBEIDE} -build ${{ matrix.project }}
-          ${CUBEIDE} -build ${{ matrix.project }}
+          # ${CUBEIDE} -build ${{ matrix.project }}
       - name: Copy Artifacts
         shell: bash
         run: |
