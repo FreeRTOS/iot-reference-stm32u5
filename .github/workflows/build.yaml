@@ -155,8 +155,8 @@ jobs:
           echo "CUBEIDE=${CUBEIDE}"
           echo "GITHUB_WORKSPACE=${GITHUB_WORKSPACE}"
           ${CUBEIDE} -removeAll "${GITHUB_WORKSPACE}\Projects"
+          ${CUBEIDE} -importAll "${GITHUB_WORKSPACE}\Projects"
           ${CUBEIDE} -import "${GITHUB_WORKSPACE}\Projects\${{ matrix.project }}"
-          # ${CUBEIDE} -import "${GITHUB_WORKSPACE}\Projects\${{ matrix.project }}"
       - name: Build
         shell: bash
         run: |
