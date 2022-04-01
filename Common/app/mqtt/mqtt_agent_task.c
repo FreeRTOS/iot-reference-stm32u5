@@ -716,10 +716,10 @@ static void prvIncomingPublishCallback( MQTTAgentContext_t * pMqttAgentContext,
 static void prvSubscriptionManagerCtxFree( SubMgrCtx_t * pxSubMgrCtx )
 {
     configASSERT( pxSubMgrCtx );
-    configASSERT_CONTINUE( MUTEX_IS_OWNED( pxSubMgrCtx->xMutex ) );
 
     if( pxSubMgrCtx->xMutex )
     {
+        configASSERT_CONTINUE( MUTEX_IS_OWNED( pxSubMgrCtx->xMutex ) );
         vSemaphoreDelete( pxSubMgrCtx->xMutex );
     }
 }
@@ -1471,7 +1471,7 @@ MQTTStatus_t MqttAgent_SubscribeSync( MQTTAgentHandle_t xHandle,
             ( pxCtx->pxSubAckStatus[ uxTargetSubIdx ] == MQTTSubAckFailure ) )
         {
             pxCtx->pxSubscriptions[ uxTargetSubIdx ].pTopicFilter = pcTopicFilter;
-            pxCtx->pxSubscriptions[ uxTargetSubIdx ].topicFilterLength = xTopicFilterLen;
+            pxCtx->pxSubscriptions[ uxTargetSubIdx ].topicFilterLength = ( uint16_t ) xTopicFilterLen;
             pxCtx->pxSubscriptions[ uxTargetSubIdx ].qos = xRequestedQoS;
         }
 
