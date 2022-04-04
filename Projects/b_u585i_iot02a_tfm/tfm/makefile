@@ -94,7 +94,7 @@ info:
 ###############################################################################
 # Rules to apply TF-M patches to mcuboot and mbedtls
 ###############################################################################
-MBEDTLS_PATCHES := $(wildcard ${TFM_SRC_PATH}/lib/ext/mbedcrypt/*.patch)
+MBEDTLS_PATCHES := $(wildcard ${TFM_SRC_PATH}/lib/ext/mbedcrypto/*.patch)
 MBEDTLS_PATCH_FLAGS = $(foreach file,$(notdir ${MBEDTLS_PATCHES}),${MBEDTLS_SRC_PATH}/$(basename ${file}).patched)
 MBEDTLS_PATCHES_APPLIED = ${wildcard ${MBEDTLS_SRC_PATH}/*.patched}
 
