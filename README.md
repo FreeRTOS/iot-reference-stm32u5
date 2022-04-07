@@ -65,10 +65,10 @@ Connect the ST-LINK USB port (USB STLK / CN8) to the PC with USB cable.  The USB
 ## Running the non secure and the secure project  
 
 For getting the Non Trust Zone project up and running follow the README.md in  
-..\lab-iot-reference-stm32u5\Projects\b_u585i_iot02a_ntz.
+..\lab-iot-reference-stm32u5\Projects\b_u585i_iot02a_ntz by clicking [here](https://github.com/msukanya/lab-iot-reference-stm32u5/blob/dev/Projects/b_u585i_iot02a_ntz/Readme.md).
 
 For getting the Trust Zone project up and running follow the README.md in  
-..\lab-iot-reference-stm32u5\Projects\b_u585i_iot02a_tfm.
+..\lab-iot-reference-stm32u5\Projects\b_u585i_iot02a_tfm by clicking here.
 
 ## Component Licensing
 
