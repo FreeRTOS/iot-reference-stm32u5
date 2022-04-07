@@ -62,12 +62,12 @@ Optional: A serial terminal like [TeraTerm](https://osdn.net/projects/ttssh2/rel
 
 Connect the ST-LINK USB port (USB STLK / CN8) to the PC with USB cable.  The USB STLK port is located to the right of the MXCHIP module in the above figure. It is used for power supply, programming the application in flash memory, and interacting with the application with virtual serial COM port. 
 
-## 
+## Running the non secure and the secure project  
 
-For getting the Non Trust Zone project up and running follow the Readme.md in  
+For getting the Non Trust Zone project up and running follow the README.md in  
 ..\lab-iot-reference-stm32u5\Projects\b_u585i_iot02a_ntz.
 
-For getting the Trust Zone project up and running follow the Readme.md in  
+For getting the Trust Zone project up and running follow the README.md in  
 ..\lab-iot-reference-stm32u5\Projects\b_u585i_iot02a_tfm.
 
 ## Component Licensing
