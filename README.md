@@ -10,7 +10,7 @@ The STM32U5 IoT Discovery Kit is equipped with a Wi-Fi and Bluetooth module, mic
 
 The board also comes with 512-Mbit octal-SPI Flash memory, 64-Mbit octal-SPI PSRAM, 256-Kbit I2C EEPROM, as well as ARDUINO Uno V3, STMod+, and Pmod expansion connectors, plus an expansion connector for a camera module, and STLink-V3E embedded debugger.
 
-The following project folder consists of a non secure version(tz_disabled) of the project and secure version(tz_enabled) of the project. The following shows the steps to follow for connecting the secure project to AWS and doing an OTA(Over the Air) Update and also connecting the non secure project to AWS. 
+The following project folder consists of a **non secure version(tz_disabled)** of the project and **secure version(tz_enabled)** of the project. The following shows the steps to follow for connecting the secure project to AWS and doing an OTA(Over the Air) Update and also connecting the non secure project to AWS. 
 
 ## Hardware Description
 
@@ -62,7 +62,7 @@ Optional: A serial terminal like [TeraTerm](https://osdn.net/projects/ttssh2/rel
 
 Connect the ST-LINK USB port (USB STLK / CN8) to the PC with USB cable.  The USB STLK port is located to the right of the MXCHIP module in the above figure. It is used for power supply, programming the application in flash memory, and interacting with the application with virtual serial COM port. 
 
-## Importing the projects into STM32CubeIDE
+## Importing the projects into STM32CubeIDE and Building the Project 
 
 #### Non Secure project(tz_disabled)
 The tz_disabled project does not use the TrustZone capabilities of the U5 board. 
@@ -90,9 +90,10 @@ Click on *Browse* above and navigate to the root of the project. Click on *Finis
 <img width="550" alt="17" src="https://user-images.githubusercontent.com/44592967/153657652-d47fc23c-37b1-4397-b358-352b32ad3a98.PNG">
 
 This is how the workspace with the imported projects looks like:
+
 <img width="550" alt="18" src="https://user-images.githubusercontent.com/44592967/153657908-6a8e9dda-1c1e-4ebc-af96-03929528a170.PNG">
 
- Build the tz_disabled project and flash the binary by clicking on Run->Run. Make sure that the board is plugged in.
+ Build the tz_disabled project and flash the binary by clicking on *Run->Run*. Make sure that the board is plugged in.
 
  <img width="550" alt="19" src="https://user-images.githubusercontent.com/44592967/153658059-27be5ea4-a6b2-4c73-8faa-47eefae3242e.PNG">
 
@@ -147,13 +148,13 @@ Here is an example of the sensor data coming through:
 
 ## Performing Over-the-air (OTA) Firmware Update
 
-The project shows an IoT reference implementation of how to integrate FreeRTOS libraries on STM32U5 platform to perform OTA update with AWS IoT using both trustzone and non-trustzone hardware capablities. The demo runs FreeRTOS OTA agent as one of the RTOS tasks in background, which waits for OTA updates from cloud. The non-trustzone version of the demo leverages internal flash memory's dual bank. The total 2MB internal flash is split into two banks of 1MB each. The main firmware is running on one bank, while downloading new firmware image into another bank. Thus, the total firmware image size should not exceed 1MB.
+The project shows an IoT reference implementation of how to integrate FreeRTOS libraries on STM32U5 platform to perform OTA update with AWS IoT using the *non trustzone* hardware capablities. The demo runs FreeRTOS OTA agent as one of the RTOS tasks in background, which waits for OTA updates from cloud. The non-trustzone version of the demo leverages internal flash memory's dual bank. The total 2MB internal flash is split into two banks of 1MB each. The main firmware is running on one bank, while downloading new firmware image into another bank. Thus, the total firmware image size should not exceed 1MB.
 
 ### Provision Code Signing credentials
 
 Devices uses digital signatures to verify the authenticity of the firmware updates sent over the air. Images are signed by an authorized source who creats the image, and device can verify the signature of the image, using the corresponding public key of the source. Steps below shows how to setup and provision the code signing credentials so as to enable cloud to digitally sign the image and the device to verify the image signature before boot.
 
-1. In your working directory, use the following text to create a file named *cert_config.txt*. Replace test_*signer@amazon.com* with your email address:
+1. In your working directory, use the following text to create a file named *cert_config.txt*. Replace *test_signer@amazon.com* with your email address:
 
 ```
 [ req ]
@@ -263,7 +264,7 @@ aws s3api  list-object-versions --bucket <s3 bucket for image> --prefix <image b
      }],
      "roleArn": "<ARN of the OTA service role created above>"
  }
-<<<<<<< HEAD
+
 ```
 
 Create a new OTA update job from the configuration file:
@@ -281,11 +282,8 @@ Note down the job ID to check the status of the job later.
 
 #### Monitoring and Verification of firmware update
 
-1. Once the job is created on the terminal logs, you will see that OTA job is accepted and device starts downloading image.
+ Once the job is created on the terminal logs, you will see that OTA job is accepted and device starts downloading image.
 
-```
-=======
- ```
 
  Create a new OTA update job from the configuration file:
 
@@ -342,14 +340,20 @@ aws iot describe-job-execution --job-id=<Job ID created above> --thing-name=<thi
 ```
 
 
-### Secure project
+## Secure project
 
 The secure version of the project uses the Trust Zone capabilities of the U5 board.
 
-Prerequisites to build the project 
+### Prerequisites to build the project 
 
+Install [Scoop](https://scoop.sh/).Scoop is a command line terminal for Windows. Follow the steps mentioned [here](https://scoop.sh/). Scoop will be used to install git, cmake and python required for the build. Below are screenshots of a the installation running successfully: 
 
 ![image](https://user-images.githubusercontent.com/44592967/162074875-cc76bba6-0b8d-497c-ae54-8ae00f465464.png)
+
+![image](https://user-images.githubusercontent.com/44592967/162259949-4f02eda5-0b95-4016-a176-6f16703e1a0e.png)
+
+
+### Importing the projects into STM32CubeIDE and Building the Project
 
 Import the workspace and project similar to how it was done in the Non secure version of the project above :
 
@@ -385,7 +389,9 @@ or FULL if only the binaries but not the flash layout has changed.
 
  With the firmware flashed to the board, open a command prompt, and navigate to the root of the project(lab-iot-reference-stm32u5). Type:
 
- `python tools/provision.py -i -v `
+ ````
+ python tools/provision.py -i -v 
+ ````
 
  To know more about the above command, visit the Troubleshooting section at the end of the document.
 
@@ -421,7 +427,9 @@ The end of the script will look somewhat like this:
 
 2 . For the command to run the script as mentioned in the document:
 
-`python tools/provision.py -i –v `
+`
+python tools/provision.py -i –v 
+`
 
 Note that here are the additional arguments:
 ```
