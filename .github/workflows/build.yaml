@@ -103,12 +103,9 @@ jobs:
       IDE_PKG_NAME: ${{ matrix.ide_pkg_name }}
       IDE_BIN: ${{ matrix.ide_bin }}
     steps:
-      - name: Setup git for long paths and unix line endings.
+      - name: Enable windows long path
         shell: bash
-        run: |
-          git config --system core.longpaths true
-          git config --system core.eol lf
-          git config --system core.autocrlf input
+        run: git config --system core.longpaths true
       - name: Checkout Target Project
         uses: actions/checkout@v2
         with:
