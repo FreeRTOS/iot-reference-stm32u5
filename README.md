@@ -1,16 +1,18 @@
 # Getting Started Guide for STM32U5 IoT Discovery Kit with AWS
 
-## Overview
+## Introduction
 
-This project demonstrates how to integrate modular FreeRTOS software with hardware enforced security to create secure and updatable cloud connected applications. The project is pre-configured to run on the STM32U585 IoT Discovery Kit and connect to AWS.
+This project demonstrates how to integrate modular FreeRTOS software with hardware enforced security to help secure updatable cloud connected applications. The project is pre-configured to run on the STM32U585 IoT Discovery Kit and connect to AWS.
 
-The STM32U585 IoT Discovery kit comes with 2048 KB of Flash memory, 786 kB of RAM and is based on Arm Cortex®-M33.
+The [STM32U585 IoT Discovery kit](https://www.st.com/en/evaluation-tools/b-u585i-iot02a.html) comes with 2048 KB of Flash memory, 786 kB of RAM and is based on Arm Cortex®-M33.
 
 The STM32U5 IoT Discovery Kit is equipped with a Wi-Fi and Bluetooth module, microphones, a temperature and humidity sensor, a magnetometer, an accelerometer and gyroscope, a pressure sensor, as well as Time-of-Flight (ToF) and gesture-detection sensors.
 
 The board also comes with 512-Mbit octal-SPI Flash memory, 64-Mbit octal-SPI PSRAM, 256-Kbit I2C EEPROM, as well as ARDUINO Uno V3, STMod+, and Pmod expansion connectors, plus an expansion connector for a camera module, and STLink-V3E embedded debugger.
 
-The following project folder consists of a **non secure version(b_u585i_iot02a_ntz)** of the project and **secure version(b_u585i_iot02a_tfm)** of the project. The following shows the steps to follow for connecting the secure project to AWS and doing an OTA(Over the Air) Update and also connecting the non secure project to AWS. 
+The following project folder consists of a **Non Trust Zone version(b_u585i_iot02a_ntz)** of the project and **Tfm enabled version(b_u585i_iot02a_tfm)** of the project. The following shows the steps to follow for connecting the secure project to AWS and doing an OTA(Over the Air) Update and also connecting the non secure project to AWS. 
+
+The demo connects to AWS IoT over Wi-Fi. It then uses the coreMQTT-Agent library to enable multiple concurrent tasks to share the connection. Those tasks publish sensor data, and demonstrate use of the Device Shadow and Device Defender AWS IoT services. There are two projects included, with and without Trusted Firmware-M(https://www.trustedfirmware.org/projects/tf-m/) enabled.
 
 ## Hardware Description
 
