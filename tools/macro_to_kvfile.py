@@ -48,8 +48,9 @@ class MacroParser(object):
         ast.RShift: op.rshift,
     }
 
-    # Recursively parse the tree
+    @staticmethod
     def evaluate_macro_recur(node):
+        """Recursively parse the tree"""
         if isinstance(node, ast.Num):
             return node.n
         elif isinstance(node, ast.BinOp):
@@ -67,6 +68,7 @@ class MacroParser(object):
             print(type(node))
             raise TypeError
 
+    @staticmethod
     def evaluate_macro(node):
         # Base case, is a number
         name = ""
