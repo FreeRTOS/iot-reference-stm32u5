@@ -32,7 +32,7 @@ repos:
         args : [--fix=lf]
 
 -   repo: https://github.com/ambv/black
-    rev: 2f52e4b4929370ec503ee272bcc10d3176db8e89 # 21.5b1
+    rev: ae2c0758c9e61a385df9700dc9c231bf54887041 # 22.3.0
     hooks:
     - id: black
 
