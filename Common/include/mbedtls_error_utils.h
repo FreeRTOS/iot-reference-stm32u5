@@ -57,12 +57,12 @@
     } while( 0 )
 
 #define MBEDTLS_LOG_IF_ERROR( lError, pFormatString, ... )  \
-   do                                                      \
-   {                                                       \
-       if( lError < 0 )                                    \
-       LogError( pFormatString " %s : %s.", __VA_ARGS__,   \
-                 mbedtlsHighLevelCodeOrDefault( lError ),  \
-                 mbedtlsLowLevelCodeOrDefault( lError ) ); \
-   } while( 0 )
+    do                                                      \
+    {                                                       \
+        if( lError < 0 )                                    \
+        LogError( pFormatString " %s : %s.", __VA_ARGS__,   \
+                  mbedtlsHighLevelCodeOrDefault( lError ),  \
+                  mbedtlsLowLevelCodeOrDefault( lError ) ); \
+    } while( 0 )
 
 #endif /* _MBEDTLS_UTILS_H */

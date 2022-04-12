@@ -73,7 +73,7 @@ void vInitLoggingEarly( void );
 extern void vTaskSuspendAll( void );
 
 #ifndef __BASE_FILE__
-    #define __BASE_FILE__ "UNKNOWN"
+#define __BASE_FILE__    "UNKNOWN"
 #endif /* ! __BASE_FILE__ */
 
 /* Get basename of file using gcc builtins. */

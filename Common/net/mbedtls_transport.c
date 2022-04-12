@@ -341,7 +341,7 @@ static void vLogCertInfo( mbedtls_x509_crt * pxCert,
 }
 
 /*-----------------------------------------------------------*/
-//TODO add proper timeout
+/*TODO add proper timeout */
 static int mbedtls_ssl_send( void * pvCtx,
                              const unsigned char * pcBuf,
                              size_t uxLen )
@@ -689,15 +689,14 @@ static TlsTransportStatus_t xConfigureCertificateAuth( TLSContext_t * pxTLSCtx,
     /* Validate that the cert and pk match. */
     if( xStatus == TLS_TRANSPORT_SUCCESS )
     {
-
         mbedtls_pk_context xTempPubKeyCtx;
 
         xTempPubKeyCtx.pk_ctx = pxCertPkCtx->pk_ctx;
         xTempPubKeyCtx.pk_info = pxPkCtx->pk_info;
 
         int lError = mbedtls_pk_check_pair( &xTempPubKeyCtx, pxPkCtx,
-                                        pxTLSCtx->xSslConfig.f_rng,
-                                        pxTLSCtx->xSslConfig.p_rng );
+                                            pxTLSCtx->xSslConfig.f_rng,
+                                            pxTLSCtx->xSslConfig.p_rng );
 
         MBEDTLS_MSG_IF_ERROR( lError, "Public-Private keypair does not match the provided certificate." );
 
@@ -898,7 +897,6 @@ TlsTransportStatus_t mbedtls_transport_configure( NetworkContext_t * pxNetworkCo
             }
         }
 #endif /* MBEDTLS_TRANSPORT_PSA */
-
     }
 
     configASSERT( pxTLSCtx->xConnectionState != STATE_CONNECTED );
@@ -954,19 +952,18 @@ TlsTransportStatus_t mbedtls_transport_configure( NetworkContext_t * pxNetworkCo
                                   &( pxTLSCtx->xCtrDrbgCtx ) );
         }
 #elif defined( MBEDTLS_TRANSPORT_PSA )
-    mbedtls_ssl_conf_rng( &( pxTLSCtx->xSslConfig ),
-                          lPSARandomCallback,
-                          NULL );
-#else
-    mbedtls_ssl_conf_rng( &( pxTLSCtx->xSslConfig ),
-                          mbedtls_entropy_func,
-                          &( pxTLSCtx->xEntropyCtx ) );
-#endif
+        mbedtls_ssl_conf_rng( &( pxTLSCtx->xSslConfig ),
+                              lPSARandomCallback,
+                              NULL );
+#else /* ifdef TRANSPORT_USE_CTR_DRBG */
+        mbedtls_ssl_conf_rng( &( pxTLSCtx->xSslConfig ),
+                              mbedtls_entropy_func,
+                              &( pxTLSCtx->xEntropyCtx ) );
+#endif /* ifdef TRANSPORT_USE_CTR_DRBG */
 
 
         xStatus = ( lError == 0 ) ? TLS_TRANSPORT_SUCCESS : TLS_TRANSPORT_INTERNAL_ERROR;
     }
-
 
     /* Configure security level settings */
     if( xStatus == TLS_TRANSPORT_SUCCESS )

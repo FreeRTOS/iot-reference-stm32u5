@@ -53,8 +53,8 @@
 
 #include "psa_util.h"
 
-#define ECP_PUB_DER_MAX_BYTES   ( 30 + 2 * MBEDTLS_ECP_MAX_BYTES )
-#define RSA_PUB_DER_MAX_BYTES   ( 38 + 2 * MBEDTLS_MPI_MAX_SIZE )
+#define ECP_PUB_DER_MAX_BYTES    ( 30 + 2 * MBEDTLS_ECP_MAX_BYTES )
+#define RSA_PUB_DER_MAX_BYTES    ( 38 + 2 * MBEDTLS_MPI_MAX_SIZE )
 
 
 /*-----------------------------------------------------------*/
@@ -71,8 +71,8 @@ psa_status_t xReadPublicKeyFromPSACrypto( unsigned char ** ppucPubKeyDer,
 
     unsigned char * pucAsn1WritePtr = NULL;
 
-    if( ppucPubKeyDer == NULL ||
-        puxPubDerKeyLen == NULL )
+    if( ( ppucPubKeyDer == NULL ) ||
+        ( puxPubDerKeyLen == NULL ) )
     {
         xStatus = PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -154,7 +154,6 @@ psa_status_t xReadPublicKeyFromPSACrypto( unsigned char ** ppucPubKeyDer,
                 pucAsn1WritePtr = &( pucAsn1WritePtr[ *puxPubDerKeyLen - uxObjLen ] );
                 ( void ) memmove( pucAsn1WritePtr, *ppucPubKeyDer, uxObjLen );
                 /* uxBytesWritten equal to the public key length written to the end of the buffer. */
-
             }
 
             /* HACK: Add a null byte */
@@ -171,6 +170,7 @@ psa_status_t xReadPublicKeyFromPSACrypto( unsigned char ** ppucPubKeyDer,
         int lRslt = 0;
 
         lRslt = mbedtls_asn1_write_len( &pucAsn1WritePtr, *ppucPubKeyDer, uxObjLen );
+
         if( lRslt > 0 )
         {
             uxBytesWritten += ( size_t ) lRslt;
@@ -187,6 +187,7 @@ psa_status_t xReadPublicKeyFromPSACrypto( unsigned char ** ppucPubKeyDer,
         int lRslt = 0;
 
         lRslt = mbedtls_asn1_write_tag( &pucAsn1WritePtr, *ppucPubKeyDer, MBEDTLS_ASN1_BIT_STRING );
+
         if( lRslt > 0 )
         {
             uxBytesWritten += ( size_t ) lRslt;
@@ -196,7 +197,6 @@ psa_status_t xReadPublicKeyFromPSACrypto( unsigned char ** ppucPubKeyDer,
             xStatus = mbedtls_to_psa_error( lRslt );
         }
     }
-
 
     /*
      * Write AlgorithmIdentifier object
@@ -217,12 +217,13 @@ psa_status_t xReadPublicKeyFromPSACrypto( unsigned char ** ppucPubKeyDer,
         {
             const char * pcNamedCurveOid = NULL;
             size_t uxNamedCurveOidLen = 0;
+
             /*
              *  Starting with ECParameters Named Curve
              *   ECParameters ::= CHOICE {
              *       namedCurve         OBJECT IDENTIFIER
              *   }
-            */
+             */
             psa_ecc_family_t xFamily = PSA_KEY_TYPE_ECC_GET_FAMILY( xKeyAttrs.type );
 
             xPkType = MBEDTLS_PK_ECKEY;
@@ -232,8 +233,8 @@ psa_status_t xReadPublicKeyFromPSACrypto( unsigned char ** ppucPubKeyDer,
                                                      &pcNamedCurveOid, &uxNamedCurveOidLen );
 
             /* Validate returned pointer and length */
-            if( pcNamedCurveOid == NULL ||
-                uxNamedCurveOidLen == 0 )
+            if( ( pcNamedCurveOid == NULL ) ||
+                ( uxNamedCurveOidLen == 0 ) )
             {
                 lRslt = MBEDTLS_ERR_PK_FEATURE_UNAVAILABLE;
             }
@@ -272,11 +273,10 @@ psa_status_t xReadPublicKeyFromPSACrypto( unsigned char ** ppucPubKeyDer,
 
         /* Determine value for algorithm OBJECT IDENTIFIER */
         lRslt = mbedtls_oid_get_oid_by_pk_alg( xPkType,
-                                              &pcAlgorithmOid, &uxAlgorithmOidLen );
+                                               &pcAlgorithmOid, &uxAlgorithmOidLen );
 
-
-        if( pcAlgorithmOid == NULL ||
-            uxAlgorithmOidLen == 0 )
+        if( ( pcAlgorithmOid == NULL ) ||
+            ( uxAlgorithmOidLen == 0 ) )
         {
             lRslt = MBEDTLS_ERR_PK_FEATURE_UNAVAILABLE;
         }
@@ -288,6 +288,7 @@ psa_status_t xReadPublicKeyFromPSACrypto( unsigned char ** ppucPubKeyDer,
                                                              *ppucPubKeyDer,
                                                              pcAlgorithmOid, uxAlgorithmOidLen,
                                                              uxObjLen );
+
             if( lRslt > 0 )
             {
                 uxBytesWritten += ( size_t ) lRslt;
@@ -345,8 +346,8 @@ psa_status_t xReadPublicKeyFromPSACrypto( unsigned char ** ppucPubKeyDer,
 
     if( xStatus != PSA_SUCCESS )
     {
-        if( ppucPubKeyDer != NULL &&
-            *ppucPubKeyDer != NULL )
+        if( ( ppucPubKeyDer != NULL ) &&
+            ( *ppucPubKeyDer != NULL ) )
         {
             mbedtls_free( *ppucPubKeyDer );
             *ppucPubKeyDer = NULL;
@@ -366,45 +367,45 @@ psa_status_t xReadPublicKeyFromPSACrypto( unsigned char ** ppucPubKeyDer,
 
 int32_t lWriteCertificateToPSACrypto( psa_key_id_t xCertId,
                                       const mbedtls_x509_crt * pxCertificateContext )
- {
-     psa_status_t xStatus = PSA_SUCCESS;
-     psa_key_attributes_t xCertAttrs = PSA_KEY_ATTRIBUTES_INIT;
-     psa_key_id_t xKeyId;
+{
+    psa_status_t xStatus = PSA_SUCCESS;
+    psa_key_attributes_t xCertAttrs = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_id_t xKeyId;
 
-     configASSERT( xCertId >= PSA_KEY_ID_USER_MIN );
-     configASSERT( xCertId <= PSA_KEY_ID_VENDOR_MAX );
+    configASSERT( xCertId >= PSA_KEY_ID_USER_MIN );
+    configASSERT( xCertId <= PSA_KEY_ID_VENDOR_MAX );
 
-     if( pxCertificateContext == NULL )
-     {
-         xStatus = PSA_ERROR_INVALID_ARGUMENT;
-     }
-     else
-     {
-         psa_key_lifetime_t xKeyLifetime = PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION(
-             PSA_KEY_LIFETIME_PERSISTENT, PSA_KEY_LOCATION_LOCAL_STORAGE );
+    if( pxCertificateContext == NULL )
+    {
+        xStatus = PSA_ERROR_INVALID_ARGUMENT;
+    }
+    else
+    {
+        psa_key_lifetime_t xKeyLifetime = PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION(
+            PSA_KEY_LIFETIME_PERSISTENT, PSA_KEY_LOCATION_LOCAL_STORAGE );
 
-         psa_set_key_id( &xCertAttrs, xCertId );
+        psa_set_key_id( &xCertAttrs, xCertId );
 
-         psa_set_key_lifetime( &xCertAttrs, xKeyLifetime );
+        psa_set_key_lifetime( &xCertAttrs, xKeyLifetime );
 
-         psa_set_key_type( &xCertAttrs, PSA_KEY_TYPE_RAW_DATA );
+        psa_set_key_type( &xCertAttrs, PSA_KEY_TYPE_RAW_DATA );
 
-         psa_set_key_bits( &xCertAttrs, 8 * pxCertificateContext->raw.len );
+        psa_set_key_bits( &xCertAttrs, 8 * pxCertificateContext->raw.len );
 
-         psa_set_key_usage_flags( &xCertAttrs, PSA_KEY_USAGE_EXPORT |  PSA_KEY_USAGE_COPY );
+        psa_set_key_usage_flags( &xCertAttrs, PSA_KEY_USAGE_EXPORT | PSA_KEY_USAGE_COPY );
 
-         psa_set_key_algorithm( &xCertAttrs, 0 );
+        psa_set_key_algorithm( &xCertAttrs, 0 );
 
-         xStatus = psa_import_key( &xCertAttrs,
-                                      pxCertificateContext->raw.p,
-                                      pxCertificateContext->raw.len,
-                                      &xKeyId );
+        xStatus = psa_import_key( &xCertAttrs,
+                                  pxCertificateContext->raw.p,
+                                  pxCertificateContext->raw.len,
+                                  &xKeyId );
 
-         ( void ) xKeyId;
+        ( void ) xKeyId;
+    }
 
-     }
-     return mbedtls_psa_err_translate_pk( xStatus );
- }
+    return mbedtls_psa_err_translate_pk( xStatus );
+}
 
 /*-----------------------------------------------------------*/
 
@@ -435,8 +436,8 @@ int32_t lReadCertificateFromPSACrypto( mbedtls_x509_crt * pxCertificateContext,
     }
 
     /* Free memory on error. */
-    if( xStatus != PSA_SUCCESS &&
-        pucCertBuffer != NULL )
+    if( ( xStatus != PSA_SUCCESS ) &&
+        ( pucCertBuffer != NULL ) )
     {
         mbedtls_free( pucCertBuffer );
         pucCertBuffer = NULL;
@@ -452,9 +453,9 @@ int32_t lWriteCertificateToPsaIts( psa_storage_uid_t xCertUid,
 {
     psa_status_t xStatus;
 
-    if( pxCertificateContext == NULL ||
-        pxCertificateContext->raw.p == NULL ||
-        pxCertificateContext->raw.len == 0 )
+    if( ( pxCertificateContext == NULL ) ||
+        ( pxCertificateContext->raw.p == NULL ) ||
+        ( pxCertificateContext->raw.len == 0 ) )
     {
         xStatus = PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -534,9 +535,9 @@ int32_t lWriteCertificateToPsaPS( psa_storage_uid_t xCertUid,
 {
     psa_status_t xStatus;
 
-    if( pxCertificateContext == NULL ||
-        pxCertificateContext->raw.p == NULL ||
-        pxCertificateContext->raw.len == 0 )
+    if( ( pxCertificateContext == NULL ) ||
+        ( pxCertificateContext->raw.p == NULL ) ||
+        ( pxCertificateContext->raw.len == 0 ) )
     {
         xStatus = PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -620,13 +621,13 @@ int32_t lGenerateKeyPairECPsaCrypto( psa_key_id_t xPrvKeyId,
     psa_status_t xStatus = PSA_SUCCESS;
     psa_key_attributes_t xKeyAttrs = PSA_KEY_ATTRIBUTES_INIT;
 
-    if( xPrvKeyId == 0 ||
-        xPubKeyId == 0 )
+    if( ( xPrvKeyId == 0 ) ||
+        ( xPubKeyId == 0 ) )
     {
         xStatus = PSA_ERROR_INVALID_HANDLE;
     }
-    else if( ppucPubKeyDer == NULL ||
-             puxPubKeyDerLen == NULL )
+    else if( ( ppucPubKeyDer == NULL ) ||
+             ( puxPubKeyDerLen == NULL ) )
     {
         xStatus = PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -655,13 +656,12 @@ int32_t lGenerateKeyPairECPsaCrypto( psa_key_id_t xPrvKeyId,
         }
     }
 
-
     if( xStatus == PSA_SUCCESS )
     {
         psa_set_key_lifetime( &xKeyAttrs,
                               PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION(
-                              PSA_KEY_LIFETIME_PERSISTENT,
-                              PSA_KEY_LOCATION_LOCAL_STORAGE ) );
+                                  PSA_KEY_LIFETIME_PERSISTENT,
+                                  PSA_KEY_LOCATION_LOCAL_STORAGE ) );
 
         psa_set_key_id( &xKeyAttrs, xPrvKeyId );
 
@@ -670,9 +670,9 @@ int32_t lGenerateKeyPairECPsaCrypto( psa_key_id_t xPrvKeyId,
         psa_set_key_bits( &xKeyAttrs, 256 );
 
         psa_set_key_usage_flags( &xKeyAttrs, PSA_KEY_USAGE_SIGN_HASH | PSA_KEY_USAGE_VERIFY_HASH |
-                                             PSA_KEY_USAGE_SIGN_MESSAGE | PSA_KEY_USAGE_VERIFY_MESSAGE |
-                                             PSA_KEY_USAGE_DERIVE | PSA_KEY_USAGE_VERIFY_DERIVATION |
-                                             PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT );
+                                 PSA_KEY_USAGE_SIGN_MESSAGE | PSA_KEY_USAGE_VERIFY_MESSAGE |
+                                 PSA_KEY_USAGE_DERIVE | PSA_KEY_USAGE_VERIFY_DERIVATION |
+                                 PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT );
 
         psa_set_key_algorithm( &xKeyAttrs, PSA_ALG_ECDSA( PSA_ALG_SHA_256 ) );
         xStatus = psa_generate_key( &xKeyAttrs, &xPrvKeyId );
@@ -683,7 +683,6 @@ int32_t lGenerateKeyPairECPsaCrypto( psa_key_id_t xPrvKeyId,
         xStatus = xReadPublicKeyFromPSACrypto( ppucPubKeyDer,
                                                puxPubKeyDerLen,
                                                xPrvKeyId );
-
     }
 
     if( xStatus == PSA_SUCCESS )
@@ -697,7 +696,6 @@ int32_t lGenerateKeyPairECPsaCrypto( psa_key_id_t xPrvKeyId,
         psa_set_key_usage_flags( &xKeyAttrs, PSA_KEY_USAGE_EXPORT );
 
         xStatus = psa_import_key( &xKeyAttrs, pucPubKey, uxPubKeyLen, &xPubKeyId );
-
     }
 
     if( xStatus != PSA_SUCCESS )
@@ -710,6 +708,7 @@ int32_t lGenerateKeyPairECPsaCrypto( psa_key_id_t xPrvKeyId,
 
         *puxPubKeyDerLen = 0;
     }
+
     return mbedtls_psa_err_translate_pk( xStatus );
 }
 

@@ -57,18 +57,23 @@
 #include "psa_util.h"
 
 /* Forward declarations */
-static int psa_ecdsa_check_pair( const void * pvPub, const void * pvPrv,
-                                 int (* lFRng)(void *, unsigned char *, size_t),
+static int psa_ecdsa_check_pair( const void * pvPub,
+                                 const void * pvPrv,
+                                 int ( * lFRng )( void *, unsigned char *, size_t ),
                                  void * pvPRng );
 
 static int psa_ecdsa_can_do( mbedtls_pk_type_t xType );
 
 static size_t psa_ecdsa_get_bitlen( const void * pvCtx );
 
-static int psa_ecdsa_sign( void * pvCtx, mbedtls_md_type_t xMdAlg,
-                           const unsigned char * pucHash, size_t xHashLen,
-                           unsigned char * pucSig, size_t xSigBufferSize, size_t * pxSigLen,
-                           int (* plRng)(void *, unsigned char *, size_t),
+static int psa_ecdsa_sign( void * pvCtx,
+                           mbedtls_md_type_t xMdAlg,
+                           const unsigned char * pucHash,
+                           size_t xHashLen,
+                           unsigned char * pucSig,
+                           size_t xSigBufferSize,
+                           size_t * pxSigLen,
+                           int ( * plRng )( void *, unsigned char *, size_t ),
                            void * pvRng );
 
 static void * psa_pk_ctx_alloc( void );
@@ -87,14 +92,15 @@ typedef struct PsaPkCtx_t
 
 /* Globals */
 
-const mbedtls_pk_info_t mbedtls_pk_psa_ecdsa = {
+const mbedtls_pk_info_t mbedtls_pk_psa_ecdsa =
+{
     MBEDTLS_PK_ECKEY,
     "Opaque ECDSA",
     psa_ecdsa_get_bitlen,
     psa_ecdsa_can_do,
     NULL, /* verify_func */
     psa_ecdsa_sign,
-#if defined(MBEDTLS_ECDSA_C) && defined(MBEDTLS_ECP_RESTARTABLE)
+#if defined( MBEDTLS_ECDSA_C ) && defined( MBEDTLS_ECP_RESTARTABLE )
     NULL, /* verify_rs_func */
     NULL, /* sign_rs_func */
 #endif
@@ -103,7 +109,7 @@ const mbedtls_pk_info_t mbedtls_pk_psa_ecdsa = {
     psa_ecdsa_check_pair,
     psa_pk_ctx_alloc,
     psa_pk_ctx_free,
-#if defined(MBEDTLS_ECDSA_C) && defined(MBEDTLS_ECP_RESTARTABLE)
+#if defined( MBEDTLS_ECDSA_C ) && defined( MBEDTLS_ECP_RESTARTABLE )
     NULL, /* rs_alloc_func */
     NULL, /* rs_free_func */
 #endif
@@ -113,8 +119,8 @@ const mbedtls_pk_info_t mbedtls_pk_psa_ecdsa = {
 /*-----------------------------------------------------------*/
 
 psa_status_t xReadObjectFromPSACrypto( unsigned char ** ppucObject,
-                                  size_t * puxObjectLen,
-                                  psa_key_id_t xObjectId )
+                                       size_t * puxObjectLen,
+                                       psa_key_id_t xObjectId )
 {
     psa_status_t xStatus = PSA_SUCCESS;
     psa_key_attributes_t xObjectAttrs = PSA_KEY_ATTRIBUTES_INIT;
@@ -125,8 +131,8 @@ psa_status_t xReadObjectFromPSACrypto( unsigned char ** ppucObject,
     configASSERT( xObjectId >= PSA_KEY_ID_USER_MIN );
     configASSERT( xObjectId <= PSA_KEY_ID_VENDOR_MAX );
 
-    if( ppucObject == NULL ||
-        puxObjectLen == NULL )
+    if( ( ppucObject == NULL ) ||
+        ( puxObjectLen == NULL ) )
     {
         xStatus = PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -138,7 +144,7 @@ psa_status_t xReadObjectFromPSACrypto( unsigned char ** ppucObject,
 
     /* Check that the key type is "raw" */
     if( ( xStatus == PSA_SUCCESS ) &&
-        ( ! PSA_KEY_TYPE_IS_UNSTRUCTURED( xObjectAttrs.type ) ) )
+        ( !PSA_KEY_TYPE_IS_UNSTRUCTURED( xObjectAttrs.type ) ) )
     {
         xStatus = PSA_ERROR_INVALID_HANDLE;
     }
@@ -165,7 +171,6 @@ psa_status_t xReadObjectFromPSACrypto( unsigned char ** ppucObject,
                                   pucObjectBuffer,
                                   uxBufferLen,
                                   &uxObjectLen );
-
     }
 
     if( xStatus == PSA_SUCCESS )
@@ -334,8 +339,8 @@ int32_t lPsa_initMbedtlsPkContext( mbedtls_pk_context * pxMbedtlsPkCtx,
     PsaPkCtx_t * pxPsaPk = NULL;
     int lError = 0;
 
-    if( pxMbedtlsPkCtx == NULL ||
-        xKeyId == 0 )
+    if( ( pxMbedtlsPkCtx == NULL ) ||
+        ( xKeyId == 0 ) )
     {
         lError = -1;
     }
@@ -415,43 +420,48 @@ int32_t lPsa_initMbedtlsPkContext( mbedtls_pk_context * pxMbedtlsPkCtx,
 
 static void * psa_pk_ctx_alloc( void )
 {
-	void * pvCtx = NULL;
+    void * pvCtx = NULL;
 
-	pvCtx = mbedtls_calloc( 1, sizeof( PsaPkCtx_t ) );
+    pvCtx = mbedtls_calloc( 1, sizeof( PsaPkCtx_t ) );
 
-	if( pvCtx != NULL )
-	{
-		PsaPkCtx_t * pxPsaPk = ( PsaPkCtx_t * ) pvCtx;
+    if( pvCtx != NULL )
+    {
+        PsaPkCtx_t * pxPsaPk = ( PsaPkCtx_t * ) pvCtx;
 
         pxPsaPk->xKeyId = 0;
-		/* Initialize other fields */
-		mbedtls_ecdsa_init( &( pxPsaPk->xEcdsaCtx ) );
-	}
-	return pvCtx;
+        /* Initialize other fields */
+        mbedtls_ecdsa_init( &( pxPsaPk->xEcdsaCtx ) );
+    }
+
+    return pvCtx;
 }
 
 /*-----------------------------------------------------------*/
 
 static void psa_pk_ctx_free( void * pvCtx )
 {
-	if( pvCtx != NULL )
-	{
-		PsaPkCtx_t * pxPsaPk = ( PsaPkCtx_t * ) pvCtx;
+    if( pvCtx != NULL )
+    {
+        PsaPkCtx_t * pxPsaPk = ( PsaPkCtx_t * ) pvCtx;
 
-		mbedtls_ecdsa_free( &( pxPsaPk->xEcdsaCtx ) );
+        mbedtls_ecdsa_free( &( pxPsaPk->xEcdsaCtx ) );
 
-		mbedtls_free( pvCtx );
-	}
+        mbedtls_free( pvCtx );
+    }
 }
 
 
 
 /*-----------------------------------------------------------*/
 
-static int psa_ecdsa_sign( void * pvCtx, mbedtls_md_type_t xMdAlg,
-                           const unsigned char * pucHash, size_t xHashLen,
-                           unsigned char * pucSig, size_t xSigBufferSize, size_t * pxSigLen,
-                           int (* plRng)(void *, unsigned char *, size_t),
+static int psa_ecdsa_sign( void * pvCtx,
+                           mbedtls_md_type_t xMdAlg,
+                           const unsigned char * pucHash,
+                           size_t xHashLen,
+                           unsigned char * pucSig,
+                           size_t xSigBufferSize,
+                           size_t * pxSigLen,
+                           int ( * plRng )( void *, unsigned char *, size_t ),
                            void * pvRng )
 {
     PsaPkCtx_t * pxPsaCtx = ( PsaPkCtx_t * ) pvCtx;
@@ -461,8 +471,8 @@ static int psa_ecdsa_sign( void * pvCtx, mbedtls_md_type_t xMdAlg,
     psa_status_t status = PSA_SUCCESS;
 
     /* Provided RNG is not used */
-    (void) plRng;
-    (void) pvRng;
+    ( void ) plRng;
+    ( void ) pvRng;
 
     /* TODO: Determine why psa_sign_hash fails when large buffer sizes are provided as xSigBufferSize */
 
@@ -474,11 +484,13 @@ static int psa_ecdsa_sign( void * pvCtx, mbedtls_md_type_t xMdAlg,
     else
     {
         status = psa_sign_hash( pxPsaCtx->xKeyId, alg, pucHash, xHashLen,
-                                        pucSig, xSigBufferSize, pxSigLen );
+                                pucSig, xSigBufferSize, pxSigLen );
     }
 
     if( status != PSA_SUCCESS )
+    {
         return( mbedtls_psa_err_translate_pk( status ) );
+    }
 
     /* Encode signature to an ASN.1 sequence */
     return( pk_ecdsa_sig_asn1_from_psa( pucSig, pxSigLen, xSigBufferSize ) );
@@ -488,7 +500,7 @@ static int psa_ecdsa_sign( void * pvCtx, mbedtls_md_type_t xMdAlg,
 
 static size_t psa_ecdsa_get_bitlen( const void * pvCtx )
 {
-	PsaPkCtx_t * pxPsaCtx = ( PsaPkCtx_t * ) pvCtx;
+    PsaPkCtx_t * pxPsaCtx = ( PsaPkCtx_t * ) pvCtx;
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
     size_t bits = 0;
 
@@ -507,13 +519,14 @@ static size_t psa_ecdsa_get_bitlen( const void * pvCtx )
 
 static int psa_ecdsa_can_do( mbedtls_pk_type_t xType )
 {
-	return( xType == MBEDTLS_PK_ECDSA );
+    return( xType == MBEDTLS_PK_ECDSA );
 }
 
 /*-----------------------------------------------------------*/
 
-static int psa_ecdsa_check_pair( const void * pvPub, const void * pvPrv,
-                                 int (* lFRng)(void *, unsigned char *, size_t),
+static int psa_ecdsa_check_pair( const void * pvPub,
+                                 const void * pvPrv,
+                                 int ( * lFRng )( void *, unsigned char *, size_t ),
                                  void * pvPRng )
 {
     mbedtls_ecp_keypair xPubCtx;

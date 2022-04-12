@@ -27,11 +27,14 @@ int mbedtls_psa_err_translate_pk( psa_status_t status );
 mbedtls_ecp_group_id xMbedtlsEccGroupIdFromPsaFamily( psa_ecc_family_t curve,
                                                       size_t bits );
 
-int mbedtls_psa_get_ecc_oid_from_id( psa_ecc_family_t curve, size_t bits,
-                                     char const **oid, size_t *oid_len );
+int mbedtls_psa_get_ecc_oid_from_id( psa_ecc_family_t curve,
+                                     size_t bits,
+                                     char const ** oid,
+                                     size_t * oid_len );
 
-int pk_ecdsa_sig_asn1_from_psa( unsigned char *sig, size_t *sig_len,
-                                       size_t buf_len );
+int pk_ecdsa_sig_asn1_from_psa( unsigned char * sig,
+                                size_t * sig_len,
+                                size_t buf_len );
 
 psa_algorithm_t mbedtls_psa_translate_md( mbedtls_md_type_t md_alg );
 

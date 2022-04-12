@@ -42,15 +42,15 @@
 
 typedef enum PkiStatus
 {
-    PKI_SUCCESS                 =  0,
-    PKI_ERR                     = -1,
-    PKI_ERR_ARG_INVALID         = -2,
-    PKI_ERR_NOMEM               = -3,
-    PKI_ERR_INTERNAL            = -6,
-    PKI_ERR_NOT_IMPLEMENTED     = -7,
-    PKI_ERR_OBJ                 = -0x8000010,
-    PKI_ERR_OBJ_NOT_FOUND       = -0x8000011,
-    PKI_ERR_OBJ_PARSING_FAILED  = -0x8000012,
+    PKI_SUCCESS = 0,
+    PKI_ERR = -1,
+    PKI_ERR_ARG_INVALID = -2,
+    PKI_ERR_NOMEM = -3,
+    PKI_ERR_INTERNAL = -6,
+    PKI_ERR_NOT_IMPLEMENTED = -7,
+    PKI_ERR_OBJ = -0x8000010,
+    PKI_ERR_OBJ_NOT_FOUND = -0x8000011,
+    PKI_ERR_OBJ_PARSING_FAILED = -0x8000012,
 } PkiStatus_t;
 
 typedef enum PkiObjectForm
@@ -84,11 +84,11 @@ typedef struct PkiObject
 } PkiObject_t;
 
 /* Convenience initializers */
-#define PKI_OBJ_PEM( buffer, len )       { .xForm = OBJ_FORM_PEM, .uxLen = len, .pucBuffer = buffer }
-#define PKI_OBJ_DER( buffer, len )       { .xForm = OBJ_FORM_DER, .uxLen = len, .pucBuffer = buffer }
+#define PKI_OBJ_PEM( buffer, len )    { .xForm = OBJ_FORM_PEM, .uxLen = len, .pucBuffer = buffer }
+#define PKI_OBJ_DER( buffer, len )    { .xForm = OBJ_FORM_DER, .uxLen = len, .pucBuffer = buffer }
 
 #if defined( MBEDTLS_TRANSPORT_PKCS11 )
-#define PKI_OBJ_PKCS11( label )          { .xForm = OBJ_FORM_PKCS11_LABEL, .uxLen = strlen( label ), .pcPkcs11Label = label }
+#define PKI_OBJ_PKCS11( label )       { .xForm = OBJ_FORM_PKCS11_LABEL, .uxLen = strlen( label ), .pcPkcs11Label = label }
 #endif /* MBEDTLS_TRANSPORT_PKCS11 */
 
 #if defined( MBEDTLS_TRANSPORT_PSA )
@@ -140,17 +140,17 @@ PkiStatus_t xPkiGenerateECKeypair( const char * pcPrvKeyLabel,
                                    size_t * puxPubKeyDerLen );
 
 #ifdef MBEDTLS_TRANSPORT_PKCS11
-PkiStatus_t  xPkcs11GenerateKeyPairEC( char * pcPrivateKeyLabel,
-                                     char * pcPublicKeyLabel,
-                                     unsigned char ** ppucPublicKeyDer,
-                                     size_t * puxPublicKeyDerLen );
+PkiStatus_t xPkcs11GenerateKeyPairEC( char * pcPrivateKeyLabel,
+                                      char * pcPublicKeyLabel,
+                                      unsigned char ** ppucPublicKeyDer,
+                                      size_t * puxPublicKeyDerLen );
 
 PkiStatus_t xPkcs11InitMbedtlsPkContext( const char * pcLabel,
                                          mbedtls_pk_context * pxPkCtx,
                                          CK_SESSION_HANDLE_PTR pxSessionHandle );
 
 PkiStatus_t xPkcs11ReadCertificate( mbedtls_x509_crt * pxCertificateContext,
-                                   const char * pcCertLabel );
+                                    const char * pcCertLabel );
 
 PkiStatus_t xPkcs11WriteCertificate( const char * pcLabel,
                                      const mbedtls_x509_crt * pxCertificateContext );
@@ -168,7 +168,7 @@ PkiStatus_t xPkcs11ReadPublicKey( unsigned char ** ppucPublicKeyDer,
 #ifdef MBEDTLS_TRANSPORT_PSA
 
 int32_t lPsa_initMbedtlsPkContext( mbedtls_pk_context * pxMbedtlsPkCtx,
-                                      psa_key_id_t xKeyId );
+                                   psa_key_id_t xKeyId );
 
 int32_t lGenerateKeyPairECPsaCrypto( psa_key_id_t xPrvKeyId,
                                      psa_key_id_t xPubKeyId,

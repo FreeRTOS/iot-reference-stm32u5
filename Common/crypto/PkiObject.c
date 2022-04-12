@@ -63,6 +63,7 @@ PkiStatus_t xPrvMbedtlsErrToPkiStatus( int lError )
             xStatus = lError < 0 ? PKI_ERR : PKI_SUCCESS;
             break;
     }
+
     return xStatus;
 }
 
@@ -71,6 +72,7 @@ PkiStatus_t xPrvMbedtlsErrToPkiStatus( int lError )
 PkiObject_t xPkiObjectFromLabel( const char * pcLabel )
 {
     PkiObject_t xPkiObject = { 0 };
+
     if( pcLabel != NULL )
     {
 #if defined( MBEDTLS_TRANSPORT_PKCS11 )
@@ -102,8 +104,9 @@ PkiObject_t xPkiObjectFromLabel( const char * pcLabel )
         {
             xPkiObject.xForm = OBJ_FORM_NONE;
         }
-#endif
+#endif /* if defined( MBEDTLS_TRANSPORT_PKCS11 ) */
     }
+
     return xPkiObject;
 }
 
@@ -120,30 +123,30 @@ PkiStatus_t xPkiReadCertificate( mbedtls_x509_crt * pxMbedtlsCertCtx,
     switch( pxCertificate->xForm )
     {
         case OBJ_FORM_PEM:
-            {
-                int lError = mbedtls_x509_crt_parse( pxMbedtlsCertCtx,
-                                                     pxCertificate->pucBuffer,
-                                                     pxCertificate->uxLen );
+           {
+               int lError = mbedtls_x509_crt_parse( pxMbedtlsCertCtx,
+                                                    pxCertificate->pucBuffer,
+                                                    pxCertificate->uxLen );
 
-                MBEDTLS_LOG_IF_ERROR( lError, "Failed to parse certificate from buffer: 0x%08X, length: %ld",
-                                      pxCertificate->pucBuffer, pxCertificate->uxLen );
+               MBEDTLS_LOG_IF_ERROR( lError, "Failed to parse certificate from buffer: 0x%08X, length: %ld",
+                                     pxCertificate->pucBuffer, pxCertificate->uxLen );
 
-                xStatus = xPrvMbedtlsErrToPkiStatus( lError );
-            }
-            break;
+               xStatus = xPrvMbedtlsErrToPkiStatus( lError );
+           }
+           break;
 
         case OBJ_FORM_DER:
-            {
-                int lError = mbedtls_x509_crt_parse_der( pxMbedtlsCertCtx,
-                                                     pxCertificate->pucBuffer,
-                                                     pxCertificate->uxLen );
+           {
+               int lError = mbedtls_x509_crt_parse_der( pxMbedtlsCertCtx,
+                                                        pxCertificate->pucBuffer,
+                                                        pxCertificate->uxLen );
 
-                MBEDTLS_LOG_IF_ERROR( lError, "Failed to parse certificate from buffer: 0x%08X, length: %ld,",
-                                      pxCertificate->pucBuffer, pxCertificate->uxLen );
+               MBEDTLS_LOG_IF_ERROR( lError, "Failed to parse certificate from buffer: 0x%08X, length: %ld,",
+                                     pxCertificate->pucBuffer, pxCertificate->uxLen );
 
-                xStatus = xPrvMbedtlsErrToPkiStatus( lError );
-            }
-            break;
+               xStatus = xPrvMbedtlsErrToPkiStatus( lError );
+           }
+           break;
 
 #ifdef MBEDTLS_TRANSPORT_PKCS11
         case OBJ_FORM_PKCS11_LABEL:
@@ -152,40 +155,40 @@ PkiStatus_t xPkiReadCertificate( mbedtls_x509_crt * pxMbedtlsCertCtx,
 #endif /* ifdef MBEDTLS_TRANSPORT_PKCS11 */
 #ifdef MBEDTLS_TRANSPORT_PSA
         case OBJ_FORM_PSA_CRYPTO:
-        {
-            int lError = lReadCertificateFromPSACrypto( pxMbedtlsCertCtx,
-                                                    pxCertificate->xPsaCryptoId );
+           {
+               int lError = lReadCertificateFromPSACrypto( pxMbedtlsCertCtx,
+                                                           pxCertificate->xPsaCryptoId );
 
-            MBEDTLS_LOG_IF_ERROR( lError, "Failed to read certificate(s) from PSA Crypto uid: 0x%08X,",
-                                  pxCertificate->xPsaCryptoId );
+               MBEDTLS_LOG_IF_ERROR( lError, "Failed to read certificate(s) from PSA Crypto uid: 0x%08X,",
+                                     pxCertificate->xPsaCryptoId );
 
-            xStatus = xPrvMbedtlsErrToPkiStatus( lError );
-        }
-            break;
+               xStatus = xPrvMbedtlsErrToPkiStatus( lError );
+           }
+           break;
 
         case OBJ_FORM_PSA_ITS:
-        {
-            int lError = lReadCertificateFromPsaIts( pxMbedtlsCertCtx,
-                                                 pxCertificate->xPsaStorageId );
+           {
+               int lError = lReadCertificateFromPsaIts( pxMbedtlsCertCtx,
+                                                        pxCertificate->xPsaStorageId );
 
-            MBEDTLS_LOG_IF_ERROR( lError, "Failed to read certificate(s) from PSA ITS uid: 0x%016ULLX,",
-                                  pxCertificate->xPsaStorageId );
+               MBEDTLS_LOG_IF_ERROR( lError, "Failed to read certificate(s) from PSA ITS uid: 0x%016ULLX,",
+                                     pxCertificate->xPsaStorageId );
 
-            xStatus = xPrvMbedtlsErrToPkiStatus( lError );
-        }
-            break;
+               xStatus = xPrvMbedtlsErrToPkiStatus( lError );
+           }
+           break;
 
         case OBJ_FORM_PSA_PS:
-        {
-            int lError = lReadCertificateFromPsaPS( pxMbedtlsCertCtx,
-                                                pxCertificate->xPsaStorageId );
+           {
+               int lError = lReadCertificateFromPsaPS( pxMbedtlsCertCtx,
+                                                       pxCertificate->xPsaStorageId );
 
-            MBEDTLS_LOG_IF_ERROR( lError, "Failed to read certificate(s) from PSA PS uid: 0x%016ULLX,",
-                                  pxCertificate->xPsaStorageId );
+               MBEDTLS_LOG_IF_ERROR( lError, "Failed to read certificate(s) from PSA PS uid: 0x%016ULLX,",
+                                     pxCertificate->xPsaStorageId );
 
-            xStatus = xPrvMbedtlsErrToPkiStatus( lError );
-        }
-            break;
+               xStatus = xPrvMbedtlsErrToPkiStatus( lError );
+           }
+           break;
 #endif /* ifdef MBEDTLS_TRANSPORT_PSA */
         case OBJ_FORM_NONE:
         /* Intentional fall through */
@@ -226,38 +229,38 @@ PkiStatus_t xPkiWriteCertificate( const char * pcCertLabel,
 #endif /* ifdef MBEDTLS_TRANSPORT_PKCS11 */
 #ifdef MBEDTLS_TRANSPORT_PSA
         case OBJ_FORM_PSA_CRYPTO:
-        {
-            int lError = lWriteCertificateToPSACrypto( xCertObject.xPsaCryptoId, pxMbedtlsCertCtx );
+           {
+               int lError = lWriteCertificateToPSACrypto( xCertObject.xPsaCryptoId, pxMbedtlsCertCtx );
 
-            MBEDTLS_LOG_IF_ERROR( lError, "Failed to write certificate to PSA Crypto uid: 0x%08X,",
-                                  xCertObject.xPsaCryptoId );
+               MBEDTLS_LOG_IF_ERROR( lError, "Failed to write certificate to PSA Crypto uid: 0x%08X,",
+                                     xCertObject.xPsaCryptoId );
 
-            xStatus = xPrvMbedtlsErrToPkiStatus( lError );
-        }
-            break;
+               xStatus = xPrvMbedtlsErrToPkiStatus( lError );
+           }
+           break;
 
         case OBJ_FORM_PSA_ITS:
-        {
-            int lError = lWriteCertificateToPsaIts( xCertObject.xPsaStorageId,
-                                                    pxMbedtlsCertCtx );
+           {
+               int lError = lWriteCertificateToPsaIts( xCertObject.xPsaStorageId,
+                                                       pxMbedtlsCertCtx );
 
-            MBEDTLS_LOG_IF_ERROR( lError, "Failed to write certificate to PSA ITS uid: 0x%PRIX64,",
-                                  xCertObject.xPsaStorageId );
+               MBEDTLS_LOG_IF_ERROR( lError, "Failed to write certificate to PSA ITS uid: 0x%PRIX64,",
+                                     xCertObject.xPsaStorageId );
 
-            xStatus = xPrvMbedtlsErrToPkiStatus( lError );
-        }
-            break;
+               xStatus = xPrvMbedtlsErrToPkiStatus( lError );
+           }
+           break;
 
         case OBJ_FORM_PSA_PS:
-        {
-            int lError = lWriteCertificateToPsaPS( xCertObject.xPsaStorageId, pxMbedtlsCertCtx );
+           {
+               int lError = lWriteCertificateToPsaPS( xCertObject.xPsaStorageId, pxMbedtlsCertCtx );
 
-            MBEDTLS_LOG_IF_ERROR( lError, "Failed to write certificate to PSA PS uid: 0x%PRIX64,",
-                                  xCertObject.xPsaStorageId );
+               MBEDTLS_LOG_IF_ERROR( lError, "Failed to write certificate to PSA PS uid: 0x%PRIX64,",
+                                     xCertObject.xPsaStorageId );
 
-            xStatus = xPrvMbedtlsErrToPkiStatus( lError );
-        }
-            break;
+               xStatus = xPrvMbedtlsErrToPkiStatus( lError );
+           }
+           break;
 #endif /* ifdef MBEDTLS_TRANSPORT_PSA */
         case OBJ_FORM_NONE:
         /* Intentional fall through */
@@ -266,6 +269,7 @@ PkiStatus_t xPkiWriteCertificate( const char * pcCertLabel,
             xStatus = PKI_ERR_ARG_INVALID;
             break;
     }
+
     return xStatus;
 }
 
@@ -286,48 +290,51 @@ PkiStatus_t xPkiReadPrivateKey( mbedtls_pk_context * pxPkCtx,
         case OBJ_FORM_PEM:
         /* Intentional fall through */
         case OBJ_FORM_DER:
-            if( pxPrivateKey->uxLen == 0 ||
-                pxPrivateKey->pucBuffer == NULL )
+
+            if( ( pxPrivateKey->uxLen == 0 ) ||
+                ( pxPrivateKey->pucBuffer == NULL ) )
             {
                 xStatus = PKI_ERR_ARG_INVALID;
             }
             else
             {
                 int lError = mbedtls_pk_parse_key( pxPkCtx,
-                                               pxPrivateKey->pucBuffer,
-                                               pxPrivateKey->uxLen,
-                                               NULL, 0,
-                                               pxRngCallback,
-                                               pvRngCtx );
+                                                   pxPrivateKey->pucBuffer,
+                                                   pxPrivateKey->uxLen,
+                                                   NULL, 0,
+                                                   pxRngCallback,
+                                                   pvRngCtx );
 
                 MBEDTLS_LOG_IF_ERROR( lError, "Failed to parse the client key at memory address %p.",
                                       pxPrivateKey->pucBuffer );
 
                 xStatus = xPrvMbedtlsErrToPkiStatus( lError );
             }
+
             break;
 
 #ifdef MBEDTLS_TRANSPORT_PKCS11
         case OBJ_FORM_PKCS11_LABEL:
-           xStatus = xPkcs11InitMbedtlsPkContext( pxPrivateKey->pcPkcs11Label, pxPkCtx, NULL );
-           break;
+            xStatus = xPkcs11InitMbedtlsPkContext( pxPrivateKey->pcPkcs11Label, pxPkCtx, NULL );
+            break;
 #endif /* ifdef MBEDTLS_TRANSPORT_PKCS11 */
 
 #ifdef MBEDTLS_TRANSPORT_PSA
         case OBJ_FORM_PSA_CRYPTO:
-            {
-//                int lError = mbedtls_pk_setup_opaque( pxPkCtx,
-//                                                      pxPrivateKey->xPsaCryptoId );
+           {
+/*                int lError = mbedtls_pk_setup_opaque( pxPkCtx, */
+/*                                                      pxPrivateKey->xPsaCryptoId ); */
 
-                int lError = lPsa_initMbedtlsPkContext( pxPkCtx, pxPrivateKey->xPsaCryptoId );
+               int lError = lPsa_initMbedtlsPkContext( pxPkCtx, pxPrivateKey->xPsaCryptoId );
 
-                MBEDTLS_LOG_IF_ERROR( lError, "Failed to initialize the PSA opaque key context. ObjectId: 0x%08x",
-                                      pxPrivateKey->xPsaCryptoId );
+               MBEDTLS_LOG_IF_ERROR( lError, "Failed to initialize the PSA opaque key context. ObjectId: 0x%08x",
+                                     pxPrivateKey->xPsaCryptoId );
 
-                xStatus = xPrvMbedtlsErrToPkiStatus( lError );
-            }
+               xStatus = xPrvMbedtlsErrToPkiStatus( lError );
+           }
 
-            break;
+           break;
+
         case OBJ_FORM_PSA_ITS:
            {
                unsigned char * pucPk = NULL;
@@ -348,7 +355,7 @@ PkiStatus_t xPkiReadPrivateKey( mbedtls_pk_context * pxPkCtx,
                                                   pvRngCtx );
 
                    MBEDTLS_LOG_IF_ERROR( lError, "Failed to parse the private key blob. PSA ITS ObjectId: 0x%ullx.",
-                                                 pxPrivateKey->xPsaStorageId );
+                                         pxPrivateKey->xPsaStorageId );
                }
 
                if( pucPk != NULL )
@@ -357,41 +364,43 @@ PkiStatus_t xPkiReadPrivateKey( mbedtls_pk_context * pxPkCtx,
                    mbedtls_platform_zeroize( pucPk, uxPkLen );
                    mbedtls_free( pucPk );
                }
+
                xStatus = xPrvMbedtlsErrToPkiStatus( lError );
            }
            break;
 
         case OBJ_FORM_PSA_PS:
-            {
-                unsigned char * pucPk = NULL;
-                size_t uxPkLen = 0;
+           {
+               unsigned char * pucPk = NULL;
+               size_t uxPkLen = 0;
 
-                int lError = lReadObjectFromPsaPs( &pucPk, &uxPkLen,
-                                                    pxPrivateKey->xPsaStorageId );
-
-                MBEDTLS_LOG_IF_ERROR( lError, "Failed to read the private key blob. PSA PS ObjectId: 0x%ullx.",
-                                      pxPrivateKey->xPsaStorageId );
-
-                if( lError == 0 )
-                {
-                    lError = mbedtls_pk_parse_key( pxPkCtx,
-                                                   pucPk, uxPkLen,
-                                                   NULL, 0,
-                                                   pxRngCallback,
-                                                   pvRngCtx );
-
-                    MBEDTLS_LOG_IF_ERROR( lError, "Failed to parse the private key blob. PSA PS ObjectId: 0x%ullx.",
+               int lError = lReadObjectFromPsaPs( &pucPk, &uxPkLen,
                                                   pxPrivateKey->xPsaStorageId );
-                }
 
-                if( pucPk != NULL )
-                {
-                    configASSERT( uxPkLen > 0 );
-                    mbedtls_platform_zeroize( pucPk, uxPkLen );
-                    mbedtls_free( pucPk );
-                }
-                xStatus = xPrvMbedtlsErrToPkiStatus( lError );
-            }
+               MBEDTLS_LOG_IF_ERROR( lError, "Failed to read the private key blob. PSA PS ObjectId: 0x%ullx.",
+                                     pxPrivateKey->xPsaStorageId );
+
+               if( lError == 0 )
+               {
+                   lError = mbedtls_pk_parse_key( pxPkCtx,
+                                                  pucPk, uxPkLen,
+                                                  NULL, 0,
+                                                  pxRngCallback,
+                                                  pvRngCtx );
+
+                   MBEDTLS_LOG_IF_ERROR( lError, "Failed to parse the private key blob. PSA PS ObjectId: 0x%ullx.",
+                                         pxPrivateKey->xPsaStorageId );
+               }
+
+               if( pucPk != NULL )
+               {
+                   configASSERT( uxPkLen > 0 );
+                   mbedtls_platform_zeroize( pucPk, uxPkLen );
+                   mbedtls_free( pucPk );
+               }
+
+               xStatus = xPrvMbedtlsErrToPkiStatus( lError );
+           }
 #endif /* ifdef MBEDTLS_TRANSPORT_PSA */
 
         case OBJ_FORM_NONE:
@@ -414,8 +423,8 @@ PkiStatus_t xPkiReadPublicKey( mbedtls_pk_context * pxPkCtx,
     unsigned char * pucPubKeyDer = NULL;
     size_t uxPubKeyLen = 0;
 
-    if( pxPkCtx == NULL ||
-        pxPublicKey == NULL )
+    if( ( pxPkCtx == NULL ) ||
+        ( pxPublicKey == NULL ) )
     {
         xStatus = PKI_ERR_ARG_INVALID;
     }
@@ -454,9 +463,9 @@ PkiStatus_t xPkiReadPublicKeyDer( unsigned char ** ppucPubKeyDer,
 {
     PkiStatus_t xStatus = PKI_SUCCESS;
 
-    if( ppucPubKeyDer == NULL ||
-        puxPubKeyDerLen == NULL ||
-        pxPublicKey == NULL )
+    if( ( ppucPubKeyDer == NULL ) ||
+        ( puxPubKeyDerLen == NULL ) ||
+        ( pxPublicKey == NULL ) )
     {
         xStatus = PKI_ERR_ARG_INVALID;
     }
@@ -467,8 +476,9 @@ PkiStatus_t xPkiReadPublicKeyDer( unsigned char ** ppucPubKeyDer,
             case OBJ_FORM_PEM:
             /* Intentional fall through */
             case OBJ_FORM_DER:
-                if( pxPublicKey->uxLen == 0 ||
-                    pxPublicKey->pucBuffer == NULL )
+
+                if( ( pxPublicKey->uxLen == 0 ) ||
+                    ( pxPublicKey->pucBuffer == NULL ) )
                 {
                     xStatus = PKI_ERR_ARG_INVALID;
                 }
@@ -477,31 +487,34 @@ PkiStatus_t xPkiReadPublicKeyDer( unsigned char ** ppucPubKeyDer,
                     *ppucPubKeyDer = ( unsigned char * ) pxPublicKey->pucBuffer;
                     *puxPubKeyDerLen = pxPublicKey->uxLen;
                 }
+
                 break;
 
-    #ifdef MBEDTLS_TRANSPORT_PKCS11
+#ifdef MBEDTLS_TRANSPORT_PKCS11
             case OBJ_FORM_PKCS11_LABEL:
-               xStatus = xPkcs11ReadPublicKey( ppucPubKeyDer, puxPubKeyDerLen, pxPublicKey->pcPkcs11Label );
-               if( xStatus != PKI_SUCCESS )
-               {
-                   LogError( "Failed to read public key with label: %s from PKCS11 module.",
-                             pxPublicKey->pcPkcs11Label );
-               }
-               break;
-    #endif /* ifdef MBEDTLS_TRANSPORT_PKCS11 */
+                xStatus = xPkcs11ReadPublicKey( ppucPubKeyDer, puxPubKeyDerLen, pxPublicKey->pcPkcs11Label );
 
-    #ifdef MBEDTLS_TRANSPORT_PSA
-            case OBJ_FORM_PSA_CRYPTO:
+                if( xStatus != PKI_SUCCESS )
                 {
-                    int lError = xReadPublicKeyFromPSACrypto( ppucPubKeyDer, puxPubKeyDerLen,
-                                                           pxPublicKey->xPsaCryptoId );
-
-                    MBEDTLS_LOG_IF_ERROR( lError, "Failed to read public key object from PSA crypto service. ObjectId: 0x%08x",
-                                          pxPublicKey->xPsaCryptoId );
-
-                    xStatus = xPrvMbedtlsErrToPkiStatus( lError );
-                    break;
+                    LogError( "Failed to read public key with label: %s from PKCS11 module.",
+                              pxPublicKey->pcPkcs11Label );
                 }
+                break;
+#endif /* ifdef MBEDTLS_TRANSPORT_PKCS11 */
+
+#ifdef MBEDTLS_TRANSPORT_PSA
+            case OBJ_FORM_PSA_CRYPTO:
+               {
+                   int lError = xReadPublicKeyFromPSACrypto( ppucPubKeyDer, puxPubKeyDerLen,
+                                                             pxPublicKey->xPsaCryptoId );
+
+                   MBEDTLS_LOG_IF_ERROR( lError, "Failed to read public key object from PSA crypto service. ObjectId: 0x%08x",
+                                         pxPublicKey->xPsaCryptoId );
+
+                   xStatus = xPrvMbedtlsErrToPkiStatus( lError );
+                   break;
+               }
+
             case OBJ_FORM_PSA_ITS:
                {
                    int lError = lReadObjectFromPsaIts( ppucPubKeyDer, puxPubKeyDerLen,
@@ -513,18 +526,19 @@ PkiStatus_t xPkiReadPublicKeyDer( unsigned char ** ppucPubKeyDer,
                    xStatus = xPrvMbedtlsErrToPkiStatus( lError );
                    break;
                }
+
             case OBJ_FORM_PSA_PS:
-                {
-                    int lError = lReadObjectFromPsaIts( ppucPubKeyDer, puxPubKeyDerLen,
-                                                        pxPublicKey->xPsaStorageId );
+               {
+                   int lError = lReadObjectFromPsaIts( ppucPubKeyDer, puxPubKeyDerLen,
+                                                       pxPublicKey->xPsaStorageId );
 
-                    MBEDTLS_LOG_IF_ERROR( lError, "Failed to read the public key blob. PSA PS ObjectId: 0x%ullx.",
-                                          pxPublicKey->xPsaStorageId );
+                   MBEDTLS_LOG_IF_ERROR( lError, "Failed to read the public key blob. PSA PS ObjectId: 0x%ullx.",
+                                         pxPublicKey->xPsaStorageId );
 
-                    xStatus = xPrvMbedtlsErrToPkiStatus( lError );
-                    break;
-                }
-    #endif /* ifdef MBEDTLS_TRANSPORT_PSA */
+                   xStatus = xPrvMbedtlsErrToPkiStatus( lError );
+                   break;
+               }
+#endif /* ifdef MBEDTLS_TRANSPORT_PSA */
 
             case OBJ_FORM_NONE:
             /* Intentional fallthrough */
@@ -534,6 +548,7 @@ PkiStatus_t xPkiReadPublicKeyDer( unsigned char ** ppucPubKeyDer,
                 break;
         }
     }
+
     return xStatus;
 }
 
@@ -548,10 +563,10 @@ PkiStatus_t xPkiGenerateECKeypair( const char * pcPrvKeyLabel,
     PkiObject_t xPubKey;
     PkiObject_t xPrvKey;
 
-    if( ppucPubKeyDer == NULL ||
-        puxPubKeyDerLen == NULL ||
-        pcPrvKeyLabel == NULL ||
-        pcPubKeyLabel == NULL )
+    if( ( ppucPubKeyDer == NULL ) ||
+        ( puxPubKeyDerLen == NULL ) ||
+        ( pcPrvKeyLabel == NULL ) ||
+        ( pcPubKeyLabel == NULL ) )
     {
         xStatus = PKI_ERR_ARG_INVALID;
     }
@@ -566,24 +581,25 @@ PkiStatus_t xPkiGenerateECKeypair( const char * pcPrvKeyLabel,
             case OBJ_FORM_DER:
                 xStatus = PKI_ERR_ARG_INVALID;
                 break;
-        #ifdef MBEDTLS_TRANSPORT_PKCS11
+
+#ifdef MBEDTLS_TRANSPORT_PKCS11
             case OBJ_FORM_PKCS11_LABEL:
                 xStatus = xPkcs11GenerateKeyPairEC( xPrvKey.pcPkcs11Label, xPubKey.pcPkcs11Label, ppucPubKeyDer, puxPubKeyDerLen );
                 break;
-        #endif
-        #ifdef MBEDTLS_TRANSPORT_PSA
+#endif
+#ifdef MBEDTLS_TRANSPORT_PSA
             case OBJ_FORM_PSA_CRYPTO:
-                {
-                    int lError = lGenerateKeyPairECPsaCrypto( xPrvKey.xPsaCryptoId, xPubKey.xPsaCryptoId, ppucPubKeyDer, puxPubKeyDerLen );
-                    xStatus = xPrvMbedtlsErrToPkiStatus( lError );
-                }
-                break;
+               {
+                   int lError = lGenerateKeyPairECPsaCrypto( xPrvKey.xPsaCryptoId, xPubKey.xPsaCryptoId, ppucPubKeyDer, puxPubKeyDerLen );
+                   xStatus = xPrvMbedtlsErrToPkiStatus( lError );
+               }
+               break;
 
             case OBJ_FORM_PSA_ITS:
             case OBJ_FORM_PSA_PS:
                 xStatus = PKI_ERR_ARG_INVALID;
                 break;
-        #endif
+#endif /* ifdef MBEDTLS_TRANSPORT_PSA */
             case OBJ_FORM_NONE:
             /* Intentional fallthrough */
             default:
@@ -592,5 +608,6 @@ PkiStatus_t xPkiGenerateECKeypair( const char * pcPrvKeyLabel,
                 break;
         }
     }
+
     return xStatus;
 }

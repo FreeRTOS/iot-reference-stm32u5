@@ -345,7 +345,6 @@ static void vSubCommand_GenerateCertificate( ConsoleIO_t * pxCIO,
         lError = mbedtls_x509write_crt_set_ns_cert_type( &xWriteCertCtx, MBEDTLS_X509_NS_CERT_TYPE_SSL_CLIENT );
         MBEDTLS_MSG_IF_ERROR( lError, "Failed to set Certificate NS Cert Type: " );
 
-
         if( lError >= 0 )
         {
             mbedtls_mpi xCertSerialNumber;
@@ -473,7 +472,7 @@ static void vSubCommand_GenerateCertificate( ConsoleIO_t * pxCIO,
 
         if( lError >= 0 )
         {
-//            PkiObject_t xCert = xPkiObjectFromLabel( pcCertLabel );
+/*            PkiObject_t xCert = xPkiObjectFromLabel( pcCertLabel ); */
             xCertContext.MBEDTLS_PRIVATE( own_buffer ) = 1;
 
             xResult = xPkiWriteCertificate( pcCertLabel, &xCertContext );
@@ -591,6 +590,7 @@ static BaseType_t xReadPemFromCliToX509Crt( ConsoleIO_t * pxCIO,
             if( lDataRead > 0 )
             {
                 size_t uxDataRead = ( size_t ) lDataRead;
+
                 if( lDataRead > 64 )
                 {
                     pxCIO->print( "Error: Current line exceeds maximum line length for a PEM file.\r\n" );

@@ -260,6 +260,7 @@ static bool prvInitializeCtx( ShadowDeviceCtx_t * pxCtx )
     {
         size_t uxDeviceNameLen = 0;
         pxCtx->pcDeviceName = KVStore_getStringHeap( CS_CORE_THING_NAME, NULL );
+
         if( pxCtx->pcDeviceName )
         {
             uxDeviceNameLen = strnlen( pxCtx->pcDeviceName, KVStore_getSize( CS_CORE_THING_NAME ) );
@@ -271,8 +272,8 @@ static bool prvInitializeCtx( ShadowDeviceCtx_t * pxCtx )
         }
     }
 
-    if( pxCtx->pcDeviceName != NULL &&
-        pxCtx->ucDeviceNameLen > 0 )
+    if( ( pxCtx->pcDeviceName != NULL ) &&
+        ( pxCtx->ucDeviceNameLen > 0 ) )
     {
         ShadowStatus_t xStatus = SHADOW_SUCCESS;
 

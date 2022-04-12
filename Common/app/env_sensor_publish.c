@@ -266,9 +266,9 @@ void vEnvironmentSensorPublishTask( void * pvParameters )
         uxTopicLen = strlcat( pcTopicString, "/" MQTT_PUBLISH_TOPIC, MQTT_PUBLICH_TOPIC_STR_LEN );
     }
 
-    if( uxTopicLen == 0 || uxTopicLen >= MQTT_PUBLICH_TOPIC_STR_LEN )
+    if( ( uxTopicLen == 0 ) || ( uxTopicLen >= MQTT_PUBLICH_TOPIC_STR_LEN ) )
     {
-        LogError("Failed to construct topic string.");
+        LogError( "Failed to construct topic string." );
         xExitFlag = pdTRUE;
     }
 

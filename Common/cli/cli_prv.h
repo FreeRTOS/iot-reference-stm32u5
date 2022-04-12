@@ -44,11 +44,11 @@ typedef struct xConsoleIO
      *
      */
     int32_t ( * read )( char * const buffer,
-                              uint32_t length );
+                        uint32_t length );
 
     int32_t ( * read_timeout )( char * const buffer,
-                                      uint32_t length,
-                                      TickType_t xTimeout );
+                                uint32_t length,
+                                TickType_t xTimeout );
 
     int32_t ( * readline )( char ** const bufferPtr );
 
@@ -58,7 +58,7 @@ typedef struct xConsoleIO
      * to the serial port.
      */
     void ( * write )( const void * const pvBuffer,
-                            uint32_t length );
+                      uint32_t length );
 
     /**
      * Function writes a null terminated string to the console.

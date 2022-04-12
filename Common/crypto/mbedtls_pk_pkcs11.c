@@ -670,8 +670,8 @@ const char * pcPKCS11StrError( CK_RV xError )
 }
 
 CK_RV xPKCS11_initMbedtlsPkContext( mbedtls_pk_context * pxMbedtlsPkCtx,
-                                      CK_SESSION_HANDLE xSessionHandle,
-                                      CK_OBJECT_HANDLE xPkHandle )
+                                    CK_SESSION_HANDLE xSessionHandle,
+                                    CK_OBJECT_HANDLE xPkHandle )
 {
     CK_RV xResult = CKR_OK;
 

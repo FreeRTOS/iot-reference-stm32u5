@@ -76,16 +76,16 @@ typedef enum
 
 typedef enum TlsTransportStatus
 {
-    TLS_TRANSPORT_SUCCESS =             PKI_SUCCESS,
-    TLS_TRANSPORT_UNKNOWN_ERROR =       PKI_ERR,
-    TLS_TRANSPORT_INVALID_PARAMETER =       PKI_ERR_ARG_INVALID,
-    TLS_TRANSPORT_INSUFFICIENT_MEMORY =     PKI_ERR_NOMEM,
-    TLS_TRANSPORT_INVALID_CREDENTIALS =     -4,
-    TLS_TRANSPORT_HANDSHAKE_FAILED =        -5,
-    TLS_TRANSPORT_INTERNAL_ERROR =          PKI_ERR_INTERNAL,
+    TLS_TRANSPORT_SUCCESS = PKI_SUCCESS,
+    TLS_TRANSPORT_UNKNOWN_ERROR = PKI_ERR,
+    TLS_TRANSPORT_INVALID_PARAMETER = PKI_ERR_ARG_INVALID,
+    TLS_TRANSPORT_INSUFFICIENT_MEMORY = PKI_ERR_NOMEM,
+    TLS_TRANSPORT_INVALID_CREDENTIALS = -4,
+    TLS_TRANSPORT_HANDSHAKE_FAILED = -5,
+    TLS_TRANSPORT_INTERNAL_ERROR = PKI_ERR_INTERNAL,
     TLS_TRANSPORT_CONNECT_FAILURE = -7,
-    TLS_TRANSPORT_PKI_OBJECT_NOT_FOUND =    PKI_ERR_OBJ_NOT_FOUND,
-    TLS_TRANSPORT_PKI_OBJECT_PARSE_FAIL =   PKI_ERR_OBJ_PARSING_FAILED,
+    TLS_TRANSPORT_PKI_OBJECT_NOT_FOUND = PKI_ERR_OBJ_NOT_FOUND,
+    TLS_TRANSPORT_PKI_OBJECT_PARSE_FAIL = PKI_ERR_OBJ_PARSING_FAILED,
     TLS_TRANSPORT_DNS_FAILED = -10,
     TLS_TRANSPORT_INSUFFICIENT_SOCKETS = -11,
     TLS_TRANSPORT_INVALID_HOSTNAME = -12,
@@ -228,8 +228,8 @@ int32_t lWriteCertificateToPKCS11( mbedtls_x509_crt * pxCertificateContext,
                                    size_t uxCertificateLabelLen );
 
 CK_RV xPKCS11_initMbedtlsPkContext( mbedtls_pk_context * pxMbedtlsPkCtx,
-                                      CK_SESSION_HANDLE xSessionHandle,
-                                      CK_OBJECT_HANDLE xPkHandle );
+                                    CK_SESSION_HANDLE xSessionHandle,
+                                    CK_OBJECT_HANDLE xPkHandle );
 
 const char * pcPKCS11StrError( CK_RV xError );
 
@@ -247,8 +247,8 @@ int32_t lWriteCertificateToPSACrypto( psa_key_id_t xCertId,
                                       const mbedtls_x509_crt * pxCertificateContext );
 
 psa_status_t xReadObjectFromPSACrypto( unsigned char ** ppucObject,
-                                  size_t * puxObjectLen,
-                                  psa_key_id_t xCertId );
+                                       size_t * puxObjectLen,
+                                       psa_key_id_t xCertId );
 
 psa_status_t xReadPublicKeyFromPSACrypto( unsigned char ** ppucPubKeyDer,
                                           size_t * puxPubDerKeyLen,
@@ -290,7 +290,7 @@ int lPSARandomCallback( void * pvCtx,
                         size_t uxLen );
 
 int32_t lPsa_initMbedtlsPkContext( mbedtls_pk_context * pxMbedtlsPkCtx,
-                                      psa_key_id_t xKeyId );
+                                   psa_key_id_t xKeyId );
 
 #endif /* MBEDTLS_TRANSPORT_PSA */
 

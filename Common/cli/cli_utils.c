@@ -634,15 +634,16 @@ static void vUptimeCommand( ConsoleIO_t * const pxCIO,
     ( void ) ppcArgv;
 
     lRslt = snprintf( pcCliScratchBuffer,
-                     CLI_OUTPUT_SCRATCH_BUF_LEN,
-                     "up %lu day(s) %02lu:%02lu:%02lu.%03lu\r\n",
-                     ulMsCount / MS_PER_DAY,
-                     ( ulMsCount % MS_PER_DAY ) / MS_PER_HOUR,
-                     ( ulMsCount % MS_PER_HOUR ) / MS_PER_MINUTE,
-                     ( ulMsCount % MS_PER_MINUTE ) / MS_PER_SECOND,
-                     ulMsCount % MS_PER_SECOND );
-    if( lRslt > 0 &&
-        lRslt < CLI_OUTPUT_SCRATCH_BUF_LEN )
+                      CLI_OUTPUT_SCRATCH_BUF_LEN,
+                      "up %lu day(s) %02lu:%02lu:%02lu.%03lu\r\n",
+                      ulMsCount / MS_PER_DAY,
+                      ( ulMsCount % MS_PER_DAY ) / MS_PER_HOUR,
+                      ( ulMsCount % MS_PER_HOUR ) / MS_PER_MINUTE,
+                      ( ulMsCount % MS_PER_MINUTE ) / MS_PER_SECOND,
+                      ulMsCount % MS_PER_SECOND );
+
+    if( ( lRslt > 0 ) &&
+        ( lRslt < CLI_OUTPUT_SCRATCH_BUF_LEN ) )
     {
         pxCIO->write( pcCliScratchBuffer, ( size_t ) lRslt );
     }
