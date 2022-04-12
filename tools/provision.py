@@ -403,60 +403,22 @@ class AwsHelper:
         policyFound = False
         for policy in policies["policies"]:
             logger.debug("Found Policy: {}".format(policy["policyName"]))
-            if policy["policyName"] == "ProvisioningScriptPolicy":
+            if policy["policyName"] == "AllowAllDev":
                 policyFound = True
 
         if policyFound:
-            logger.debug('Found existing "ProvisioningScriptPolicy" IoT core policy.')
+            logger.debug('Found existing "AllowAllDev" IoT core policy.')
         else:
-            logger.info(
-                'Existing policy "ProvisioningScriptPolicy" was not found. Creating it...'
-            )
+            logger.info('Existing policy "AllowAllDev" was not found. Creating it...')
 
-        arn_base = "arn:aws:iot:{region}:{account_id}".format(
-            region=self.session.region_name, account_id=self.account
-        )
         policyDocument = {
             "Version": "2012-10-17",
-            "Statement": [
-                {
-                    "Effect": "Allow",
-                    "Action": "iot:Connect",
-                    "Resource": arn_base + ":client/${iot:Connection.Thing.ThingName}",
-                },
-                {
-                    "Effect": "Allow",
-                    "Action": [
-                        "iot:GetPendingJobExecutions",
-                        "iot:GetThingShadow",
-                        "iot:StartNextPendingJobExecution",
-                        "iot:UpdateJobExecution",
-                        "iot:UpdateThingShadow",
-                    ],
-                    "Resource": arn_base + ":thing/${iot:Connection.Thing.ThingName}",
-                },
-                {
-                    "Effect": "Allow",
-                    "Action": [
-                        "iot:GetRetainedMessage",
-                        "iot:Publish",
-                        "iot:Receive",
-                        "iot:RetainPublish",
-                    ],
-                    "Resource": arn_base + ":topic/${iot:Connection.Thing.ThingName}/*",
-                },
-                {
-                    "Effect": "Allow",
-                    "Action": "iot:Subscribe",
-                    "Resource": arn_base
-                    + ":topicfilter/${iot:Connection.Thing.ThingName}/*",
-                },
-            ],
+            "Statement": [{"Effect": "Allow", "Action": "iot:*", "Resource": "*"}],
         }
 
         if not policyFound:
             policy = self.iot_client.create_policy(
-                policyName="ProvisioningScriptPolicy",
+                policyName="AllowAllDev",
                 policyDocument=json.dumps(policyDocument),
             )
 
@@ -502,11 +464,9 @@ class AwsHelper:
         self.create_policy()
 
         # Attach the policy to the principal.
-        print(
-            'Attaching the "ProvisioningScriptPolicy" policy to the device certificate.'
-        )
+        print('Attaching the "AllowAllDev" policy to the device certificate.')
         self.iot_client.attach_policy(
-            policyName="ProvisioningScriptPolicy", target=self.thing["certificateArn"]
+            policyName="AllowAllDev", target=self.thing["certificateArn"]
         )
 
         self.thing["certificatePem"] = bytes(
@@ -553,11 +513,9 @@ class AwsHelper:
         self.create_policy()
 
         # Attach the policy to the principal.
-        print(
-            'Attaching the "ProvisioningScriptPolicy" policy to the device certificate.'
-        )
+        print('Attaching the "AllowAllDev" policy to the device certificate.')
         self.iot_client.attach_policy(
-            policyName="ProvisioningScriptPolicy", target=self.thing["certificateArn"]
+            policyName="AllowAllDev", target=self.thing["certificateArn"]
         )
 
         return self.thing.copy()
