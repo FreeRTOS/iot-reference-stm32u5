@@ -54,8 +54,6 @@
 
 /* MQTT Agent ports. */
 #include "freertos_command_pool.h"
-#include "core_pkcs11_config.h"
-
 
 /* Exponential backoff retry include. */
 #include "backoff_algorithm.h"
@@ -161,16 +159,6 @@ typedef struct MQTTAgentTaskCtx
 
 /* ALPN protocols must be a NULL-terminated list of strings. */
 static const char * pcAlpnProtocols[] = { AWS_IOT_MQTT_ALPN, NULL };
-
-#if defined( MBEDTLS_TRANSPORT_PKCS11 )
-static const PkiObject_t xPrivateKey = PKI_OBJ_PKCS11( pkcs11_TLS_KEY_PRV_LABEL );
-static const PkiObject_t xClientCertificate = PKI_OBJ_PKCS11( pkcs11_TLS_CERT_LABEL );
-static const PkiObject_t pxRootCaChain[] = { PKI_OBJ_PKCS11( pkcs11_ROOT_CA_CERT_LABEL ) };
-#elif defined( MBEDTLS_TRANSPORT_PSA )
-static const PkiObject_t xPrivateKey = PKI_OBJ_PSA_CRYPTO( 0x1234 );
-static const PkiObject_t xClientCertificate = PKI_OBJ_PSA_PS( 0x1234 );
-static const PkiObject_t pxRootCaChain[] = { PKI_OBJ_PSA_PS( 0x1234 ) };
-#endif
 
 static MQTTAgentHandle_t xDefaultInstanceHandle = NULL;
 
@@ -949,6 +937,10 @@ void vMQTTAgentTask( void * pvParameters )
     uint8_t * pucNetworkBuffer = NULL;
     NetworkContext_t * pxNetworkContext = NULL;
     uint16_t usNextRetryBackOff = 0U;
+
+    PkiObject_t xPrivateKey = xPkiObjectFromLabel( TLS_KEY_PRV_LABEL );
+    PkiObject_t xClientCertificate = xPkiObjectFromLabel( TLS_CERT_LABEL );
+    PkiObject_t pxRootCaChain[ 1 ] = { xPkiObjectFromLabel( TLS_ROOT_CA_CERT_LABEL ) };
 
     ( void ) pvParameters;
 

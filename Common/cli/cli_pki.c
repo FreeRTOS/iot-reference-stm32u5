@@ -41,14 +41,13 @@
 #include "tls_transport_config.h"
 #include "mbedtls_transport.h"
 
-#if defined( MBEDTLS_TRANSPORT_PKCS11 )
-
+#ifdef MBEDTLS_TRANSPORT_PKCS11
 /* PKCS11 */
 #include "pkcs11.h"
 #include "core_pkcs11_config.h"
 #include "core_pkcs11.h"
-
-#include "cli_pki_prv.h"
+#include "core_pki_utils.h"
+#endif /* MBEDTLS_TRANSPORT_PKCS11 */
 
 /* Mbedtls */
 #include "mbedtls/pem.h"
@@ -62,7 +61,6 @@
 #include "mbedtls/platform.h"
 #include "pk_wrap.h"
 #include "mbedtls/ecp.h"
-#include "core_pki_utils.h"
 
 
 #define LABEL_PUB_IDX          3
@@ -100,9 +98,8 @@ const CLI_Command_Definition_t xCommandDef_pki =
         "        Generates a new Certificate Signing Request using the private key\r\n"
         "        with the specified label.\r\n"
         "        If no label is specified, the default tls private key is used.\r\n\n"
-        "    pki generate cert <slot>\r\n"
-        "        Generate a new self-signed certificate"
-        "        -- Not yet implemented --\r\n\n"
+        "    pki generate cert <cert_label> <private_key_label>\r\n"
+        "        Generate a new self-signed certificate\r\n\n"
         "    pki import cert <label>\r\n"
         "        Import a certificate into the given slot. The certificate should be \r\n"
         "        copied into the terminal in PEM format, ending with two blank lines.\r\n\n"
@@ -168,24 +165,24 @@ static void vPrintDer( ConsoleIO_t * pxCIO,
     }
 }
 
+
 #define CSR_BUFFER_LEN    2048
 
 static void vSubCommand_GenerateCsr( ConsoleIO_t * pxCIO,
                                      uint32_t ulArgc,
                                      char * ppcArgv[] )
 {
-    BaseType_t xResult = pdTRUE;
-    const char * pcPrvKeyLabel = NULL;
+    PkiStatus_t xStatus = PKI_SUCCESS;
+    char * pcPrvKeyLabel = NULL;
     unsigned char * pucCsrDer = NULL;
     size_t uxCsrDerLen = 0;
     mbedtls_pk_context xPkCtx;
+    mbedtls_entropy_context xEntropyCtx;
+    PkiObject_t xPrvKeyObj;
 
     int lError = -1;
 
-#ifdef MBEDTLS_TRANSPORT_PKCS11
-    CK_SESSION_HANDLE xSessionHandle;
-    pcPrvKeyLabel = pkcs11_TLS_KEY_PRV_LABEL;
-#endif
+    pcPrvKeyLabel = TLS_KEY_PRV_LABEL;
 
     if( ( ulArgc > LABEL_IDX ) &&
         ( ppcArgv[ LABEL_IDX ] != NULL ) )
@@ -193,14 +190,15 @@ static void vSubCommand_GenerateCsr( ConsoleIO_t * pxCIO,
         pcPrvKeyLabel = ppcArgv[ LABEL_IDX ];
     }
 
+    xPrvKeyObj = xPkiObjectFromLabel( pcPrvKeyLabel );
+
     pucCsrDer = pvPortMalloc( CSR_BUFFER_LEN );
     mbedtls_pk_init( &xPkCtx );
+    mbedtls_entropy_init( &xEntropyCtx );
 
-#ifdef MBEDTLS_TRANSPORT_PKCS11
-    xResult = xPkcs11InitMbedtlsPkContext( pcPrvKeyLabel, &xPkCtx, &xSessionHandle );
-#endif /* MBEDTLS_TRANSPORT_PKCS11 */
+    xStatus = xPkiReadPrivateKey( &xPkCtx, &xPrvKeyObj, mbedtls_entropy_func, &xEntropyCtx );
 
-    if( xResult == pdTRUE )
+    if( xStatus == PKI_SUCCESS )
     {
         mbedtls_x509write_csr xCsr;
         static const char * pcSubjectNamePrefix = "CN=";
@@ -241,13 +239,13 @@ static void vSubCommand_GenerateCsr( ConsoleIO_t * pxCIO,
             lError = mbedtls_x509write_csr_der( &xCsr,
                                                 pucCsrDer,
                                                 CSR_BUFFER_LEN,
-                                                lPKCS11RandomCallback, &xSessionHandle );
+                                                mbedtls_entropy_func, &xEntropyCtx );
 
             /* mbedtls_x509write_csr_der returns the length of data written to the end of the buffer. */
             if( lError > 0 )
             {
                 configASSERT( CSR_BUFFER_LEN > lError );
-                uxCsrDerLen = lError;
+                uxCsrDerLen = ( size_t ) lError;
 
                 ( void ) memmove( pucCsrDer, &( pucCsrDer[ CSR_BUFFER_LEN - lError ] ), uxCsrDerLen );
                 lError = 0;
@@ -281,6 +279,8 @@ static void vSubCommand_GenerateCsr( ConsoleIO_t * pxCIO,
         vPortFree( pucCsrDer );
     }
 
+    mbedtls_entropy_free( &xEntropyCtx );
+
 #ifdef MBEDTLS_TRANSPORT_PKCS11
     lError = lPKCS11PkMbedtlsCloseSessionAndFree( &xPkCtx );
 #endif /* MBEDTLS_TRANSPORT_PKCS11 */
@@ -290,39 +290,46 @@ static void vSubCommand_GenerateCertificate( ConsoleIO_t * pxCIO,
                                              uint32_t ulArgc,
                                              char * ppcArgv[] )
 {
-    BaseType_t xResult = pdTRUE;
-    const char * pcPrvKeyLabel = NULL;
+    PkiStatus_t xResult = PKI_SUCCESS;
+    char * pcCertLabel = NULL;
+    char * pcPrvKeyLabel = NULL;
     unsigned char * pucCertDer = NULL;
     size_t uxCertDerLen = 0;
     mbedtls_pk_context xPkCtx;
+    mbedtls_entropy_context xEntropyCtx;
+    PkiObject_t xPrvKeyObject;
     int lError = 0;
 
-#ifdef MBEDTLS_TRANSPORT_PKCS11
-    CK_SESSION_HANDLE xSessionHandle;
-    pcPrvKeyLabel = pkcs11_TLS_KEY_PRV_LABEL;
-#endif
+    pcCertLabel = TLS_CERT_LABEL;
+    pcPrvKeyLabel = TLS_KEY_PRV_LABEL;
 
     if( ( ulArgc > LABEL_IDX ) &&
         ( ppcArgv[ LABEL_IDX ] != NULL ) )
     {
-        pcPrvKeyLabel = ppcArgv[ LABEL_IDX ];
+        pcCertLabel = ppcArgv[ LABEL_IDX ];
     }
 
-    pucCertDer = pvPortMalloc( CSR_BUFFER_LEN );
+    if( ( ulArgc > LABEL_PRV_IDX ) &&
+        ( ppcArgv[ LABEL_PRV_IDX ] != NULL ) )
+    {
+        pcPrvKeyLabel = ppcArgv[ LABEL_PRV_IDX ];
+    }
+
+    pucCertDer = mbedtls_calloc( 1, CSR_BUFFER_LEN );
 
     if( !pucCertDer )
     {
-        lError = -1;
+        xResult = PKI_ERR_NOMEM;
     }
 
+    xPrvKeyObject = xPkiObjectFromLabel( pcPrvKeyLabel );
+
     mbedtls_pk_init( &xPkCtx );
+    mbedtls_entropy_init( &xEntropyCtx );
 
-#ifdef MBEDTLS_TRANSPORT_PKCS11
-    xResult = xPkcs11InitMbedtlsPkContext( pcPrvKeyLabel, &xPkCtx, &xSessionHandle );
-#endif /* MBEDTLS_TRANSPORT_PKCS11 */
+    xResult = xPkiReadPrivateKey( &xPkCtx, &xPrvKeyObject, mbedtls_entropy_func, &xEntropyCtx );
 
-    if( ( xResult == pdTRUE ) &&
-        ( lError >= 0 ) )
+    if( xResult == PKI_SUCCESS )
     {
         mbedtls_x509write_cert xWriteCertCtx;
 
@@ -335,22 +342,18 @@ static void vSubCommand_GenerateCertificate( ConsoleIO_t * pxCIO,
         mbedtls_x509write_crt_set_version( &xWriteCertCtx, MBEDTLS_X509_CRT_VERSION_3 );
         mbedtls_x509write_crt_set_md_alg( &xWriteCertCtx, MBEDTLS_MD_SHA256 );
 
-        if( lError >= 0 )
-        {
-            lError = mbedtls_x509write_crt_set_ns_cert_type( &xWriteCertCtx, MBEDTLS_X509_NS_CERT_TYPE_SSL_CLIENT );
-            MBEDTLS_MSG_IF_ERROR( lError, "Failed to set Certificate NS Cert Type: " );
-        }
+        lError = mbedtls_x509write_crt_set_ns_cert_type( &xWriteCertCtx, MBEDTLS_X509_NS_CERT_TYPE_SSL_CLIENT );
+        MBEDTLS_MSG_IF_ERROR( lError, "Failed to set Certificate NS Cert Type: " );
+
 
         if( lError >= 0 )
         {
             mbedtls_mpi xCertSerialNumber;
             mbedtls_mpi_init( &xCertSerialNumber );
 
-#ifdef MBEDTLS_TRANSPORT_PKCS11
             lError = mbedtls_mpi_fill_random( &xCertSerialNumber, sizeof( uint64_t ),
-                                              lPKCS11RandomCallback, &xSessionHandle );
+                                              mbedtls_entropy_func, &xEntropyCtx );
             MBEDTLS_MSG_IF_ERROR( lError, "Failed to generate a random certificate serial number: " );
-#endif /* MBEDTLS_TRANSPORT_PKCS11 */
 
             if( lError >= 0 )
             {
@@ -437,12 +440,12 @@ static void vSubCommand_GenerateCertificate( ConsoleIO_t * pxCIO,
             lError = mbedtls_x509write_crt_der( &xWriteCertCtx,
                                                 pucCertDer,
                                                 CSR_BUFFER_LEN,
-                                                lPKCS11RandomCallback, &xSessionHandle );
+                                                mbedtls_entropy_func, &xEntropyCtx );
 
             if( lError > 0 )
             {
                 configASSERT( CSR_BUFFER_LEN > lError );
-                uxCertDerLen = lError;
+                uxCertDerLen = ( size_t ) lError;
 
                 ( void ) memmove( pucCertDer, &( pucCertDer[ CSR_BUFFER_LEN - lError ] ), uxCertDerLen );
                 lError = 0;
@@ -459,16 +462,38 @@ static void vSubCommand_GenerateCertificate( ConsoleIO_t * pxCIO,
         ( uxCertDerLen > 0 ) &&
         ( pucCertDer != NULL ) )
     {
-        vPrintDer( pxCIO,
-                   "-----BEGIN CERTIFICATE-----\r\n",
-                   "-----END CERTIFICATE-----\r\n",
-                   pucCertDer, uxCertDerLen );
+        mbedtls_x509_crt xCertContext;
+        mbedtls_x509_crt_init( &xCertContext );
+
+        lError = mbedtls_x509_crt_parse_der_nocopy( &xCertContext,
+                                                    pucCertDer,
+                                                    uxCertDerLen );
+
+        MBEDTLS_MSG_IF_ERROR( lError, "Failed to validate resulting certificate." );
+
+        if( lError >= 0 )
+        {
+//            PkiObject_t xCert = xPkiObjectFromLabel( pcCertLabel );
+            xCertContext.MBEDTLS_PRIVATE( own_buffer ) = 1;
+
+            xResult = xPkiWriteCertificate( pcCertLabel, &xCertContext );
+
+            vPrintDer( pxCIO,
+                       "-----BEGIN CERTIFICATE-----\r\n",
+                       "-----END CERTIFICATE-----\r\n",
+                       pucCertDer, uxCertDerLen );
+        }
+
+        mbedtls_x509_crt_free( &xCertContext );
+        pucCertDer = NULL;
     }
 
     if( pucCertDer != NULL )
     {
-        vPortFree( pucCertDer );
+        mbedtls_free( pucCertDer );
     }
+
+    mbedtls_entropy_free( &xEntropyCtx );
 
 #ifdef MBEDTLS_TRANSPORT_PKCS11
     lError = lPKCS11PkMbedtlsCloseSessionAndFree( &xPkCtx );
@@ -480,16 +505,14 @@ static void vSubCommand_GenerateKey( ConsoleIO_t * pxCIO,
                                      uint32_t ulArgc,
                                      char * ppcArgv[] )
 {
-    BaseType_t xResult;
+    PkiStatus_t xStatus = PKI_SUCCESS;
     char * pcPrvKeyLabel = NULL;
     char * pcPubKeyLabel = NULL;
     unsigned char * pucPublicKeyDer = NULL;
     size_t uxPublicKeyDerLen = 0;
 
-#ifdef MBEDTLS_TRANSPORT_PKCS11
-    pcPrvKeyLabel = pkcs11_TLS_KEY_PRV_LABEL;
-    pcPubKeyLabel = pkcs11_TLS_KEY_PUB_LABEL;
-#endif /* MBEDTLS_TRANSPORT_PKCS11 */
+    pcPrvKeyLabel = TLS_KEY_PRV_LABEL;
+    pcPubKeyLabel = TLS_KEY_PUB_LABEL;
 
     if( ( ulArgc > LABEL_PRV_IDX ) &&
         ( ppcArgv[ LABEL_PRV_IDX ] != NULL ) &&
@@ -499,21 +522,19 @@ static void vSubCommand_GenerateKey( ConsoleIO_t * pxCIO,
         pcPubKeyLabel = ppcArgv[ LABEL_PUB_IDX ];
     }
 
-#ifdef MBEDTLS_TRANSPORT_PKCS11
-    xResult = xPkcs11GenerateKeyPairEC( pcPrvKeyLabel,
-                                        pcPubKeyLabel,
-                                        &pucPublicKeyDer,
-                                        &uxPublicKeyDerLen );
-#endif /* MBEDTLS_TRANSPORT_PKCS11 */
+    xStatus = xPkiGenerateECKeypair( pcPrvKeyLabel,
+                                     pcPubKeyLabel,
+                                     &pucPublicKeyDer,
+                                     &uxPublicKeyDerLen );
 
     /* If successful, print public key in PEM form to terminal. */
-    if( xResult == pdTRUE )
+    if( xStatus == PKI_SUCCESS )
     {
         pxCIO->print( "SUCCESS: Key pair generated and stored in\r\n" );
         pxCIO->print( "Private Key Label: " );
-        pxCIO->write( pcPrvKeyLabel, strnlen( pcPrvKeyLabel, pkcs11configMAX_LABEL_LENGTH ) );
+        pxCIO->write( pcPrvKeyLabel, strnlen( pcPrvKeyLabel, configTLS_MAX_LABEL_LEN ) );
         pxCIO->print( "\r\nPublic Key Label: " );
-        pxCIO->write( pcPubKeyLabel, strnlen( pcPrvKeyLabel, pkcs11configMAX_LABEL_LENGTH ) );
+        pxCIO->write( pcPubKeyLabel, strnlen( pcPrvKeyLabel, configTLS_MAX_LABEL_LEN ) );
         pxCIO->print( "\r\n" );
     }
     else
@@ -569,6 +590,7 @@ static BaseType_t xReadPemFromCliToX509Crt( ConsoleIO_t * pxCIO,
 
             if( lDataRead > 0 )
             {
+                size_t uxDataRead = ( size_t ) lDataRead;
                 if( lDataRead > 64 )
                 {
                     pxCIO->print( "Error: Current line exceeds maximum line length for a PEM file.\r\n" );
@@ -576,8 +598,8 @@ static BaseType_t xReadPemFromCliToX509Crt( ConsoleIO_t * pxCIO,
                 }
                 /* Check if this line will overflow the buffer given for the pem file */
                 else if( ( xErrorFlag == pdFALSE ) &&
-                         ( lDataRead > 0 ) &&
-                         ( ( uxDerDataLen + lDataRead + PEM_LINE_ENDING_LEN ) >= PEM_CERT_MAX_LEN ) )
+                         ( uxDataRead > 0 ) &&
+                         ( ( uxDerDataLen + uxDataRead + PEM_LINE_ENDING_LEN ) >= PEM_CERT_MAX_LEN ) )
                 {
                     pxCIO->print( "Error: Out of memory to store the given PEM file.\r\n" );
                     xErrorFlag = pdTRUE;
@@ -589,7 +611,7 @@ static BaseType_t xReadPemFromCliToX509Crt( ConsoleIO_t * pxCIO,
                     {
                         char * pcLabelEnd = strnstr( &( pcInputBuffer[ strlen( PEM_BEGIN ) ] ),
                                                      PEM_META_SUFFIX,
-                                                     lDataRead - strlen( PEM_BEGIN ) );
+                                                     uxDataRead - strlen( PEM_BEGIN ) );
 
                         if( pcLabelEnd == NULL )
                         {
@@ -599,7 +621,7 @@ static BaseType_t xReadPemFromCliToX509Crt( ConsoleIO_t * pxCIO,
                         else
                         {
                             xBeginFound = pdTRUE;
-                            lDataRead = pxCIO->readline( &pcInputBuffer );
+                            continue;
                         }
                     }
                     else
@@ -614,7 +636,7 @@ static BaseType_t xReadPemFromCliToX509Crt( ConsoleIO_t * pxCIO,
                     {
                         char * pcLabelEnd = strnstr( &( pcInputBuffer[ strlen( PEM_END ) ] ),
                                                      PEM_META_SUFFIX,
-                                                     lDataRead - strlen( PEM_END ) );
+                                                     uxDataRead - strlen( PEM_END ) );
 
                         if( pcLabelEnd == NULL )
                         {
@@ -639,7 +661,7 @@ static BaseType_t xReadPemFromCliToX509Crt( ConsoleIO_t * pxCIO,
                     int lRslt = mbedtls_base64_decode( &( pucDerBuffer[ uxDerDataLen ] ),
                                                        PEM_CERT_MAX_LEN - uxDerDataLen,
                                                        &uxBytesWritten,
-                                                       ( unsigned char * ) pcInputBuffer, lDataRead );
+                                                       ( unsigned char * ) pcInputBuffer, uxDataRead );
 
                     if( lRslt == 0 )
                     {
@@ -668,12 +690,7 @@ static BaseType_t xReadPemFromCliToX509Crt( ConsoleIO_t * pxCIO,
         mbedtls_x509_crt_init( pxCertificateContext );
         int lRslt = mbedtls_x509_crt_parse_der_nocopy( pxCertificateContext, pucDerBuffer, uxDerDataLen );
 
-        if( lRslt >= 0 )
-        {
-            /* Transfer buffer ownership to certificate context */
-            pxCertificateContext->own_buffer = 1;
-        }
-        else
+        if( lRslt < 0 )
         {
             vPortFree( pucDerBuffer );
             xErrorFlag = pdTRUE;
@@ -688,13 +705,10 @@ static void vSubCommand_ImportCertificate( ConsoleIO_t * pxCIO,
                                            char * ppcArgv[] )
 {
     BaseType_t xResult = pdTRUE;
+    PkiStatus_t xStatus = PKI_SUCCESS;
 
-    char pcCertLabel[ pkcs11configMAX_LABEL_LENGTH + 1 ] = { 0 };
+    char pcCertLabel[ configTLS_MAX_LABEL_LEN + 1 ] = { 0 };
     size_t xCertLabelLen = 0;
-
-    char * pcCertData = NULL;
-    size_t xCertDataLen = 0;
-
     mbedtls_x509_crt xCertContext;
 
     mbedtls_x509_crt_init( &xCertContext );
@@ -702,16 +716,16 @@ static void vSubCommand_ImportCertificate( ConsoleIO_t * pxCIO,
     if( ( ulArgc > LABEL_IDX ) &&
         ( ppcArgv[ LABEL_IDX ] != NULL ) )
     {
-        ( void ) strncpy( pcCertLabel, ppcArgv[ LABEL_IDX ], pkcs11configMAX_LABEL_LENGTH + 1 );
+        ( void ) strncpy( pcCertLabel, ppcArgv[ LABEL_IDX ], configTLS_MAX_LABEL_LEN + 1 );
     }
     else
     {
-        ( void ) strncpy( pcCertLabel, pkcs11_TLS_CERT_LABEL, pkcs11configMAX_LABEL_LENGTH + 1 );
+        ( void ) strncpy( pcCertLabel, TLS_CERT_LABEL, configTLS_MAX_LABEL_LEN + 1 );
     }
 
-    xCertLabelLen = strnlen( pcCertLabel, pkcs11configMAX_LABEL_LENGTH );
+    xCertLabelLen = strnlen( pcCertLabel, configTLS_MAX_LABEL_LEN );
 
-    if( xCertLabelLen > pkcs11configMAX_LABEL_LENGTH )
+    if( xCertLabelLen > configTLS_MAX_LABEL_LEN )
     {
         pxCIO->print( "Error: Certificate label: '" );
         pxCIO->print( pcCertLabel );
@@ -721,44 +735,30 @@ static void vSubCommand_ImportCertificate( ConsoleIO_t * pxCIO,
 
     if( xResult == pdTRUE )
     {
-        pcCertData = pvPortMalloc( PEM_CERT_MAX_LEN + 1 );
-        ( void ) memset( pcCertData, 0, PEM_CERT_MAX_LEN + 1 );
-    }
+        xResult = xReadPemFromCliToX509Crt( pxCIO, &xCertContext );
 
-    if( pcCertData == NULL )
-    {
-        pxCIO->print( "Error: Failed to allocate #PEM_CERT_MAX_LEN bytes to store the given certificate.\r\n" );
-        xResult = pdFALSE;
+        if( !xResult )
+        {
+            LogDebug( "xReadPemFromCliToX509Crt function failed." );
+        }
     }
-    else
-    {
-        xCertDataLen = xReadPemFromCliToX509Crt( pxCIO, &xCertContext );
-    }
-
-    if( xCertDataLen == 0 )
-    {
-        LogDebug( "xReadPemFromCliToX509Crt returned %ld", xCertDataLen );
-        xResult = pdFALSE;
-    }
-
-#ifdef MBEDTLS_TRANSPORT_PKCS11
-    if( xResult == pdTRUE )
-    {
-        xResult = xPkcs11WriteCertificate( pcCertLabel, &xCertContext );
-    }
-#endif /* MBEDTLS_TRANSPORT_PKCS11 */
 
     if( xResult == pdTRUE )
     {
-        pxCIO->print( "Success: Certificate loaded to label: '" );
-        pxCIO->print( pcCertLabel );
-        pxCIO->print( "'.\r\n" );
-    }
-    else
-    {
-        pxCIO->print( "Error: failed to save certificate to label: '" );
-        pxCIO->print( pcCertLabel );
-        pxCIO->print( "'.\r\n" );
+        xStatus = xPkiWriteCertificate( pcCertLabel, &xCertContext );
+
+        if( xStatus == PKI_SUCCESS )
+        {
+            pxCIO->print( "Success: Certificate loaded to label: '" );
+            pxCIO->print( pcCertLabel );
+            pxCIO->print( "'.\r\n" );
+        }
+        else
+        {
+            pxCIO->print( "Error: failed to save certificate to label: '" );
+            pxCIO->print( pcCertLabel );
+            pxCIO->print( "'.\r\n" );
+        }
     }
 }
 
@@ -766,6 +766,8 @@ static void vSubCommand_ImportKey( ConsoleIO_t * pxCIO,
                                    uint32_t ulArgc,
                                    char * ppcArgv[] )
 {
+    ( void ) ulArgc;
+    ( void ) ppcArgv;
     pxCIO->print( "Not Implemented\r\n" );
 }
 
@@ -775,11 +777,11 @@ static void vSubCommand_ExportCertificate( ConsoleIO_t * pxCIO,
 {
     mbedtls_x509_crt xCertificateContext;
     char * pcCertLabel = NULL;
-    BaseType_t xResult = pdTRUE;
+    PkiStatus_t xStatus = PKI_SUCCESS;
+    PkiObject_t xCert;
 
-#ifdef MBEDTLS_TRANSPORT_PKCS11
-    pcCertLabel = pkcs11_TLS_CERT_LABEL;
-#endif /* MBEDTLS_TRANSPORT_PKCS11 */
+    pcCertLabel = TLS_CERT_LABEL;
+    mbedtls_x509_crt_init( &xCertificateContext );
 
     if( ( ulArgc > LABEL_IDX ) &&
         ( ppcArgv[ LABEL_IDX ] != NULL ) )
@@ -787,11 +789,11 @@ static void vSubCommand_ExportCertificate( ConsoleIO_t * pxCIO,
         pcCertLabel = ppcArgv[ LABEL_PUB_IDX ];
     }
 
-#ifdef MBEDTLS_TRANSPORT_PKCS11
-    xResult = xPkcs11ReadCertificate( &xCertificateContext, pcCertLabel );
-#endif /* MBEDTLS_TRANSPORT_PKCS11 */
+    xCert = xPkiObjectFromLabel( pcCertLabel );
 
-    if( xResult == pdTRUE )
+    xStatus = xPkiReadCertificate( &xCertificateContext, &xCert );
+
+    if( xStatus == PKI_SUCCESS )
     {
         vPrintDer( pxCIO,
                    "-----BEGIN CERTIFICATE-----\r\n",
@@ -807,14 +809,13 @@ static void vSubCommand_ExportKey( ConsoleIO_t * pxCIO,
                                    uint32_t ulArgc,
                                    char * ppcArgv[] )
 {
-    BaseType_t xResult;
+    PkiStatus_t xStatus = PKI_SUCCESS;
     char * pcPubKeyLabel = NULL;
     unsigned char * pucPublicKeyDer = NULL;
     size_t uxPublicKeyDerLen = 0;
+    PkiObject_t xPubKeyObj;
 
-#ifdef MBEDTLS_TRANSPORT_PKCS11
-    pcPubKeyLabel = pkcs11_TLS_KEY_PUB_LABEL;
-#endif /* MBEDTLS_TRANSPORT_PKCS11 */
+    pcPubKeyLabel = TLS_KEY_PUB_LABEL;
 
     if( ( ulArgc > LABEL_IDX ) &&
         ( ppcArgv[ LABEL_IDX ] != NULL ) )
@@ -822,12 +823,12 @@ static void vSubCommand_ExportKey( ConsoleIO_t * pxCIO,
         pcPubKeyLabel = ppcArgv[ LABEL_PUB_IDX ];
     }
 
-#ifdef MBEDTLS_TRANSPORT_PKCS11
-    xResult = xPkcs11ExportPublicKey( pcPubKeyLabel, &pucPublicKeyDer, &uxPublicKeyDerLen );
-#endif /* MBEDTLS_TRANSPORT_PKCS11 */
+    xPubKeyObj = xPkiObjectFromLabel( pcPubKeyLabel );
+
+    xStatus = xPkiReadPublicKeyDer( &pucPublicKeyDer, &uxPublicKeyDerLen, &xPubKeyObj );
 
     /* If successful, print public key in PEM form to terminal. */
-    if( xResult == pdTRUE )
+    if( xStatus == PKI_SUCCESS )
     {
         pxCIO->print( "Public Key Label: " );
     }
@@ -836,7 +837,7 @@ static void vSubCommand_ExportKey( ConsoleIO_t * pxCIO,
         pxCIO->print( "ERROR: Failed to locate public key with label: '" );
     }
 
-    pxCIO->write( pcPubKeyLabel, strnlen( pcPubKeyLabel, pkcs11configMAX_LABEL_LENGTH ) );
+    pxCIO->write( pcPubKeyLabel, strnlen( pcPubKeyLabel, configTLS_MAX_LABEL_LEN ) );
     pxCIO->print( "\r\n" );
 
     /* Print PEM public key */
@@ -976,5 +977,3 @@ static void vCommand_PKI( ConsoleIO_t * pxCIO,
         pxCIO->print( xCommandDef_pki.pcHelpString );
     }
 }
-
-#endif /* defined( MBEDTLS_TRANSPORT_PKCS11 ) */

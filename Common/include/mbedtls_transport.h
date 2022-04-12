@@ -28,6 +28,7 @@
 #ifndef _MBEDTLS_TRANSPORT_H
 #define _MBEDTLS_TRANSPORT_H
 
+#include "mbedtls_error_utils.h"
 #include "transport_interface.h"
 
 /* socket definitions  */
@@ -42,6 +43,8 @@
 #include "mbedtls/x509.h"
 #include "pk_wrap.h"
 #include "tls_transport_config.h"
+
+#include "PkiObject.h"
 
 #ifdef MBEDTLS_TRANSPORT_PKCS11
 #include "core_pkcs11_config.h"
@@ -73,16 +76,16 @@ typedef enum
 
 typedef enum TlsTransportStatus
 {
-    TLS_TRANSPORT_SUCCESS = 0,
-    TLS_TRANSPORT_UNKNOWN_ERROR = -1,
-    TLS_TRANSPORT_INVALID_PARAMETER = -2,
-    TLS_TRANSPORT_INSUFFICIENT_MEMORY = -3,
-    TLS_TRANSPORT_INVALID_CREDENTIALS = -4,
-    TLS_TRANSPORT_HANDSHAKE_FAILED = -5,
-    TLS_TRANSPORT_INTERNAL_ERROR = -6,
+    TLS_TRANSPORT_SUCCESS =             PKI_SUCCESS,
+    TLS_TRANSPORT_UNKNOWN_ERROR =       PKI_ERR,
+    TLS_TRANSPORT_INVALID_PARAMETER =       PKI_ERR_ARG_INVALID,
+    TLS_TRANSPORT_INSUFFICIENT_MEMORY =     PKI_ERR_NOMEM,
+    TLS_TRANSPORT_INVALID_CREDENTIALS =     -4,
+    TLS_TRANSPORT_HANDSHAKE_FAILED =        -5,
+    TLS_TRANSPORT_INTERNAL_ERROR =          PKI_ERR_INTERNAL,
     TLS_TRANSPORT_CONNECT_FAILURE = -7,
-    TLS_TRANSPORT_PKI_OBJECT_NOT_FOUND = -8,
-    TLS_TRANSPORT_PKI_OBJECT_PARSE_FAIL = -9,
+    TLS_TRANSPORT_PKI_OBJECT_NOT_FOUND =    PKI_ERR_OBJ_NOT_FOUND,
+    TLS_TRANSPORT_PKI_OBJECT_PARSE_FAIL =   PKI_ERR_OBJ_PARSING_FAILED,
     TLS_TRANSPORT_DNS_FAILED = -10,
     TLS_TRANSPORT_INSUFFICIENT_SOCKETS = -11,
     TLS_TRANSPORT_INVALID_HOSTNAME = -12,
@@ -93,46 +96,6 @@ typedef enum TlsTransportStatus
 
 typedef void ( * GenericCallback_t )( void * );
 
-typedef enum PkiObjectForm
-{
-    OBJ_FORM_NONE,
-    OBJ_FORM_PEM,
-    OBJ_FORM_DER,
-#ifdef MBEDTLS_TRANSPORT_PKCS11
-    OBJ_FORM_PKCS11_LABEL,
-#endif
-#ifdef MBEDTLS_TRANSPORT_PSA
-    OBJ_FORM_PSA_CRYPTO,
-    OBJ_FORM_PSA_ITS,
-    OBJ_FORM_PSA_PS,
-#endif
-} PkiObjectForm_t;
-
-typedef struct PkiObject
-{
-    PkiObjectForm_t xForm;
-    size_t uxLen;
-    union
-    {
-        const unsigned char * pucBuffer;
-        char * pcPkcs11Label;
-#ifdef MBEDTLS_TRANSPORT_PSA
-        psa_key_id_t xPsaCryptoId;
-        psa_storage_uid_t xPsaStorageId;
-#endif /* MBEDTLS_TRANSPORT_PSA */
-    };
-} PkiObject_t;
-
-/* Convenience initializers */
-#define PKI_OBJ_PEM( buffer, len )       { .xForm = OBJ_FORM_PEM, .uxLen = len, .pucBuffer = buffer }
-#define PKI_OBJ_DER( buffer, len )       { .xForm = OBJ_FORM_DER, .uxLen = len, .pucBuffer = buffer }
-#if defined( MBEDTLS_TRANSPORT_PKCS11 )
-#define PKI_OBJ_PKCS11( label )          { .xForm = OBJ_FORM_PKCS11_LABEL, .uxLen = strlen( label ), .pcPkcs11Label = label }
-#elif defined( MBEDTLS_TRANSPORT_PSA ) /* MBEDTLS_TRANSPORT_PKCS11 */
-#define PKI_OBJ_PSA_CRYPTO( key_id )     { .xForm = OBJ_FORM_PSA_CRYPTO, .xPsaCryptoId = key_id }
-#define PKI_OBJ_PSA_ITS( storage_id )    { .xForm = OBJ_FORM_PSA_ITS, .xPsaStorageId = storage_id }
-#define PKI_OBJ_PSA_PS( storage_id )     { .xForm = OBJ_FORM_PSA_PS, .xPsaStorageId = storage_id }
-#endif /* MBEDTLS_TRANSPORT_PSA */
 /*-----------------------------------------------------------*/
 
 /* Lwip related definitions */
@@ -151,45 +114,6 @@ typedef struct PkiObject
 typedef int SockHandle_t;
 
 /*-----------------------------------------------------------*/
-
-/**
- * @brief Utility for converting the high-level code in an mbedTLS error to string,
- * if the code-contains a high-level code; otherwise, using a default string.
- */
-#ifndef mbedtlsHighLevelCodeOrDefault
-#define mbedtlsHighLevelCodeOrDefault( mbedTlsCode )       \
-    ( mbedtls_high_level_strerr( mbedTlsCode ) != NULL ) ? \
-    mbedtls_high_level_strerr( mbedTlsCode ) : ( const char * ) "<No-High-Level-Code>"
-#endif /* mbedtlsHighLevelCodeOrDefault */
-
-/**
- * @brief Utility for converting the level-level code in an mbedTLS error to string,
- * if the code-contains a level-level code; otherwise, using a default string.
- */
-#ifndef mbedtlsLowLevelCodeOrDefault
-#define mbedtlsLowLevelCodeOrDefault( mbedTlsCode )       \
-    ( mbedtls_low_level_strerr( mbedTlsCode ) != NULL ) ? \
-    mbedtls_low_level_strerr( mbedTlsCode ) : ( const char * ) "<No-Low-Level-Code>"
-#endif /* mbedtlsLowLevelCodeOrDefault */
-
-#define MBEDTLS_MSG_IF_ERROR( lError, pMessage )            \
-    do                                                      \
-    {                                                       \
-        if( lError < 0 )                                    \
-        LogError( pMessage " %s : %s.",                     \
-                  mbedtlsHighLevelCodeOrDefault( lError ),  \
-                  mbedtlsLowLevelCodeOrDefault( lError ) ); \
-    } while( 0 )
-
-#define MBEDTLS_LOG_IF_ERROR( lError, pFormatString, ... )  \
-    do                                                      \
-    {                                                       \
-        if( lError < 0 )                                    \
-        LogError( pFormatString " %s : %s.", __VA_ARGS__,   \
-                  mbedtlsHighLevelCodeOrDefault( lError ),  \
-                  mbedtlsLowLevelCodeOrDefault( lError ) ); \
-    } while( 0 )
-
 
 /**
  * @brief Allocate a TLS Network Context
@@ -300,10 +224,10 @@ int32_t lReadCertificateFromPKCS11( mbedtls_x509_crt * pxCertificateContext,
 
 int32_t lWriteCertificateToPKCS11( mbedtls_x509_crt * pxCertificateContext,
                                    CK_SESSION_HANDLE xP11SessionHandle,
-                                   const char * pcCertificateLabel,
+                                   char * pcCertificateLabel,
                                    size_t uxCertificateLabelLen );
 
-int32_t lPKCS11_initMbedtlsPkContext( mbedtls_pk_context * pxMbedtlsPkCtx,
+CK_RV xPKCS11_initMbedtlsPkContext( mbedtls_pk_context * pxMbedtlsPkCtx,
                                       CK_SESSION_HANDLE xSessionHandle,
                                       CK_OBJECT_HANDLE xPkHandle );
 
@@ -319,19 +243,44 @@ int lPKCS11PkMbedtlsCloseSessionAndFree( mbedtls_pk_context * pxMbedtlsPkCtx );
 
 #ifdef MBEDTLS_TRANSPORT_PSA
 
+int32_t lWriteCertificateToPSACrypto( psa_key_id_t xCertId,
+                                      const mbedtls_x509_crt * pxCertificateContext );
+
+psa_status_t xReadObjectFromPSACrypto( unsigned char ** ppucObject,
+                                  size_t * puxObjectLen,
+                                  psa_key_id_t xCertId );
+
+psa_status_t xReadPublicKeyFromPSACrypto( unsigned char ** ppucPubKeyDer,
+                                          size_t * puxPubDerKeyLen,
+                                          psa_key_id_t xKeyId );
+
 int32_t lReadCertificateFromPSACrypto( mbedtls_x509_crt * pxCertificateContext,
                                        psa_key_id_t xCertId );
 
-int32_t lLoadObjectFromPsaPs( uint8_t ** ppucData,
-                              size_t * puxDataLen,
-                              psa_storage_uid_t xObjectUid );
+int32_t lWriteObjectToPsaIts( psa_storage_uid_t xObjectUid,
+                              uint8_t * pucData,
+                              size_t uxDataLen );
 
-int32_t lLoadObjectFromPsaIts( uint8_t ** ppucData,
+int32_t lReadObjectFromPsaIts( uint8_t ** ppucData,
                                size_t * puxDataLen,
                                psa_storage_uid_t xObjectUid );
 
+int32_t lWriteObjectToPsaPs( psa_storage_uid_t xObjectUid,
+                             uint8_t * pucData,
+                             size_t uxDataLen );
+
+int32_t lReadObjectFromPsaPs( uint8_t ** ppucData,
+                              size_t * puxDataLen,
+                              psa_storage_uid_t xObjectUid );
+
+int32_t lWriteCertificateToPsaIts( psa_storage_uid_t xCertUid,
+                                   const mbedtls_x509_crt * pxCertificateContext );
+
 int32_t lReadCertificateFromPsaIts( mbedtls_x509_crt * pxCertificateContext,
                                     psa_storage_uid_t xCertUid );
+
+int32_t lWriteCertificateToPsaPS( psa_storage_uid_t xCertUid,
+                                  const mbedtls_x509_crt * pxCertificateContext );
 
 int32_t lReadCertificateFromPsaPS( mbedtls_x509_crt * pxCertificateContext,
                                    psa_storage_uid_t xCertUid );
@@ -339,6 +288,9 @@ int32_t lReadCertificateFromPsaPS( mbedtls_x509_crt * pxCertificateContext,
 int lPSARandomCallback( void * pvCtx,
                         unsigned char * pucOutput,
                         size_t uxLen );
+
+int32_t lPsa_initMbedtlsPkContext( mbedtls_pk_context * pxMbedtlsPkCtx,
+                                      psa_key_id_t xKeyId );
 
 #endif /* MBEDTLS_TRANSPORT_PSA */
 
