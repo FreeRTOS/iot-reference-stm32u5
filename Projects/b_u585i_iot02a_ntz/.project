@@ -42,11 +42,6 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
-			<name>launch_scripts</name>
-			<type>2</type>
-			<locationURI>WORKSPACE_LOC/tools/launch_scripts</locationURI>
-		</link>
-		<link>
 			<name>Drivers/bsp</name>
 			<type>2</type>
 			<locationURI>WORKSPACE_LOC/Drivers/BSP/B-U585I-IOT02A</locationURI>
@@ -394,7 +389,7 @@
 	</linkedResources>
 	<filteredResources>
 		<filter>
-			<id>1648685024403</id>
+			<id>1649178521185</id>
 			<name></name>
 			<type>6</type>
 			<matcher>

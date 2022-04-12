@@ -1,0 +1,12 @@
+.PHONY : tfm_clean
+
+clean : tfm_clean
+
+pre-build : info spe_bin nspe_build_reqs
+
+secondary-outputs : update factory
+
+include ../tfm.mk
+
+tfm_clean:
+	-${RM} *.{hex,bin,elf,axf,sh,ld,c}
