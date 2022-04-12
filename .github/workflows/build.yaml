@@ -70,7 +70,7 @@ jobs:
         shell: bash
         run: |
           CUBEIDE="STM32CubeIDE/${IDE_BIN} --launcher.suppressErrors -nosplash -application org.eclipse.cdt.managedbuilder.core.headlessbuild -data ${GITHUB_WORKSPACE} -verbose"
-          $CUBEIDE -build ${{ matrix.project }}
+          $CUBEIDE -build "${{ matrix.project }}/.*"
           echo "Listing artifacts: "
           ls -1 "${{ github.workspace }}/Projects/${{ matrix.project }}/Debug/${{ matrix.project }}"*
       - name: Copy Artifacts
@@ -161,8 +161,8 @@ jobs:
         shell: bash
         run: |
           CUBEIDE="STM32CubeIDE/${IDE_BIN} --launcher.suppressErrors -nosplash -application org.eclipse.cdt.managedbuilder.core.headlessbuild -data ${GITHUB_WORKSPACE} -verbose -no-indexer"
-          ${CUBEIDE} -build ${{ matrix.project }}
-          # ${CUBEIDE} -build ${{ matrix.project }}
+          ${CUBEIDE} -build "${{ matrix.project }}/.*"
+          ${CUBEIDE} -build "${{ matrix.project }}/.*"
       - name: Copy Artifacts
         shell: bash
         run: |

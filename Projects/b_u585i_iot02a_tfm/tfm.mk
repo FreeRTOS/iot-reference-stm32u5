@@ -100,7 +100,7 @@ MBEDTLS_PATCHES_APPLIED = ${wildcard ${MBEDTLS_SRC_PATH}/*.patched}
 # Apply each mbedtls patch
 ${MBEDTLS_SRC_PATH}/%.patched : ${TFM_SRC_PATH}/lib/ext/mbedcrypto/%.patch
 	@echo Applying mbedtls patch: $(notdir $<)
-	git -C ${MBEDTLS_SRC_PATH} apply $<
+	git -C ${MBEDTLS_SRC_PATH} apply --whitespace=nowarn $<
 	cp $< $@
 	touch $@
 
@@ -111,7 +111,7 @@ MCUBOOT_PATCHES_APPLIED = ${wildcard ${MCUBOOT_SRC_PATH}/*.patched}
 # Apply each mcuboot patch
 ${MCUBOOT_SRC_PATH}/%.patched : ${TFM_SRC_PATH}/lib/ext/mcuboot/%.patch
 	@echo Applying mcuboot patch: $(notdir $<)
-	git -C ${MCUBOOT_SRC_PATH} apply $<
+	git -C ${MCUBOOT_SRC_PATH} apply --whitespace=nowarn $<
 	cp $< $@
 	touch $@
 

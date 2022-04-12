@@ -177,7 +177,7 @@ extern void vMQTTAgentTask( void * );
 extern void vMotionSensorsPublish( void * );
 extern void vEnvironmentSensorPublishTask( void * );
 extern void vShadowDeviceTask( void * );
-/*extern void vOTAUpdateTask( void * pvParam ); */
+extern void vOTAUpdateTask( void * pvParam );
 extern void vDefenderAgentTask( void * );
 /*extern void vTimeSyncTask( void * ); */
 
@@ -221,8 +221,7 @@ void vInitTask( void * pvArgs )
 
     configASSERT( xResult == pdTRUE );
 
-/*    xResult = xTaskCreate( vOTAUpdateTask, "OTAUpdate", 4096, NULL, tskIDLE_PRIORITY + 1, NULL ); */
-/* */
+    xResult = xTaskCreate( vOTAUpdateTask, "OTAUpdate", 4096, NULL, tskIDLE_PRIORITY + 1, NULL );
     configASSERT( xResult == pdTRUE );
 
 /*    xResult = xTaskCreate( vEnvironmentSensorPublishTask, "EnvSense", 1024, NULL, 5, NULL ); */

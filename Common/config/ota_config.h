@@ -99,7 +99,7 @@
  *  Please note that this must be set larger than zero.
  *
  */
-#define otaconfigMAX_NUM_BLOCKS_REQUEST         4U
+#define otaconfigMAX_NUM_BLOCKS_REQUEST         1U
 
 /**
  * @brief The maximum number of requests allowed to send without a response before we abort.
@@ -116,7 +116,7 @@
  * This configurations parameter sets the maximum number of static data buffers used by
  * the OTA agent for job and file data blocks received.
  */
-#define otaconfigMAX_NUM_OTA_DATA_BUFFERS       5U
+#define otaconfigMAX_NUM_OTA_DATA_BUFFERS       2U
 
 /**
  * @brief How frequently the device will report its OTA progress to the cloud.
