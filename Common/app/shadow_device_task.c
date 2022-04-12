@@ -155,17 +155,17 @@
 typedef struct MQTTAgentCommandContext
 {
     char * pcDeviceName;
-    uint16_t xDeviceNameLen;
+    uint8_t ucDeviceNameLen;
     char * pcTopicUpdate;
-    uint16_t xTopicUpdateLen;
+    uint16_t usTopicUpdateLen;
     char * pcTopicUpdateDelta;
-    uint16_t xTopicUpdateDeltaLen;
+    uint16_t usTopicUpdateDeltaLen;
     char * pcTopicUpdateAccepted;
-    uint16_t xTopicUpdateAcceptedLen;
+    uint16_t usTopicUpdateAcceptedLen;
     char * pcTopicUpdateRejected;
-    uint16_t xTopicUpdateRejectedLen;
+    uint16_t usTopicUpdateRejectedLen;
     char * pcTopicDelete;
-    uint16_t xTopicDeleteLen;
+    uint16_t usTopicDeleteLen;
 
     /**
      * @brief The simulated device current power on state.
@@ -203,20 +203,6 @@ extern MQTTAgentContext_t xGlobalMqttAgentContext;
  * false otherwise.
  */
 static bool prvSubscribeToShadowUpdateTopics( ShadowDeviceCtx_t * pxCtx );
-
-/**
- * @brief Passed into MQTTAgent_Subscribe() as the callback to execute when the
- * broker ACKs the SUBSCRIBE message. Its implementation sends a notification
- * to the task that called MQTTAgent_Subscribe() to let the task know the
- * SUBSCRIBE operation completed. It also sets the xReturnStatus of the
- * structure passed in as the command's context to the value of the
- * xReturnStatus parameter - which enables the task to check the status of the
- * operation.
- *
- * See https://freertos.org/mqtt/mqtt-agent-demo.html#example_mqtt_api_call
- */
-static void prvSubscribeCommandCallback( MQTTAgentCommandContext_t * pCmdCallbackContext,
-                                         MQTTAgentReturnInfo_t * pxReturnInfo );
 
 /**
  * @brief The callback to execute when there is an incoming publish on the
@@ -265,67 +251,81 @@ static bool prvInitializeCtx( ShadowDeviceCtx_t * pxCtx )
 {
     bool xSuccess = true;
 
+    configASSERT( pxCtx );
+
+    pxCtx->pcDeviceName = NULL;
+
     /* Note: KVStore_getSize always returns the buffer length needed */
-    pxCtx->pcDeviceName = pvPortMalloc( KVStore_getSize( CS_CORE_THING_NAME ) );
-
-    if( pxCtx->pcDeviceName != NULL )
+    if( KVStore_getSize( CS_CORE_THING_NAME ) <= UINT8_MAX )
     {
-        pxCtx->xDeviceNameLen = KVStore_getString( CS_CORE_THING_NAME,
-                                                   pxCtx->pcDeviceName,
-                                                   KVStore_getSize( CS_CORE_THING_NAME ) );
+        size_t uxDeviceNameLen = 0;
+        pxCtx->pcDeviceName = KVStore_getStringHeap( CS_CORE_THING_NAME, NULL );
+        if( pxCtx->pcDeviceName )
+        {
+            uxDeviceNameLen = strnlen( pxCtx->pcDeviceName, KVStore_getSize( CS_CORE_THING_NAME ) );
+        }
 
+        if( uxDeviceNameLen < UINT8_MAX )
+        {
+            pxCtx->ucDeviceNameLen = ( uint8_t ) uxDeviceNameLen;
+        }
+    }
+
+    if( pxCtx->pcDeviceName != NULL &&
+        pxCtx->ucDeviceNameLen > 0 )
+    {
         ShadowStatus_t xStatus = SHADOW_SUCCESS;
 
-        pxCtx->xTopicUpdateLen = SHADOW_TOPIC_LENGTH_UPDATE( pxCtx->xDeviceNameLen );
-        pxCtx->pcTopicUpdate = pvPortMalloc( pxCtx->xTopicUpdateLen );
+        pxCtx->usTopicUpdateLen = SHADOW_TOPIC_LENGTH_UPDATE( pxCtx->ucDeviceNameLen );
+        pxCtx->pcTopicUpdate = pvPortMalloc( pxCtx->usTopicUpdateLen );
 
         xStatus |= Shadow_GetTopicString( ShadowTopicStringTypeUpdate,
                                           pxCtx->pcDeviceName,
-                                          pxCtx->xDeviceNameLen,
+                                          pxCtx->ucDeviceNameLen,
                                           pxCtx->pcTopicUpdate,
-                                          pxCtx->xTopicUpdateLen,
-                                          &( pxCtx->xTopicUpdateLen ) );
+                                          pxCtx->usTopicUpdateLen,
+                                          &( pxCtx->usTopicUpdateLen ) );
 
-        pxCtx->xTopicUpdateDeltaLen = SHADOW_TOPIC_LENGTH_UPDATE_DELTA( pxCtx->xDeviceNameLen );
-        pxCtx->pcTopicUpdateDelta = pvPortMalloc( pxCtx->xTopicUpdateDeltaLen );
+        pxCtx->usTopicUpdateDeltaLen = SHADOW_TOPIC_LENGTH_UPDATE_DELTA( pxCtx->ucDeviceNameLen );
+        pxCtx->pcTopicUpdateDelta = pvPortMalloc( pxCtx->usTopicUpdateDeltaLen );
 
         xStatus |= Shadow_GetTopicString( ShadowTopicStringTypeUpdateDelta,
                                           pxCtx->pcDeviceName,
-                                          pxCtx->xDeviceNameLen,
+                                          pxCtx->ucDeviceNameLen,
                                           pxCtx->pcTopicUpdateDelta,
-                                          pxCtx->xTopicUpdateDeltaLen,
-                                          &( pxCtx->xTopicUpdateDeltaLen ) );
+                                          pxCtx->usTopicUpdateDeltaLen,
+                                          &( pxCtx->usTopicUpdateDeltaLen ) );
 
-        pxCtx->xTopicUpdateAcceptedLen = SHADOW_TOPIC_LENGTH_UPDATE_ACCEPTED( pxCtx->xDeviceNameLen );
-        pxCtx->pcTopicUpdateAccepted = pvPortMalloc( pxCtx->xTopicUpdateAcceptedLen );
+        pxCtx->usTopicUpdateAcceptedLen = SHADOW_TOPIC_LENGTH_UPDATE_ACCEPTED( pxCtx->ucDeviceNameLen );
+        pxCtx->pcTopicUpdateAccepted = pvPortMalloc( pxCtx->usTopicUpdateAcceptedLen );
 
         xStatus |= Shadow_GetTopicString( ShadowTopicStringTypeUpdateAccepted,
                                           pxCtx->pcDeviceName,
-                                          pxCtx->xDeviceNameLen,
+                                          pxCtx->ucDeviceNameLen,
                                           pxCtx->pcTopicUpdateAccepted,
-                                          pxCtx->xTopicUpdateAcceptedLen,
-                                          &( pxCtx->xTopicUpdateAcceptedLen ) );
+                                          pxCtx->usTopicUpdateAcceptedLen,
+                                          &( pxCtx->usTopicUpdateAcceptedLen ) );
 
-        pxCtx->xTopicUpdateRejectedLen = SHADOW_TOPIC_LENGTH_UPDATE_REJECTED( pxCtx->xDeviceNameLen );
-        pxCtx->pcTopicUpdateRejected = pvPortMalloc( pxCtx->xTopicUpdateRejectedLen );
+        pxCtx->usTopicUpdateRejectedLen = SHADOW_TOPIC_LENGTH_UPDATE_REJECTED( pxCtx->ucDeviceNameLen );
+        pxCtx->pcTopicUpdateRejected = pvPortMalloc( pxCtx->usTopicUpdateRejectedLen );
 
         xStatus |= Shadow_GetTopicString( ShadowTopicStringTypeUpdateRejected,
                                           pxCtx->pcDeviceName,
-                                          pxCtx->xDeviceNameLen,
+                                          pxCtx->ucDeviceNameLen,
                                           pxCtx->pcTopicUpdateRejected,
-                                          pxCtx->xTopicUpdateRejectedLen,
-                                          &( pxCtx->xTopicUpdateRejectedLen ) );
+                                          pxCtx->usTopicUpdateRejectedLen,
+                                          &( pxCtx->usTopicUpdateRejectedLen ) );
 
 
-        pxCtx->xTopicDeleteLen = SHADOW_TOPIC_LENGTH_DELETE( pxCtx->xDeviceNameLen );
-        pxCtx->pcTopicDelete = pvPortMalloc( pxCtx->xTopicDeleteLen );
+        pxCtx->usTopicDeleteLen = SHADOW_TOPIC_LENGTH_DELETE( pxCtx->ucDeviceNameLen );
+        pxCtx->pcTopicDelete = pvPortMalloc( pxCtx->usTopicDeleteLen );
 
         xStatus |= Shadow_GetTopicString( ShadowTopicStringTypeDelete,
                                           pxCtx->pcDeviceName,
-                                          pxCtx->xDeviceNameLen,
+                                          pxCtx->ucDeviceNameLen,
                                           pxCtx->pcTopicDelete,
-                                          pxCtx->xTopicDeleteLen,
-                                          &( pxCtx->xTopicDeleteLen ) );
+                                          pxCtx->usTopicDeleteLen,
+                                          &( pxCtx->usTopicDeleteLen ) );
 
         xSuccess &= ( xStatus == SHADOW_SUCCESS );
     }
@@ -742,7 +742,7 @@ void vShadowDeviceTask( void * pvParameters )
     /* Set up MQTTPublishInfo_t for the update reports. */
     xPublishInfo.qos = MQTTQoS1;
     xPublishInfo.pTopicName = xShadowCtx.pcTopicUpdate;
-    xPublishInfo.topicNameLength = xShadowCtx.xTopicUpdateLen;
+    xPublishInfo.topicNameLength = xShadowCtx.usTopicUpdateLen;
     xPublishInfo.pPayload = pcUpdateDocument;
     xPublishInfo.payloadLength = ( shadowexampleSHADOW_REPORTED_JSON_LENGTH + 1 );
 
