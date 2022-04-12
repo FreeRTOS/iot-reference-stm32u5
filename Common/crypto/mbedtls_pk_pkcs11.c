@@ -293,9 +293,9 @@ int32_t lReadCertificateFromPKCS11( mbedtls_x509_crt * pxCertificateContext,
 
 /*-----------------------------------------------------------*/
 
-int32_t lWriteCertificateToPKCS11( mbedtls_x509_crt * pxCertificateContext,
+int32_t lWriteCertificateToPKCS11( const mbedtls_x509_crt * pxCertificateContext,
                                    CK_SESSION_HANDLE xP11SessionHandle,
-                                   const char * pcCertificateLabel,
+                                   char * pcCertificateLabel,
                                    size_t uxCertificateLabelLen )
 {
     CK_RV xResult;
@@ -307,7 +307,7 @@ int32_t lWriteCertificateToPKCS11( mbedtls_x509_crt * pxCertificateContext,
     configASSERT( pxCertificateContext->raw.len > 0 );
     configASSERT( xP11SessionHandle );
     configASSERT( pcCertificateLabel );
-    configASSERT( pcCertificateLabel > 0 );
+    configASSERT( uxCertificateLabelLen > 0 );
 
     xResult = C_GetFunctionList( &pxFunctionList );
 
@@ -669,7 +669,7 @@ const char * pcPKCS11StrError( CK_RV xError )
     }
 }
 
-int32_t lPKCS11_initMbedtlsPkContext( mbedtls_pk_context * pxMbedtlsPkCtx,
+CK_RV xPKCS11_initMbedtlsPkContext( mbedtls_pk_context * pxMbedtlsPkCtx,
                                       CK_SESSION_HANDLE xSessionHandle,
                                       CK_OBJECT_HANDLE xPkHandle )
 {
@@ -802,7 +802,7 @@ int lPKCS11PkMbedtlsCloseSessionAndFree( mbedtls_pk_context * pxMbedtlsPkCtx )
 
     if( xResult == CKR_OK )
     {
-        pxP11Ctx->xSessionHandle = NULL;
+        pxP11Ctx->xSessionHandle = CK_INVALID_HANDLE;
     }
 
     return( xResult == CKR_OK ? 0 : -1 );
@@ -994,27 +994,27 @@ static CK_RV p11_ecdsa_ctx_init( void * pvCtx,
 static int prvASN1WriteBigIntFromOctetStr( unsigned char ** ppucPosition,
                                            const unsigned char * pucStart,
                                            const unsigned char * pucOctetStr,
-                                           size_t xOctetStrLen )
+                                           size_t uxOctetStrLen )
 {
-    size_t xRequiredLen = 0;
+    size_t uxRequiredLen = 0;
     int lReturn = 0;
 
     /* Check if zero byte is needed at beginning */
     if( pucOctetStr[ 0 ] > 0x7F )
     {
-        xRequiredLen = xOctetStrLen + 1;
+        uxRequiredLen = uxOctetStrLen + 1;
     }
     else
     {
-        xRequiredLen = xOctetStrLen;
+        uxRequiredLen = uxOctetStrLen;
     }
 
-    if( &( ( *ppucPosition )[ -xRequiredLen ] ) >= pucStart )
+    if( &( ( *ppucPosition )[ -uxRequiredLen ] ) >= pucStart )
     {
-        *ppucPosition = &( ( *ppucPosition )[ -xOctetStrLen ] );
+        *ppucPosition = &( ( *ppucPosition )[ -uxOctetStrLen ] );
 
         /* Copy octet string */
-        ( void ) memcpy( *ppucPosition, pucOctetStr, xOctetStrLen );
+        ( void ) memcpy( *ppucPosition, pucOctetStr, uxOctetStrLen );
 
         /* Prepend additional byte if necessary */
         if( pucOctetStr[ 0 ] > 0x7F )
@@ -1023,17 +1023,17 @@ static int prvASN1WriteBigIntFromOctetStr( unsigned char ** ppucPosition,
             **ppucPosition = 0;
         }
 
-        lReturn = mbedtls_asn1_write_len( ppucPosition, pucStart, xRequiredLen );
+        lReturn = mbedtls_asn1_write_len( ppucPosition, pucStart, uxRequiredLen );
 
         if( lReturn > 0 )
         {
-            xRequiredLen += lReturn;
+            uxRequiredLen += ( size_t ) lReturn;
             lReturn = mbedtls_asn1_write_tag( ppucPosition, pucStart, MBEDTLS_ASN1_INTEGER );
         }
 
         if( lReturn > 0 )
         {
-            lReturn = lReturn + xRequiredLen;
+            lReturn = ( size_t ) lReturn + uxRequiredLen;
         }
     }
 
@@ -1052,7 +1052,7 @@ static int prvEcdsaSigToASN1InPlace( unsigned char * pucSig,
     unsigned char pucTempBuf[ MBEDTLS_ECDSA_MAX_LEN ] = { 0 };
     unsigned char * pucPosition = pucTempBuf + sizeof( pucTempBuf );
 
-    size_t xLen = 0;
+    size_t uxLen = 0;
     int lReturn = 0;
     size_t xComponentLen = *pxSigLen / 2;
 
@@ -1067,33 +1067,33 @@ static int prvEcdsaSigToASN1InPlace( unsigned char * pucSig,
     /* Write "R" Portion VLT */
     if( lReturn > 0 )
     {
-        xLen += lReturn;
+        uxLen += ( size_t ) lReturn;
         lReturn = prvASN1WriteBigIntFromOctetStr( &pucPosition, pucTempBuf,
                                                   pucSig, xComponentLen );
     }
 
     if( lReturn > 0 )
     {
-        xLen += lReturn;
-        lReturn = mbedtls_asn1_write_len( &pucPosition, pucTempBuf, xLen );
+        uxLen += ( size_t ) lReturn;
+        lReturn = mbedtls_asn1_write_len( &pucPosition, pucTempBuf, uxLen );
     }
 
     if( lReturn > 0 )
     {
-        xLen += lReturn;
+        uxLen += ( size_t ) lReturn;
         lReturn = mbedtls_asn1_write_tag( &pucPosition, pucTempBuf,
                                           MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE );
     }
 
     if( lReturn > 0 )
     {
-        xLen += lReturn;
+        uxLen += ( size_t ) lReturn;
     }
 
-    if( ( lReturn > 0 ) && ( xLen <= xSigBufferSize ) )
+    if( ( lReturn > 0 ) && ( uxLen <= xSigBufferSize ) )
     {
-        ( void ) memcpy( pucSig, pucPosition, xLen );
-        *pxSigLen = xLen;
+        ( void ) memcpy( pucSig, pucPosition, uxLen );
+        *pxSigLen = uxLen;
         lReturn = 0;
     }
     else
@@ -1116,8 +1116,8 @@ static int p11_ecdsa_sign( void * pvCtx,
 {
     CK_RV xResult = CKR_OK;
     int32_t lFinalResult = 0;
-    P11EcDsaCtx_t * pxEcDsaCtx = NULL;
-    P11PkCtx_t * pxP11Ctx = NULL;
+    const P11EcDsaCtx_t * pxEcDsaCtx = NULL;
+    const P11PkCtx_t * pxP11Ctx = NULL;
     unsigned char pucHashCopy[ xHashLen ];
 
     CK_MECHANISM xMech =
@@ -1227,21 +1227,18 @@ static int p11_ecdsa_check_pair( const void * pvPub,
                                  int ( * lFRng )( void *, unsigned char *, size_t ),
                                  void * pvPRng )
 {
-    const mbedtls_ecp_keypair * pxPubKey = ( mbedtls_ecp_keypair * ) pvPub;
-    const mbedtls_ecp_keypair * pxPrvKey = NULL;
-    const P11EcDsaCtx_t * pxP11PrvKey = ( P11EcDsaCtx_t * ) pvPrv;
+    mbedtls_ecp_keypair * pxPubKey = ( mbedtls_ecp_keypair * ) pvPub;
+    mbedtls_ecp_keypair * pxPrvKey = ( mbedtls_ecp_keypair * ) pvPrv;
+
+    P11EcDsaCtx_t * pxP11PrvKey = ( P11EcDsaCtx_t * ) pvPrv;
     int lResult = 0;
 
     ( void ) lFRng;
     ( void ) pvPRng;
 
-    if( ( pxPubKey == NULL ) || ( pxP11PrvKey == NULL ) )
+    if( ( pxPubKey == NULL ) || ( pxPrvKey == NULL ) )
     {
         lResult = -1;
-    }
-    else
-    {
-        pxPrvKey = &( pxP11PrvKey->xMbedEcDsaCtx );
     }
 
     if( lResult == 0 )
@@ -1281,7 +1278,7 @@ static int p11_ecdsa_check_pair( const void * pvPub,
         };
         unsigned char pucTestSignature[ MBEDTLS_ECDSA_MAX_SIG_LEN( 256 ) ] = { 0 };
         size_t uxSigLen = 0;
-        lResult = p11_ecdsa_sign( pvPrv, MBEDTLS_MD_SHA256,
+        lResult = p11_ecdsa_sign( ( void * ) ( void * ) pvPrv, MBEDTLS_MD_SHA256,
                                   pucTestHash, sizeof( pucTestHash ),
                                   pucTestSignature, sizeof( pucTestSignature ), &uxSigLen,
                                   NULL, NULL );
@@ -1351,6 +1348,16 @@ static int p11_rsa_sign( void * ctx,
                          void * p_rng )
 {
     /*TODO: Not implemented yet. */
+    ( void ) ctx;
+    ( void ) md_alg;
+    ( void ) hash;
+    ( void ) hash_len;
+    ( void ) sig;
+    ( void ) sig_size;
+    ( void ) sig_len;
+    ( void ) f_rng;
+    ( void ) p_rng;
+
     return -1;
 }
 
