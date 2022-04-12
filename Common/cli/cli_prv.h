@@ -43,30 +43,30 @@ typedef struct xConsoleIO
      * The API is not thread-safe.
      *
      */
-    const int32_t ( * read )( char * const buffer,
-                              uint32_t length );
+    int32_t ( * read )( char * const buffer,
+                        uint32_t length );
 
-    const int32_t ( * read_timeout )( char * const buffer,
-                                      uint32_t length,
-                                      TickType_t xTimeout );
+    int32_t ( * read_timeout )( char * const buffer,
+                                uint32_t length,
+                                TickType_t xTimeout );
 
-    const int32_t ( * readline )( char ** const bufferPtr );
+    int32_t ( * readline )( char ** const bufferPtr );
 
     /**
      * Function writes the output of a finite length buffer to the console. If the buffer is a null
      * terminated string, the entire length of the buffer (including null characters) will be sent
      * to the serial port.
      */
-    const void ( * write )( const void * const pvBuffer,
-                            uint32_t length );
+    void ( * write )( const void * const pvBuffer,
+                      uint32_t length );
 
     /**
      * Function writes a null terminated string to the console.
      */
-    const void ( * print )( const char * const pcString );
+    void ( * print )( const char * const pcString );
 
-    const void ( * lock )( void );
-    const void ( * unlock )( void );
+    void ( * lock )( void );
+    void ( * unlock )( void );
 } ConsoleIO_t;
 
 /* The prototype to which callback functions used to process command line
@@ -131,7 +131,6 @@ extern const CLI_Command_Definition_t xCommandDef_killAll;
 extern const CLI_Command_Definition_t xCommandDef_heapStat;
 extern const CLI_Command_Definition_t xCommandDef_reset;
 extern const CLI_Command_Definition_t xCommandDef_uptime;
-
-
+extern const CLI_Command_Definition_t xCommandDef_rngtest;
 
 #endif /* _CLI_PRIV */

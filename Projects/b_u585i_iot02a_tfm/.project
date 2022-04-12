@@ -42,9 +42,34 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
-			<name>launch_scripts</name>
+			<name>Drivers/bsp</name>
 			<type>2</type>
-			<locationURI>WORKSPACE_LOC/tools/launch_scripts</locationURI>
+			<locationURI>WORKSPACE_LOC/Drivers/BSP/B-U585I-IOT02A</locationURI>
+		</link>
+		<link>
+			<name>Drivers/hts221</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Drivers/BSP/Components/hts221</locationURI>
+		</link>
+		<link>
+			<name>Drivers/iis2mdc</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Drivers/BSP/Components/iis2mdc</locationURI>
+		</link>
+		<link>
+			<name>Drivers/ism330dlc</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Drivers/BSP/Components/ism330dlc</locationURI>
+		</link>
+		<link>
+			<name>Drivers/lps22hh</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Drivers/BSP/Components/lps22hh</locationURI>
+		</link>
+		<link>
+			<name>Drivers/lsm6dso</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Drivers/BSP/Components/lsm6dso</locationURI>
 		</link>
 		<link>
 			<name>Libraries/CMSIS</name>
@@ -80,11 +105,6 @@
 			<name>Libraries/coreMQTTAgent</name>
 			<type>2</type>
 			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/coreMQTT-Agent/source</locationURI>
-		</link>
-		<link>
-			<name>Libraries/corePKCS11</name>
-			<type>2</type>
-			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
 			<name>Libraries/deviceDefender</name>
@@ -192,6 +212,16 @@
 			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_gpio.c</locationURI>
 		</link>
 		<link>
+			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_i2c.c</name>
+			<type>1</type>
+			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_i2c.c</locationURI>
+		</link>
+		<link>
+			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_i2c_ex.c</name>
+			<type>1</type>
+			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_i2c_ex.c</locationURI>
+		</link>
+		<link>
 			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_icache.c</name>
 			<type>1</type>
 			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_icache.c</locationURI>
@@ -252,26 +282,6 @@
 			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_uart_ex.c</locationURI>
 		</link>
 		<link>
-			<name>Libraries/corePKCS11/core_pkcs11.c</name>
-			<type>1</type>
-			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/corePKCS11/source/core_pkcs11.c</locationURI>
-		</link>
-		<link>
-			<name>Libraries/corePKCS11/core_pki_utils.c</name>
-			<type>1</type>
-			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/corePKCS11/source/core_pki_utils.c</locationURI>
-		</link>
-		<link>
-			<name>Libraries/corePKCS11/include</name>
-			<type>2</type>
-			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/corePKCS11/source/include</locationURI>
-		</link>
-		<link>
-			<name>Libraries/corePKCS11/mbedtls_utils</name>
-			<type>2</type>
-			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/corePKCS11/source/dependency/3rdparty/mbedtls_utils</locationURI>
-		</link>
-		<link>
 			<name>Libraries/freertos_kernel/event_groups.c</name>
 			<type>1</type>
 			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/kernel/event_groups.c</locationURI>
@@ -318,6 +328,15 @@
 		</link>
 	</linkedResources>
 	<filteredResources>
+		<filter>
+			<id>1649399046564</id>
+			<name></name>
+			<type>6</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-true-false-b_u585i_iot02a_tfm_debug*.cfg</arguments>
+			</matcher>
+		</filter>
 		<filter>
 			<id>1634612303185</id>
 			<name>Libraries/CommonIO</name>

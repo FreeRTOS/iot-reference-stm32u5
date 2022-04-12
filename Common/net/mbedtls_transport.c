@@ -96,9 +96,10 @@ typedef struct TLSContext
     CK_SESSION_HANDLE xP11SessionHandle;
 #endif /* MBEDTLS_TRANSPORT_PKCS11 */
 
-#ifdef TRANSPORT_USE_CTR_DRBG
     /* Entropy Ctx */
     mbedtls_entropy_context xEntropyCtx;
+
+#ifdef TRANSPORT_USE_CTR_DRBG
     mbedtls_ctr_drbg_context xCtrDrbgCtx;
 #endif /* TRANSPORT_USE_CTR_DRBG */
 } TLSContext_t;
@@ -113,31 +114,6 @@ static TlsTransportStatus_t xConfigureCertificateAuth( TLSContext_t * pxTLSCtx,
 static TlsTransportStatus_t xConfigureCAChain( TLSContext_t * pxTLSCtx,
                                                const PkiObject_t * pxRootCaCerts,
                                                const size_t uxNumRootCA );
-
-/**
- * @brief Add X509 certificate to a given mbedtls_x509_crt list.
- * @param[out] pxMbedtlsCertCtx Pointer to an mbedtls X509 certificate chain object.
- * @param[in] pxCertificate Pointer to a PkiObject_t describing a certificate to be loaded.
- * @param[in] pxTLSCtx Pointer to the TLS transport context.
- *
- * @return 0 on success; otherwise, failure;
- */
-static TlsTransportStatus_t xAddCertificate( mbedtls_x509_crt * pxMbedtlsCertCtx,
-                                             const PkiObject_t * pxCertificate,
-                                             const TLSContext_t * pxTLSCtx );
-
-/**
- * @brief Initialize the private key object
- *
- * @param[out] pxPkCtx Mbedtls pk_context object to map the key to.
- * @param[in] pxTLSCtx SSL context to which the private key is to be set.
- * @param[in] pxPrivateKey PkiObject_t representing the key to load.
- *
- * @return 0 on success; otherwise, failure;
- */
-static int32_t xLoadPrivateKey( mbedtls_pk_context * pxPkCtx,
-                                TLSContext_t * pxTLSCtx,
-                                const PkiObject_t * pxPrivateKey );
 
 static inline void vStopSocketNotifyTask( NotifyThreadCtx_t * pxNotifyThreadCtx );
 
@@ -216,36 +192,6 @@ static void vSocketNotifyThread( void * pvParameters )
 }
 
 /*-----------------------------------------------------------*/
-#ifdef MBEDTLS_TRANSPORT_PKCS11
-
-static int32_t lP11ErrToTransportError( CK_RV xError )
-{
-    int32_t lError;
-
-    switch( xError )
-    {
-        case CKR_OBJECT_HANDLE_INVALID:
-            lError = TLS_TRANSPORT_PKI_OBJECT_NOT_FOUND;
-            break;
-
-        case CKR_HOST_MEMORY:
-            lError = TLS_TRANSPORT_INSUFFICIENT_MEMORY;
-            break;
-
-        case CKR_FUNCTION_FAILED:
-            lError = TLS_TRANSPORT_INTERNAL_ERROR;
-            break;
-
-        default:
-            lError = TLS_TRANSPORT_UNKNOWN_ERROR;
-            break;
-    }
-
-    return lError;
-}
-#endif /* MBEDTLS_TRANSPORT_PKCS11 */
-
-/*-----------------------------------------------------------*/
 
 static int32_t lMbedtlsErrToTransportError( int32_t lError )
 {
@@ -290,7 +236,7 @@ static int32_t lMbedtlsErrToTransportError( int32_t lError )
 #define X509_CRT_ERROR_INFO( err, err_str, info ) \
     case err:                                     \
         pcVerifyInfo = info; break;
-static const char * pcGetVerifyInfoString( int flag )
+static const char * pcGetVerifyInfoString( unsigned int flag )
 {
     const char * pcVerifyInfo = "Unknown Failure reason.";
 
@@ -308,10 +254,10 @@ static const char * pcGetVerifyInfoString( int flag )
 /*-----------------------------------------------------------*/
 
 
-static void vLogCertificateVerifyResult( int flags )
+static void vLogCertificateVerifyResult( unsigned int flags )
 {
 #ifndef MBEDTLS_X509_REMOVE_INFO
-    for( uint32_t mask = 1; mask != ( 1U << 31 ); mask = mask << 1 )
+    for( unsigned int mask = 1; mask != ( 1U << 31 ); mask = mask << 1 )
     {
         if( ( flags & mask ) > 0 )
         {
@@ -333,12 +279,12 @@ static size_t uxGetCertCNFromName( unsigned char ** ppucCommonName,
 
     *ppucCommonName = NULL;
 
-    for( ; pxCertName != NULL; pxCertName = pxCertName->MBEDTLS_PRIVATE( next ) )
+    for( ; pxCertName != NULL; pxCertName = pxCertName->next )
     {
-        if( MBEDTLS_OID_CMP( MBEDTLS_OID_AT_CN, &( pxCertName->MBEDTLS_PRIVATE( oid ) ) ) == 0 )
+        if( MBEDTLS_OID_CMP( MBEDTLS_OID_AT_CN, &( pxCertName->oid ) ) == 0 )
         {
-            *ppucCommonName = pxCertName->MBEDTLS_PRIVATE( val ).MBEDTLS_PRIVATE( p );
-            uxCommonNameLen = pxCertName->MBEDTLS_PRIVATE( val ).MBEDTLS_PRIVATE( len );
+            *ppucCommonName = pxCertName->MBEDTLS_PRIVATE( val ).p;
+            uxCommonNameLen = pxCertName->MBEDTLS_PRIVATE( val ).len;
             break;
         }
     }
@@ -363,13 +309,13 @@ static void vLogCertInfo( mbedtls_x509_crt * pxCert,
     mbedtls_x509_time * pxValidTo = NULL;
 
     uxSubjectCNLen = uxGetCertCNFromName( &pucSubjectCN,
-                                          &( pxCert->MBEDTLS_PRIVATE( subject ) ) );
+                                          &( pxCert->subject ) );
 
     uxIssuerCNLen = uxGetCertCNFromName( &pucIssuerCN,
-                                         &( pxCert->MBEDTLS_PRIVATE( issuer ) ) );
+                                         &( pxCert->issuer ) );
 
-    uxSerialNumberLen = pxCert->MBEDTLS_PRIVATE( serial ).MBEDTLS_PRIVATE( len );
-    pucSerialNumber = pxCert->MBEDTLS_PRIVATE( serial ).MBEDTLS_PRIVATE( p );
+    uxSerialNumberLen = pxCert->serial.len;
+    pucSerialNumber = pxCert->serial.p;
 
     for( uint32_t i = 0; i < uxSerialNumberLen; i++ )
     {
@@ -381,304 +327,28 @@ static void vLogCertInfo( mbedtls_x509_crt * pxCert,
         snprintf( &( pcSerialNumberHex[ i * 2 ] ), 3, "%.02X", pucSerialNumber[ i ] );
     }
 
-    pxValidFrom = &( pxCert->MBEDTLS_PRIVATE( valid_from ) );
-    pxValidTo = &( pxCert->MBEDTLS_PRIVATE( valid_to ) );
+    pxValidFrom = &( pxCert->valid_from );
+    pxValidTo = &( pxCert->valid_to );
 
     if( pcMessage && pucSubjectCN && pucIssuerCN && pucSerialNumber && pxValidFrom && pxValidTo )
     {
         LogInfo( "%s CN=%.*s, SN:0x%s", pcMessage, uxSubjectCNLen, pucSubjectCN, pcSerialNumberHex );
         LogInfo( "Issuer: CN=%.*s", uxIssuerCNLen, pucIssuerCN );
         LogInfo( "Valid From: %04d-%02d-%02d, Expires: %04d-%02d-%02d",
-                 pxValidFrom->MBEDTLS_PRIVATE( year ), pxValidFrom->MBEDTLS_PRIVATE( mon ), pxValidFrom->MBEDTLS_PRIVATE( day ),
-                 pxValidTo->MBEDTLS_PRIVATE( year ), pxValidTo->MBEDTLS_PRIVATE( mon ), pxValidTo->MBEDTLS_PRIVATE( day ) );
+                 pxValidFrom->year, pxValidFrom->mon, pxValidFrom->day,
+                 pxValidTo->year, pxValidTo->mon, pxValidTo->day );
     }
 }
 
 /*-----------------------------------------------------------*/
-
-static TlsTransportStatus_t xAddCertificate( mbedtls_x509_crt * pxMbedtlsCertCtx,
-                                             const PkiObject_t * pxCertificate,
-                                             const TLSContext_t * pxTLSCtx )
-{
-    TlsTransportStatus_t xError = TLS_TRANSPORT_PKI_OBJECT_NOT_FOUND;
-    int lError = 0;
-
-    configASSERT( pxMbedtlsCertCtx != NULL );
-    configASSERT( pxTLSCtx != NULL );
-    configASSERT( pxCertificate != NULL );
-
-    switch( pxCertificate->xForm )
-    {
-        case OBJ_FORM_PEM:
-            lError = mbedtls_x509_crt_parse( pxMbedtlsCertCtx,
-                                             pxCertificate->pucBuffer,
-                                             pxCertificate->uxLen );
-
-            MBEDTLS_LOG_IF_ERROR( lError, "Failed to parse certificate from buffer: 0x%08X, length: %ld",
-                                  pxCertificate->pucBuffer, pxCertificate->uxLen );
-
-            xError = lMbedtlsErrToTransportError( lError );
-            break;
-
-        case OBJ_FORM_DER:
-            lError = mbedtls_x509_crt_parse_der( pxMbedtlsCertCtx,
-                                                 pxCertificate->pucBuffer,
-                                                 pxCertificate->uxLen );
-
-            MBEDTLS_LOG_IF_ERROR( lError, "Failed to parse certificate from buffer: 0x%08X, length: %ld,",
-                                  pxCertificate->pucBuffer, pxCertificate->uxLen );
-
-            xError = lMbedtlsErrToTransportError( lError );
-            break;
-
-#ifdef MBEDTLS_TRANSPORT_PKCS11
-        case OBJ_FORM_PKCS11_LABEL:
-            lError = lReadCertificateFromPKCS11( pxMbedtlsCertCtx,
-                                                 pxTLSCtx->xP11SessionHandle,
-                                                 pxCertificate->pcPkcs11Label,
-                                                 pxCertificate->uxLen );
-
-            /* PKCS11 errors are > 0 */
-            if( lError > 0 )
-            {
-                LogError( "Failed to read certificate(s) from pkcs11 label: %.*s, CK_RV: %s.",
-                          pxCertificate->uxLen, pxCertificate->pcPkcs11Label, pcPKCS11StrError( lError ) );
-
-                xError = lP11ErrToTransportError( lError );
-            }
-
-            MBEDTLS_LOG_IF_ERROR( lError, "Failed to parse certificate(s) from pkcs11 label: %.*s,",
-                                  pxCertificate->uxLen, pxCertificate->pcPkcs11Label );
-
-            xError = lMbedtlsErrToTransportError( lError );
-            break;
-#endif /* ifdef MBEDTLS_TRANSPORT_PKCS11 */
-#ifdef MBEDTLS_TRANSPORT_PSA
-        case OBJ_FORM_PSA_CRYPTO:
-            lError = lReadCertificateFromPSACrypto( pxMbedtlsCertCtx,
-                                                    pxCertificate->xPsaCryptoId );
-
-            MBEDTLS_LOG_IF_ERROR( lError, "Failed to read certificate(s) from PSA Crypto uid: 0x%08X,",
-                                  pxCertificate->xPsaCryptoId );
-
-            xError = lMbedtlsErrToTransportError( lError );
-            break;
-
-        case OBJ_FORM_PSA_ITS:
-            lError = lReadCertificateFromPsaIts( pxMbedtlsCertCtx,
-                                                 pxCertificate->xPsaStorageId );
-
-            MBEDTLS_LOG_IF_ERROR( lError, "Failed to read certificate(s) from PSA ITS uid: 0x%016X,",
-                                  pxCertificate->xPsaStorageId );
-
-            xError = lMbedtlsErrToTransportError( lError );
-            break;
-
-        case OBJ_FORM_PSA_PS:
-            lError = lReadCertificateFromPsaPS( pxMbedtlsCertCtx,
-                                                pxCertificate->xPsaStorageId );
-
-            MBEDTLS_LOG_IF_ERROR( lError, "Failed to read certificate(s) from PSA PS uid: 0x%016X,",
-                                  pxCertificate->xPsaStorageId );
-
-            xError = lMbedtlsErrToTransportError( lError );
-            break;
-#endif /* ifdef MBEDTLS_TRANSPORT_PSA */
-        case OBJ_FORM_NONE:
-        /* Intentional fall through */
-        default:
-            LogError( "Invalid certificate form specified." );
-            xError = TLS_TRANSPORT_INVALID_PARAMETER;
-            break;
-    }
-
-    return xError;
-}
-
-/*-----------------------------------------------------------*/
-
-static int32_t xLoadPrivateKey( mbedtls_pk_context * pxPkCtx,
-                                TLSContext_t * pxTLSCtx,
-                                const PkiObject_t * pxPrivateKey )
-{
-    int32_t lError = -1;
-
-    configASSERT( pxPkCtx != NULL );
-    configASSERT( pxTLSCtx != NULL );
-    configASSERT( pxPrivateKey != NULL );
-
-    switch( pxPrivateKey->xForm )
-    {
-        case OBJ_FORM_PEM:
-        /* Intentional fall through */
-        case OBJ_FORM_DER:
-            configASSERT( pxPrivateKey->uxLen > 0 );
-            configASSERT( pxPrivateKey->pucBuffer != NULL );
-
-            lError = mbedtls_pk_parse_key( pxPkCtx,
-                                           pxPrivateKey->pucBuffer,
-                                           pxPrivateKey->uxLen,
-                                           NULL, 0,
-                                           pxTLSCtx->xSslConfig.MBEDTLS_PRIVATE( f_rng ),
-                                           pxTLSCtx->xSslConfig.MBEDTLS_PRIVATE( p_rng ) );
-
-            if( lError != 0 )
-            {
-                LogError( "Failed to parse the client key: lError= %s : %s.",
-                          mbedtlsHighLevelCodeOrDefault( lError ),
-                          mbedtlsLowLevelCodeOrDefault( lError ) );
-            }
-
-            break;
-
-#ifdef MBEDTLS_TRANSPORT_PKCS11
-        case OBJ_FORM_PKCS11_LABEL:
-           {
-               CK_OBJECT_HANDLE xPkHandle = CK_INVALID_HANDLE;
-               CK_RV xResult = CKR_OK;
-
-               xResult = xFindObjectWithLabelAndClass( pxTLSCtx->xP11SessionHandle,
-                                                       pxPrivateKey->pcPkcs11Label,
-                                                       pxPrivateKey->uxLen,
-                                                       CKO_PRIVATE_KEY,
-                                                       &xPkHandle );
-
-               if( xResult != CKR_OK )
-               {
-                   LogError( "Failed to find private key in PKCS#11 module. CK_RV: %s",
-                             pcPKCS11StrError( xResult ) );
-                   lError = lP11ErrToTransportError( xResult );
-               }
-               else
-               {
-                   lError = lPKCS11_initMbedtlsPkContext( pxPkCtx,
-                                                          pxTLSCtx->xP11SessionHandle,
-                                                          xPkHandle );
-
-                   if( xResult != CKR_OK )
-                   {
-                       LogError( "Failed to find private key in PKCS#11 module. CK_RV: %s",
-                                 pcPKCS11StrError( xResult ) );
-
-                       lError = lP11ErrToTransportError( xResult );
-                   }
-               }
-
-               break;
-           }
-#endif /* ifdef MBEDTLS_TRANSPORT_PKCS11 */
-#ifdef MBEDTLS_TRANSPORT_PSA
-        case OBJ_FORM_PSA_CRYPTO:
-            lError = mbedtls_pk_setup_opaque( &( pxTLSCtx->xPkCtx ),
-                                              pxPrivateKey->xPsaCryptoId );
-
-            if( lError != 0 )
-            {
-                LogError( "Failed to initialize the PSA opaque key context. lError= %s : %s.",
-                          mbedtlsHighLevelCodeOrDefault( lError ),
-                          mbedtlsLowLevelCodeOrDefault( lError ) );
-            }
-
-            break;
-
-        case OBJ_FORM_PSA_ITS:
-           {
-               unsigned char * pucPk = NULL;
-               size_t uxPkLen = 0;
-               lError = lLoadObjectFromPsaIts( &pucPk, &uxPkLen, pxPrivateKey->xPsaStorageId );
-
-               if( lError != 0 )
-               {
-                   LogError( "Failed to read the private key blob from the PSA ITS service. lError= %s : %s.",
-                             mbedtlsHighLevelCodeOrDefault( lError ),
-                             mbedtlsLowLevelCodeOrDefault( lError ) );
-               }
-
-               if( lError == 0 )
-               {
-                   lError = mbedtls_pk_parse_key( pxPkCtx,
-                                                  pucPk, uxPkLen,
-                                                  NULL, 0,
-                                                  pxTLSCtx->xSslConfig.MBEDTLS_PRIVATE( f_rng ),
-                                                  pxTLSCtx->xSslConfig.MBEDTLS_PRIVATE( p_rng ) );
-
-                   if( lError != 0 )
-                   {
-                       LogError( "Failed to parse the private key. lError= %s : %s.",
-                                 mbedtlsHighLevelCodeOrDefault( lError ),
-                                 mbedtlsLowLevelCodeOrDefault( lError ) );
-                   }
-               }
-
-               if( pucPk != NULL )
-               {
-                   configASSERT( uxPkLen > 0 );
-                   mbedtls_platform_zeroize( pucPk, uxPkLen );
-                   mbedtls_free( pucPk );
-               }
-
-               break;
-           }
-
-        case OBJ_FORM_PSA_PS:
-           {
-               unsigned char * pucPk = NULL;
-               size_t uxPkLen = 0;
-               lError = lLoadObjectFromPsaPs( &pucPk, &uxPkLen, pxPrivateKey->xPsaStorageId );
-
-               if( lError != 0 )
-               {
-                   LogError( "Failed to read the private key blob from the PSA PS service. lError= %s : %s.",
-                             mbedtlsHighLevelCodeOrDefault( lError ),
-                             mbedtlsLowLevelCodeOrDefault( lError ) );
-               }
-
-               if( lError == 0 )
-               {
-                   lError = mbedtls_pk_parse_key( pxPkCtx,
-                                                  pucPk, uxPkLen,
-                                                  NULL, 0,
-                                                  pxTLSCtx->xSslConfig.MBEDTLS_PRIVATE( f_rng ),
-                                                  pxTLSCtx->xSslConfig.MBEDTLS_PRIVATE( p_rng ) );
-
-                   if( lError != 0 )
-                   {
-                       LogError( "Failed to parse the private key. lError= %s : %s.",
-                                 mbedtlsHighLevelCodeOrDefault( lError ),
-                                 mbedtlsLowLevelCodeOrDefault( lError ) );
-                   }
-               }
-
-               if( pucPk != NULL )
-               {
-                   configASSERT( uxPkLen > 0 );
-                   mbedtls_platform_zeroize( pucPk, uxPkLen );
-                   mbedtls_free( pucPk );
-               }
-
-               break;
-           }
-#endif /* ifdef MBEDTLS_TRANSPORT_PSA */
-
-        case OBJ_FORM_NONE:
-        /* Intentional fallthrough */
-        default:
-            lError = TLS_TRANSPORT_INVALID_PARAMETER;
-            break;
-    }
-
-    return lError;
-}
-
-/*-----------------------------------------------------------*/
-
+/*TODO add proper timeout */
 static int mbedtls_ssl_send( void * pvCtx,
                              const unsigned char * pcBuf,
-                             size_t xLen )
+                             size_t uxLen )
 {
     SockHandle_t * pxSockHandle = ( SockHandle_t * ) pvCtx;
     int lError = 0;
-    size_t xBytesSent = 0;
+    size_t uxBytesSent = 0;
     uint32_t ulBackofftimeMs = 1;
 
     if( ( pxSockHandle == NULL ) ||
@@ -688,16 +358,16 @@ static int mbedtls_ssl_send( void * pvCtx,
     }
     else
     {
-        while( xBytesSent < xLen && lError == 0 )
+        while( uxBytesSent < uxLen && lError == 0 )
         {
             ssize_t xRslt = sock_send( *pxSockHandle,
                                        ( void * const ) pcBuf,
-                                       xLen,
+                                       uxLen,
                                        0 );
 
             if( xRslt > 0 )
             {
-                xBytesSent += xRslt;
+                uxBytesSent += ( size_t ) xRslt;
             }
             else
             {
@@ -737,7 +407,7 @@ static int mbedtls_ssl_send( void * pvCtx,
         }
     }
 
-    return ( int ) xBytesSent;
+    return ( int ) uxBytesSent;
 }
 
 /*-----------------------------------------------------------*/
@@ -814,8 +484,9 @@ NetworkContext_t * mbedtls_transport_allocate( void )
         pxTLSCtx->xP11SessionHandle = CK_INVALID_HANDLE;
 #endif /* MBEDTLS_TRANSPORT_PKCS11 */
 
-#ifdef TRANSPORT_USE_CTR_DRBG
         mbedtls_entropy_init( &( pxTLSCtx->xEntropyCtx ) );
+
+#ifdef TRANSPORT_USE_CTR_DRBG
         mbedtls_ctr_drbg_init( &( pxTLSCtx->xCtrDrbgCtx ) );
 #endif /* TRANSPORT_USE_CTR_DRBG */
 
@@ -871,119 +542,6 @@ void mbedtls_transport_free( NetworkContext_t * pxNetworkContext )
 }
 
 /*-----------------------------------------------------------*/
-#ifdef TRANSPORT_USE_CTR_DRBG
-static int lEntropyCallback( void * pvCtx,
-                             unsigned char * pucBuffer,
-                             size_t uxLen,
-                             size_t * puxOutLen )
-{
-    int lError = -1;
-
-    configASSERT( pucBuffer != NULL );
-    configASSERT_CONTINUE( uxLen > 0 );
-    configASSERT( puxOutLen != NULL );
-
-#ifdef MBEDTLS_TRANSPORT_PSA
-    lError = lPSARandomCallback( NULL, pucBuffer, uxLen );
-#elif defined( MBEDTLS_TRANSPORT_PKCS11 )
-    configASSERT( pvCtx != NULL );
-    lError = lPKCS11RandomCallback( pvCtx, pucBuffer, uxLen );
-#endif /* !MBEDTLS_TRANSPORT_PSA */
-
-    if( lError == 0 )
-    {
-        *puxOutLen = uxLen;
-    }
-
-    return lError;
-}
-#endif /* TRANSPORT_USE_CTR_DRBG */
-/*-----------------------------------------------------------*/
-
-static int lConfigureEntropy( TLSContext_t * pxTLSCtx )
-{
-    int lRslt = 0;
-
-    configASSERT( pxTLSCtx != NULL );
-
-#ifdef TRANSPORT_USE_CTR_DRBG
-#ifdef MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES
-#ifdef MBEDTLS_TRANSPORT_PSA
-    if( lRslt == 0 )
-    {
-        lRslt = mbedtls_entropy_add_source( &( pxTLSCtx->xEntropyCtx ),
-                                            lEntropyCallback, NULL,
-                                            MBEDTLS_ENTROPY_MIN_PLATFORM,
-                                            MBEDTLS_ENTROPY_SOURCE_STRONG );
-
-        if( lRslt != 0 )
-        {
-            LogError( "Failed to add PSA entropy source: Error: %s : %s.",
-                      mbedtlsHighLevelCodeOrDefault( lError ),
-                      mbedtlsLowLevelCodeOrDefault( lError ) );
-        }
-    }
-#elif MBEDTLS_TRANSPORT_PKCS11
-    if( lRslt == 0 )
-    {
-        lRslt = mbedtls_entropy_add_source( &( pxTLSCtx->xEntropyCtx ),
-                                            lEntropyCallback, NULL,
-                                            MBEDTLS_ENTROPY_MIN_PLATFORM,
-                                            MBEDTLS_ENTROPY_SOURCE_STRONG );
-
-        if( lRslt != 0 )
-        {
-            LogError( "Failed to add PKCS#11 entropy source: Error: %s : %s.",
-                      mbedtlsHighLevelCodeOrDefault( lError ),
-                      mbedtlsLowLevelCodeOrDefault( lError ) );
-        }
-    }
-#else /* MBEDTLS_TRANSPORT_PKCS11 */
-#error "No default entropy source defined."
-#endif /* !MBEDTLS_TRANSPORT_PKCS11 && !MBEDTLS_TRANSPORT_PSA */
-#endif /* MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES */
-#endif /* TRANSPORT_USE_CTR_DRBG */
-
-    /* TODO: perform entropy self-test: mbedtls_entropy_source_self_test */
-
-#ifdef TRANSPORT_USE_CTR_DRBG
-    if( lRslt == 0 )
-    {
-        /* Seed the local RNG. */
-        lRslt = mbedtls_ctr_drbg_seed( pCtrDrgbContext,
-                                       mbedtls_entropy_func,
-                                       pEntropyContext,
-                                       NULL,
-                                       0 );
-
-        if( lError != 0 )
-        {
-            LogError( "Failed to seed PRNG: Error: %s : %s.",
-                      mbedtlsHighLevelCodeOrDefault( lError ),
-                      mbedtlsLowLevelCodeOrDefault( lError ) );
-            xStatus = TLS_TRANSPORT_INTERNAL_ERROR;
-        }
-    }
-
-    /* Configure RNG callback */
-    mbedtls_ssl_conf_rng( &( pxTLSCtx->xSslConfig ),
-                          mbedtls_ctr_drbg_random,
-                          &( pxTLSCtx->xCtrDrbgCtx ) );
-#elif defined( MBEDTLS_TRANSPORT_PSA )
-    mbedtls_ssl_conf_rng( &( pxTLSCtx->xSslConfig ),
-                          lPSARandomCallback,
-                          NULL );
-#elif defined( MBEDTLS_TRANSPORT_PKCS11 )
-    mbedtls_ssl_conf_rng( &( pxTLSCtx->xSslConfig ),
-                          lPKCS11RandomCallback,
-                          &( pxTLSCtx->xP11SessionHandle ) );
-#else /* ifdef TRANSPORT_USE_CTR_DRBG */
-    LogError( "Transport entropy configurations is invalid." );
-    xStatus = TLS_TRANSPORT_INVALID_PARAMETER;
-#endif /* !MBEDTLS_TRANSPORT_PKCS11 && !MBEDTLS_TRANSPORT_PSA && !TRANSPORT_USE_CTR_DRBG */
-
-    return lRslt;
-}
 
 static int lValidateCertByProfile( TLSContext_t * pxTLSCtx,
                                    mbedtls_x509_crt * pxCert )
@@ -1073,7 +631,11 @@ static TlsTransportStatus_t xConfigureCertificateAuth( TLSContext_t * pxTLSCtx,
         mbedtls_x509_crt_init( pxCertCtx );
     }
 
-    xStatus = xLoadPrivateKey( pxPkCtx, pxTLSCtx, pxPrivateKey );
+    configASSERT( pxTLSCtx->xSslConfig.f_rng );
+
+    xStatus = xPkiReadPrivateKey( pxPkCtx, pxPrivateKey,
+                                  pxTLSCtx->xSslConfig.f_rng,
+                                  pxTLSCtx->xSslConfig.p_rng );
 
     if( xStatus != TLS_TRANSPORT_SUCCESS )
     {
@@ -1081,7 +643,7 @@ static TlsTransportStatus_t xConfigureCertificateAuth( TLSContext_t * pxTLSCtx,
     }
     else
     {
-        xStatus = xAddCertificate( pxCertCtx, pxClientCert, pxTLSCtx );
+        xStatus = xPkiReadCertificate( pxCertCtx, pxClientCert );
 
         if( xStatus != TLS_TRANSPORT_SUCCESS )
         {
@@ -1127,16 +689,14 @@ static TlsTransportStatus_t xConfigureCertificateAuth( TLSContext_t * pxTLSCtx,
     /* Validate that the cert and pk match. */
     if( xStatus == TLS_TRANSPORT_SUCCESS )
     {
-        /* Construct a temporary key context so that public key and private key pk_info pointers pass validation */
         mbedtls_pk_context xTempPubKeyCtx;
-        int lError;
 
-        xTempPubKeyCtx.MBEDTLS_PRIVATE( pk_ctx ) = pxCertPkCtx->MBEDTLS_PRIVATE( pk_ctx );
-        xTempPubKeyCtx.MBEDTLS_PRIVATE( pk_info ) = pxPkCtx->MBEDTLS_PRIVATE( pk_info );
+        xTempPubKeyCtx.pk_ctx = pxCertPkCtx->pk_ctx;
+        xTempPubKeyCtx.pk_info = pxPkCtx->pk_info;
 
-        lError = mbedtls_pk_check_pair( &xTempPubKeyCtx, pxPkCtx,
-                                        pxTLSCtx->xSslConfig.MBEDTLS_PRIVATE( f_rng ),
-                                        pxTLSCtx->xSslConfig.MBEDTLS_PRIVATE( p_rng ) );
+        int lError = mbedtls_pk_check_pair( &xTempPubKeyCtx, pxPkCtx,
+                                            pxTLSCtx->xSslConfig.f_rng,
+                                            pxTLSCtx->xSslConfig.p_rng );
 
         MBEDTLS_MSG_IF_ERROR( lError, "Public-Private keypair does not match the provided certificate." );
 
@@ -1201,7 +761,7 @@ static TlsTransportStatus_t xConfigureCAChain( TLSContext_t * pxTLSCtx,
             mbedtls_x509_crt_init( pxTempCaCert );
 
             /* load the certificate onto the heap */
-            lError = xAddCertificate( pxTempCaCert, pxRootCert, pxTLSCtx );
+            lError = xPkiReadCertificate( pxTempCaCert, pxRootCert );
 
             MBEDTLS_LOG_IF_ERROR( lError, "Failed to load the CA Certificate at index: %ld, Error: ", uxIdx );
         }
@@ -1337,14 +897,6 @@ TlsTransportStatus_t mbedtls_transport_configure( NetworkContext_t * pxNetworkCo
             }
         }
 #endif /* MBEDTLS_TRANSPORT_PSA */
-
-        /* Setup entropy / rng contexts */
-        if( xStatus == TLS_TRANSPORT_SUCCESS )
-        {
-            lError = lConfigureEntropy( pxTLSCtx );
-
-            xStatus = ( lError == 0 ) ? TLS_TRANSPORT_SUCCESS : TLS_TRANSPORT_INTERNAL_ERROR;
-        }
     }
 
     configASSERT( pxTLSCtx->xConnectionState != STATE_CONNECTED );
@@ -1371,6 +923,46 @@ TlsTransportStatus_t mbedtls_transport_configure( NetworkContext_t * pxNetworkCo
         MBEDTLS_MSG_IF_ERROR( lError, "Failed to initialize ssl configuration: Error:" );
 
         xStatus = lMbedtlsErrToTransportError( lError );
+    }
+
+    /* Setup entropy / rng contexts */
+    if( xStatus == TLS_TRANSPORT_SUCCESS )
+    {
+        int lRslt = 0;
+
+#ifdef TRANSPORT_USE_CTR_DRBG
+        /* Seed the local RNG. */
+        lRslt = mbedtls_ctr_drbg_seed( &( pxTLSCtx->xCtrDrbgCtx ),
+                                       mbedtls_entropy_func,
+                                       &( pxTLSCtx->xEntropyCtx ),
+                                       NULL,
+                                       0 );
+
+        if( lRslt < 0 )
+        {
+            LogError( "Failed to seed PRNG: Error: %s : %s.",
+                      mbedtlsHighLevelCodeOrDefault( lRslt ),
+                      mbedtlsLowLevelCodeOrDefault( lRslt ) );
+            xStatus = TLS_TRANSPORT_INTERNAL_ERROR;
+        }
+        else
+        {
+            mbedtls_ssl_conf_rng( &( pxTLSCtx->xSslConfig ),
+                                  mbedtls_ctr_drbg_random,
+                                  &( pxTLSCtx->xCtrDrbgCtx ) );
+        }
+#elif defined( MBEDTLS_TRANSPORT_PSA )
+        mbedtls_ssl_conf_rng( &( pxTLSCtx->xSslConfig ),
+                              lPSARandomCallback,
+                              NULL );
+#else /* ifdef TRANSPORT_USE_CTR_DRBG */
+        mbedtls_ssl_conf_rng( &( pxTLSCtx->xSslConfig ),
+                              mbedtls_entropy_func,
+                              &( pxTLSCtx->xEntropyCtx ) );
+#endif /* ifdef TRANSPORT_USE_CTR_DRBG */
+
+
+        xStatus = ( lError == 0 ) ? TLS_TRANSPORT_SUCCESS : TLS_TRANSPORT_INTERNAL_ERROR;
     }
 
     /* Configure security level settings */

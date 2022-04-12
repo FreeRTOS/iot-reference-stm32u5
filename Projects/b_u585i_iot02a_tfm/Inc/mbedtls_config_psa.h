@@ -1154,7 +1154,7 @@ void mbedtls_platform_free( void * ptr );
  * \warning This interface is experimental and may change or be removed
  * without notice.
  */
-/*#define MBEDTLS_PSA_CRYPTO_CLIENT */
+#define MBEDTLS_PSA_CRYPTO_CLIENT
 
 /** \def MBEDTLS_PSA_CRYPTO_DRIVERS
  *
@@ -1738,7 +1738,7 @@ void mbedtls_platform_free( void * ptr );
  *
  * Uncomment this to enable internal use of PSA Crypto and new associated APIs.
  */
-#define MBEDTLS_USE_PSA_CRYPTO
+/*#define MBEDTLS_USE_PSA_CRYPTO */
 
 /**
  * \def MBEDTLS_PSA_CRYPTO_CONFIG
@@ -2080,7 +2080,7 @@ void mbedtls_platform_free( void * ptr );
  * This module enables the AES-CCM ciphersuites, if other requisites are
  * enabled as well.
  */
-#define MBEDTLS_CCM_C
+/*#define MBEDTLS_CCM_C */
 
 /**
  * \def MBEDTLS_CHACHA20_C
@@ -2164,7 +2164,7 @@ void mbedtls_platform_free( void * ptr );
  *
  * This module provides debugging functions.
  */
-/*#define MBEDTLS_DEBUG_C */
+#define MBEDTLS_DEBUG_C
 
 /**
  * \def MBEDTLS_DES_C
@@ -2661,7 +2661,7 @@ void mbedtls_platform_free( void * ptr );
  * Caller:  library/md.c
  *
  */
-#define MBEDTLS_RIPEMD160_C
+/*#define MBEDTLS_RIPEMD160_C */
 
 /**
  * \def MBEDTLS_RSA_C
@@ -2781,7 +2781,7 @@ void mbedtls_platform_free( void * ptr );
  *
  * Requires: MBEDTLS_SSL_CACHE_C
  */
-#define MBEDTLS_SSL_CACHE_C
+/*#define MBEDTLS_SSL_CACHE_C */
 
 /**
  * \def MBEDTLS_SSL_COOKIE_C
@@ -2791,7 +2791,7 @@ void mbedtls_platform_free( void * ptr );
  * Module:  library/ssl_cookie.c
  * Caller:
  */
-#define MBEDTLS_SSL_COOKIE_C
+/*#define MBEDTLS_SSL_COOKIE_C */
 
 /**
  * \def MBEDTLS_SSL_TICKET_C
@@ -2803,7 +2803,7 @@ void mbedtls_platform_free( void * ptr );
  *
  * Requires: MBEDTLS_CIPHER_C
  */
-#define MBEDTLS_SSL_TICKET_C
+/*#define MBEDTLS_SSL_TICKET_C */
 
 /**
  * \def MBEDTLS_SSL_CLI_C
@@ -2949,7 +2949,7 @@ void mbedtls_platform_free( void * ptr );
  *
  * This module is required for X.509 CRL parsing.
  */
-#define MBEDTLS_X509_CRL_PARSE_C
+/*#define MBEDTLS_X509_CRL_PARSE_C */
 
 /**
  * \def MBEDTLS_X509_CSR_PARSE_C
@@ -3271,8 +3271,12 @@ void mbedtls_platform_free( void * ptr );
 
 /* \} name SECTION: Customisation configuration options */
 
-#define MBEDTLS_PSA_CRYPTO_C
+/*#define MBEDTLS_PSA_CRYPTO_C */
 
 #include "mbedtls/check_config.h"
 
-#undef MBEDTLS_PSA_CRYPTO_C
+/*#undef MBEDTLS_PSA_CRYPTO_C */
+
+#ifndef MBEDTLS_SVC_KEY_ID_INIT
+#define MBEDTLS_SVC_KEY_ID_INIT    ( ( psa_key_id_t ) 0 )
+#endif /* MBEDTLS_SVC_KEY_ID_INIT */

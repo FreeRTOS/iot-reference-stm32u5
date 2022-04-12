@@ -54,8 +54,6 @@
 
 /* MQTT Agent ports. */
 #include "freertos_command_pool.h"
-#include "core_pkcs11_config.h"
-
 
 /* Exponential backoff retry include. */
 #include "backoff_algorithm.h"
@@ -161,16 +159,6 @@ typedef struct MQTTAgentTaskCtx
 
 /* ALPN protocols must be a NULL-terminated list of strings. */
 static const char * pcAlpnProtocols[] = { AWS_IOT_MQTT_ALPN, NULL };
-
-#if defined( MBEDTLS_TRANSPORT_PKCS11 )
-static const PkiObject_t xPrivateKey = PKI_OBJ_PKCS11( pkcs11_TLS_KEY_PRV_LABEL );
-static const PkiObject_t xClientCertificate = PKI_OBJ_PKCS11( pkcs11_TLS_CERT_LABEL );
-static const PkiObject_t pxRootCaChain[] = { PKI_OBJ_PKCS11( pkcs11_ROOT_CA_CERT_LABEL ) };
-#elif defined( MBEDTLS_TRANSPORT_PSA )
-static const PkiObject_t xPrivateKey = PKI_OBJ_PSA_CRYPTO( 0x1234 );
-static const PkiObject_t xClientCertificate = PKI_OBJ_PSA_PS( 0x1234 );
-static const PkiObject_t pxRootCaChain[] = { PKI_OBJ_PSA_PS( 0x1234 ) };
-#endif
 
 static MQTTAgentHandle_t xDefaultInstanceHandle = NULL;
 
@@ -716,10 +704,10 @@ static void prvIncomingPublishCallback( MQTTAgentContext_t * pMqttAgentContext,
 static void prvSubscriptionManagerCtxFree( SubMgrCtx_t * pxSubMgrCtx )
 {
     configASSERT( pxSubMgrCtx );
-    configASSERT_CONTINUE( MUTEX_IS_OWNED( pxSubMgrCtx->xMutex ) );
 
     if( pxSubMgrCtx->xMutex )
     {
+        configASSERT_CONTINUE( MUTEX_IS_OWNED( pxSubMgrCtx->xMutex ) );
         vSemaphoreDelete( pxSubMgrCtx->xMutex );
     }
 }
@@ -949,6 +937,10 @@ void vMQTTAgentTask( void * pvParameters )
     uint8_t * pucNetworkBuffer = NULL;
     NetworkContext_t * pxNetworkContext = NULL;
     uint16_t usNextRetryBackOff = 0U;
+
+    PkiObject_t xPrivateKey = xPkiObjectFromLabel( TLS_KEY_PRV_LABEL );
+    PkiObject_t xClientCertificate = xPkiObjectFromLabel( TLS_CERT_LABEL );
+    PkiObject_t pxRootCaChain[ 1 ] = { xPkiObjectFromLabel( TLS_ROOT_CA_CERT_LABEL ) };
 
     ( void ) pvParameters;
 
@@ -1471,7 +1463,7 @@ MQTTStatus_t MqttAgent_SubscribeSync( MQTTAgentHandle_t xHandle,
             ( pxCtx->pxSubAckStatus[ uxTargetSubIdx ] == MQTTSubAckFailure ) )
         {
             pxCtx->pxSubscriptions[ uxTargetSubIdx ].pTopicFilter = pcTopicFilter;
-            pxCtx->pxSubscriptions[ uxTargetSubIdx ].topicFilterLength = xTopicFilterLen;
+            pxCtx->pxSubscriptions[ uxTargetSubIdx ].topicFilterLength = ( uint16_t ) xTopicFilterLen;
             pxCtx->pxSubscriptions[ uxTargetSubIdx ].qos = xRequestedQoS;
         }
 

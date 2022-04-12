@@ -1,6 +1,6 @@
 #  FreeRTOS STM32 Reference Integration
 #
-#  Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+#  Copyright (C) 2022 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a copy of
 #  this software and associated documentation files (the "Software"), to deal in
@@ -26,16 +26,16 @@
 ###############################################################################
 # Copy auto generated files and scripts needed by the NSPE build.
 ###############################################################################
-TFM_INTERFACE_FILES = ${shell sh -c 'find ${TFM_BUILD_PATH}/install/interface -type f'}
+TFM_INTERFACE_FILES = ${shell sh -c 'find ${TFM_BUILD_PATH}/install/interface -type f 2>/dev/null'}
 TFM_INTERFACE_HEADERS =  $(filter %.h,$(TFM_INTERFACE_FILES))
 TFM_INTERFACE_HEADER_PATHS = ${subst ${TFM_BUILD_PATH}/install/interface/,${PROJECT_PATH}/tfm/interface/,${TFM_INTERFACE_HEADERS}}
 
 TFM_S_VENEERS = ${TFM_BUILD_PATH}/install/interface/lib/s_veneers.o
 
-TFM_LAYOUT_FILES = ${shell sh -c 'find ${TFM_BUILD_PATH}/install/image_signing/layout_files -type f'}
+TFM_LAYOUT_FILES = ${shell sh -c 'find ${TFM_BUILD_PATH}/install/image_signing/layout_files -type f 2>/dev/null'}
 TFM_LAYOUT_PATHS = ${subst ${TFM_BUILD_PATH}/install/image_signing/layout_files/,${PROJECT_PATH}/tfm/layout_files/,${TFM_LAYOUT_FILES}}
 
-TFM_SCRIPT_FILES = ${shell sh -c "find ${TFM_BUILD_PATH}/install/image_signing/scripts -type f -name '*.py'"}
+TFM_SCRIPT_FILES = ${shell sh -c "find ${TFM_BUILD_PATH}/install/image_signing/scripts -type f -name '*.py' 2>/dev/null"}
 TFM_SCRIPT_PATHS = ${subst ${TFM_BUILD_PATH}/install/image_signing/scripts/,${PROJECT_PATH}/tfm/scripts/,${TFM_SCRIPT_FILES}}
 
 .DEFAULT_GOAL = all
@@ -73,6 +73,7 @@ ${PROJECT_PATH}/tfm/layout_files/%.o : ${TFM_BUILD_PATH}/install/image_signing/l
 	cp "$<" "$@"
 
 clean:
-	rm -rf ${PROJECT_PATH}/tfm/interface/
-	rm -rf ${PROJECT_PATH}/tfm/scripts/
-	rm -rf ${PROJECT_PATH}/tfm/layout_files/
+	rm -rf ${PROJECT_PATH}/tfm/interface/*.a
+	rm -rf ${PROJECT_PATH}/tfm/interface/include/*
+	rm -rf ${PROJECT_PATH}/tfm/scripts/*
+	rm -rf ${PROJECT_PATH}/tfm/layout_files/*.o

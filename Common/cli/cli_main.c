@@ -336,17 +336,16 @@ static uint32_t prvGetNumberOfArgs( const char * pcCommandString )
 
 void Task_CLI( void * pvParameters )
 {
+    ( void ) pvParameters;
     FreeRTOS_CLIRegisterCommand( &xCommandDef_conf );
-#if defined( MBEDTLS_TRANSPORT_PKCS11 )
     FreeRTOS_CLIRegisterCommand( &xCommandDef_pki );
-#endif /* defined( MBEDTLS_TRANSPORT_PKCS11 ) */
     FreeRTOS_CLIRegisterCommand( &xCommandDef_ps );
     FreeRTOS_CLIRegisterCommand( &xCommandDef_kill );
     FreeRTOS_CLIRegisterCommand( &xCommandDef_killAll );
     FreeRTOS_CLIRegisterCommand( &xCommandDef_heapStat );
     FreeRTOS_CLIRegisterCommand( &xCommandDef_reset );
     FreeRTOS_CLIRegisterCommand( &xCommandDef_uptime );
-
+    FreeRTOS_CLIRegisterCommand( &xCommandDef_rngtest );
 
     char * pcCommandBuffer = NULL;
 

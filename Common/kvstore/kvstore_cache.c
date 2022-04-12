@@ -225,7 +225,7 @@ BaseType_t xprvWriteCacheEntry( KVStoreKey_t xKey,
     /* Otherwise, type / length are the same, so check value */
     else
     {
-        void * pvReadPtr = pvGetDataReadPtr( xKey );
+        const void * pvReadPtr = pvGetDataReadPtr( xKey );
 
         if( ( pvReadPtr == NULL ) ||
             ( memcmp( pvReadPtr, pvNewValue, xLength ) != 0 ) )

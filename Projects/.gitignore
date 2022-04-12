@@ -1,0 +1,6 @@
+*/.settings/*
+!**/.settings/com.st.stm32cube.ide.mcu.sfrview.prefs
+!**/.settings/org.eclipse.cdt.core.prefs
+*/Debug
+*/Release
+*/*.cfg

@@ -347,8 +347,10 @@ static void vSubCommand_SetConfig( ConsoleIO_t * pxCIO,
             lCharsPrinted = CLI_OUTPUT_SCRATCH_BUF_LEN;
         }
 
-        /* Print call expects a null terminated string */
-        pxCIO->write( pcCliScratchBuffer, lCharsPrinted );
+        if( lCharsPrinted > 0 )
+        {
+            pxCIO->write( pcCliScratchBuffer, ( size_t ) lCharsPrinted );
+        }
     }
     else
     {

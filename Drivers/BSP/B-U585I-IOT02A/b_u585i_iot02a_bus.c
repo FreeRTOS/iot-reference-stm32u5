@@ -144,7 +144,6 @@ static const I2C_Charac_t I2C_Charac[] =
   * @{
   */
 #if (USE_HAL_I2C_REGISTER_CALLBACKS > 0)
-static uint32_t IsI2c1MspCbValid = 0;
 static uint32_t IsI2c2MspCbValid = 0;
 #endif /* USE_HAL_I2C_REGISTER_CALLBACKS */
 

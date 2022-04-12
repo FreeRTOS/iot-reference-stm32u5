@@ -239,7 +239,7 @@ void vMotionSensorsPublish( void * pvParameters )
     }
     else
     {
-        xTopicLen = snprintf( pcTopicString, MQTT_PUBLICH_TOPIC_STR_LEN, "/%s/motion_sensor_data", pcDeviceId );
+        xTopicLen = snprintf( pcTopicString, MQTT_PUBLICH_TOPIC_STR_LEN, "%s/motion_sensor_data", pcDeviceId );
     }
 
     if( ( xTopicLen == 0 ) || ( xTopicLen > MQTT_PUBLICH_TOPIC_STR_LEN ) )

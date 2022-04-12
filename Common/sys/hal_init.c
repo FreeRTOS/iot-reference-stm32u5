@@ -74,7 +74,9 @@ void hw_init( void )
     /* Configure the system clock */
     SystemClock_Config();
 
+#ifndef TFM_PSA_API
     hw_cache_init();
+#endif
 
     /* Initialize uart for logging before cli is up and running */
     vInitLoggingEarly();
@@ -576,6 +578,7 @@ static void hw_rng_init( void )
         .State                    = HAL_RNG_STATE_RESET,
         .RandomNumber             = 0
     };
+    volatile uint32_t ulDummyValue = 0;
 
     PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RNG;
     PeriphClkInit.RngClockSelection = RCC_RNGCLKSOURCE_HSI48;
@@ -591,6 +594,9 @@ static void hw_rng_init( void )
         xResult = HAL_RNG_Init( &xRngHandle );
         configASSERT( xResult == HAL_OK );
     }
+
+    /* Ignore first random value returned */
+    ( void ) HAL_RNG_GenerateRandomNumber( &xRngHandle, &ulDummyValue );
 
     if( xResult == HAL_OK )
     {
