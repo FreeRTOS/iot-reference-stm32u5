@@ -151,11 +151,11 @@ jobs:
       - name: Import Projects into STM32CubeIDE
         shell: bash
         run: |
-          CUBEIDE="STM32CubeIDE/${IDE_BIN} --launcher.suppressErrors -nosplash -application org.eclipse.cdt.managedbuilder.core.headlessbuild -data ${GITHUB_WORKSPACE} -verbose -no-indexer"
+          CUBEIDE="STM32CubeIDE/${IDE_BIN} --launcher.suppressErrors -nosplash -application org.eclipse.cdt.managedbuilder.core.headlessbuild -data ${GITHUB_WORKSPACE} -verbose"
           echo "CUBEIDE=${CUBEIDE}"
           echo "GITHUB_WORKSPACE=${GITHUB_WORKSPACE}"
           ${CUBEIDE} -removeAll "${GITHUB_WORKSPACE}\Projects"
-          ${CUBEIDE} -importAll "${GITHUB_WORKSPACE}\Projects"
+          ${CUBEIDE} -import "${GITHUB_WORKSPACE}\Projects\${{ matrix.project }}"
           ${CUBEIDE} -import "${GITHUB_WORKSPACE}\Projects\${{ matrix.project }}"
       - name: Build
         shell: bash
