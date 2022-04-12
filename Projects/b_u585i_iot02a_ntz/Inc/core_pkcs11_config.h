@@ -85,13 +85,13 @@
  * @brief Maximum number of token objects that can be stored
  * by the PKCS #11 module.
  */
-#define pkcs11configMAX_NUM_OBJECTS                        32
+#define pkcs11configMAX_NUM_OBJECTS                        32U
 
 /**
  * @brief Maximum number of sessions that can be stored
  * by the PKCS #11 module.
  */
-#define pkcs11configMAX_SESSIONS                           10
+#define pkcs11configMAX_SESSIONS                           10U
 
 /**
  * @brief Set to 1 if a PAL destroy object is implemented.
