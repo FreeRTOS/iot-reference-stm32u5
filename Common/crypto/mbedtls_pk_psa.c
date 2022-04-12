@@ -32,17 +32,14 @@
 
 #include <string.h>
 
+#define MBEDTLS_ALLOW_PRIVATE_ACCESS
+
 #include "psa/crypto.h"
 #include "psa/crypto_types.h"
 #include "psa/crypto_values.h"
-
 #include "mbedtls_transport.h"
 
-#define MBEDTLS_ALLOW_PRIVATE_ACCESS
-
 /* Mbedtls Includes */
-#include "mbedtls/private_access.h"
-
 #include "mbedtls/pk.h"
 #include "mbedtls/asn1.h"
 #include "mbedtls/platform.h"
