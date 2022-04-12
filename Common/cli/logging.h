@@ -72,6 +72,10 @@ void vInitLoggingEarly( void );
 /* task.h cannot be included here because this file is included by FreeRTOSConfig.h */
 extern void vTaskSuspendAll( void );
 
+#ifndef __BASE_FILE__
+    #define __BASE_FILE__ "UNKNOWN"
+#endif /* ! __BASE_FILE__ */
+
 /* Get basename of file using gcc builtins. */
 #define __NAME_ARG__    ( __builtin_strrchr( __BASE_FILE__, '/' ) ? __builtin_strrchr( __BASE_FILE__, '/' ) + 1 : __BASE_FILE__ )
 

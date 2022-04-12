@@ -298,7 +298,6 @@ static void vSignalTask( TaskHandle_t xTask,
     }
 }
 
-/* This is a really dumb way to do this */
 static TaskHandle_t xGetTaskHandleFromID( UBaseType_t uxTaskID )
 {
     TaskHandle_t xTaskHandle = NULL;
@@ -622,7 +621,7 @@ static void vUptimeCommand( ConsoleIO_t * const pxCIO,
                             uint32_t ulArgc,
                             char * ppcArgv[] )
 {
-    size_t xLen = 0;
+    int lRslt = 0;
 
     const unsigned int MS_PER_SECOND = 1000;
     const unsigned int MS_PER_MINUTE = 60 * MS_PER_SECOND;
@@ -631,7 +630,10 @@ static void vUptimeCommand( ConsoleIO_t * const pxCIO,
 
     unsigned long ulMsCount = ( xTaskGetTickCount() / portTICK_PERIOD_MS );
 
-    xLen = snprintf( pcCliScratchBuffer,
+    ( void ) ulArgc;
+    ( void ) ppcArgv;
+
+    lRslt = snprintf( pcCliScratchBuffer,
                      CLI_OUTPUT_SCRATCH_BUF_LEN,
                      "up %lu day(s) %02lu:%02lu:%02lu.%03lu\r\n",
                      ulMsCount / MS_PER_DAY,
@@ -639,6 +641,9 @@ static void vUptimeCommand( ConsoleIO_t * const pxCIO,
                      ( ulMsCount % MS_PER_HOUR ) / MS_PER_MINUTE,
                      ( ulMsCount % MS_PER_MINUTE ) / MS_PER_SECOND,
                      ulMsCount % MS_PER_SECOND );
-
-    pxCIO->write( pcCliScratchBuffer, xLen );
+    if( lRslt > 0 &&
+        lRslt < CLI_OUTPUT_SCRATCH_BUF_LEN )
+    {
+        pxCIO->write( pcCliScratchBuffer, ( size_t ) lRslt );
+    }
 }
