@@ -157,13 +157,11 @@ ${TFM_BUILD_PATH}/.ready :
 		-DTFM_ISOLATION_LEVEL=2 \
 		-DPython_FIND_VIRTUALENV=FIRST \
 		-DCMAKE_MAKE_PROGRAM=${MAKE} \
-		-DCMAKE_OBJECT_PATH_MAX=1024 \
 		-DTFM_PARTITION_FIRMWARE_UPDATE=ON \
 		-DMCUBOOT_DATA_SHARING=ON \
 		-G"Unix Makefiles" \
 		-DCONFIG_TFM_FP=hard \
-		-DTFM_EXCEPTION_INFO_DUMP=on \
-		-DNS=1 && touch $@
+		-DTFM_EXCEPTION_INFO_DUMP=on && touch $@
 	sleep 1
 
 ###############################################################################
