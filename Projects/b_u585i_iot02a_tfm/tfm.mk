@@ -139,7 +139,7 @@ spe_patch_libs_distclean :
 ###############################################################################
 
 # Use cmake to generate the Makefile file
-${TFM_BUILD_PATH}/.ready :
+${TFM_BUILD_PATH}/.ready : ${MBEDTLS_PATCH_FLAGS} ${MCUBOOT_PATCH_FLAGS}
 	@echo Calling cmake for artifact: $@ due to prereq: $?
 	${RM} ${TFM_BUILD_PATH}
 	mkdir -p ${TFM_BUILD_PATH}
@@ -161,7 +161,8 @@ ${TFM_BUILD_PATH}/.ready :
 		-DMCUBOOT_DATA_SHARING=ON \
 		-G"Unix Makefiles" \
 		-DCONFIG_TFM_FP=hard \
-		-DTFM_EXCEPTION_INFO_DUMP=on && touch $@
+		-DTFM_EXCEPTION_INFO_DUMP=on \
+		-DNS=0 && touch $@
 	sleep 1
 
 ###############################################################################
@@ -195,7 +196,7 @@ tfm_bin : ${TFM_ARTIFACT_PATHS}
 ###############################################################################
 # Build TF-M Artifacts / SPE image
 ###############################################################################
-${TFM_ARTIFACT_PATHS} &: ${TFM_BUILD_PATH}/.ready ${MBEDTLS_PATCH_FLAGS} ${MCUBOOT_PATCH_FLAGS}
+${TFM_ARTIFACT_PATHS} &: ${TFM_BUILD_PATH}/.ready
 	@echo Calling TFM build for artifact: $@ due to prereq: $?
 	$(MAKE) -C ${TFM_BUILD_PATH} all install
 	$(MAKE) -f ${PROJECT_PATH}/generated.mk PROJECT_PATH=${PROJECT_PATH} TFM_BUILD_PATH=${TFM_BUILD_PATH} all
@@ -235,7 +236,7 @@ TFM_INTF_LIB = ${PROJECT_PATH}/tfm/interface/libtfm_interface.a
 ###############################################################################
 # Build tfm interface library.
 ###############################################################################
-$(TFM_INTF_LIB) : ${TFM_BUILD_PATH}/app/libtfm_api_ns.a
+$(TFM_INTF_LIB) :
 	cp $^ $@
 	$(MAKE) -f ${PROJECT_PATH}/generated.mk PROJECT_PATH=${PROJECT_PATH} TFM_BUILD_PATH=${TFM_BUILD_PATH} all
 
