@@ -187,7 +187,7 @@ case "$1" in
         ;;
     "tz_enable")
         echo "Enabling TZ"
-        prog_cli mode=HOTPLUG -ob TZEN=1 || {
+        prog_cli mode=HOTPLUG -ob TZEN=1 SRAM2_RST=0 || {
             echo "Error: Trustzone enable operation failed."
             exit 1
         }
@@ -224,7 +224,7 @@ case "$1" in
         }
 
         echo "Enabling SECWM, setting SECBOOTADD0"
-        prog_cli mode=UR -ob SECWM1_PSTRT=0 SECWM1_PEND=${FP} SECBOOTADD0="${SECBOOTADD0}" || {
+        prog_cli mode=UR -ob SECWM1_PSTRT=0 SECWM1_PEND=${FP} SECBOOTADD0="${SECBOOTADD0}" SRAM2_RST=0 || {
             echo "Error: Flash unlock operation failed."
             exit 1
         }
