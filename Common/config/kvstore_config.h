@@ -34,7 +34,6 @@ typedef enum KvStoreEnum
     CS_CORE_MQTT_ENDPOINT,
     CS_CORE_MQTT_PORT,
     CS_WIFI_SSID,
-    CS_WIFI_AUTH,
     CS_WIFI_CREDENTIAL,
     CS_TIME_HWM_S_1970,
     CS_NUM_KEYS
@@ -54,7 +53,6 @@ typedef enum KvStoreEnum
         "mqtt_endpoint",   \
         "mqtt_port",       \
         "wifi_ssid",       \
-        "wifi_auth",       \
         "wifi_credential", \
         "time_hwm"         \
     }
@@ -65,7 +63,6 @@ typedef enum KvStoreEnum
         KV_DFLT( KV_TYPE_STRING, MQTT_ENDOPOINT_DFLT ), /* CS_CORE_MQTT_ENDPOINT */ \
         KV_DFLT( KV_TYPE_UINT32, 8883 ),                /* CS_CORE_MQTT_PORT */     \
         KV_DFLT( KV_TYPE_STRING, WIFI_SSID_DFLT ),      /* CS_WIFI_SSID */          \
-        KV_DFLT( KV_TYPE_STRING, "" ),                  /* CS_WIFI_AUTH */          \
         KV_DFLT( KV_TYPE_STRING, WIFI_PASSWORD_DFLT ),  /* CS_WIFI_CREDENTIAL */    \
         KV_DFLT( KV_TYPE_UINT32, 0 ),                   /* CS_TIME_HWM_S_1970 */    \
     }
