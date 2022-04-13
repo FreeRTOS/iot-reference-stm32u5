@@ -36,8 +36,6 @@ typedef enum KvStoreEnum
     CS_WIFI_SSID,
     CS_WIFI_AUTH,
     CS_WIFI_CREDENTIAL,
-    CS_TLS_VERIFY_CA,
-    CS_TLS_VERIFY_SNI,
     CS_TIME_HWM_S_1970,
     CS_NUM_KEYS
 } KVStoreKey_t;
@@ -58,8 +56,6 @@ typedef enum KvStoreEnum
         "wifi_ssid",       \
         "wifi_auth",       \
         "wifi_credential", \
-        "tls_verify_ca",   \
-        "tls_verify_sni",  \
         "time_hwm"         \
     }
 
@@ -71,8 +67,6 @@ typedef enum KvStoreEnum
         KV_DFLT( KV_TYPE_STRING, WIFI_SSID_DFLT ),      /* CS_WIFI_SSID */          \
         KV_DFLT( KV_TYPE_STRING, "" ),                  /* CS_WIFI_AUTH */          \
         KV_DFLT( KV_TYPE_STRING, WIFI_PASSWORD_DFLT ),  /* CS_WIFI_CREDENTIAL */    \
-        KV_DFLT( KV_TYPE_BASE_T, pdTRUE ),              /* CS_TLS_VERIFY_CA */      \
-        KV_DFLT( KV_TYPE_BASE_T, pdTRUE ),              /* CS_TLS_VERIFY_SNI */     \
         KV_DFLT( KV_TYPE_UINT32, 0 ),                   /* CS_TIME_HWM_S_1970 */    \
     }
 
