@@ -33,6 +33,7 @@
 /* Standard includes. */
 #include <string.h>
 #include <stdio.h>
+#include <assert.h>
 
 /* Kernel includes. */
 #include "FreeRTOS.h"
