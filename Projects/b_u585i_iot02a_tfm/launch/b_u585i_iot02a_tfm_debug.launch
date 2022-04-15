@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <launchConfiguration type="com.st.stm32cube.ide.mcu.debug.launch.launchConfigurationType">
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.launch.access_port_id" value="0"/>
-    <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.launch.enable_live_expr" value="true"/>
+    <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.launch.enable_live_expr" value="false"/>
     <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.launch.enable_swv" value="false"/>
     <intAttribute key="com.st.stm32cube.ide.mcu.debug.launch.formatVersion" value="2"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.launch.ip_address_local" value="localhost"/>
     <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.launch.limit_swo_clock.enabled" value="false"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.launch.limit_swo_clock.value" value=""/>
-    <stringAttribute key="com.st.stm32cube.ide.mcu.debug.launch.loadList" value="{&quot;fItems&quot;:[{&quot;fIsFromMainTab&quot;:false,&quot;fPath&quot;:&quot;Debug/b_u585i_iot02a_tfm_ns.elf&quot;,&quot;fProjectName&quot;:&quot;b_u585i_iot02a_tfm&quot;,&quot;fUseActiveBuildConfig&quot;:true,&quot;fPerformBuild&quot;:false,&quot;fDownload&quot;:false,&quot;fLoadSymbols&quot;:true},{&quot;fIsFromMainTab&quot;:true,&quot;fPath&quot;:&quot;Debug/b_u585i_iot02a_tfm_s.elf&quot;,&quot;fProjectName&quot;:&quot;b_u585i_iot02a_tfm&quot;,&quot;fPerformBuild&quot;:true,&quot;fDownload&quot;:false,&quot;fLoadSymbols&quot;:true}]}"/>
+    <stringAttribute key="com.st.stm32cube.ide.mcu.debug.launch.loadList" value="{&quot;fItems&quot;:[{&quot;fIsFromMainTab&quot;:true,&quot;fPath&quot;:&quot;Debug/b_u585i_iot02a_tfm_ns.elf&quot;,&quot;fProjectName&quot;:&quot;b_u585i_iot02a_tfm&quot;,&quot;fPerformBuild&quot;:true,&quot;fDownload&quot;:false,&quot;fLoadSymbols&quot;:false}]}"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.launch.override_start_address_mode" value="default"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.launch.remoteCommand" value="target remote"/>
     <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.launch.startServer" value="true"/>
@@ -24,14 +24,14 @@
     <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.openocd.DBG_DEVICE_SHAREABLE_ALLOWED" value="false"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.openocd.DBG_INTERFACE" value="Swd"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.openocd.DBG_INTERFACE_FREQUENCY" value="2.4E7"/>
-    <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.openocd.DBG_LOW_POWER_MODE_ALLOWED" value="true"/>
-    <stringAttribute key="com.st.stm32cube.ide.mcu.debug.openocd.DBG_RESET_MODE" value="connect_under_reset"/>
-    <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.openocd.DBG_STOP_WATCHDOG_THEN_HALTED_ALLOWED" value="true"/>
+    <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.openocd.DBG_LOW_POWER_MODE_ALLOWED" value="false"/>
+    <stringAttribute key="com.st.stm32cube.ide.mcu.debug.openocd.DBG_RESET_MODE" value="none"/>
+    <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.openocd.DBG_STOP_WATCHDOG_THEN_HALTED_ALLOWED" value="false"/>
     <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.openocd.OPENOCD_GENERATOR_OPTION" value="true"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.openocd.OPENOCD_NAME" value="&quot;${stm32cubeide_openocd_path}/openocd&quot;"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.openocd.OPENOCD_OTHER_OPTIONS" value=""/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.openocd.OPENOCD_RESTART_CONFIGURATIONS" value="{&quot;fVersion&quot;:1,&quot;fItems&quot;:[{&quot;fDisplayName&quot;:&quot;Reset halt&quot;,&quot;fIsSuppressible&quot;:false,&quot;fResetAttribute&quot;:&quot;Reset halt&quot;,&quot;fResetStrategies&quot;:[{&quot;fDisplayName&quot;:&quot;Reset halt&quot;,&quot;fLaunchAttribute&quot;:&quot;monitor reset halt&quot;,&quot;fGdbCommands&quot;:[&quot;monitor reset halt&quot;],&quot;fCmdOptions&quot;:[]},{&quot;fDisplayName&quot;:&quot;Reset init&quot;,&quot;fLaunchAttribute&quot;:&quot;monitor reset init&quot;,&quot;fGdbCommands&quot;:[&quot;monitor reset init&quot;],&quot;fCmdOptions&quot;:[]},{&quot;fDisplayName&quot;:&quot;None&quot;,&quot;fLaunchAttribute&quot;:&quot;&quot;,&quot;fGdbCommands&quot;:[],&quot;fCmdOptions&quot;:[]}],&quot;fGdbCommandGroup&quot;:{&quot;name&quot;:&quot;Additional commands&quot;,&quot;commands&quot;:[]},&quot;fStartApplication&quot;:true},{&quot;fDisplayName&quot;:&quot;Reset init&quot;,&quot;fIsSuppressible&quot;:false,&quot;fResetAttribute&quot;:&quot;Reset init&quot;,&quot;fResetStrategies&quot;:[{&quot;fDisplayName&quot;:&quot;Reset halt&quot;,&quot;fLaunchAttribute&quot;:&quot;monitor reset halt&quot;,&quot;fGdbCommands&quot;:[&quot;monitor reset halt&quot;],&quot;fCmdOptions&quot;:[]},{&quot;fDisplayName&quot;:&quot;Reset init&quot;,&quot;fLaunchAttribute&quot;:&quot;monitor reset init&quot;,&quot;fGdbCommands&quot;:[&quot;monitor reset init&quot;],&quot;fCmdOptions&quot;:[]},{&quot;fDisplayName&quot;:&quot;None&quot;,&quot;fLaunchAttribute&quot;:&quot;&quot;,&quot;fGdbCommands&quot;:[],&quot;fCmdOptions&quot;:[]}],&quot;fGdbCommandGroup&quot;:{&quot;name&quot;:&quot;Additional commands&quot;,&quot;commands&quot;:[]},&quot;fStartApplication&quot;:true}]}"/>
-    <stringAttribute key="com.st.stm32cube.ide.mcu.debug.openocd.OPENOCD_SCRIPT" value="${ProjDirPath}/b_u585i_iot02a_tfm_debug_s_ns.cfg"/>
+    <stringAttribute key="com.st.stm32cube.ide.mcu.debug.openocd.OPENOCD_SCRIPT" value="${ProjDirPath}/b_u585i_iot02a_tfm_debug.cfg"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.openocd.OPENOCD_SCRIPT_CHOICE" value="automated"/>
     <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.openocdenable_rtos" value="false"/>
     <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.stlink.cti_allow_halt" value="false"/>
@@ -55,9 +55,9 @@
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.stlinkrestart_configurations" value="{&quot;fVersion&quot;:1,&quot;fItems&quot;:[{&quot;fDisplayName&quot;:&quot;Reset&quot;,&quot;fIsSuppressible&quot;:false,&quot;fResetAttribute&quot;:&quot;Software system reset&quot;,&quot;fResetStrategies&quot;:[{&quot;fDisplayName&quot;:&quot;Software system reset&quot;,&quot;fLaunchAttribute&quot;:&quot;system_reset&quot;,&quot;fGdbCommands&quot;:[&quot;monitor reset\n&quot;],&quot;fCmdOptions&quot;:[&quot;-g&quot;]},{&quot;fDisplayName&quot;:&quot;Hardware reset&quot;,&quot;fLaunchAttribute&quot;:&quot;hardware_reset&quot;,&quot;fGdbCommands&quot;:[&quot;monitor reset hardware\n&quot;],&quot;fCmdOptions&quot;:[&quot;-g&quot;]},{&quot;fDisplayName&quot;:&quot;Core reset&quot;,&quot;fLaunchAttribute&quot;:&quot;core_reset&quot;,&quot;fGdbCommands&quot;:[&quot;monitor reset core\n&quot;],&quot;fCmdOptions&quot;:[&quot;-g&quot;]},{&quot;fDisplayName&quot;:&quot;None&quot;,&quot;fLaunchAttribute&quot;:&quot;no_reset&quot;,&quot;fGdbCommands&quot;:[],&quot;fCmdOptions&quot;:[&quot;-g&quot;]}],&quot;fGdbCommandGroup&quot;:{&quot;name&quot;:&quot;Additional commands&quot;,&quot;commands&quot;:[]},&quot;fStartApplication&quot;:true}]}"/>
     <booleanAttribute key="com.st.stm32cube.ide.mcu.rtosproxy.enableRtosProxy" value="false"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.rtosproxy.rtosProxyCustomProperties" value=""/>
-    <stringAttribute key="com.st.stm32cube.ide.mcu.rtosproxy.rtosProxyDriver" value="threadx"/>
+    <stringAttribute key="com.st.stm32cube.ide.mcu.rtosproxy.rtosProxyDriver" value="freertos"/>
     <booleanAttribute key="com.st.stm32cube.ide.mcu.rtosproxy.rtosProxyDriverAuto" value="false"/>
-    <stringAttribute key="com.st.stm32cube.ide.mcu.rtosproxy.rtosProxyDriverPort" value="cortex_m0"/>
+    <stringAttribute key="com.st.stm32cube.ide.mcu.rtosproxy.rtosProxyDriverPort" value="ARM_CM33_NTZ"/>
     <intAttribute key="com.st.stm32cube.ide.mcu.rtosproxy.rtosProxyPort" value="60000"/>
     <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.doHalt" value="false"/>
     <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.doReset" value="false"/>
@@ -66,20 +66,20 @@
     <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.jtagDeviceId" value="com.st.stm32cube.ide.mcu.debug.openocd"/>
     <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.pcRegister" value=""/>
     <intAttribute key="org.eclipse.cdt.debug.gdbjtag.core.portNumber" value="3333"/>
-    <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.runCommands" value="echo Starting Download&#10;load Debug/b_u585i_iot02a_tfm_s_ns_signed.hex&#10;echo Download Complete&#10;mon reset init&#10;"/>
+    <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.runCommands" value="monitor reset halt&#10;monitor arm semihosting enable&#10;monitor echo &quot;Starting Download&quot;&#10;monitor reset init&#10;mon flash write_image erase Debug/b_u585i_iot02a_tfm_s_ns_update.hex&#10;monitor echo &quot;Download Complete&quot;&#10;monitor echo &quot;Loading Symbols&quot;&#10;add-symbol-file Debug/b_u585i_iot02a_tfm_s.elf&#10;add-symbol-file Debug/b_u585i_iot02a_tfm_ns.elf&#10;monitor echo &quot;Loading Symbols Complete&quot;&#10;monitor reset halt&#10;break app_main.c:main&#10;continue"/>
     <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.setPcRegister" value="false"/>
-    <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.setResume" value="true"/>
-    <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.setStopAt" value="true"/>
-    <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.stopAt" value="main"/>
+    <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.setResume" value="false"/>
+    <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.setStopAt" value="false"/>
+    <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.stopAt" value=""/>
     <stringAttribute key="org.eclipse.cdt.dsf.gdb.DEBUG_NAME" value="arm-none-eabi-gdb"/>
     <booleanAttribute key="org.eclipse.cdt.dsf.gdb.NON_STOP" value="false"/>
     <booleanAttribute key="org.eclipse.cdt.dsf.gdb.UPDATE_THREADLIST_ON_SUSPEND" value="false"/>
-    <intAttribute key="org.eclipse.cdt.launch.ATTR_BUILD_BEFORE_LAUNCH_ATTR" value="0"/>
+    <intAttribute key="org.eclipse.cdt.launch.ATTR_BUILD_BEFORE_LAUNCH_ATTR" value="1"/>
     <stringAttribute key="org.eclipse.cdt.launch.COREFILE_PATH" value=""/>
     <stringAttribute key="org.eclipse.cdt.launch.DEBUGGER_START_MODE" value="remote"/>
-    <booleanAttribute key="org.eclipse.cdt.launch.DEBUGGER_STOP_AT_MAIN" value="true"/>
-    <stringAttribute key="org.eclipse.cdt.launch.DEBUGGER_STOP_AT_MAIN_SYMBOL" value="main"/>
-    <stringAttribute key="org.eclipse.cdt.launch.PROGRAM_NAME" value="Debug/b_u585i_iot02a_tfm_s.elf"/>
+    <booleanAttribute key="org.eclipse.cdt.launch.DEBUGGER_STOP_AT_MAIN" value="false"/>
+    <stringAttribute key="org.eclipse.cdt.launch.DEBUGGER_STOP_AT_MAIN_SYMBOL" value=""/>
+    <stringAttribute key="org.eclipse.cdt.launch.PROGRAM_NAME" value="Debug/b_u585i_iot02a_tfm_ns.elf"/>
     <stringAttribute key="org.eclipse.cdt.launch.PROJECT_ATTR" value="b_u585i_iot02a_tfm"/>
     <booleanAttribute key="org.eclipse.cdt.launch.PROJECT_BUILD_CONFIG_AUTO_ATTR" value="true"/>
     <stringAttribute key="org.eclipse.cdt.launch.PROJECT_BUILD_CONFIG_ID_ATTR" value="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.402628481"/>
