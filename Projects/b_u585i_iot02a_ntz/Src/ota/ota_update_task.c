@@ -423,7 +423,7 @@ static char * pcThingName = NULL;
 /**
  * @brief Variable which holds the length of the thing name.
  */
-static uint32_t thingNameLength = 0UL;
+static size_t uxThingNameLength = 0UL;
 
 
 /**
@@ -644,7 +644,7 @@ static void prvProcessIncomingData( void * pxContext,
     isMatch = prvMatchClientIdentifierInTopic( pPublishInfo->pTopicName,
                                                pPublishInfo->topicNameLength,
                                                pcThingName,
-                                               thingNameLength );
+                                               uxThingNameLength );
 
     if( isMatch == pdTRUE )
     {
@@ -1044,7 +1044,7 @@ void vOTAUpdateTask( void * pvParam )
     /* OTA Agent state returned from calling OTA_GetAgentState.*/
     OtaState_t state = OtaAgentStateStopped;
 
-    MQTTStatus_t xMQTTStatus;
+    MQTTStatus_t xMQTTStatus = MQTTBadParameter;
 
     /**
      * @brief Structure containing all application allocated buffers used by the OTA agent.
@@ -1068,19 +1068,13 @@ void vOTAUpdateTask( void * pvParam )
     if( xResult == pdPASS )
     {
         /* Fetch thing name from key value store. */
-        pcThingName = ( char * ) pvPortMalloc( KVStore_getSize( CS_CORE_THING_NAME ) );
+        pcThingName = KVStore_getStringHeap( CS_CORE_THING_NAME, &uxThingNameLength );
 
-        if( pcThingName != NULL )
-        {
-            thingNameLength = KVStore_getString( CS_CORE_THING_NAME,
-                                                 pcThingName,
-                                                 KVStore_getSize( CS_CORE_THING_NAME ) );
-            configASSERT( thingNameLength > 0 );
-        }
-        else
+        if( ( pcThingName == NULL ) ||
+            ( uxThingNameLength == 0 ) )
         {
             xResult = pdFAIL;
-            LogError( ( "Failed to allocate memory for thing name." ) );
+            LogError( ( "Failed to load thing name from key value store." ) );
         }
     }
 
@@ -1167,11 +1161,18 @@ void vOTAUpdateTask( void * pvParam )
 
     LogInfo( ( "OTA agent task stopped. Exiting OTA demo." ) );
 
+    if( xMQTTStatus == MQTTSuccess )
+    {
+        xMQTTStatus = MqttAgent_UnSubscribeSync( xMQTTAgentHandle,
+                                                 OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER,
+                                                 prvProcessIncomingJobMessage,
+                                                 NULL );
 
-    MqttAgent_UnSubscribeSync( xMQTTAgentHandle,
-                               OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER,
-                               prvProcessIncomingJobMessage,
-                               NULL );
+        if( xMQTTStatus != MQTTSuccess )
+        {
+            LogError( "MQTT unsubscribe request failed." );
+        }
+    }
 
     if( pcThingName != NULL )
     {
