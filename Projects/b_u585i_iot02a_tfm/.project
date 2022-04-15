@@ -142,6 +142,11 @@
 			<locationURI>WORKSPACE_LOC/Middleware/AWS/OTA/source</locationURI>
 		</link>
 		<link>
+			<name>Libraries/ota-pal-psa</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Middleware/ARM/ota-pal-psa</locationURI>
+		</link>
+		<link>
 			<name>Libraries/tinycbor</name>
 			<type>2</type>
 			<locationURI>WORKSPACE_LOC/Middleware/tinycbor/src</locationURI>
@@ -479,33 +484,6 @@
 			<matcher>
 				<id>org.eclipse.ui.ide.multiFilter</id>
 				<arguments>1.0-name-matches-false-false-*.h</arguments>
-			</matcher>
-		</filter>
-		<filter>
-			<id>1634426066446</id>
-			<name>Libraries/trusted-firmware-m</name>
-			<type>21</type>
-			<matcher>
-				<id>org.eclipse.ui.ide.multiFilter</id>
-				<arguments>1.0-name-matches-false-false-*.h</arguments>
-			</matcher>
-		</filter>
-		<filter>
-			<id>1634426066448</id>
-			<name>Libraries/trusted-firmware-m</name>
-			<type>9</type>
-			<matcher>
-				<id>org.eclipse.ui.ide.multiFilter</id>
-				<arguments>1.0-name-matches-false-false-interface</arguments>
-			</matcher>
-		</filter>
-		<filter>
-			<id>1634426066452</id>
-			<name>Libraries/trusted-firmware-m</name>
-			<type>21</type>
-			<matcher>
-				<id>org.eclipse.ui.ide.multiFilter</id>
-				<arguments>1.0-name-matches-false-false-*.c</arguments>
 			</matcher>
 		</filter>
 		<filter>

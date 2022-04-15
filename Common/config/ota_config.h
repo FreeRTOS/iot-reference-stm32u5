@@ -56,7 +56,7 @@
  *
  * 10 bits yields a data block size of 1KB.
  */
-#define otaconfigLOG2_FILE_BLOCK_SIZE           11UL
+#define otaconfigLOG2_FILE_BLOCK_SIZE           10UL
 
 /**
  * @brief Size of the file data block message (excluding the header).
@@ -174,5 +174,14 @@
  */
 
 #define configOTA_PRIMARY_DATA_PROTOCOL    ( OTA_DATA_OVER_MQTT )
+
+/**
+ * @brief Configuration for public key used to  validate the signature of OTA update images.
+ * Public key should be PEM encoded with the format as below:
+ * "-----BEGIN PUBLIC KEY-----\n"\
+ * "...base64 data...\n"\
+ * "-----END PUBLIC KEY-----\n"
+ */
+#define configOTA_CODE_VERIFY_PUBLIC_KEY   " Plesase insert key here"
 
 #endif /* OTA_CONFIG_H_ */
