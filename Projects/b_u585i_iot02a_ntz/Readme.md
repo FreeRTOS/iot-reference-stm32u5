@@ -48,13 +48,11 @@ To know more about the above command, visit the Troubleshooting section at the e
 The script will prompt you to enter the following details. You only need to update wifi_ssid, wifi_credential, mqtt_endpoint and thing name.
 
 ```
-tls_verify_ca[]: <Click enter>
 time_hwm[]: <Click enter>
-Wifi_credential[]: <your wifi password>
+wifi_credential[]: <your wifi password>
 wifi_auth[]: <Click enter>
 mqtt_endpoint[]: <a1qwhobjt*****-ats.iot.us-east-2.amazonaws.com>
 wifi_ssid[]: <your wifi ssid>
-tls_verify[]: <Click enter>
 mqtt_port[]: <Click enter>
 thing_name[]: <stm32u5>
 ```
