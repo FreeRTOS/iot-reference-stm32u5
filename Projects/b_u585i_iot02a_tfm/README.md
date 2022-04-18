@@ -2,11 +2,11 @@
 
 ## Overview
 
-The following Readme.md contains instructions on getting the secure(b_u585i_iot02a_tfm) version of the project up and running. It connects to AWS Core and publishes data. 
+The following Readme.md contains instructions on getting the secure(b_u585i_iot02a_tfm) version of the project up and running. It connects to AWS Core and publishes data.
 
-## Importing the projects into STM32CubeIDE and Building the Project 
+## Importing the projects into STM32CubeIDE and Building the Project
 
-The b_u585i_iot02a_tfm project uses the TrustZone capabilities of the U5 board. 
+The b_u585i_iot02a_tfm project uses the TrustZone capabilities of the U5 board.
  With the project cloned on the C drive, open STM32CubeIDE. When prompted with setting workspace, click on Browse and navigate to C:\lab-iot-reference-stm32u5 as shown below:
 
 <img width="550" alt="13" src="https://user-images.githubusercontent.com/44592967/153656131-4688b728-4bde-4828-abdb-12f616b8c70b.PNG">
@@ -65,7 +65,7 @@ or FULL if only the binaries but not the flash layout has changed.
  With the firmware flashed to the board, open a command prompt, and navigate to the root of the project(lab-iot-reference-stm32u5). Type:
 
  ````
- python tools/provision.py -i -v 
+ python tools/provision.py -i -v
  ````
 
  To know more about the above command, visit the Troubleshooting section at the end of the document.
@@ -103,7 +103,7 @@ The end of the script will look somewhat like this:
 2 . For the command to run the script as mentioned in the document:
 
 `
-python tools/provision.py -i –v 
+python tools/provision.py -i –v
 `
 
 Note that here are the additional arguments:

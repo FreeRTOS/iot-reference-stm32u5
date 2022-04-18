@@ -2,11 +2,11 @@
 
 ## Overview
 
-The following Readme.md contains instructions on getting the non-secure(b_u585i_iot02a_ntz) version of the project up and running. It connects to AWS Core and publishes data. It also contains instructions on how to perform an OTA update in the later section of the Readme.md. 
+The following Readme.md contains instructions on getting the non-secure(b_u585i_iot02a_ntz) version of the project up and running. It connects to AWS Core and publishes data. It also contains instructions on how to perform an OTA update in the later section of the Readme.md.
 
-## Importing the projects into STM32CubeIDE and Building the Project 
+## Importing the projects into STM32CubeIDE and Building the Project
 
-The b_u585i_iot02a_ntz project does not use the TrustZone capabilities of the U5 board. 
+The b_u585i_iot02a_ntz project does not use the TrustZone capabilities of the U5 board.
 With the project cloned on the C drive, open STM32CubeIDE. When prompted with setting workspace, click on Browse and navigate to C:\lab-iot-reference-stm32u5 as shown below:
 
 <img width="550" alt="13" src="https://user-images.githubusercontent.com/44592967/153656131-4688b728-4bde-4828-abdb-12f616b8c70b.PNG">
@@ -287,7 +287,7 @@ aws iot describe-job-execution --job-id=<Job ID created above> --thing-name=<thi
 2 . For the command to run the script as mentioned in the document:
 
 `
-python tools/provision.py -i –v 
+python tools/provision.py -i –v
 `
 
 Note that here are the additional arguments for reference:
@@ -304,4 +304,3 @@ Note that here are the additional arguments for reference:
 --aws-access-key-id AWS_ACCESS_KEY_ID
 --aws-access-key-secret AWS_ACCESS_KEY_SECRET
 ```
-

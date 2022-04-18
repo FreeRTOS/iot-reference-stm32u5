@@ -10,9 +10,7 @@ The STM32U5 IoT Discovery Kit is equipped with a Wi-Fi and Bluetooth module, mic
 
 The board also comes with 512-Mbit octal-SPI Flash memory, 64-Mbit octal-SPI PSRAM, 256-Kbit I2C EEPROM, as well as ARDUINO Uno V3, STMod+, and Pmod expansion connectors, plus an expansion connector for a camera module, and STLink-V3E embedded debugger.
 
-The following project folder consists of a **Non Trust Zone version(b_u585i_iot02a_ntz)** of the project and **Tfm enabled version(b_u585i_iot02a_tfm)** of the project. The following shows the steps to follow for connecting the secure project to AWS and doing an OTA(Over the Air) Update and also connecting the non secure project to AWS. 
-
-The demo connects to AWS IoT over Wi-Fi. It then uses the coreMQTT-Agent library to enable multiple concurrent tasks to share the connection. Those tasks publish sensor data, and demonstrate use of the Device Shadow and Device Defender AWS IoT services. There are two projects included, with and without Trusted Firmware-M(https://www.trustedfirmware.org/projects/tf-m/) enabled.
+The following project folder consists of a **Non-TrustZone version(b_u585i_iot02a_ntz)** of the project and **TF-M enabled version(b_u585i_iot02a_tfm)** of the project. The following shows the steps to connect the STM32U585 IoT Discovery kit to AWS IoT core and utilize the FreeRTOS OTA Update service. The demo connects to AWS IoT using the WiFi module. It then uses the coreMQTT-Agent library to enable multiple concurrent tasks to share a single MQTT connection. These tasks publish sensor data, and demonstrate use of the Device Shadow and Device Defender AWS IoT services.
 
 ## Hardware Description
 
@@ -24,7 +22,7 @@ A USB micro-B cable
 
 ## Clone the repository and submodules
 
-Using your favorite unix-like console application, run the following commands to clone and initialize the git repository and its submodules, preferably on the C drive directly. For the purpose of this document it has been cloned on the C drive. 
+Using your favorite unix-like console application, run the following commands to clone and initialize the git repository and its submodules. If using Microsoft Windows, path length limitations may apply so it is recommended to clone the respository to the root of a drive rather than deep in the directory tree.
 
 ```
 git clone https://github.com/FreeRTOS/lab-iot-reference-stm32u5.git
@@ -62,14 +60,14 @@ Optional: A serial terminal like [TeraTerm](https://osdn.net/projects/ttssh2/rel
 
 ![image](https://user-images.githubusercontent.com/44592967/162077566-531f1bf3-d974-44ef-9409-06df1615cfd0.png)
 
-Connect the ST-LINK USB port (USB STLK / CN8) to the PC with USB cable.  The USB STLK port is located to the right of the MXCHIP module in the above figure. It is used for power supply, programming the application in flash memory, and interacting with the application with virtual serial COM port. 
+Connect the ST-LINK USB port (USB STLK / CN8) to the PC with USB cable.  The USB STLK port is located to the right of the MXCHIP module in the above figure. It is used for power supply, programming the application in flash memory, and interacting with the application with virtual serial COM port.
 
-## Running the non secure and the secure project  
+## Running the non secure and the secure project
 
-For getting the Non Trust Zone project up and running follow the README.md in  
+For getting the Non Trust Zone project up and running follow the README.md in
 Projects\b_u585i_iot02a_ntz by clicking [here](Projects/b_u585i_iot02a_ntz/Readme.md).
 
-For getting the Trust Zone project up and running follow the README.md in  
+For getting the Trust Zone project up and running follow the README.md in
 Projects/b_u585i_iot02a_tfm by clicking [here](Projects/b_u585i_iot02a_tfm/Readme.md).
 
 ## Component Licensing
