@@ -124,12 +124,12 @@ openssl req -new -x509 -config cert_config.txt -extensions my_exts -nodes -days 
 NOTE: This command displays an ARN for your certificate. You need this ARN when you create an OTA update job later
 
 ```
-aws acm import-certificate --certificate fileb://ecdsasigner.crt --private-key fileb://ecdsasigner.key
+aws acm import-certificate --certificate fileb://ecdsasigner.crt --private-key fileb://ecdsasigner-priv-key.pem
 ```
 
 5. Connect the device to a terminal over serial port. On the command line prompt type following command to provision public key to device:
 
-  `> pki import cert ota_signer_pub`
+  `> pki import key ota_signer_pub`
 
    Press `Enter` then paste the contents of the PEM public key file `ecdsasigner-pub-key.pem` into the terminal.
    Press `Enter` again.
@@ -155,7 +155,7 @@ aws signer put-signing-profile --profile-name <your profile name> --signing-mate
 
 ## Create a code signed firmware update job
 
-1. Bump up the version of the new firmware image to be updated. From the demo project, open File B-U585I-IOT02A/tz_disabled/Inc/ota_config.h and set APP_VERSION_MAJOR to 1 higher than current version. Build the firmware image using STM32Cube IDE.
+1. Bump up the version of the new firmware image to be updated. From the demo project, open File Common/config/ota_config.h and set APP_VERSION_MAJOR to 1 higher than current version. Build the firmware image using STM32Cube IDE.
 
 2. Upload the new image to the s3 bucket created in the previous section.
 
@@ -246,7 +246,7 @@ Note down the job ID to check the status of the job later.
 > AF>    16351 [OTAAgent] Current State=[WaitingForFileBlock], Event=[RequestFileBlock], New state=[WaitingForFileBlock] (ota.c:2834)
 > AF>    15293 [OTAAgent] Extracted parameter: [key: value]=[execution.jobDocument.afr_ota.streamname: AFR_OTA-eb53bc47-6918-4b2c-9c85-a4c74c44a04c] (ota.c:1642)
 <INF>    15294 [OTAAgent] Extracted parameter: [key: value]=[execution.jobDocument.afr_ota.protocols: ["MQTT"]] (ota.c:1642)
-<INF>    15296 [OTAAgent] Extracted parameter: [key: value]=[filepath: tz_disabled.bin] (ota.c:1642)
+<INF>    15296 [OTAAgent] Extracted parameter: [key: value]=[filepath: b_u585i_iot02a_ntz.bin] (ota.c:1642)
 <INF>    17784 [OTAAgent] Current State=[WaitingForFileBlock], Event=[RequestFileBlock], New state=[WaitingForFileBlock] (ota.c:2834)
 <INF>    15297 [OTAAgent] Extracted parameter: [key: value]=[fileid: 0] (ota.c:1683)
 <INF>    15298 [OTAAgent] Extracted parameter: [key: value]=[certfile: ota_signer_pub] (ota.c:1642)
