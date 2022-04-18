@@ -36,52 +36,30 @@ This is how the workspace with the imported projects looks like:
 
 Build the project.
 
-The binaries will get populated in the the following path C:/lab-iot-reference-stm32u5/Projects/b_u585_iot02a_tfm/Debug as shown below:
+The binaries will get populated in the Projects/b_u585_iot02a_tfm/Debug directory as shown below:
 
 ![image](https://user-images.githubusercontent.com/44592967/160490860-386ae4d9-8688-432c-b028-235393c9ae13.png)
 
- In order to flash the genarted binaries to the board, open a git bash terminal in Windows and navigate to the root of the Debug repository.
+To Enable TrustZone, Select the "External Tools" menu and run the "Trustzone Enable" tool.
 
- Type in the following commands :
+To flash the newly built binary on to the target board, select the "Run" menu and then the "Flash_tfm_bl2_s_ns" configuration.
 
- ```
- flash_gp.sh REG
- flash_gp.sh RM
- flash_gp.sh FULL
- ```
-Ensure that the script programs the bytes and runs to completion successfully.
+## Running the demo
 
-There are 3 use cases for the above script :
+With the firmware flashed to the board, open a command prompt, and navigate to the root of the project(lab-iot-reference-stm32u5). Type:
 
-a)	Non-secure project to Secure project = mass erase + TZ + RM + FULL
-b)	Secure project to Non-secure project = RM + TZ-REG
-c)	Secure project to Secure project = RM +  FULL
-or NS if only the user app is changed,
-or FULL if only the binaries but not the flash layout has changed.
-
-
- ## Running the demo
-
- With the firmware flashed to the board, open a command prompt, and navigate to the root of the project(lab-iot-reference-stm32u5). Type:
-
- ````
- python tools/provision.py -i -v
- ````
-
- To know more about the above command, visit the Troubleshooting section at the end of the document.
-
+````
+python tools/provision.py -i
+````
 The script will prompt you to enter the following details. You only need to update wifi_ssid, wifi_credential, mqtt_endpoint and thing name.
 
 ```
-tls_verify_ca[]: <Click enter>
-time_hwm[]: <Click enter>
-Wifi_credential[]: <your wifi password>
-wifi_auth[]: <Click enter>
+time_hwm[]: <enter>
+wifi_credential[]: <your wifi password>
 mqtt_endpoint[]: <a1qwhobjt*****-ats.iot.us-east-2.amazonaws.com>
 wifi_ssid[]: <your wifi ssid>
-tls_verify[]: <Click enter>
-mqtt_port[]: <Click enter>
-thing_name[]: <stm32u5>
+mqtt_port[]: <enter>
+thing_name[]:
 ```
 <img width="500" alt="20" src="https://user-images.githubusercontent.com/44592967/153658546-8c9a7212-86c9-4b38-aeb8-982aeaade8f0.PNG">
 
@@ -91,7 +69,7 @@ The end of the script will look somewhat like this:
 
 <img width="500" alt="21" src="https://user-images.githubusercontent.com/44592967/153658687-c6bfc826-5653-483c-97b9-957bef57b53a.PNG">
 
- Optional: Open a serial terminal like TeraTerm. Connect to the board and set the Baud Rate to 115200. Reset the board to observe activity on TeraTerm.
+Optional: Open a serial terminal like TeraTerm. Connect to the board and set the Baud Rate to 115200. Reset the board to observe activity on TeraTerm.
 
 
 ## Troubleshooting
@@ -100,7 +78,7 @@ The end of the script will look somewhat like this:
 
 <img width="314" alt="25" src="https://user-images.githubusercontent.com/44592967/153659709-64d8cc21-9c5e-4fe5-8bf0-d43116662f20.PNG">
 
-2 . For the command to run the script as mentioned in the document:
+2. For the command to run the script as mentioned in the document:
 
 `
 python tools/provision.py -i –v

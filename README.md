@@ -22,7 +22,8 @@ A USB micro-B cable
 
 ## Clone the repository and submodules
 
-Using your favorite unix-like console application, run the following commands to clone and initialize the git repository and its submodules. If using Microsoft Windows, path length limitations may apply so it is recommended to clone the respository to the root of a drive rather than deep in the directory tree.
+Using your favorite unix-like console application, run the following commands to clone and initialize the git repository and its submodules.
+ If using Microsoft Windows, path length limitations may apply so it is recommended to clone the respository to the root of a drive to minimize the path length of each file.
 
 ```
 git clone https://github.com/FreeRTOS/lab-iot-reference-stm32u5.git
@@ -31,7 +32,7 @@ git -C lab-iot-reference-stm32u5 submodule update --init
 
 ## Set up your Development Environment
 
-Download and install [STM32CubeIDE](https://www.st.com/en/development-tools/stm32cubeide.html#get-software) Version 1.8.0.
+Download and install [STM32CubeIDE](https://www.st.com/en/development-tools/stm32cubeide.html#get-software) Version 1.9.0.
 Download and install the latest version of [Python](https://www.python.org/downloads/).
 During the installation process for python, make sure to tick the boxes to install pip and add python to path.
 To install python libraries using pip, navigate to the repository (C:\lab-iot-reference-stm32u5\tools) and type:
@@ -62,7 +63,7 @@ Optional: A serial terminal like [TeraTerm](https://osdn.net/projects/ttssh2/rel
 
 Connect the ST-LINK USB port (USB STLK / CN8) to the PC with USB cable.  The USB STLK port is located to the right of the MXCHIP module in the above figure. It is used for power supply, programming the application in flash memory, and interacting with the application with virtual serial COM port.
 
-## Running the non secure and the secure project
+## Running the TFM-Enabled and Non-TrustZone projects
 
 For getting the Non Trust Zone project up and running follow the README.md in
 Projects\b_u585i_iot02a_ntz by clicking [here](Projects/b_u585i_iot02a_ntz/Readme.md).

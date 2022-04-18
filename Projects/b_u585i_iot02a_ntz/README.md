@@ -50,7 +50,6 @@ The script will prompt you to enter the following details. You only need to upda
 ```
 time_hwm[]: <Click enter>
 wifi_credential[]: <your wifi password>
-wifi_auth[]: <Click enter>
 mqtt_endpoint[]: <a1qwhobjt*****-ats.iot.us-east-2.amazonaws.com>
 wifi_ssid[]: <your wifi ssid>
 mqtt_port[]: <Click enter>
@@ -242,9 +241,8 @@ Note down the job ID to check the status of the job later.
  1. Once the job is created on the terminal logs, you will see that OTA job is accepted and device starts downloading image.
 
 ```
->>>>>>> cfc299a (Updating Getting Started guide)
-> AF>    16351 [OTAAgent] Current State=[WaitingForFileBlock], Event=[RequestFileBlock], New state=[WaitingForFileBlock] (ota.c:2834)
-> AF>    15293 [OTAAgent] Extracted parameter: [key: value]=[execution.jobDocument.afr_ota.streamname: AFR_OTA-eb53bc47-6918-4b2c-9c85-a4c74c44a04c] (ota.c:1642)
+<INF>    16351 [OTAAgent] Current State=[WaitingForFileBlock], Event=[RequestFileBlock], New state=[WaitingForFileBlock] (ota.c:2834)
+<INF>    15293 [OTAAgent] Extracted parameter: [key: value]=[execution.jobDocument.afr_ota.streamname: AFR_OTA-eb53bc47-6918-4b2c-9c85-a4c74c44a04c] (ota.c:1642)
 <INF>    15294 [OTAAgent] Extracted parameter: [key: value]=[execution.jobDocument.afr_ota.protocols: ["MQTT"]] (ota.c:1642)
 <INF>    15296 [OTAAgent] Extracted parameter: [key: value]=[filepath: b_u585i_iot02a_ntz.bin] (ota.c:1642)
 <INF>    17784 [OTAAgent] Current State=[WaitingForFileBlock], Event=[RequestFileBlock], New state=[WaitingForFileBlock] (ota.c:2834)
@@ -258,7 +256,7 @@ Note down the job ID to check the status of the job later.
 <INF>    15450 [OTAAgent] Current State=[Creating
 
 ```
-2. Once all image is downloaded, it verifies signature and activates the new image in the other bank.
+2. Once the full image has been downloaded, the OTA library verifies the image signature and activates the new image in the unused flash bank.
 
 ```
 <INF>    67405 [OTAAgent] Received final block of the update. (ota.c:2633)
