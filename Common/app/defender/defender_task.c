@@ -69,9 +69,6 @@
 /* Subscription manager header include. */
 #include "subscription_manager.h"
 
-/* JSON Library. */
-#include "core_json.h"
-
 /* Device Defender Client Library. */
 #include "defender.h"
 
@@ -708,7 +705,7 @@ void vDefenderAgentTask( void * pvParameters )
         if( xError == CborNoError )
         {
             size_t xLen = cbor_encoder_get_buffer_size( &xEncoder, pucReportBuffer );
-            LogInfo( "Publishing device defender report." );
+            LogInfo( "Publishing defender metrics report." );
 
             xSuccess = prvPublishDeviceMetricsReport( &xCtx, pucReportBuffer, xLen );
 
