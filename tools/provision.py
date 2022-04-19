@@ -32,16 +32,17 @@ import os
 import random
 import string
 from time import time
-from TargetDevice import TargetDevice
-from CryptoUtils import CryptoUtils
-from AWSHelper import AWSHelper
 
 import boto3
 import requests
 import serial
 import serial.tools.list_ports
+from AWSHelper import AWSHelper
+from CryptoUtils import CryptoUtils
+from TargetDevice import TargetDevice
 
 logger = logging.getLogger()
+
 
 def find_serial_port(usbVendorId=0x0483, usbProductId=0x374E):
     ports = serial.tools.list_ports.comports()
@@ -98,9 +99,9 @@ def provision_pki(target, aws, cert_issuer):
         raise SystemExit
 
     if cert_issuer == "aws":
-        provision_pki_csr( target, aws )
+        provision_pki_csr(target, aws)
     elif cert_issuer == "self":
-        provision_pki_self( target, aws )
+        provision_pki_self(target, aws)
     else:
         print("Error: Unknown certificate issuer.")
         raise SystemExit
@@ -114,6 +115,7 @@ def provision_pki(target, aws, cert_issuer):
     else:
         print('Importing Root Ca Certificate: "{}"'.format(ca_cert.common_name))
         target.write_cert(ca_cert_pem, label="root_ca_cert")
+
 
 def provision_pki_self(target, aws):
     print("Generating a self-signed Certificate")

@@ -26,22 +26,27 @@
 #
 #
 
+from dataclasses import dataclass
+
 from cryptography import x509
 from cryptography.hazmat.primitives.asymmetric import ec, rsa
 from cryptography.hazmat.primitives.serialization import load_pem_public_key
 from cryptography.x509.oid import NameOID
-from dataclasses import dataclass
+
 
 class CryptoUtils:
     @dataclass
     class CACertificate:
         """Keep track of a single CA Certificate"""
+
         common_name: str
         organization: str
         label: str
         pem: str
 
-        def __init__(self, subject_common_name: str, subject_organization: str, label: str):
+        def __init__(
+            self, subject_common_name: str, subject_organization: str, label: str
+        ):
             self.subject_common_name = subject_common_name
             self.subject_organization = subject_organization
             self.label = label
@@ -82,18 +87,24 @@ class CryptoUtils:
                 x509Cert = x509.load_pem_x509_certificate(ca_cert_pem)
             except ValueError:
                 logging.error(
-                    "Failed to parse certificate: Common Name: {}, Organization: {}".format(self.common_name, self.organization)
+                    "Failed to parse certificate: Common Name: {}, Organization: {}".format(
+                        self.common_name, self.organization
+                    )
                 )
                 result = False
 
             if result:
-                for attr in x509Cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME):
+                for attr in x509Cert.subject.get_attributes_for_oid(
+                    NameOID.COMMON_NAME
+                ):
                     rfc4514_str = attr.rfc4514_string()
                     logging.debug("Parsed Cert Attribute: {}".format(rfc4514_str))
                     if not ("CN=" in rfc4514_str and attr.value == self.common_name):
                         result = False
 
-                for attr in x509Cert.subject.get_attributes_for_oid(NameOID.ORGANIZATION_NAME):
+                for attr in x509Cert.subject.get_attributes_for_oid(
+                    NameOID.ORGANIZATION_NAME
+                ):
                     rfc4514_str = attr.rfc4514_string()
                     logging.debug("Parsed Cert Attribute: {}".format(rfc4514_str))
                     if not ("O=" in rfc4514_str and attr.value == self.organization):
@@ -107,27 +118,15 @@ class CryptoUtils:
                 return cert
 
     AmazonTrustRootCAs = (
-        CACertificate(
-            "Amazon Root CA 1",
-            "Amazon",
-            "AmazonRootCA1" ),
-        CACertificate(
-            "Amazon Root CA 2",
-            "Amazon",
-            "AmazonRootCA2" ),
-        CACertificate(
-            "Amazon Root CA 3",
-            "Amazon",
-            "AmazonRootCA3"),
-        CACertificate(
-            "Amazon Root CA 4",
-            "Amazon",
-            "AmazonRootCA4"),
+        CACertificate("Amazon Root CA 1", "Amazon", "AmazonRootCA1"),
+        CACertificate("Amazon Root CA 2", "Amazon", "AmazonRootCA2"),
+        CACertificate("Amazon Root CA 3", "Amazon", "AmazonRootCA3"),
+        CACertificate("Amazon Root CA 4", "Amazon", "AmazonRootCA4"),
         CACertificate(
             "Starfield Services Root Certificate Authority - G2",
             "Starfield Technologies, Inc.",
             "SFSRootCAG2",
-        )
+        ),
     )
 
     def validate_csr(csr_pem: bytes, pub_key_pem: bytes, common_name: str):
@@ -182,7 +181,8 @@ class CryptoUtils:
                 result = False
         elif result and isinstance(key, ec.EllipticCurvePublicKey):
             if not (
-                isinstance(key.curve, ec.SECP256R1) or isinstance(key.curve, ec.SECP384R1)
+                isinstance(key.curve, ec.SECP256R1)
+                or isinstance(key.curve, ec.SECP384R1)
             ):
                 logging.error("Error: EC keys must of type secp256r1 or secp384r1.")
                 result = False
@@ -192,7 +192,9 @@ class CryptoUtils:
 
         return result
 
-    def validate_certificate_from_csr(cert_pem: bytes, pub_key_pem: bytes, common_name: str):
+    def validate_certificate_from_csr(
+        cert_pem: bytes, pub_key_pem: bytes, common_name: str
+    ):
         result = True
         pubkey = None
         cert = None
@@ -226,7 +228,11 @@ class CryptoUtils:
                     commonNameFound = True
 
             if not commonNameFound:
-                logging.error("Error: Did not find \"{}\" in Certificate subject.".format(common_name))
+                logging.error(
+                    'Error: Did not find "{}" in Certificate subject.'.format(
+                        common_name
+                    )
+                )
                 result = False
         return result
 
@@ -263,7 +269,11 @@ class CryptoUtils:
                     commonNameFound = True
 
             if not commonNameFound:
-                logging.error("Error: Did not find \"{}\" in Certificate Subject.".format(common_name))
+                logging.error(
+                    'Error: Did not find "{}" in Certificate Subject.'.format(
+                        common_name
+                    )
+                )
                 result = False
 
         if result:
@@ -275,6 +285,10 @@ class CryptoUtils:
                     commonNameFound = True
 
             if not commonNameFound:
-                logging.error("Error: Did not find \"{}\" in Certificate Issuer.".format(common_name))
+                logging.error(
+                    'Error: Did not find "{}" in Certificate Issuer.'.format(
+                        common_name
+                    )
+                )
                 result = False
         return result

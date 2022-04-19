@@ -244,4 +244,3 @@ class AWSHelper:
         )
 
         return self.thing.copy()
-

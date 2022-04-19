@@ -1,10 +1,11 @@
-import serial
 import io
-from time import monotonic,time
 import logging
+from time import monotonic, time
 
+import serial
 
 logger = logging.getLogger()
+
 
 class TargetDevice:
     _running_config = None
@@ -245,7 +246,6 @@ class TargetDevice:
 
         # Otherwise, no changes to write
 
-
     def conf_get(self, key):
         """Get the specified key as a string"""
         # Convert fromt ascii to byte string
@@ -282,4 +282,3 @@ class TargetDevice:
         value_b = bytes(value, "ascii")
         if self._running_config.get(key_b, None) != value_b:
             self._staged_config[key_b] = value_b
-
