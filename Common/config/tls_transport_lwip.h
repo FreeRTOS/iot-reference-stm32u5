@@ -20,28 +20,23 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef TLS_TRANSPORT_CONFIG
-#define TLS_TRANSPORT_CONFIG
+#ifndef TLS_TRANSPORT_LWIP
+#define TLS_TRANSPORT_LWIP
 
-#include "tls_transport_lwip.h"
-#include "core_pkcs11_config.h"
+/* Lwip related definitions */
 
-#define configTLS_MAX_LABEL_LEN    pkcs11configMAX_LABEL_LENGTH
-#define TLS_KEY_PRV_LABEL          pkcs11_TLS_KEY_PRV_LABEL
-#define TLS_KEY_PUB_LABEL          pkcs11_TLS_KEY_PUB_LABEL
-#define TLS_CERT_LABEL             pkcs11_TLS_CERT_LABEL
-#define TLS_ROOT_CA_CERT_LABEL     pkcs11_ROOT_CA_CERT_LABEL
-#define OTA_SIGNING_KEY_LABEL      pkcs11configLABEL_CODE_VERIFICATION_KEY
+#define sock_socket         lwip_socket
+#define sock_connect        lwip_connect
+#define sock_send           lwip_send
+#define sock_recv           lwip_recv
+#define sock_close          lwip_close
+#define sock_setsockopt     lwip_setsockopt
+#define sock_fcntl          lwip_fcntl
+#define sock_select         lwip_select
 
-/*
- * Define MBEDTLS_TRANSPORT_PKCS11 to enable certificate and key storage via the PKCS#11 API.
- */
-#define MBEDTLS_TRANSPORT_PKCS11
+#define dns_getaddrinfo     lwip_getaddrinfo
+#define dns_freeaddrinfo    lwip_freeaddrinfo
 
-/*
- * Define MBEDTLS_TRANSPORT_PSA to enable certificate and key storage via the ARM PSA API.
- */
-/*#define MBEDTLS_TRANSPORT_PSA */
+typedef int SockHandle_t;
 
-
-#endif /* TLS_TRANSPORT_CONFIG */
+#endif /* TLS_TRANSPORT_LWIP */
