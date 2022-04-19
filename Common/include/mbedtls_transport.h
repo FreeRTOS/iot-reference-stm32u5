@@ -42,6 +42,7 @@
 #include "mbedtls/threading.h"
 #include "mbedtls/x509.h"
 #include "pk_wrap.h"
+
 #include "tls_transport_config.h"
 
 #include "PkiObject.h"
@@ -95,23 +96,6 @@ typedef enum TlsTransportStatus
 } TlsTransportStatus_t;
 
 typedef void ( * GenericCallback_t )( void * );
-
-/*-----------------------------------------------------------*/
-
-/* Lwip related definitions */
-
-#define sock_socket         lwip_socket
-#define sock_connect        lwip_connect
-#define sock_send           lwip_send
-#define sock_recv           lwip_recv
-#define sock_close          lwip_close
-#define sock_setsockopt     lwip_setsockopt
-#define sock_fcntl          lwip_fcntl
-
-#define dns_getaddrinfo     lwip_getaddrinfo
-#define dns_freeaddrinfo    lwip_freeaddrinfo
-
-typedef int SockHandle_t;
 
 /*-----------------------------------------------------------*/
 

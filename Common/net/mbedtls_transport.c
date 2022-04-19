@@ -159,7 +159,7 @@ static void vSocketNotifyThread( void * pvParameters )
         FD_SET( xSockHandle, &xReadSet );
         FD_SET( xSockHandle, &xErrorSet );
 
-        lRslt = lwip_select( xSockHandle + 1, &xReadSet, NULL, &xErrorSet, NULL );
+        lRslt = sock_select( xSockHandle + 1, &xReadSet, NULL, &xErrorSet, NULL );
 
         xExitFlag |= ( lRslt == 0 );
 

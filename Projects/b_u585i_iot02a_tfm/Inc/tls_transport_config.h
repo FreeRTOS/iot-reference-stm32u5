@@ -1,6 +1,8 @@
 #ifndef TLS_TRANSPORT_CONFIG
 #define TLS_TRANSPORT_CONFIG
 
+#include "tls_transport_lwip.h"
+
 #define configTLS_MAX_LABEL_LEN    32UL
 #define TLS_KEY_PRV_LABEL          "tls_key_priv"
 #define TLS_KEY_PUB_LABEL          "tls_key_pub"
