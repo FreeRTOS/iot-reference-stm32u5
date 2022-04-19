@@ -1,6 +1,6 @@
 /*
  * FreeRTOS STM32 Reference Integration
- * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * Copyright (C) 2022 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -27,7 +27,7 @@
  */
 
 #include "logging_levels.h"
-#define LOG_LEVEL    LOG_DEBUG
+#define LOG_LEVEL    LOG_INFO
 #include "logging.h"
 
 /* Standard includes. */
@@ -145,7 +145,7 @@ typedef struct MQTTAgentTaskCtx
     MQTTAgentContext_t xAgentContext;
 
     MQTTFixedBuffer_t xNetworkFixedBuffer;
-    TransportInterface_t xTransport; /*TODO: remove this. Is copied into mqtt context by MQTT_Init */
+    TransportInterface_t xTransport;
 
     MQTTAgentMessageInterface_t xMessageInterface;
     MQTTAgentMessageContext_t xAgentMessageCtx;
@@ -223,16 +223,16 @@ static inline BaseType_t xLockSubCtx( SubMgrCtx_t * pxSubCtx )
 
     configASSERT_CONTINUE( !MUTEX_IS_OWNED( pxSubCtx->xMutex ) );
 
-    LogDebug( ">>   LOCK begin wait." );
+    LogDebug( "Waiting for Mutex." );
     xResult = xSemaphoreTake( pxSubCtx->xMutex, portMAX_DELAY );
 
     if( xResult )
     {
-        LogDebug( ">>>> LOCK complete." );
+        LogDebug( ">>>> Mutex wait complete." );
     }
     else
     {
-        LogError( "**** LOCK request failed, xResult=%d.", xResult );
+        LogError( "**** Mutex request failed, xResult=%d.", xResult );
     }
 
     return xResult;
@@ -252,11 +252,11 @@ static inline BaseType_t xUnlockSubCtx( SubMgrCtx_t * pxSubCtx )
 
     if( xResult )
     {
-        LogDebug( "<<<< UNLOCK." );
+        LogDebug( "<<<< Mutex Give." );
     }
     else
     {
-        LogError( "**** UNLOCK request failed, xResult=%d.", xResult );
+        LogError( "**** Mutex Give request failed, xResult=%d.", xResult );
     }
 
     return xResult;
@@ -665,21 +665,29 @@ static void prvIncomingPublishCallback( MQTTAgentContext_t * pMqttAgentContext,
         /* Iterate over pxCtx->pxCallbacks list */
         for( uint32_t ulCbIdx = 0; ulCbIdx < MQTT_AGENT_MAX_CALLBACKS; ulCbIdx++ )
         {
-            MQTTSubscribeInfo_t * const pxSubInfo = pxCtx->pxCallbacks[ ulCbIdx ].pxSubInfo;
+            SubCallbackElement_t * const pxCallback = &( pxCtx->pxCallbacks[ ulCbIdx ] );
+            MQTTSubscribeInfo_t * const pxSubInfo = pxCallback->pxSubInfo;
 
             if( ( pxSubInfo != NULL ) &&
                 prvMatchTopic( pxSubInfo,
                                pxPublishInfo->pTopicName,
                                pxPublishInfo->topicNameLength ) )
             {
-                SubCallbackElement_t * const pxCallback = &( pxCtx->pxCallbacks[ ulCbIdx ] );
+                char * pcTaskName = pcTaskGetName( pxCallback->xTaskHandle );
 
-                if( pxCallback->pxSubInfo == pxSubInfo )
+                if( !pcTaskName )
                 {
-                    pxCallback->pxIncomingPublishCallback( pxCallback->pvIncomingPublishCallbackContext,
-                                                           pxPublishInfo );
-                    xPublishHandled = true;
+                    pcTaskName = "Unknown";
                 }
+
+                LogInfo( "Handling callback for task=%s, topic=\"%.*s\", filter=\"%.*s\".",
+                         pcTaskName,
+                         pxPublishInfo->topicNameLength, pxPublishInfo->pTopicName,
+                         pxSubInfo->topicFilterLength, pxSubInfo->pTopicFilter );
+
+                pxCallback->pxIncomingPublishCallback( pxCallback->pvIncomingPublishCallbackContext,
+                                                       pxPublishInfo );
+                xPublishHandled = true;
             }
         }
 
@@ -688,15 +696,8 @@ static void prvIncomingPublishCallback( MQTTAgentContext_t * pMqttAgentContext,
 
     if( !xPublishHandled )
     {
-        LogWarn( "Incoming publish with topic: \"%.*s\" does not match any callback functions.",
-                 pxPublishInfo->topicNameLength,
-                 pxPublishInfo->pTopicName );
-    }
-    else
-    {
-        LogDebug( "Incoming publish with topic: \"%.*s\" was handled successfully.",
-                  pxPublishInfo->topicNameLength,
-                  pxPublishInfo->pTopicName );
+        LogWarn( "Incoming publish with topic=\"%.*s\" does not match any callback functions.",
+                 pxPublishInfo->topicNameLength, pxPublishInfo->pTopicName );
     }
 }
 
@@ -1071,8 +1072,8 @@ void vMQTTAgentTask( void * pvParameters )
                                           pdTRUE,
                                           portMAX_DELAY );
 
-            LogInfo( ( "Attempting a TLS connection to %s:%d.",
-                       pxCtx->pcMqttEndpoint, pxCtx->ulMqttPort ) );
+            LogInfo( "Attempting a TLS connection to %s:%d.",
+                     pxCtx->pcMqttEndpoint, pxCtx->ulMqttPort );
 
             xTlsStatus = mbedtls_transport_connect( pxNetworkContext,
                                                     pxCtx->pcMqttEndpoint,
@@ -1117,15 +1118,16 @@ void vMQTTAgentTask( void * pvParameters )
 
             configASSERT_CONTINUE( MUTEX_IS_OWNED( pxCtx->xSubMgrCtx.xMutex ) );
 
-            LogInfo( "Session present: %d", xSessionPresent );
-
             /* Resume a session if desired. */
             if( ( xMQTTStatus == MQTTSuccess ) &&
                 ( pxCtx->xConnectInfo.cleanSession == false ) )
             {
+                configASSERT_CONTINUE( MUTEX_IS_OWNED( pxCtx->xSubMgrCtx.xMutex ) );
+                LogInfo( "Resuming persistent MQTT Session." );
+
                 xMQTTStatus = MQTTAgent_ResumeSession( &( pxCtx->xAgentContext ), xSessionPresent );
 
-                /* Resubscribe to all the subscribed topics. */
+                /* Re-subscribe to all the previously subscribed topics if there is no existing session. */
                 if( ( xMQTTStatus == MQTTSuccess ) &&
                     ( xSessionPresent == false ) )
                 {
@@ -1136,6 +1138,8 @@ void vMQTTAgentTask( void * pvParameters )
             else if( xMQTTStatus == MQTTSuccess )
             {
                 configASSERT_CONTINUE( MUTEX_IS_OWNED( pxCtx->xSubMgrCtx.xMutex ) );
+
+                LogInfo( "Starting a clean MQTT Session." );
 
                 prvSubscriptionManagerCtxReset( &( pxCtx->xSubMgrCtx ) );
 
@@ -1332,6 +1336,8 @@ static inline MQTTStatus_t prvSendSubRequest( MQTTAgentContext_t * pxAgentCtx,
 
     xStatus = MQTTAgent_Subscribe( pxAgentCtx, &xSubscribeArgs, &xCommandInfo );
 
+    LogInfo( "MQTT Subscribe, filter=\"%.*s\"", pxSubInfo->topicFilterLength, pxSubInfo->pTopicFilter );
+
     if( xStatus == MQTTSuccess )
     {
         uint32_t ulNotifyValue = 0;
@@ -1481,6 +1487,8 @@ MQTTStatus_t MqttAgent_SubscribeSync( MQTTAgentHandle_t xHandle,
 
             /* Increment subscription reference count. */
             pxCtx->pulSubCbCount[ uxTargetSubIdx ]++;
+
+            LogInfo( "Callback registered with filter=\"%.*s\".", xTopicFilterLen, pcTopicFilter );
         }
 
         ( void ) xUnlockSubCtx( pxCtx );
@@ -1551,6 +1559,8 @@ static inline MQTTStatus_t prvSendUnsubRequest( MQTTAgentContext_t * pxAgentCtx,
     {
         uint32_t ulNotifyValue = 0;
 
+        LogInfo( "MQTT Unsubscribe: \"%.*s\"", pxSubInfo->topicFilterLength, pxSubInfo->pTopicFilter );
+
         if( xTaskNotifyWaitIndexed( MQTT_AGENT_NOTIFY_IDX,
                                     0x0,
                                     0xFFFFFFFF,
@@ -1608,9 +1618,10 @@ MQTTStatus_t MqttAgent_UnSubscribeSync( MQTTAgentHandle_t xHandle,
         /* Find matching subscription context */
         for( size_t uxIdx = 0U; uxIdx < MQTT_AGENT_MAX_SUBSCRIPTIONS; uxIdx++ )
         {
-            if( strncmp( pxCtx->pxSubscriptions[ uxIdx ].pTopicFilter,
-                         pcTopicFilter,
-                         pxCtx->pxSubscriptions[ uxIdx ].topicFilterLength ) == 0 )
+            if( ( xTopicFilterLen == pxCtx->pxSubscriptions[ uxIdx ].topicFilterLength ) &&
+                ( strncmp( pxCtx->pxSubscriptions[ uxIdx ].pTopicFilter,
+                           pcTopicFilter,
+                           pxCtx->pxSubscriptions[ uxIdx ].topicFilterLength ) == 0 ) )
             {
                 uxSubInfoIdx = uxIdx;
                 xStatus = MQTTSuccess;
@@ -1650,6 +1661,8 @@ MQTTStatus_t MqttAgent_UnSubscribeSync( MQTTAgentHandle_t xHandle,
         }
 
         ( void ) xUnlockSubCtx( pxCtx );
+
+        LogInfo( "Callback de-registered, filter=\"%.*s\".", xTopicFilterLen, pcTopicFilter );
 
         if( ( xStatus == MQTTSuccess ) &&
             ( pxCtx->pulSubCbCount[ uxSubInfoIdx ] == 0 ) )
