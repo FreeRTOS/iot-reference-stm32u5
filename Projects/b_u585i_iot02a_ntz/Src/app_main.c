@@ -37,7 +37,6 @@
 #include "stm32u5xx.h"
 #include "kvstore.h"
 #include "hw_defs.h"
-/*#include "psa/crypto.h" */
 #include <string.h>
 
 #include "lfs.h"
@@ -186,6 +185,8 @@ void vInitTask( void * pvArgs )
     BaseType_t xResult;
     int xMountStatus;
 
+    ( void ) pvArgs;
+
     xResult = xTaskCreate( Task_CLI, "cli", 2048, NULL, 10, NULL );
 
     xMountStatus = fs_init();
@@ -224,8 +225,8 @@ void vInitTask( void * pvArgs )
     xResult = xTaskCreate( vOTAUpdateTask, "OTAUpdate", 4096, NULL, tskIDLE_PRIORITY + 1, NULL );
     configASSERT( xResult == pdTRUE );
 
-/*    xResult = xTaskCreate( vEnvironmentSensorPublishTask, "EnvSense", 1024, NULL, 5, NULL ); */
-/*    configASSERT( xResult == pdTRUE ); */
+    xResult = xTaskCreate( vEnvironmentSensorPublishTask, "EnvSense", 1024, NULL, 6, NULL );
+    configASSERT( xResult == pdTRUE );
 
     xResult = xTaskCreate( vMotionSensorsPublish, "MotionS", 2048, NULL, 5, NULL );
     configASSERT( xResult == pdTRUE );
