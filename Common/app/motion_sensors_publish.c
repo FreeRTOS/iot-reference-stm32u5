@@ -66,7 +66,7 @@
  * payloads.
  */
 #define MQTT_PUBLISH_MAX_LEN                 ( 200 )
-#define MQTT_PUBLISH_PERIOD_MS               ( 100 )
+#define MQTT_PUBLISH_PERIOD_MS               ( 500 )
 #define MQTT_PUBLICH_TOPIC_STR_LEN           ( 256 )
 #define MQTT_PUBLISH_BLOCK_TIME_MS           ( 200 )
 #define MQTT_PUBLISH_NOTIFICATION_WAIT_MS    ( 1000 )
@@ -276,7 +276,7 @@ void vMotionSensorsPublish( void * pvParameters )
                                          "\"y\": %ld,"
                                          "\"z\": %ld"
                                          "},"
-                                         "\"magnetism_mGauss\":"
+                                         "\"magnetometer_mGauss\":"
                                          "{"
                                          "\"x\": %ld,"
                                          "\"y\": %ld,"
