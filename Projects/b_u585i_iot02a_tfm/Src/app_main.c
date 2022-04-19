@@ -102,7 +102,6 @@ extern void vEnvironmentSensorPublishTask( void * );
 extern void vShadowDeviceTask( void * );
 /*extern void vOTAUpdateTask( void * pvParam ); */
 extern void vDefenderAgentTask( void * );
-/*extern void vTimeSyncTask( void * ); */
 
 void vInitTask( void * pvArgs )
 {
