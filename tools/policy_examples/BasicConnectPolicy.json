@@ -1,0 +1,25 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "iot:Connect",
+            "Resource": "*:client/${iot:Connection.Thing.ThingName}"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "iot:Publish",
+                "iot:GetRetainedMessage",
+                "iot:RetainPublish",
+                "iot:Receive"
+            ],
+            "Resource": "*:topic/${iot:Connection.Thing.ThingName}/*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": "iot:Subscribe",
+            "Resource": "*:topicfilter/${iot:Connection.Thing.ThingName}/*"
+        }
+    ]
+}

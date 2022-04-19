@@ -1,0 +1,37 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "iot:Subscribe",
+            "Resource": [
+                "*:topicfilter/$aws/things/${iot:Connection.Thing.ThingName}/jobs/get*",
+                "*:topicfilter/$aws/things/${iot:Connection.Thing.ThingName}/jobs/start-next*",
+                "*:topicfilter/$aws/things/${iot:Connection.Thing.ThingName}/jobs/*/update/*",
+                "*:topicfilter/$aws/things/${iot:Connection.Thing.ThingName}/jobs/*/get/*",
+                "*:topicfilter/$aws/things/${iot:Connection.Thing.ThingName}/jobs/notify",
+                "*:topicfilter/$aws/things/${iot:Connection.Thing.ThingName}/jobs/notify-next",
+            ],
+        },
+        {
+            "Effect": "Allow",
+            "Action": "iot:Receive",
+            "Resource": [
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/jobs/*/accepted",
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/jobs/*/rejected",
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/jobs/notify",
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/jobs/notify-next",
+            ],
+        },
+        {
+            "Effect": "Allow",
+            "Action": "iot:Publish",
+            "Resource": [
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/jobs/get",
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/jobs/*/get",
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/jobs/start-next",
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/jobs/*/update"
+            ],
+        },
+    ],
+}

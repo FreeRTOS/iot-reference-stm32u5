@@ -1,0 +1,36 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "iot:Subscribe",
+            "Resource": [
+                "*:topicfilter/$aws/things/${iot:Connection.Thing.ThingName}/shadow/delete*",
+                "*:topicfilter/$aws/things/${iot:Connection.Thing.ThingName}/shadow/get*",
+                "*:topicfilter/$aws/things/${iot:Connection.Thing.ThingName}/shadow/update*",
+            ],
+        },
+        {
+            "Effect": "Allow",
+            "Action": "iot:Receive",
+            "Resource": [
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/shadow/delete",
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/shadow/get",
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/shadow/update",
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/shadow/update/delta",
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/shadow/update/documents",
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/shadow/*/accepted",
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/shadow/*/rejected",
+            ],
+        },
+        {
+            "Effect": "Allow",
+            "Action": "iot:Publish",
+            "Resource": [
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/shadow/delete",
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/shadow/get",
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/shadow/update",
+            ],
+        },
+    ],
+}

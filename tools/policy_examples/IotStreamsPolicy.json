@@ -1,0 +1,35 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "iot:Publish",
+            "Resource": [
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/streams/*/get/cbor"
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/streams/*/get/json"
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/streams/*/describe/cbor"
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/streams/*/describe/json"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": "iot:Subscribe",
+            "Resource": [
+                "*:topicfilter/$aws/things/${iot:Connection.Thing.ThingName}/streams/*/*/json",
+                "*:topicfilter/$aws/things/${iot:Connection.Thing.ThingName}/streams/*/*/cbor",
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": "iot:Receive",
+            "Resource": [
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/streams/*/data/cbor",
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/streams/*/data/json",
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/streams/*/description/cbor",
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/streams/*/description/json",
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/streams/*/rejected/cbor",
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/streams/*/rejected/json",
+            ]
+        }
+    ]
+}

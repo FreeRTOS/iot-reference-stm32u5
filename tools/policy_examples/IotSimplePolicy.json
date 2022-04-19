@@ -1,0 +1,40 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "iot:Connect",
+            "Resource": "*:client/${iot:Connection.Thing.ThingName}"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [ "iot:GetRetainedMessage", "iot:RetainPublish" ],
+            "Resource": "*:topic/${iot:Connection.Thing.ThingName}/*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [ "iot:Publish", "iot:Receive" ],
+            "Resource": [
+                "*:topic/${iot:Connection.Thing.ThingName}/*",
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/*shadow/*",
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/jobs/*",
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/streams/*",
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/defender/metrics/cbor*",
+                "*:topic/$aws/things/${iot:Connection.Thing.ThingName}/defender/metrics/json*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": "iot:Subscribe",
+            "Resource": [
+                "*:topicfilter/${iot:Connection.Thing.ThingName}/*",
+                "*:topicfilter/$aws/things/${iot:Connection.Thing.ThingName}/*shadow/*",
+                "*:topicfilter/$aws/things/${iot:Connection.Thing.ThingName}/jobs/*",
+                "*:topicfilter/$aws/things/${iot:Connection.Thing.ThingName}/streams/*/*/cbor",
+                "*:topicfilter/$aws/things/${iot:Connection.Thing.ThingName}/streams/*/*/json",
+                "*:topicfilter/$aws/things/${iot:Connection.Thing.ThingName}/defender/metrics/cbor/*",
+                "*:topicfilter/$aws/things/${iot:Connection.Thing.ThingName}/defender/metrics/json/*"
+            ]
+        }
+    ],
+}
