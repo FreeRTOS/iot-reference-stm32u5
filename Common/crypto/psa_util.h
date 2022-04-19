@@ -38,4 +38,6 @@ int pk_ecdsa_sig_asn1_from_psa( unsigned char * sig,
 
 psa_algorithm_t mbedtls_psa_translate_md( mbedtls_md_type_t md_alg );
 
+psa_ecc_family_t xPsaFamilyFromMbedtlsEccGroupId( mbedtls_ecp_group_id xGroupId );
+
 #endif /* _PSA_UTIL_H_ */

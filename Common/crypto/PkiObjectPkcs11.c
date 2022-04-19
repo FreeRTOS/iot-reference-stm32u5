@@ -124,8 +124,6 @@ static CK_RV xPrvExportPubKeyDer( CK_SESSION_HANDLE xSession,
     /* Read public key into buffer */
     if( *ppucPubKeyDer != NULL )
     {
-        LogDebug( "Allocated %ld bytes for public key in DER format.", *pulPubKeyDerLen );
-
         memset( *ppucPubKeyDer, 0, *pulPubKeyDerLen );
 
         xTemplate.pValue = &( ( *ppucPubKeyDer )[ sizeof( pucEcP256AsnAndOid ) - sizeof( pucUnusedKeyTag ) ] );
@@ -488,6 +486,8 @@ PkiStatus_t xPkcs11GenerateKeyPairEC( char * pcPrivateKeyLabel,
     CK_OBJECT_HANDLE xPubKeyHandle = 0;
     size_t uxPrivateKeyLabelLen = 0;
     size_t uxPublicKeyLabelLen = 0;
+    char pcPubKeyLabelBuffer[ pkcs11configMAX_LABEL_LENGTH + 1 ];
+    char pcPrvKeyLabelBuffer[ pkcs11configMAX_LABEL_LENGTH + 1 ];
 
     CK_FUNCTION_LIST_PTR pxFunctionList;
 
@@ -497,6 +497,10 @@ PkiStatus_t xPkcs11GenerateKeyPairEC( char * pcPrivateKeyLabel,
     configASSERT( pcPublicKeyLabel );
     configASSERT( ppucPublicKeyDer );
     configASSERT( puxPublicKeyDerLen );
+
+    ( void ) strncpy( pcPrvKeyLabelBuffer, pcPrivateKeyLabel, pkcs11configMAX_LABEL_LENGTH );
+    ( void ) strncpy( pcPubKeyLabelBuffer, pcPublicKeyLabel, pkcs11configMAX_LABEL_LENGTH );
+
 
     uxPrivateKeyLabelLen = strnlen( pcPrivateKeyLabel, pkcs11configMAX_LABEL_LENGTH );
     uxPublicKeyLabelLen = strnlen( pcPublicKeyLabel, pkcs11configMAX_LABEL_LENGTH );
@@ -529,18 +533,18 @@ PkiStatus_t xPkcs11GenerateKeyPairEC( char * pcPrivateKeyLabel,
         CK_BBOOL xTrue = CK_TRUE;
         CK_ATTRIBUTE xPrivateKeyTemplate[] =
         {
-            { CKA_KEY_TYPE, &xKeyType,         sizeof( xKeyType )   },
-            { CKA_TOKEN,    &xTrue,            sizeof( xTrue )      },
-            { CKA_PRIVATE,  &xTrue,            sizeof( xTrue )      },
-            { CKA_SIGN,     &xTrue,            sizeof( xTrue )      },
-            { CKA_LABEL,    pcPrivateKeyLabel, uxPrivateKeyLabelLen }
+            { CKA_KEY_TYPE, &xKeyType,           sizeof( xKeyType )   },
+            { CKA_TOKEN,    &xTrue,              sizeof( xTrue )      },
+            { CKA_PRIVATE,  &xTrue,              sizeof( xTrue )      },
+            { CKA_SIGN,     &xTrue,              sizeof( xTrue )      },
+            { CKA_LABEL,    pcPrvKeyLabelBuffer, uxPrivateKeyLabelLen }
         };
         CK_ATTRIBUTE xPublicKeyTemplate[] =
         {
-            { CKA_KEY_TYPE,  &xKeyType,        sizeof( xKeyType )  },
-            { CKA_VERIFY,    &xTrue,           sizeof( xTrue )     },
-            { CKA_EC_PARAMS, xEcParams,        sizeof( xEcParams ) },
-            { CKA_LABEL,     pcPublicKeyLabel, uxPublicKeyLabelLen }
+            { CKA_KEY_TYPE,  &xKeyType,           sizeof( xKeyType )  },
+            { CKA_VERIFY,    &xTrue,              sizeof( xTrue )     },
+            { CKA_EC_PARAMS, xEcParams,           sizeof( xEcParams ) },
+            { CKA_LABEL,     pcPubKeyLabelBuffer, uxPublicKeyLabelLen }
         };
         xResult = pxFunctionList->C_GenerateKeyPair( xSession,
                                                      &xMechanism,
@@ -649,6 +653,97 @@ PkiStatus_t xPkcs11ReadPublicKey( unsigned char ** ppucPublicKeyDer,
     {
         CK_RV xResult = pxFunctionList->C_CloseSession( xSession );
         xStatus = xPrvCkRvToPkiStatus( xResult );
+    }
+
+    return xStatus;
+}
+
+/*-----------------------------------------------------------*/
+
+PkiStatus_t xPkcs11WritePubKey( const char * pcLabel,
+                                const mbedtls_pk_context * pxPubKeyContext )
+{
+    char pcLabelBuffer[ pkcs11configMAX_LABEL_LENGTH + 1 ];
+    CK_FUNCTION_LIST_PTR pxFunctionList = NULL;
+    PkiStatus_t xStatus = PKI_SUCCESS;
+    CK_SESSION_HANDLE xSession = 0;
+    size_t uxLabelLen = 0;
+    CK_RV xResult = CKR_OK;
+
+
+    if( !pcLabel )
+    {
+        xStatus = PKI_ERR_ARG_INVALID;
+        LogError( "pcLabel cannot be NULL." );
+    }
+    else if( !pxPubKeyContext )
+    {
+        xStatus = PKI_ERR_ARG_INVALID;
+        LogError( "pxCertificateContext cannot be NULL." );
+    }
+    else
+    {
+        uxLabelLen = strnlen( pcLabel, pkcs11configMAX_LABEL_LENGTH );
+        ( void ) strncpy( pcLabelBuffer, pcLabel, pkcs11configMAX_LABEL_LENGTH + 1 );
+    }
+
+    if( uxLabelLen == 0 )
+    {
+        xStatus = PKI_ERR_ARG_INVALID;
+        LogError( "pcLabel must have a length > 0." );
+    }
+    else
+    {
+        xResult = C_GetFunctionList( &pxFunctionList );
+    }
+
+    if( xResult != CKR_OK )
+    {
+        LogError( "Failed to get PKCS11 function list pointer. CK_RV: %s",
+                  pcPKCS11StrError( xResult ) );
+
+        xStatus = xPrvCkRvToPkiStatus( xResult );
+    }
+
+    if( xStatus == PKI_SUCCESS )
+    {
+        xResult = xInitializePkcs11Session( &xSession );
+
+        if( xResult != CKR_OK )
+        {
+            LogError( "Failed to initialize PKCS11 session. CK_RV: %s",
+                      pcPKCS11StrError( xResult ) );
+
+            xStatus = xPrvCkRvToPkiStatus( xResult );
+        }
+    }
+
+    if( xStatus == PKI_SUCCESS )
+    {
+        xResult = xPrvDestoryObject( xSession, CKO_PUBLIC_KEY, pcLabelBuffer, uxLabelLen );
+
+        if( xResult != CKR_OK )
+        {
+            LogError( "Failed to delete existing PKCS11 object. CK_RV: %s",
+                      pcPKCS11StrError( xResult ) );
+
+            xStatus = xPrvCkRvToPkiStatus( xResult );
+        }
+    }
+
+    if( xStatus == PKI_SUCCESS )
+    {
+        int lRslt = lWriteEcPublicKeyToPKCS11( pxPubKeyContext,
+                                               xSession,
+                                               pcLabelBuffer, uxLabelLen );
+
+        xStatus = xPrvMbedtlsErrToPkiStatus( lRslt );
+    }
+
+    if( xSession )
+    {
+        pxFunctionList->C_CloseSession( xSession );
+        xSession = 0;
     }
 
     return xStatus;

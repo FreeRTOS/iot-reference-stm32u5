@@ -35,6 +35,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define MBEDTLS_ALLOW_PRIVATE_ACCESS
+
 #include "mbedtls_transport.h"
 
 /* Mbedtls includes */
@@ -362,6 +364,84 @@ psa_status_t xReadPublicKeyFromPSACrypto( unsigned char ** ppucPubKeyDer,
     return xStatus;
 }
 
+/*-----------------------------------------------------------*/
+
+int32_t lWritePublicKeyToPSACrypto( psa_key_id_t xPubKeyId,
+                                    const mbedtls_pk_context * pxPublicKeyContext )
+{
+    psa_status_t xStatus = PSA_SUCCESS;
+    psa_key_attributes_t xKeyAttributes = PSA_KEY_ATTRIBUTES_INIT;
+    mbedtls_pk_type_t xKeyType = MBEDTLS_PK_NONE;
+
+
+    unsigned char * pucPubKeyBuffer = NULL;
+    size_t uxPubKeyBufferLen = 0;
+
+    configASSERT( xPubKeyId );
+    configASSERT( pxPublicKeyContext );
+
+    xKeyType = mbedtls_pk_get_type( pxPublicKeyContext );
+
+    if( xKeyType == MBEDTLS_PK_ECKEY )
+    {
+        mbedtls_ecdsa_context * pxEcpKey = ( mbedtls_ecdsa_context * ) pxPublicKeyContext->pk_ctx;
+
+        psa_ecc_family_t xKeyFamily = xPsaFamilyFromMbedtlsEccGroupId( pxEcpKey->grp.id );
+
+        psa_set_key_type( &xKeyAttributes, PSA_KEY_TYPE_ECC_PUBLIC_KEY( xKeyFamily ) );
+
+        psa_set_key_algorithm( &xKeyAttributes, PSA_ALG_ECDSA( PSA_ALG_ANY_HASH ) );
+
+        psa_set_key_id( &xKeyAttributes, xPubKeyId );
+
+        psa_set_key_lifetime( &xKeyAttributes, PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION(
+                                  PSA_KEY_LIFETIME_PERSISTENT, PSA_KEY_LOCATION_LOCAL_STORAGE ) );
+
+        psa_set_key_bits( &xKeyAttributes, mbedtls_pk_get_bitlen( pxPublicKeyContext ) );
+
+        psa_set_key_usage_flags( &xKeyAttributes, PSA_KEY_USAGE_VERIFY_MESSAGE |
+                                 PSA_KEY_USAGE_VERIFY_HASH | PSA_KEY_USAGE_EXPORT );
+
+        uxPubKeyBufferLen = PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE( xKeyAttributes.bits );
+
+        pucPubKeyBuffer = mbedtls_calloc( 1, uxPubKeyBufferLen );
+
+        if( pucPubKeyBuffer == NULL )
+        {
+            xStatus = PSA_ERROR_INSUFFICIENT_MEMORY;
+        }
+        else
+        {
+            /* Write EC point to buffer */
+            int lRslt = mbedtls_ecp_point_write_binary( &( pxEcpKey->grp ),
+                                                        &( pxEcpKey->Q ),
+                                                        MBEDTLS_ECP_PF_UNCOMPRESSED,
+                                                        &uxPubKeyBufferLen,
+                                                        pucPubKeyBuffer,
+                                                        uxPubKeyBufferLen );
+
+            if( lRslt != 0 )
+            {
+                xStatus = PSA_ERROR_GENERIC_ERROR;
+            }
+        }
+    }
+    else
+    {
+        xStatus = PSA_ERROR_NOT_SUPPORTED;
+    }
+
+    /* Export key to PSA */
+    if( xStatus == PSA_SUCCESS )
+    {
+        xStatus = psa_import_key( &xKeyAttributes,
+                                  pucPubKeyBuffer,
+                                  uxPubKeyBufferLen,
+                                  &( xKeyAttributes.id ) );
+    }
+
+    return mbedtls_psa_err_translate_pk( xStatus );
+}
 
 /*-----------------------------------------------------------*/
 

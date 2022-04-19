@@ -222,10 +222,15 @@ int32_t lReadCertificateFromPKCS11( mbedtls_x509_crt * pxCertificateContext,
                                     const char * pcCertificateLabel,
                                     size_t xLabelLen );
 
-int32_t lWriteCertificateToPKCS11( mbedtls_x509_crt * pxCertificateContext,
+int32_t lWriteCertificateToPKCS11( const mbedtls_x509_crt * pxCertificateContext,
                                    CK_SESSION_HANDLE xP11SessionHandle,
                                    char * pcCertificateLabel,
                                    size_t uxCertificateLabelLen );
+
+int32_t lWriteEcPublicKeyToPKCS11( const mbedtls_pk_context * pxPubKeyContext,
+                                   CK_SESSION_HANDLE xP11SessionHandle,
+                                   char * pcPubKeyLabel,
+                                   size_t uxPubKeyLabelLen );
 
 CK_RV xPKCS11_initMbedtlsPkContext( mbedtls_pk_context * pxMbedtlsPkCtx,
                                     CK_SESSION_HANDLE xSessionHandle,
@@ -254,11 +259,14 @@ psa_status_t xReadPublicKeyFromPSACrypto( unsigned char ** ppucPubKeyDer,
                                           size_t * puxPubDerKeyLen,
                                           psa_key_id_t xKeyId );
 
+int32_t lWritePublicKeyToPSACrypto( psa_key_id_t xPubKeyId,
+                                    const mbedtls_pk_context * pxPublicKeyContext );
+
 int32_t lReadCertificateFromPSACrypto( mbedtls_x509_crt * pxCertificateContext,
                                        psa_key_id_t xCertId );
 
 int32_t lWriteObjectToPsaIts( psa_storage_uid_t xObjectUid,
-                              uint8_t * pucData,
+                              const uint8_t * pucData,
                               size_t uxDataLen );
 
 int32_t lReadObjectFromPsaIts( uint8_t ** ppucData,
@@ -266,7 +274,7 @@ int32_t lReadObjectFromPsaIts( uint8_t ** ppucData,
                                psa_storage_uid_t xObjectUid );
 
 int32_t lWriteObjectToPsaPs( psa_storage_uid_t xObjectUid,
-                             uint8_t * pucData,
+                             const uint8_t * pucData,
                              size_t uxDataLen );
 
 int32_t lReadObjectFromPsaPs( uint8_t ** ppucData,
