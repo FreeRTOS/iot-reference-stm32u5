@@ -288,6 +288,48 @@ mbedtls_ecp_group_id xMbedtlsEccGroupIdFromPsaFamily( psa_ecc_family_t curve,
 
 /*-----------------------------------------------------------*/
 
+psa_ecc_family_t xPsaFamilyFromMbedtlsEccGroupId( mbedtls_ecp_group_id xGroupId )
+{
+    size_t uxBits;
+    psa_ecc_family_t xFamily;
+
+    switch( xGroupId )
+    {
+        case MBEDTLS_ECP_DP_SECP192R1:
+        case MBEDTLS_ECP_DP_SECP224R1:
+        case MBEDTLS_ECP_DP_SECP256R1:
+        case MBEDTLS_ECP_DP_SECP384R1:
+        case MBEDTLS_ECP_DP_SECP521R1:
+            xFamily = PSA_ECC_FAMILY_SECP_R1;
+            break;
+
+        case MBEDTLS_ECP_DP_BP256R1:
+        case MBEDTLS_ECP_DP_BP384R1:
+        case MBEDTLS_ECP_DP_BP512R1:
+            xFamily = PSA_ECC_FAMILY_BRAINPOOL_P_R1;
+            break;
+
+        case MBEDTLS_ECP_DP_CURVE25519:
+        case MBEDTLS_ECP_DP_CURVE448:
+            xFamily = PSA_ECC_FAMILY_MONTGOMERY;
+            break;
+
+        case MBEDTLS_ECP_DP_SECP192K1:
+        case MBEDTLS_ECP_DP_SECP224K1:
+        case MBEDTLS_ECP_DP_SECP256K1:
+            xFamily = PSA_ECC_FAMILY_SECP_K1;
+            break;
+
+        default:
+            xFamily = 0;
+            break;
+    }
+
+    return xFamily;
+}
+
+/*-----------------------------------------------------------*/
+
 psa_status_t mbedtls_to_psa_error( int ret )
 {
     /* Mbed TLS error codes can combine a high-level error code and a

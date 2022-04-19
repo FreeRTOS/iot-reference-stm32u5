@@ -6,9 +6,11 @@
 #define TLS_KEY_PUB_LABEL          "tls_key_pub"
 #define TLS_CERT_LABEL             "tls_cert"
 #define TLS_ROOT_CA_CERT_LABEL     "root_ca_cert"
+#define OTA_SIGNING_KEY_LABEL      "ota_signer_pub"
 
 #define PSA_TLS_PRV_KEY_ID         0x10000000UL
 #define PSA_TLS_PUB_KEY_ID         0x10000001UL
+#define OTA_SIGNING_KEY_ID         0x10000002UL
 #define PSA_TLS_CERT_ID            0x1000000000000101ULL
 #define PSA_TLS_ROOT_CA_CERT_ID    0x1000000000000201ULL
 

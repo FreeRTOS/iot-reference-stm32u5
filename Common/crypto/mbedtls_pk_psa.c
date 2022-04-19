@@ -193,7 +193,7 @@ psa_status_t xReadObjectFromPSACrypto( unsigned char ** ppucObject,
 /*-----------------------------------------------------------*/
 
 int32_t lWriteObjectToPsaIts( psa_storage_uid_t xObjectUid,
-                              uint8_t * pucData,
+                              const uint8_t * pucData,
                               size_t uxDataLen )
 {
     psa_status_t xStatus = PSA_SUCCESS;
@@ -262,7 +262,7 @@ int32_t lReadObjectFromPsaIts( uint8_t ** ppucData,
 /*-----------------------------------------------------------*/
 
 int32_t lWriteObjectToPsaPs( psa_storage_uid_t xObjectUid,
-                             uint8_t * pucData,
+                             const uint8_t * pucData,
                              size_t uxDataLen )
 {
     psa_status_t xStatus = PSA_SUCCESS;

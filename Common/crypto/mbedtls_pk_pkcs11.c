@@ -209,7 +209,8 @@ int32_t lReadCertificateFromPKCS11( mbedtls_x509_crt * pxCertificateContext,
                                     const char * pcCertificateLabel,
                                     size_t xLabelLen )
 {
-    int32_t lResult = CKR_OK;
+    CK_RV xResult = CKR_OK;
+    int32_t lResult = 0;
     CK_ATTRIBUTE xTemplate = { 0 };
     CK_OBJECT_HANDLE xCertObj = 0;
     char pcCertLabelCopy[ pkcs11configMAX_LABEL_LENGTH ] = { 0 };
@@ -226,10 +227,10 @@ int32_t lReadCertificateFromPKCS11( mbedtls_x509_crt * pxCertificateContext,
         lResult = CKR_FUNCTION_FAILED;
     }
 
-    if( lResult == CKR_OK )
+    if( xResult == CKR_OK )
     {
         /* Get the handle of the certificate. */
-        lResult = xFindObjectWithLabelAndClass( xP11SessionHandle,
+        xResult = xFindObjectWithLabelAndClass( xP11SessionHandle,
                                                 pcCertLabelCopy,
                                                 xLabelLen,
                                                 CKO_CERTIFICATE,
@@ -242,44 +243,48 @@ int32_t lReadCertificateFromPKCS11( mbedtls_x509_crt * pxCertificateContext,
     }
 
     /* Query the certificate size. */
-    if( CKR_OK == lResult )
+    if( CKR_OK == xResult )
     {
         xTemplate.type = CKA_VALUE;
         xTemplate.ulValueLen = 0;
         xTemplate.pValue = NULL;
 
-        lResult = pxFunctionList->C_GetAttributeValue( xP11SessionHandle,
+        xResult = pxFunctionList->C_GetAttributeValue( xP11SessionHandle,
                                                        xCertObj,
                                                        &xTemplate,
                                                        1 );
     }
 
     /* Create a buffer for the certificate. */
-    if( CKR_OK == lResult )
+    if( CKR_OK == xResult )
     {
         xTemplate.pValue = mbedtls_calloc( 1, xTemplate.ulValueLen );
 
         if( NULL == xTemplate.pValue )
         {
-            lResult = CKR_HOST_MEMORY;
+            xResult = CKR_HOST_MEMORY;
         }
     }
 
     /* Export the certificate. */
-    if( CKR_OK == lResult )
+    if( CKR_OK == xResult )
     {
-        lResult = pxFunctionList->C_GetAttributeValue( xP11SessionHandle,
+        xResult = pxFunctionList->C_GetAttributeValue( xP11SessionHandle,
                                                        xCertObj,
                                                        &xTemplate,
                                                        1 );
     }
 
     /* Decode the certificate. */
-    if( CKR_OK == lResult )
+    if( CKR_OK == xResult )
     {
         lResult = mbedtls_x509_crt_parse( pxCertificateContext,
                                           ( unsigned char * ) xTemplate.pValue,
                                           xTemplate.ulValueLen );
+    }
+    else
+    {
+        lResult = ( int32_t ) xResult;
     }
 
     /* Free memory. */
@@ -368,6 +373,180 @@ int32_t lWriteCertificateToPKCS11( const mbedtls_x509_crt * pxCertificateContext
                                                   pxTemplate,
                                                   5,
                                                   &xCertHandle );
+    }
+
+    return( ( xResult == CKR_OK ) ? 0 : -1 );
+}
+
+/*-----------------------------------------------------------*/
+
+#define EC_POINT_LEN    256
+
+int32_t lWriteEcPublicKeyToPKCS11( const mbedtls_pk_context * pxPubKeyContext,
+                                   CK_SESSION_HANDLE xP11SessionHandle,
+                                   char * pcPubKeyLabel,
+                                   size_t uxPubKeyLabelLen )
+{
+    CK_RV xResult;
+    CK_OBJECT_HANDLE xCertHandle = 0;
+    CK_FUNCTION_LIST_PTR pxFunctionList;
+    size_t uxEcPointLength = 0;
+    CK_BYTE * pucEcPoint = NULL;
+    static CK_BYTE pucEcParams[] = pkcs11DER_ENCODED_OID_P256;
+
+    configASSERT( pxPubKeyContext );
+    configASSERT( pxPubKeyContext->pk_ctx );
+    configASSERT( pxPubKeyContext->pk_info );
+    configASSERT( xP11SessionHandle );
+    configASSERT( pcPubKeyLabel );
+    configASSERT( uxPubKeyLabelLen > 0 );
+
+    xResult = C_GetFunctionList( &pxFunctionList );
+
+    if( xResult == CKR_OK )
+    {
+        /* Look for an existing object that we may need to overwrite */
+        xResult = xFindObjectWithLabelAndClass( xP11SessionHandle,
+                                                pcPubKeyLabel,
+                                                uxPubKeyLabelLen,
+                                                CKO_PUBLIC_KEY,
+                                                &xCertHandle );
+    }
+
+    if( ( xResult == CKR_OK ) &&
+        ( xCertHandle != CK_INVALID_HANDLE ) )
+    {
+        xResult = pxFunctionList->C_DestroyObject( xP11SessionHandle,
+                                                   xCertHandle );
+    }
+
+    /* Export EC Point from mbedtls context to binary form */
+    if( xResult == CKR_OK )
+    {
+        if( pxPubKeyContext->pk_info->type == MBEDTLS_PK_ECKEY )
+        {
+            int lRslt = 0;
+
+            mbedtls_ecp_keypair * pxEcpKey = ( mbedtls_ecp_keypair * ) ( pxPubKeyContext->pk_ctx );
+
+            /* Determine length */
+            lRslt = mbedtls_ecp_point_write_binary( &( pxEcpKey->grp ),
+                                                    &( pxEcpKey->Q ),
+                                                    MBEDTLS_ECP_PF_UNCOMPRESSED,
+                                                    &uxEcPointLength,
+                                                    NULL,
+                                                    0 );
+
+            if( ( lRslt == MBEDTLS_ERR_ECP_BUFFER_TOO_SMALL ) ||
+                ( lRslt == 0 ) )
+            {
+                pucEcPoint = mbedtls_calloc( 1, uxEcPointLength + 2 );
+
+                if( pucEcPoint == NULL )
+                {
+                    xResult = CKR_HOST_MEMORY;
+                }
+            }
+            else
+            {
+                xResult = CKR_FUNCTION_FAILED;
+            }
+
+            if( xResult == CKR_OK )
+            {
+                if( uxEcPointLength <= UINT8_MAX )
+                {
+                    pucEcPoint[ 0 ] = MBEDTLS_ASN1_OCTET_STRING;
+                    pucEcPoint[ 1 ] = ( CK_BYTE ) uxEcPointLength;
+                }
+                else
+                {
+                    xResult = CKR_FUNCTION_FAILED;
+                }
+            }
+
+            if( xResult == CKR_OK )
+            {
+                /* Write public key */
+                lRslt = mbedtls_ecp_point_write_binary( &( pxEcpKey->grp ),
+                                                        &( pxEcpKey->Q ),
+                                                        MBEDTLS_ECP_PF_UNCOMPRESSED,
+                                                        &uxEcPointLength,
+                                                        &( pucEcPoint[ 2 ] ),
+                                                        uxEcPointLength );
+
+                if( lRslt != 0 )
+                {
+                    xResult = CKR_FUNCTION_FAILED;
+                }
+                else
+                {
+                    uxEcPointLength += 2;
+                }
+            }
+        }
+        else
+        {
+            xResult = CKR_FUNCTION_NOT_SUPPORTED;
+        }
+    }
+
+    if( xResult == CKR_OK )
+    {
+        CK_OBJECT_CLASS xObjClass = CKO_PUBLIC_KEY;
+        CK_KEY_TYPE xKeyType = CKK_EC;
+        CK_BBOOL xPersistKey = CK_TRUE;
+        CK_BBOOL xVerify = CK_TRUE;
+
+        CK_ATTRIBUTE pxTemplate[ 7 ] =
+        {
+            {
+                .type = CKA_CLASS,
+                .ulValueLen = sizeof( CK_OBJECT_CLASS ),
+                .pValue = &xObjClass,
+            },
+            {
+                .type = CKA_KEY_TYPE,
+                .ulValueLen = sizeof( CK_KEY_TYPE ),
+                .pValue = &xKeyType,
+            },
+            {
+                .type = CKA_LABEL,
+                .ulValueLen = uxPubKeyLabelLen,
+                .pValue = pcPubKeyLabel,
+            },
+            {
+                .type = CKA_TOKEN,
+                .ulValueLen = sizeof( CK_BBOOL ),
+                .pValue = &xPersistKey,
+            },
+            {
+                .type = CKA_EC_PARAMS,
+                .ulValueLen = sizeof( pucEcParams ),
+                .pValue = pucEcParams,
+            },
+            {
+                .type = CKA_VERIFY,
+                .ulValueLen = sizeof( CK_BBOOL ),
+                .pValue = &xVerify,
+            },
+            {
+                .type = CKA_EC_POINT,
+                .ulValueLen = uxEcPointLength,
+                .pValue = pucEcPoint,
+            }
+        };
+
+        xResult = pxFunctionList->C_CreateObject( xP11SessionHandle,
+                                                  pxTemplate,
+                                                  7,
+                                                  &xCertHandle );
+    }
+
+    if( pucEcPoint != NULL )
+    {
+        mbedtls_free( pucEcPoint );
+        pucEcPoint = NULL;
     }
 
     return( ( xResult == CKR_OK ) ? 0 : -1 );
@@ -827,7 +1006,7 @@ int lPKCS11RandomCallback( void * pvCtx,
     }
     else
     {
-        lRslt = C_GetFunctionList( &pxFunctionList );
+        lRslt = ( int ) C_GetFunctionList( &pxFunctionList );
     }
 
     if( ( lRslt != CKR_OK ) ||
@@ -838,7 +1017,7 @@ int lPKCS11RandomCallback( void * pvCtx,
     }
     else
     {
-        lRslt = pxFunctionList->C_GenerateRandom( *pxSessionHandle, pucOutput, uxLen );
+        lRslt = ( int ) pxFunctionList->C_GenerateRandom( *pxSessionHandle, pucOutput, uxLen );
     }
 
     return lRslt;
@@ -1172,11 +1351,6 @@ static int p11_ecdsa_sign( void * pvCtx,
         }
     }
 
-    if( xResult == CKR_OK )
-    {
-        xResult = prvEcdsaSigToASN1InPlace( pucSig, xSigBufferSize, pxSigLen );
-    }
-
     if( xResult != CKR_OK )
     {
         LogError( "Failed to sign message using PKCS #11 with error code %02X.", xResult );
@@ -1184,7 +1358,7 @@ static int p11_ecdsa_sign( void * pvCtx,
     }
     else
     {
-        lFinalResult = 0;
+        lFinalResult = prvEcdsaSigToASN1InPlace( pucSig, xSigBufferSize, pxSigLen );
     }
 
     return lFinalResult;
