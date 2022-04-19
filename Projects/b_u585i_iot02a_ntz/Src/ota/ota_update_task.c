@@ -409,6 +409,12 @@ static BaseType_t prvMatchClientIdentifierInTopic( const char * pTopic,
                                                    size_t clientIdentifierLength );
 
 /**
+ * @brief Returns pdTRUE if the OTA Agent is currently executing a job.
+ * @return pdTRUE if OTA agent is currently active.
+ */
+static inline BaseType_t xIsOtaAgentActive( void );
+
+/**
  * @brief Static buffer allocated by application and used by OTA Agent.
  * Buffer is allocated in the global scope outside of function call stack.
  */
@@ -1023,6 +1029,35 @@ static void prvSetOTAAppBuffer( OtaAppBuffer_t * pOtaAppBuffer )
     pOtaAppBuffer->fileBitmapSize = OTA_MAX_BLOCK_BITMAP_SIZE;
 }
 
+static inline BaseType_t xIsOtaAgentActive( void )
+{
+    BaseType_t xResult;
+
+    switch( OTA_GetState() )
+    {
+        case OtaAgentStateRequestingJob:
+        case OtaAgentStateWaitingForJob:
+        case OtaAgentStateCreatingFile:
+        case OtaAgentStateRequestingFileBlock:
+        case OtaAgentStateWaitingForFileBlock:
+        case OtaAgentStateClosingFile:
+            xResult = pdTRUE;
+            break;
+
+        case OtaAgentStateNoTransition:
+        case OtaAgentStateInit:
+        case OtaAgentStateReady:
+        case OtaAgentStateStopped:
+        case OtaAgentStateSuspended:
+        case OtaAgentStateShuttingDown:
+        default:
+            xResult = pdFALSE;
+            break;
+    }
+
+    return xResult;
+}
+
 void vOTAUpdateTask( void * pvParam )
 {
     ( void ) pvParam;
@@ -1037,12 +1072,6 @@ void vOTAUpdateTask( void * pvParam )
 
     /* OTA interface context required for library interface functions.*/
     OtaInterfaces_t otaInterfaces;
-
-    /* OTA library packet statistics per job.*/
-    OtaAgentStatistics_t otaStatistics = { 0 };
-
-    /* OTA Agent state returned from calling OTA_GetAgentState.*/
-    OtaState_t state = OtaAgentStateStopped;
 
     MQTTStatus_t xMQTTStatus = MQTTBadParameter;
 
@@ -1059,7 +1088,7 @@ void vOTAUpdateTask( void * pvParam )
     prvSetOTAAppBuffer( &otaAppBuffer );
 
 
-    LogInfo( ( "OTA over MQTT demo, Application version %u.%u.%u",
+    LogInfo( ( "OTA Agent: Application version %u.%u.%u",
                appFirmwareVersion.u.x.major,
                appFirmwareVersion.u.x.minor,
                appFirmwareVersion.u.x.build ) );
@@ -1145,18 +1174,24 @@ void vOTAUpdateTask( void * pvParam )
         eventMsg.eventId = OtaAgentEventStart;
         OTA_SignalEvent( &eventMsg );
 
-        while( ( ( state = OTA_GetState() ) != OtaAgentStateStopped ) )
+        do
         {
+            /* OTA library packet statistics per job.*/
+            OtaAgentStatistics_t otaStatistics = { 0 };
+
             /* Get OTA statistics for currently executing job. */
-            OTA_GetStatistics( &otaStatistics );
-            LogInfo( ( " Received: %u   Queued: %u   Processed: %u   Dropped: %u",
-                       otaStatistics.otaPacketsReceived,
-                       otaStatistics.otaPacketsQueued,
-                       otaStatistics.otaPacketsProcessed,
-                       otaStatistics.otaPacketsDropped ) );
+            if( ( xIsOtaAgentActive() == pdTRUE ) &&
+                ( OTA_GetStatistics( &otaStatistics ) == OtaErrNone ) )
+            {
+                LogInfo( ( " Received: %u   Queued: %u   Processed: %u   Dropped: %u",
+                           otaStatistics.otaPacketsReceived,
+                           otaStatistics.otaPacketsQueued,
+                           otaStatistics.otaPacketsProcessed,
+                           otaStatistics.otaPacketsDropped ) );
+            }
 
             vTaskDelay( pdMS_TO_TICKS( otaexampleTASK_DELAY_MS ) );
-        }
+        } while( OTA_GetState() != OtaAgentStateStopped );
     }
 
     LogInfo( ( "OTA agent task stopped. Exiting OTA demo." ) );
