@@ -106,6 +106,9 @@ const CLI_Command_Definition_t xCommandDef_pki =
         "    pki export cert <label>\r\n"
         "        Export the certificate with the given label in pem format.\r\n"
         "        When no label is specified, the default certificate is exported.\r\n\n"
+        "    pki import key <label>\r\n"
+        "        Import a public key into the given slot. The key should be \r\n"
+        "        copied into the terminal in PEM format, ending with two blank lines.\r\n\n"
         "    pki export key <label>\r\n"
         "        Export the public portion of the key with the specified label.\r\n\n",
     .pxCommandInterpreter = vCommand_PKI
@@ -560,8 +563,9 @@ static void vSubCommand_GenerateKey( ConsoleIO_t * pxCIO,
     }
 }
 
-static BaseType_t xReadPemFromCliToX509Crt( ConsoleIO_t * pxCIO,
-                                            mbedtls_x509_crt * pxCertificateContext )
+static BaseType_t xReadPemFromCliAsDer( ConsoleIO_t * pxCIO,
+                                        unsigned char ** ppucDerBuffer,
+                                        size_t * puxDerLen )
 {
     size_t uxDerDataLen = 0;
     BaseType_t xBeginFound = pdFALSE;
@@ -569,8 +573,9 @@ static BaseType_t xReadPemFromCliToX509Crt( ConsoleIO_t * pxCIO,
     BaseType_t xErrorFlag = pdFALSE;
     unsigned char * pucDerBuffer = NULL;
 
-    configASSERT( pxCertificateContext );
     configASSERT( pxCIO );
+    configASSERT( ppucDerBuffer );
+    configASSERT( puxDerLen );
 
     pucDerBuffer = mbedtls_calloc( 1, PEM_CERT_MAX_LEN );
 
@@ -674,6 +679,10 @@ static BaseType_t xReadPemFromCliToX509Crt( ConsoleIO_t * pxCIO,
                     }
                 }
             }
+            else
+            {
+                xErrorFlag = pdTRUE;
+            }
 
             if( xErrorFlag == pdTRUE )
             {
@@ -685,8 +694,36 @@ static BaseType_t xReadPemFromCliToX509Crt( ConsoleIO_t * pxCIO,
         }
     }
 
-    if( uxDerDataLen > 0 )
+    if( pucDerBuffer != NULL )
     {
+        *ppucDerBuffer = pucDerBuffer;
+        *puxDerLen = uxDerDataLen;
+    }
+    else
+    {
+        xErrorFlag = pdTRUE;
+    }
+
+    return !xErrorFlag;
+}
+
+static BaseType_t xReadPemFromCliToX509Crt( ConsoleIO_t * pxCIO,
+                                            mbedtls_x509_crt * pxCertificateContext )
+{
+    size_t uxDerDataLen = 0;
+    BaseType_t xErrorFlag = pdFALSE;
+    unsigned char * pucDerBuffer = NULL;
+
+    configASSERT( pxCertificateContext );
+    configASSERT( pxCIO );
+
+    if( !xReadPemFromCliAsDer( pxCIO, &pucDerBuffer, &uxDerDataLen ) )
+    {
+        xErrorFlag = pdTRUE;
+    }
+    else
+    {
+        configASSERT( uxDerDataLen > 0 );
         mbedtls_x509_crt_init( pxCertificateContext );
         int lRslt = mbedtls_x509_crt_parse_der_nocopy( pxCertificateContext, pucDerBuffer, uxDerDataLen );
 
@@ -762,13 +799,86 @@ static void vSubCommand_ImportCertificate( ConsoleIO_t * pxCIO,
     }
 }
 
-static void vSubCommand_ImportKey( ConsoleIO_t * pxCIO,
-                                   uint32_t ulArgc,
-                                   char * ppcArgv[] )
+static void vSubCommand_ImportPubKey( ConsoleIO_t * pxCIO,
+                                      uint32_t ulArgc,
+                                      char * ppcArgv[] )
 {
-    ( void ) ulArgc;
-    ( void ) ppcArgv;
-    pxCIO->print( "Not Implemented\r\n" );
+    BaseType_t xResult = pdTRUE;
+    PkiStatus_t xStatus = PKI_SUCCESS;
+
+    char pcPubKeyLabel[ configTLS_MAX_LABEL_LEN + 1 ] = { 0 };
+    size_t xPubKeyLabelLen = 0;
+    mbedtls_pk_context xPkContext;
+    unsigned char * pucDerBuffer = NULL;
+    size_t uxDerDataLen = 0;
+
+    configASSERT( pxCIO );
+
+    mbedtls_pk_init( &xPkContext );
+
+    if( ( ulArgc > LABEL_IDX ) &&
+        ( ppcArgv[ LABEL_IDX ] != NULL ) )
+    {
+        ( void ) strncpy( pcPubKeyLabel, ppcArgv[ LABEL_IDX ], configTLS_MAX_LABEL_LEN + 1 );
+    }
+    else
+    {
+        ( void ) strncpy( pcPubKeyLabel, OTA_SIGNING_KEY_LABEL, configTLS_MAX_LABEL_LEN + 1 );
+    }
+
+    xPubKeyLabelLen = strnlen( pcPubKeyLabel, configTLS_MAX_LABEL_LEN );
+
+    if( xPubKeyLabelLen > configTLS_MAX_LABEL_LEN )
+    {
+        pxCIO->print( "Error: Public Key label: '" );
+        pxCIO->print( pcPubKeyLabel );
+        pxCIO->print( "' is longer than the configured maximum length.\r\n" );
+        xResult = pdFALSE;
+    }
+
+    if( xResult == pdTRUE )
+    {
+        xResult = xReadPemFromCliAsDer( pxCIO, &pucDerBuffer, &uxDerDataLen );
+    }
+
+    if( xResult == pdTRUE )
+    {
+        int lRslt = 0;
+
+        lRslt = mbedtls_pk_parse_public_key( &xPkContext, pucDerBuffer, uxDerDataLen );
+
+        if( lRslt != 0 )
+        {
+            pxCIO->print( "ERROR: Failed to parse public key." );
+            xResult = pdFALSE;
+        }
+    }
+
+    if( xResult == pdTRUE )
+    {
+        xStatus = xPkiWritePubKey( pcPubKeyLabel, pucDerBuffer, uxDerDataLen, &xPkContext );
+
+        if( xStatus == PKI_SUCCESS )
+        {
+            pxCIO->print( "Success: Public Key loaded to label: '" );
+            pxCIO->print( pcPubKeyLabel );
+            pxCIO->print( "'.\r\n" );
+        }
+        else
+        {
+            pxCIO->print( "Error: failed to save public key to label: '" );
+            pxCIO->print( pcPubKeyLabel );
+            pxCIO->print( "'.\r\n" );
+        }
+    }
+
+    if( pucDerBuffer != NULL )
+    {
+        mbedtls_free( pucDerBuffer );
+        pucDerBuffer = NULL;
+    }
+
+    mbedtls_pk_free( &xPkContext );
 }
 
 static void vSubCommand_ExportCertificate( ConsoleIO_t * pxCIO,
@@ -922,7 +1032,7 @@ static void vCommand_PKI( ConsoleIO_t * pxCIO,
 
                 if( 0 == strcmp( "key", pcObject ) )
                 {
-                    vSubCommand_ImportKey( pxCIO, ulArgc, ppcArgv );
+                    vSubCommand_ImportPubKey( pxCIO, ulArgc, ppcArgv );
                     xSuccess = pdTRUE;
                 }
                 else if( 0 == strcmp( "cert", pcObject ) )
