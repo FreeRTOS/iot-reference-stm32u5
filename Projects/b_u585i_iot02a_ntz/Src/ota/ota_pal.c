@@ -403,9 +403,9 @@ static HAL_StatusTypeDef prvEraseBank( uint32_t bankNumber )
 }
 
 
-static CK_RV prvPKCS11GetCertificateHandle( CK_SESSION_HANDLE xSession,
-                                            const char * pcLabelName,
-                                            CK_OBJECT_HANDLE_PTR pxCertHandle )
+static CK_RV prvPKCS11GetPubKeyHandle( CK_SESSION_HANDLE xSession,
+                                       const char * pcLabelName,
+                                       CK_OBJECT_HANDLE_PTR pxpubKeyHandle )
 {
     CK_ATTRIBUTE xTemplate;
     CK_RV xResult = CKR_OK;
@@ -415,7 +415,7 @@ static CK_RV prvPKCS11GetCertificateHandle( CK_SESSION_HANDLE xSession,
 
     xResult = C_GetFunctionList( &xFunctionList );
 
-    /* Get the certificate handle. */
+    /* Get the public key handle. */
     if( CKR_OK == xResult )
     {
         xTemplate.type = CKA_LABEL;
@@ -428,7 +428,7 @@ static CK_RV prvPKCS11GetCertificateHandle( CK_SESSION_HANDLE xSession,
     {
         xFindInit = CK_TRUE;
         xResult = xFunctionList->C_FindObjects( xSession,
-                                                ( CK_OBJECT_HANDLE_PTR ) pxCertHandle,
+                                                ( CK_OBJECT_HANDLE_PTR ) pxpubKeyHandle,
                                                 1,
                                                 &ulCount );
     }
@@ -443,7 +443,7 @@ static CK_RV prvPKCS11GetCertificateHandle( CK_SESSION_HANDLE xSession,
 
 static CK_RV prvOpenPKCS11Session( CK_SESSION_HANDLE_PTR pSession )
 {
-    /* Find the certificate */
+    /* Find the public key */
     CK_RV xResult;
     CK_FUNCTION_LIST_PTR xFunctionList;
     CK_SLOT_ID xSlotId;
@@ -485,7 +485,7 @@ static CK_RV prvClosePKCS11Session( CK_SESSION_HANDLE xSession )
 }
 
 CK_RV prvVerifyImageSignatureUsingPKCS11( CK_SESSION_HANDLE session,
-                                          CK_OBJECT_HANDLE certificateHandle,
+                                          CK_OBJECT_HANDLE pubKeyHandle,
                                           OtaImageContext_t * pImageContext,
                                           uint8_t * pSignature,
                                           size_t signatureLength )
@@ -533,7 +533,7 @@ CK_RV prvVerifyImageSignatureUsingPKCS11( CK_SESSION_HANDLE session,
     {
         result = functionList->C_VerifyInit( session,
                                              &mechanism,
-                                             certificateHandle );
+                                             pubKeyHandle );
     }
 
     if( result == CKR_OK )
@@ -550,13 +550,13 @@ CK_RV prvVerifyImageSignatureUsingPKCS11( CK_SESSION_HANDLE session,
 
 
 BaseType_t prvValidateImageSignature( OtaImageContext_t * pImageContext,
-                                      const char * pCertificatePath,
+                                      const char * pPubKeyLabel,
                                       uint8_t * pSignature,
                                       size_t signatureLength )
 {
     CK_SESSION_HANDLE session = CKR_SESSION_HANDLE_INVALID;
     CK_RV xPKCS11Status = CKR_OK;
-    CK_OBJECT_HANDLE certHandle;
+    CK_OBJECT_HANDLE pubKeyHandle;
     BaseType_t result = pdTRUE;
     uint8_t pkcs11Signature[ pkcs11ECDSA_P256_SIGNATURE_LENGTH ] = { 0 };
 
@@ -575,13 +575,13 @@ BaseType_t prvValidateImageSignature( OtaImageContext_t * pImageContext,
 
         if( xPKCS11Status == CKR_OK )
         {
-            xPKCS11Status = prvPKCS11GetCertificateHandle( session, pCertificatePath, &certHandle );
+            xPKCS11Status = prvPKCS11GetPubKeyHandle( session, pPubKeyLabel, &pubKeyHandle );
         }
 
         if( xPKCS11Status == CKR_OK )
         {
             xPKCS11Status = prvVerifyImageSignatureUsingPKCS11( session,
-                                                                certHandle,
+                                                                pubKeyHandle,
                                                                 pImageContext,
                                                                 pkcs11Signature,
                                                                 pkcs11ECDSA_P256_SIGNATURE_LENGTH );
