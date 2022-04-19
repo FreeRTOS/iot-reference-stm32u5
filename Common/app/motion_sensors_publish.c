@@ -117,10 +117,13 @@ static BaseType_t prvPublishAndWaitForAck( MQTTAgentHandle_t xAgentHandle,
                                            size_t xPublishDataLen )
 {
     MQTTStatus_t xStatus;
+    size_t uxTopicLen = 0;
 
     configASSERT( pcTopic != NULL );
     configASSERT( pvPublishData != NULL );
     configASSERT( xPublishDataLen > 0 );
+
+    uxTopicLen = strnlen( pcTopic, UINT16_MAX );
 
     MQTTPublishInfo_t xPublishInfo =
     {
@@ -128,7 +131,7 @@ static BaseType_t prvPublishAndWaitForAck( MQTTAgentHandle_t xAgentHandle,
         .retain          = 0,
         .dup             = 0,
         .pTopicName      = pcTopic,
-        .topicNameLength = strlen( pcTopic ),
+        .topicNameLength = ( uint16_t ) uxTopicLen,
         .pPayload        = pvPublishData,
         .payloadLength   = xPublishDataLen
     };
@@ -221,7 +224,7 @@ void vMotionSensorsPublish( void * pvParameters )
     char pcPayloadBuf[ MQTT_PUBLISH_MAX_LEN ];
     char pcTopicString[ MQTT_PUBLICH_TOPIC_STR_LEN ] = { 0 };
     char * pcDeviceId = NULL;
-    size_t xTopicLen = 0;
+    int lTopicLen = 0;
 
     xResult = xInitSensors();
 
@@ -239,12 +242,13 @@ void vMotionSensorsPublish( void * pvParameters )
     }
     else
     {
-        xTopicLen = snprintf( pcTopicString, MQTT_PUBLICH_TOPIC_STR_LEN, "%s/motion_sensor_data", pcDeviceId );
+        lTopicLen = snprintf( pcTopicString, ( size_t ) MQTT_PUBLICH_TOPIC_STR_LEN, "%s/motion_sensor_data", pcDeviceId );
     }
 
-    if( ( xTopicLen == 0 ) || ( xTopicLen > MQTT_PUBLICH_TOPIC_STR_LEN ) )
+    if( ( lTopicLen <= 0 ) || ( lTopicLen > MQTT_PUBLICH_TOPIC_STR_LEN ) )
     {
         LogError( "Error while constructing topic string." );
+        xExitFlag = pdTRUE;
     }
 
     xAgentHandle = xGetMqttAgentHandle();
@@ -261,39 +265,39 @@ void vMotionSensorsPublish( void * pvParameters )
 
         if( lBspError == BSP_ERROR_NONE )
         {
-            int bytesWritten = snprintf( pcPayloadBuf,
-                                         MQTT_PUBLISH_MAX_LEN,
-                                         "{"
-                                         "\"acceleration_mG\":"
-                                         "{"
-                                         "\"x\": %ld,"
-                                         "\"y\": %ld,"
-                                         "\"z\": %ld"
-                                         "},"
-                                         "\"gyro_mDPS\":"
-                                         "{"
-                                         "\"x\": %ld,"
-                                         "\"y\": %ld,"
-                                         "\"z\": %ld"
-                                         "},"
-                                         "\"magnetometer_mGauss\":"
-                                         "{"
-                                         "\"x\": %ld,"
-                                         "\"y\": %ld,"
-                                         "\"z\": %ld"
-                                         "}"
-                                         "}",
-                                         xAcceleroAxes.x, xAcceleroAxes.y, xAcceleroAxes.z,
-                                         xGyroAxes.x, xGyroAxes.y, xGyroAxes.z,
-                                         xMagnetoAxes.x, xMagnetoAxes.y, xMagnetoAxes.z );
+            int lbytesWritten = snprintf( pcPayloadBuf,
+                                          MQTT_PUBLISH_MAX_LEN,
+                                          "{"
+                                          "\"acceleration_mG\":"
+                                          "{"
+                                          "\"x\": %ld,"
+                                          "\"y\": %ld,"
+                                          "\"z\": %ld"
+                                          "},"
+                                          "\"gyro_mDPS\":"
+                                          "{"
+                                          "\"x\": %ld,"
+                                          "\"y\": %ld,"
+                                          "\"z\": %ld"
+                                          "},"
+                                          "\"magnetometer_mGauss\":"
+                                          "{"
+                                          "\"x\": %ld,"
+                                          "\"y\": %ld,"
+                                          "\"z\": %ld"
+                                          "}"
+                                          "}",
+                                          xAcceleroAxes.x, xAcceleroAxes.y, xAcceleroAxes.z,
+                                          xGyroAxes.x, xGyroAxes.y, xGyroAxes.z,
+                                          xMagnetoAxes.x, xMagnetoAxes.y, xMagnetoAxes.z );
 
-            if( ( bytesWritten < MQTT_PUBLISH_MAX_LEN ) &&
+            if( ( lbytesWritten < MQTT_PUBLISH_MAX_LEN ) &&
                 ( xIsMqttAgentConnected() == pdTRUE ) )
             {
                 xResult = prvPublishAndWaitForAck( xAgentHandle,
                                                    pcTopicString,
                                                    pcPayloadBuf,
-                                                   bytesWritten );
+                                                   ( size_t ) lbytesWritten );
 
                 if( xResult != pdPASS )
                 {
