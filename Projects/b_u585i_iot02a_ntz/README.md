@@ -111,14 +111,20 @@ extendedKeyUsage = codeSigning
 openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -pkeyopt ec_param_enc:named_curve -outform PEM -out ecdsasigner-priv-key.pem
 ```
 
-3.Create an ECDSA code-signing certificate to be uploaded to the AWS ACM service:
+3. Generate a file containing the public key associated with the private key generated above:
+
+```
+openssl ec -inform pem -in ecdsasigner-priv-key.pem -pubout -outform pem -out ecdsasigner-pub-key.pem
+```
+
+4.Create an ECDSA code-signing certificate to be uploaded to the AWS ACM service:
 
 ```
 openssl req -new -x509 -config cert_config.txt -extensions my_exts -nodes -days 365 -key ecdsasigner-priv-key.pem -out ecdsasigner.crt
 
 ```
 
-4. Import the code-signing certificate and private key into AWS Certificate Manager:
+5. Import the code-signing certificate and private key into AWS Certificate Manager:
 
 NOTE: This command displays an ARN for your certificate. You need this ARN when you create an OTA update job later
 
@@ -126,7 +132,7 @@ NOTE: This command displays an ARN for your certificate. You need this ARN when 
 aws acm import-certificate --certificate fileb://ecdsasigner.crt --private-key fileb://ecdsasigner-priv-key.pem
 ```
 
-5. Connect the device to a terminal over serial port. On the command line prompt type following command to provision public key to device:
+6. Connect the device to a terminal over serial port. On the command line prompt type following command to provision public key to device:
 
   `> pki import key ota_signer_pub`
 
@@ -136,7 +142,7 @@ aws acm import-certificate --certificate fileb://ecdsasigner.crt --private-key f
 
 `ota_signer_pub` is the label used to refer to the code signing key during verification of the firmware update.
 
-6. Create a signing profile in AWS to sign the firmware image.
+7. Create a signing profile in AWS to sign the firmware image.
 
 ```
 aws signer put-signing-profile --profile-name <your profile name> --signing-material certificateArn=<certificate arn created in step 4> --platform AmazonFreeRTOS-Default --signing-parameters certname=ota_signer_pub
