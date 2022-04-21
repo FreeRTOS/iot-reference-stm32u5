@@ -18,13 +18,14 @@ fi
 # Run STM32_Programmer_CLI and remove color codes.
 prog_cli()
 {
+    echo ${PROG_BIN} --quietMode -c port=SWD "$@"
     ${PROG_BIN} --quietMode -c port=SWD "$@" | sed 's/\x1b\[[0-9;]*m//g'
 }
 
 # Locate project build directory and store it in BUILD_PATH
 # Assume pwd is project main directory if not specified.
 # shellcheck disable=SC2154
-if [ -n "${ProjDirPath}" ]; then
+if [ -z "${ProjDirPath}" ]; then
     ProjDirPath="${PWD}"
 fi
 
