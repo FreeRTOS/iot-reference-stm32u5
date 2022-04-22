@@ -98,7 +98,10 @@ Using your platform's package manager, install the following prerequisites:
 ## Windows
 There are many options for downloading and installing packages on windows. Use the approach you are most comfortable with.
 
-### Windows Manual Installation
+### Windows: Decide which shell you will use
+Windows has a wide variety of unix or posix-like shells available. This guide will assume you are using GitBash which is included in the git for windows package.
+
+### Windows: Manual Installation without a Package Manager
 Download and install the latest version of each of the following packages:
 - [python](https://www.python.org/downloads/) (with pip)
 - [perl](https://www.perl.org/get.html)
@@ -106,13 +109,13 @@ Download and install the latest version of each of the following packages:
 - [git](https://git-scm.com/downloads)
 - [7-zip](https://www.7-zip.org/download.html)
 
-### Windows installation with Scoop Package Manager
-With [scoop](https://scoop.sh/) package manager installed, run the following command:
+### Windows: Installation with Scoop Package Manager
+With [scoop](https://scoop.sh/) package manager installed, run the following command from your preferred shell.
 ```
 scoop install python cmake git ninja 7zip perl
 ```
-### Windows installation with Chocolatey Package Manager
-With [chocolatey](https://chocolatey.org/install) installed, run the following commands:
+### Windows: Installation with Chocolatey Package Manager
+With [chocolatey](https://chocolatey.org/install) installed, run the following commands from your preferred shell.
 ```
 choco install cmake
 choco install wget
@@ -121,11 +124,46 @@ choco install python3
 choco install 7zip
 choco install perl
 ```
-### Windows specific configuration
-On windows, long path names can present issues with some legacy programs. Enable long path support in git so that git knows long paths are supported by STM32CubeIDE and the included toolchain.
+### Windows: Enable the git longpaths option:
+On windows, long path names can present problems with some programs that utilize legacy APIs. Enable long path support in git so that git knows long paths are supported by STM32CubeIDE and the included toolchain.
+
+Open GitBash or a similar unix-like shell environment and run the following command:
 ```
 git config --system core.longpaths true
 ```
+### Windows: Add bash.exe to your Path:
+In order to use the stm32u5_tool.sh script and the related STM32CubeIDE launch files, you must include bash.exe in your system path.
+In your shell, run the following command to determine the location of bash.exe in your environment. Copy this location to your clipboard for later user.
+```
+cygpath -w $(dirname $(which bash))
+```
+
+For reference, the default location for GitBash is ```C:\Program Files\Git\usr\bin```.
+
+#### Option A: Update Environment via command line:
+1. Enter the windows cmd environment by typing cmd in your shell.
+
+2. Run the following command to append the git directory to your path:
+```
+setx PATH "%PATH%;C:\Program Files\Git\usr\bin"
+```
+3. Type ```exit``` from within the cmd environment to exit back to git bash.
+
+4. To allow the environment variable changes to take effect, log out of your windows session and then log back in.
+
+#### Option B: Update Environment via gui
+1. Run the following command to open the environment variable editor from Control Panel:
+```
+rundll32 sysdm.cpl,EditEnvironmentVariables
+```
+
+2. Select the "Path" user environment variable and click "Edit".
+
+3. Select "New" and then paste the path from the previous section into the text box.
+
+4. Press OK and OK to exit the environment variable editor.
+
+5. To allow the environment variable changes to take effect, log out of your windows session and then log back in.
 
 ## Linux
 Install dependencies using your distribution's package manager:
@@ -304,7 +342,7 @@ Source the setup script to enter the python virutal environment
 source tools/env_setup.sh
 ```
 
-## Setup your AWS Acount and awscli
+## Setup your AWS account with awscli
 
 Follow the instructions to [Create an IAM user](https://docs.aws.amazon.com/iot/latest/developerguide/setting-up.html).
 
