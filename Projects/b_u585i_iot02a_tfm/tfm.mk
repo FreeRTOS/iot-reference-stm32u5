@@ -237,11 +237,7 @@ TFM_INTF_LIB = ${PROJECT_PATH}/tfm/interface/libtfm_interface.a
 # Build tfm interface library.
 ###############################################################################
 $(TFM_INTF_LIB) :
-	cp $^ $@
 	$(MAKE) -f ${PROJECT_PATH}/generated.mk PROJECT_PATH=${PROJECT_PATH} TFM_BUILD_PATH=${TFM_BUILD_PATH} all
-
-${PROJECT_PATH}/tfm/interface/libtfm_s_veneers.a : ${TFM_BUILD_PATH}/secure_fw/libtfm_s_veneers.a
-	cp $^ $@
 
 ###############################################################################
 # Generate the linker script for the NSPE partition based on the template
@@ -349,8 +345,8 @@ ${BUILD_PATH}/${PROJECT_NAME}_s_signed.bin : ${BUILD_PATH}/${PROJECT_NAME}_s.bin
 	source ${TOOLS_PATH}/env_setup.sh
 	python ${PROJECT_PATH}/tfm/scripts/wrapper/wrapper.py \
 		--version ${SPE_VERSION} \
-		--layout ${abspath "${PROJECT_PATH}"}/tfm/layout_files/signing_layout_s.o \
-		--key ${S_REGION_SIGNING_KEY} \
+		--layout "${abspath ${PROJECT_PATH}}/tfm/layout_files/signing_layout_s.o" \
+		--key "${S_REGION_SIGNING_KEY}" \
 		--public-key-format full \
 		--align 8 --pad --pad-header \
 		--header-size 0x400 \
@@ -417,7 +413,6 @@ spe_bin : ${BL2_BIN} ${TFM_BIN}
 nspe_build_reqs : ${BL2_BIN} \
 				  ${TFM_BIN} \
 				  ${TFM_INTF_LIB} \
-				  ${PROJECT_PATH}/tfm/interface/libtfm_s_veneers.a \
 				  ${BUILD_PATH}/stm32u5xx_ns.ld \
 				  ${BUILD_PATH}/image_defs.sh
 
