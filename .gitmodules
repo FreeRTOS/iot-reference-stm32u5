@@ -83,3 +83,9 @@
 [submodule "Drivers/STM32U5xx_HAL"]
 	path = Drivers/STM32U5xx_HAL
 	url = https://github.com/STMicroelectronics/stm32u5xx_hal_driver.git
+[submodule "Middleware/FreeRTOS/integration_tests"]
+	path = Middleware/FreeRTOS/integration_tests
+	url = https://github.com/FreeRTOS/Labs-FreeRTOS-Libraries-Integration-Tests.git
+[submodule "Middleware/unity"]
+	path = Middleware/unity
+	url = https://github.com/ThrowTheSwitch/Unity.git

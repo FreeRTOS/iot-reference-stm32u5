@@ -132,6 +132,11 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
+			<name>Libraries/integration_tests</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/integration_tests/src</locationURI>
+		</link>
+		<link>
 			<name>Libraries/lwip</name>
 			<type>2</type>
 			<locationURI>WORKSPACE_LOC/Middleware/lwip/src</locationURI>
@@ -160,6 +165,16 @@
 			<name>Libraries/tinycbor</name>
 			<type>2</type>
 			<locationURI>WORKSPACE_LOC/Middleware/tinycbor/src</locationURI>
+		</link>
+		<link>
+			<name>Libraries/unity</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>Libraries/xio_fusion</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Middleware/xio_fusion/Fusion</locationURI>
 		</link>
 		<link>
 			<name>Libraries/CMSIS/core</name>
@@ -386,10 +401,20 @@
 			<type>1</type>
 			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/kernel/timers.c</locationURI>
 		</link>
+		<link>
+			<name>Libraries/unity/fixture</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Middleware/unity/extras/fixture/src</locationURI>
+		</link>
+		<link>
+			<name>Libraries/unity/src</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Middleware/unity/src</locationURI>
+		</link>
 	</linkedResources>
 	<filteredResources>
 		<filter>
-			<id>1649178521185</id>
+			<id>1650043402182</id>
 			<name></name>
 			<type>6</type>
 			<matcher>
@@ -422,6 +447,33 @@
 			<matcher>
 				<id>org.eclipse.ui.ide.multiFilter</id>
 				<arguments>1.0-name-matches-false-false-*.h</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1650044472254</id>
+			<name>Libraries/LittleFS</name>
+			<type>5</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-*.c</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1650044472259</id>
+			<name>Libraries/LittleFS</name>
+			<type>5</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-*.h</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1650044472263</id>
+			<name>Libraries/LittleFS</name>
+			<type>10</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-*</arguments>
 			</matcher>
 		</filter>
 		<filter>
@@ -517,6 +569,24 @@
 		<filter>
 			<id>1634615308376</id>
 			<name>Libraries/tinycbor</name>
+			<type>5</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-*.h</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1650045018924</id>
+			<name>Libraries/xio_fusion</name>
+			<type>5</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-*.c</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1650045018926</id>
+			<name>Libraries/xio_fusion</name>
 			<type>5</type>
 			<matcher>
 				<id>org.eclipse.ui.ide.multiFilter</id>
