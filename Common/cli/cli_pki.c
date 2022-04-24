@@ -62,6 +62,8 @@
 #include "pk_wrap.h"
 #include "mbedtls/ecp.h"
 
+#include "ota_config.h"
+
 
 #define LABEL_PUB_IDX          3
 #define LABEL_PRV_IDX          4
@@ -563,6 +565,173 @@ static void vSubCommand_GenerateKey( ConsoleIO_t * pxCIO,
     }
 }
 
+static BaseType_t xReadPemFromBufferAsDer( ConsoleIO_t * pxCIO,
+                                        const char *input_buf,
+                                        unsigned char ** ppucDerBuffer,
+                                        size_t * puxDerLen )
+{
+    size_t uxDerDataLen = 0;
+    BaseType_t xBeginFound = pdFALSE;
+    BaseType_t xEndFound = pdFALSE;
+    BaseType_t xErrorFlag = pdFALSE;
+    unsigned char * pucDerBuffer = NULL;
+    int first = 1;
+    char *ctxt;
+    char tmp_input[4096];
+
+    strcpy(tmp_input, input_buf);
+
+    configASSERT( pxCIO );
+    configASSERT( ppucDerBuffer );
+    configASSERT( puxDerLen );
+
+    pucDerBuffer = mbedtls_calloc( 1, PEM_CERT_MAX_LEN );
+
+    if( pucDerBuffer == NULL )
+    {
+        pxCIO->print( "Error: Out of memory to store the given PEM file.\r\n" );
+        xErrorFlag = pdTRUE;
+    }
+    else
+    {
+        while( uxDerDataLen < PEM_CERT_MAX_LEN &&
+               xEndFound == pdFALSE )
+        {
+            char * pcInputBuffer = NULL;
+            int32_t lDataRead;
+            char tmp[32];
+
+            pcInputBuffer = strtok_r((first==1) ? tmp_input : NULL, "\n", &ctxt);
+            pxCIO->print( "\r\n'" );
+            pxCIO->print( pcInputBuffer );
+            pxCIO->print( "'\r\n" );
+            lDataRead = 0;
+            first = 0;
+            if (pcInputBuffer != NULL) {
+                lDataRead = (int32_t)strlen(pcInputBuffer);
+            }
+
+            sprintf(tmp, "len: %ld\n", lDataRead);
+            pxCIO->print( tmp );
+            pxCIO->print( "\r\n" );
+
+            if( lDataRead > 0 )
+            {
+                size_t uxDataRead = ( size_t ) lDataRead;
+
+                if( lDataRead > 64 )
+                {
+                    pxCIO->print( "Error: Current line exceeds maximum line length for a PEM file.\r\n" );
+                    xErrorFlag = pdTRUE;
+                }
+                /* Check if this line will overflow the buffer given for the pem file */
+                else if( ( xErrorFlag == pdFALSE ) &&
+                         ( uxDataRead > 0 ) &&
+                         ( ( uxDerDataLen + uxDataRead + PEM_LINE_ENDING_LEN ) >= PEM_CERT_MAX_LEN ) )
+                {
+                    pxCIO->print( "Error: Out of memory to store the given PEM file.\r\n" );
+                    xErrorFlag = pdTRUE;
+                }
+                /* Validate a header header line */
+                else if( xBeginFound == pdFALSE )
+                {
+                    if( strncmp( PEM_BEGIN, pcInputBuffer, strlen( PEM_BEGIN ) ) == 0 )
+                    {
+                        char * pcLabelEnd = strnstr( &( pcInputBuffer[ strlen( PEM_BEGIN ) ] ),
+                                                     PEM_META_SUFFIX,
+                                                     uxDataRead - strlen( PEM_BEGIN ) );
+
+                        if( pcLabelEnd == NULL )
+                        {
+                            pxCIO->print( "Error: PEM header does not contain the expected ending: '" PEM_META_SUFFIX "'.\r\n" );
+                            xErrorFlag = pdTRUE;
+                        }
+                        else
+                        {
+                            xBeginFound = pdTRUE;
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        pxCIO->print( "Error: PEM header does not contain the expected text: '" PEM_BEGIN "'.\r\n" );
+                        xErrorFlag = pdTRUE;
+                    }
+                }
+                else if( xEndFound == pdFALSE )
+                {
+                    if( strncmp( PEM_END, pcInputBuffer, strlen( PEM_END ) ) == 0 )
+                    {
+                        char * pcLabelEnd = strnstr( &( pcInputBuffer[ strlen( PEM_END ) ] ),
+                                                     PEM_META_SUFFIX,
+                                                     uxDataRead - strlen( PEM_END ) );
+
+                        if( pcLabelEnd == NULL )
+                        {
+                            pxCIO->print( "Error: PEM footer does not contain the expected ending: '" PEM_META_SUFFIX "'.\r\n" );
+                            xErrorFlag = pdTRUE;
+                        }
+                        else
+                        {
+                            xEndFound = pdTRUE;
+                        }
+                    }
+                }
+                else
+                {
+                    /* Empty */
+                }
+
+                if( ( xBeginFound == pdTRUE ) &&
+                    ( xEndFound == pdFALSE ) )
+                {
+                    size_t uxBytesWritten = 0;
+                    int lRslt = mbedtls_base64_decode( &( pucDerBuffer[ uxDerDataLen ] ),
+                                                       PEM_CERT_MAX_LEN - uxDerDataLen,
+                                                       &uxBytesWritten,
+                                                       ( unsigned char * ) pcInputBuffer, uxDataRead );
+
+                    if( lRslt == 0 )
+                    {
+                        uxDerDataLen += uxBytesWritten;
+                        configASSERT( uxDerDataLen < PEM_CERT_MAX_LEN );
+                    }
+                    else
+                    {
+                        xErrorFlag = pdTRUE;
+                    }
+                }
+            }
+            else
+            {
+                xErrorFlag = pdTRUE;
+            }
+
+            if( xErrorFlag == pdTRUE )
+            {
+                uxDerDataLen = 0;
+                vPortFree( pucDerBuffer );
+                pucDerBuffer = NULL;
+                break;
+            }
+        }
+    }
+
+    if( pucDerBuffer != NULL )
+    {
+        *ppucDerBuffer = pucDerBuffer;
+        *puxDerLen = uxDerDataLen;
+    }
+    else
+    {
+        xErrorFlag = pdTRUE;
+    }
+
+    return !xErrorFlag;
+}
+
+
+
 static BaseType_t xReadPemFromCliAsDer( ConsoleIO_t * pxCIO,
                                         unsigned char ** ppucDerBuffer,
                                         size_t * puxDerLen )
@@ -799,6 +968,10 @@ static void vSubCommand_ImportCertificate( ConsoleIO_t * pxCIO,
     }
 }
 
+#ifdef keyCLIENT_CERTIFICATE_PEM
+const char g_signingKey[] = keyCLIENT_CERTIFICATE_PEM;
+#endif
+
 static void vSubCommand_ImportPubKey( ConsoleIO_t * pxCIO,
                                       uint32_t ulArgc,
                                       char * ppcArgv[] )
@@ -838,7 +1011,16 @@ static void vSubCommand_ImportPubKey( ConsoleIO_t * pxCIO,
 
     if( xResult == pdTRUE )
     {
+#ifdef keyCLIENT_CERTIFICATE_PEM
+        if (strcmp(pcPubKeyLabel, OTA_SIGNING_KEY_LABEL) == 0)
+        {
+            xResult = xReadPemFromBufferAsDer( pxCIO, g_signingKey, &pucDerBuffer, &uxDerDataLen );
+        } else {
+            xResult = xReadPemFromCliAsDer( pxCIO, &pucDerBuffer, &uxDerDataLen );
+        }
+#else
         xResult = xReadPemFromCliAsDer( pxCIO, &pucDerBuffer, &uxDerDataLen );
+#endif
     }
 
     if( xResult == pdTRUE )

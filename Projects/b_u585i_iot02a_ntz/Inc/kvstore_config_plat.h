@@ -30,7 +30,7 @@
 #define KV_STORE_CACHE_ENABLE       1
 
 /* Define KV_STORE_NVIMPL_ENABLE to 1 to enable storage of all key / value pairs in non-volatile storage */
-#define KV_STORE_NVIMPL_ENABLE      1
+#define KV_STORE_NVIMPL_ENABLE      0
 
 #define KV_STORE_NVIMPL_LITTLEFS    1
 

@@ -188,8 +188,6 @@ void vInitTask( void * pvArgs )
 
     ( void ) pvArgs;
 
-    xResult = xTaskCreate( Task_CLI, "cli", 2048, NULL, 10, NULL );
-
     xMountStatus = fs_init();
 
     if( xMountStatus == LFS_ERR_OK )
@@ -239,6 +237,8 @@ void vInitTask( void * pvArgs )
 
     xResult = xTaskCreate( vDefenderAgentTask, "AWSDefender", 2048, NULL, 5, NULL );
     configASSERT( xResult == pdTRUE );
+
+    xResult = xTaskCreate( Task_CLI, "cli", 2048, NULL, 10, NULL );
 
     while( 1 )
     {
