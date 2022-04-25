@@ -41,11 +41,18 @@ MCUBOOT_PATH=$(realpath "${TOOLS_PATH}/..")/Middleware/ARM/mcuboot
 [ -n "${DEBUG}" ] && echo "MCUBOOT_PATH:       ${MCUBOOT_PATH}"
 [ -n "${DEBUG}" ] && echo
 
-command -v python > /dev/null 2>&1 || alias python=python3
-command -v python > /dev/null 2>&1 || {
+pycmd="python"
+
+command -v python > /dev/null 2>&1 && pycmd="python"
+command -v python3 > /dev/null 2>&1 && pycmd="python3"
+
+command -v ${pycmd} > /dev/null 2>&1 || {
 	echo "Error: Failed to find a valid python installation."
 	return 1
 }
+
+# shellcheck disable=SC2139
+alias python="${pycmd}"
 
 load_venv()
 {
@@ -98,10 +105,10 @@ SITE_PACKAGES_PATH=$(find "${VENV_PATH}" -name site-packages -type d)
 
 # Setup PATH and PYTHONPATH for cmake
 [ -n "${DEBUG}" ] && echo "Adding tools and site packages to PATH."
-export PATH="${TOOLS_PATH}:${SITE_PACKAGES_PATH}:${PATH}"
+export PATH="${MCUBOOT_PATH}/scripts:${TOOLS_PATH}:${SITE_PACKAGES_PATH}:${PATH}"
 
 [ -n "${DEBUG}" ] && echo "Adding tools and site packages to PYTHONPATH."
-export PYTHONPATH="${TOOLS_PATH}:${SITE_PACKAGES_PATH}:${PYTHONPATH}"
+export PYTHONPATH="${MCUBOOT_PATH}/scripts:${TOOLS_PATH}:${SITE_PACKAGES_PATH}:${PYTHONPATH}"
 
 [ -n "${DEBUG}" ] && echo "Done."
 
