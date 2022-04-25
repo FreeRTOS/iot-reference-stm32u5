@@ -149,7 +149,7 @@ ${TFM_BUILD_PATH}/.ready : ${MBEDTLS_PATCH_FLAGS} ${MCUBOOT_PATCH_FLAGS}
 		-DTFM_SPM_LOG_LEVEL_DEBUG=1 \
 		-DTFM_PLATFORM=stm/b_u585i_iot02a \
 		-DTFM_TOOLCHAIN_FILE=${TFM_SRC_PATH}/toolchain_GNUARM.cmake \
-		-DCMAKE_BUILD_TYPE=Relwithdebinfo \
+		-DCMAKE_BUILD_TYPE=debug \
 		-DTFM_DEV_MODE=1 \
 		-DMBEDCRYPTO_PATH=${MBEDTLS_SRC_PATH} \
 		-DMCUBOOT_PATH=${MCUBOOT_SRC_PATH} \
@@ -342,13 +342,13 @@ ${BUILD_PATH}/${PROJECT_NAME}_s_ns% : ${BUILD_PATH}/${PROJECT_NAME}_s% ${BUILD_P
 # Rule to sign SPE / secure / tf-m images
 ###############################################################################
 ${BUILD_PATH}/${PROJECT_NAME}_s_signed.bin : ${BUILD_PATH}/${PROJECT_NAME}_s.bin
-	source ${TOOLS_PATH}/env_setup.sh
+	source ${TOOLS_PATH}/env_setup.sh && \
 	python ${PROJECT_PATH}/tfm/scripts/wrapper/wrapper.py \
 		--version ${SPE_VERSION} \
 		--layout "${abspath ${PROJECT_PATH}}/tfm/layout_files/signing_layout_s.o" \
 		--key "${S_REGION_SIGNING_KEY}" \
 		--public-key-format full \
-		--align 8 --pad --pad-header \
+		--align 16 --pad --pad-header \
 		--header-size 0x400 \
 		--security-counter 1 \
 		--dependencies "(1,0.0.0+0)" \
@@ -359,13 +359,13 @@ ${BUILD_PATH}/${PROJECT_NAME}_s_signed.bin : ${BUILD_PATH}/${PROJECT_NAME}_s.bin
 # Rule to sign NSPE / non-secure envronment images
 ###############################################################################
 ${BUILD_PATH}/${PROJECT_NAME}_ns_signed.bin : ${BUILD_PATH}/${PROJECT_NAME}_ns.bin
-	source ${TOOLS_PATH}/env_setup.sh
+	source ${TOOLS_PATH}/env_setup.sh && \
 	python ${PROJECT_PATH}/tfm/scripts/wrapper/wrapper.py \
 		--version ${NSPE_VERSION} \
 		--layout ${abspath "${PROJECT_PATH}"}/tfm/layout_files/signing_layout_ns.o \
 		--key ${NS_REGION_SIGNING_KEY} \
 		--public-key-format full \
-		--align 1 --pad --pad-header \
+		--align 16 --pad --pad-header \
 		--header-size 0x400 \
 		--security-counter 1 \
 		--dependencies "(0,${SPE_VERSION}+0)" \
