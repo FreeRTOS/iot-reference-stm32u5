@@ -48,6 +48,11 @@ jobs:
       - name: Fetch Packages
         shell: bash
         run: sudo apt install -y ${{ matrix.apt_pkg_deps }}
+      - name: Initialize python virtualenv
+        shell: bash
+        run: |
+          cd ${GITHUB_WORKSPACE}
+          source tools/env_setup.sh
       - name: Download and unzip IDE
         if: ${{ steps.cache.outputs.cache-hit != 'true' }}
         run: |
@@ -136,6 +141,11 @@ jobs:
             scoop install $pkg
           done
           pip install ${{ matrix.pip_pkg_deps }}
+      - name: Initialize python virtualenv
+        shell: bash
+        run: |
+          cd ${GITHUB_WORKSPACE}
+          source tools/env_setup.sh
       - name: Download and unzip IDE
         shell: bash
         if: ${{ steps.cache-ide.outputs.cache-hit != 'true' }}
