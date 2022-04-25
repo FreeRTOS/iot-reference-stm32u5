@@ -113,8 +113,15 @@ case "$1" in
         fi
 
         check_ntz_vars
-        echo "Writing Non-TrustZone image, setting NSBOOTADD0 and clearing SWAP_BANK."
-        prog_cli speed=fast mode=UR -d "${BUILD_PATH}/${TARGET_HEX}" -ob NSBOOTADD0="${NSBOOTADD0}" SWAP_BANK=0 || {
+
+        echo "Setting NSBOOTADD0=${NSBOOTADD0} SWAP_BANK=0."
+        prog_cli speed=fast mode=UR -ob NSBOOTADD0="${NSBOOTADD0}" SWAP_BANK=0 || {
+            echo "Error: Failed to program non-trustzone firmware image."
+            exit 1
+        }
+
+        echo "Writing Non-TrustZone image."
+        prog_cli speed=fast mode=UR -d "${BUILD_PATH}/${TARGET_HEX}" || {
             echo "Error: Failed to program non-trustzone firmware image."
             exit 1
         }
