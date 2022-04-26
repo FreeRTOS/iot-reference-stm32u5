@@ -122,22 +122,22 @@ void vInitTask( void * pvArgs )
     xResult = xTaskCreate( &net_main, "MxNet", 1024, NULL, 23, NULL );
     configASSERT( xResult == pdTRUE );
 
-    xResult = xTaskCreate( vMQTTAgentTask, "MQTTAgent", 4096, NULL, tskIDLE_PRIORITY + 1, NULL );
+    xResult = xTaskCreate( vMQTTAgentTask, "MQTTAgent", 2048, NULL, tskIDLE_PRIORITY + 3, NULL );
     configASSERT( xResult == pdTRUE );
 
-    xResult = xTaskCreate( vOTAUpdateTask, "OTAUpdate", 2048, NULL, tskIDLE_PRIORITY + 1, NULL );
+    xResult = xTaskCreate( vOTAUpdateTask, "OTAUpdate", 2048, NULL, tskIDLE_PRIORITY + 3, NULL );
     configASSERT( xResult == pdTRUE );
 
-    //xResult = xTaskCreate( vEnvironmentSensorPublishTask, "EnvSense", 1024, NULL, 10, NULL );
+    xResult = xTaskCreate( vEnvironmentSensorPublishTask, "EnvSense", 1024, NULL, tskIDLE_PRIORITY + 2, NULL );
     configASSERT( xResult == pdTRUE );
 
-    //xResult = xTaskCreate( vMotionSensorsPublish, "MotionS", 1024, NULL, 11, NULL );
+    xResult = xTaskCreate( vMotionSensorsPublish, "MotionS", 1024, NULL, tskIDLE_PRIORITY + 2, NULL );
     configASSERT( xResult == pdTRUE );
 
-    //xResult = xTaskCreate( vShadowDeviceTask, "ShadowDevice", 1024, NULL, 5, NULL );
+    xResult = xTaskCreate( vShadowDeviceTask, "ShadowDevice", 1024, NULL, tskIDLE_PRIORITY + 1, NULL );
     configASSERT( xResult == pdTRUE );
 
-    //xResult = xTaskCreate( vDefenderAgentTask, "AWSDefender", 2048, NULL, 5, NULL );
+    xResult = xTaskCreate( vDefenderAgentTask, "AWSDefender", 2048, NULL, tskIDLE_PRIORITY + 1, NULL );
     configASSERT( xResult == pdTRUE );
 
     while( 1 )

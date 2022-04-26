@@ -184,12 +184,12 @@
 /**
  * @brief Task priority of OTA agent.
  */
-#define otaexampleAGENT_TASK_PRIORITY            ( tskIDLE_PRIORITY + 1 )
+#define otaexampleAGENT_TASK_PRIORITY            ( tskIDLE_PRIORITY + 3 )
 
 /**
  * @brief Maximum stack size of OTA agent task.
  */
-#define otaexampleAGENT_TASK_STACK_SIZE          ( 6144 )
+#define otaexampleAGENT_TASK_STACK_SIZE          ( 4096 )
 
 /**
  * @brief A statically allocated array of event buffers used by the OTA agent.

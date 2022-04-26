@@ -98,7 +98,7 @@ extern uint32_t SystemCoreClock;
 #define configUSE_TIMERS                           1
 #define configTIMER_TASK_PRIORITY                  ( 24 )
 #define configTIMER_QUEUE_LENGTH                   10
-#define configTIMER_TASK_STACK_DEPTH               4096
+#define configTIMER_TASK_STACK_DEPTH               2048
 
 
 #define configTASK_NOTIFICATION_ARRAY_ENTRIES      8
