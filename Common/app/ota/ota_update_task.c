@@ -85,9 +85,9 @@
 #include "kvstore.h"
 
 #ifdef MBEDTLS_TRANSPORT_PSA
-#include "psa/crypto.h"
-#include "tfm_fwu_defs.h"
-#include "application_version.h"
+    #include "psa/crypto.h"
+    #include "tfm_fwu_defs.h"
+    #include "application_version.h"
 #endif
 
 
@@ -418,6 +418,13 @@ static BaseType_t prvMatchClientIdentifierInTopic( const char * pTopic,
                                                    const char * pClientIdentifier,
                                                    size_t clientIdentifierLength );
 
+
+/**
+ * @brief Returns pdTRUE if the OTA Agent is currently executing a job.
+ * @return pdTRUE if OTA agent is currently active.
+ */
+static inline BaseType_t xIsOtaAgentActive( void );
+
 /**
  * @brief Static buffer allocated by application and used by OTA Agent.
  * Buffer is allocated in the global scope outside of function call stack.
@@ -433,7 +440,7 @@ static char * pcThingName = NULL;
 /**
  * @brief Variable which holds the length of the thing name.
  */
-static uint32_t thingNameLength = 0UL;
+static size_t uxThingNameLength = 0UL;
 
 
 /*
@@ -646,7 +653,7 @@ static void prvProcessIncomingData( void * pxContext,
     isMatch = prvMatchClientIdentifierInTopic( pPublishInfo->pTopicName,
                                                pPublishInfo->topicNameLength,
                                                pcThingName,
-                                               thingNameLength );
+                                               uxThingNameLength );
 
     if( isMatch == pdTRUE )
     {
@@ -1025,6 +1032,35 @@ static void prvSetOTAAppBuffer( OtaAppBuffer_t * pOtaAppBuffer )
     pOtaAppBuffer->fileBitmapSize = OTA_MAX_BLOCK_BITMAP_SIZE;
 }
 
+static inline BaseType_t xIsOtaAgentActive( void )
+{
+    BaseType_t xResult;
+
+    switch( OTA_GetState() )
+    {
+        case OtaAgentStateRequestingJob:
+        case OtaAgentStateWaitingForJob:
+        case OtaAgentStateCreatingFile:
+        case OtaAgentStateRequestingFileBlock:
+        case OtaAgentStateWaitingForFileBlock:
+        case OtaAgentStateClosingFile:
+            xResult = pdTRUE;
+            break;
+
+        case OtaAgentStateNoTransition:
+        case OtaAgentStateInit:
+        case OtaAgentStateReady:
+        case OtaAgentStateStopped:
+        case OtaAgentStateSuspended:
+        case OtaAgentStateShuttingDown:
+        default:
+            xResult = pdFALSE;
+            break;
+    }
+
+    return xResult;
+}
+
 void vOTAUpdateTask( void * pvParam )
 {
     ( void ) pvParam;
@@ -1046,7 +1082,7 @@ void vOTAUpdateTask( void * pvParam )
     /* OTA Agent state returned from calling OTA_GetAgentState.*/
     OtaState_t state = OtaAgentStateStopped;
 
-    MQTTStatus_t xMQTTStatus;
+    MQTTStatus_t xMQTTStatus = MQTTBadParameter;
 
     /**
      * @brief Structure containing all application allocated buffers used by the OTA agent.
@@ -1060,18 +1096,18 @@ void vOTAUpdateTask( void * pvParam )
     /* Set OTA buffers for use by OTA agent. */
     prvSetOTAAppBuffer( &otaAppBuffer );
 
-#ifdef MBEDTLS_TRANSPORT_PSA
-    /*
-     * Query the firmware version for the non-secure image from PSA.
-     * Currently only non-secure partition update is supported.
-     */
-    GetImageVersionPSA( FWU_IMAGE_TYPE_NONSECURE );
-#endif
+    #ifdef MBEDTLS_TRANSPORT_PSA
+        /*
+         * Query the firmware version for the non-secure image from PSA.
+         * Currently only non-secure partition update is supported.
+         */
+        GetImageVersionPSA( FWU_IMAGE_TYPE_NONSECURE );
+    #endif
 
-    LogInfo( ( "OTA over MQTT demo, Application version %u.%u.%u",
+    LogInfo( ( "OTA Agent: Application version %u.%u.%u",
                appFirmwareVersion.u.x.major,
                appFirmwareVersion.u.x.minor,
-              appFirmwareVersion.u.x.build ) );
+               appFirmwareVersion.u.x.build ) );
 
 
     /****************************** Init OTA Library. ******************************/
@@ -1089,26 +1125,15 @@ void vOTAUpdateTask( void * pvParam )
     if( xResult == pdPASS )
     {
         /* Fetch thing name from key value store. */
-        pcThingName = ( char * ) pvPortMalloc( KVStore_getSize( CS_CORE_THING_NAME ) );
+        pcThingName = KVStore_getStringHeap( CS_CORE_THING_NAME, &uxThingNameLength );
 
-        if( pcThingName != NULL )
-        {
-            thingNameLength = KVStore_getString( CS_CORE_THING_NAME,
-                                                 pcThingName,
-                                                 KVStore_getSize( CS_CORE_THING_NAME ) );
-            if( thingNameLength == 0 )
-            {
-            	LogError( "Failed to fetch thing name for OTA Agent." );
-            	xResult = pdFAIL;
-            }
-        }
-        else
+        if( ( pcThingName == NULL ) ||
+            ( uxThingNameLength == 0 ) )
         {
             xResult = pdFAIL;
-            LogError( ( "Failed to allocate memory for thing name." ) );
+            LogError( ( "Failed to load thing name from key value store." ) );
         }
-     }
-
+    }
 
     if( xResult == pdPASS )
     {
@@ -1167,27 +1192,40 @@ void vOTAUpdateTask( void * pvParam )
         eventMsg.eventId = OtaAgentEventStart;
         OTA_SignalEvent( &eventMsg );
 
-        while( ( ( state = OTA_GetState() ) != OtaAgentStateStopped ) )
+        do
         {
+            /* OTA library packet statistics per job.*/
+            OtaAgentStatistics_t otaStatistics = { 0 };
+
             /* Get OTA statistics for currently executing job. */
-            OTA_GetStatistics( &otaStatistics );
-            LogInfo( ( " Received: %u   Queued: %u   Processed: %u   Dropped: %u",
-                       otaStatistics.otaPacketsReceived,
-                       otaStatistics.otaPacketsQueued,
-                       otaStatistics.otaPacketsProcessed,
-                       otaStatistics.otaPacketsDropped ) );
+            if( ( xIsOtaAgentActive() == pdTRUE ) &&
+                ( OTA_GetStatistics( &otaStatistics ) == OtaErrNone ) )
+            {
+                LogInfo( ( " Received: %u   Queued: %u   Processed: %u   Dropped: %u",
+                           otaStatistics.otaPacketsReceived,
+                           otaStatistics.otaPacketsQueued,
+                           otaStatistics.otaPacketsProcessed,
+                           otaStatistics.otaPacketsDropped ) );
+            }
 
             vTaskDelay( pdMS_TO_TICKS( otaexampleTASK_DELAY_MS ) );
-        }
+        } while( OTA_GetState() != OtaAgentStateStopped );
     }
 
     LogInfo( ( "OTA agent task stopped. Exiting OTA demo." ) );
 
+    if( xMQTTStatus == MQTTSuccess )
+    {
+        xMQTTStatus = MqttAgent_UnSubscribeSync( xMQTTAgentHandle,
+                                                 OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER,
+                                                 prvProcessIncomingJobMessage,
+                                                 NULL );
 
-    MqttAgent_UnSubscribeSync( xMQTTAgentHandle,
-                               OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER,
-                               prvProcessIncomingJobMessage,
-                               NULL );
+        if( xMQTTStatus != MQTTSuccess )
+        {
+            LogError( "MQTT unsubscribe request failed." );
+        }
+    }
 
     if( pcThingName != NULL )
     {
