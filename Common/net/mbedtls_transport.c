@@ -407,7 +407,7 @@ static int mbedtls_ssl_send( void * pvCtx,
         }
     }
 
-    return ( int ) lError == 0 ? uxBytesSent : lError;
+    return ( int ) lError < 0 ? lError : uxBytesSent;
 }
 
 /*-----------------------------------------------------------*/
