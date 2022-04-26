@@ -1,12 +1,18 @@
-.PHONY : tfm_clean
+.PHONY : tfm_clean nspe_pre_build nspe_post_build
 
 clean : tfm_clean
 
-pre-build : info spe_bin nspe_build_reqs
+nspe_pre_build:
+	${MAKE} -f ../tfm.mk info spe_bin nspe_build_reqs
 
-secondary-outputs : update factory
+nspe_post_build:
+	${MAKE} -f ../tfm.mk spe_signed nspe_signed ota update factory
 
-include ../tfm.mk
+pre-build : nspe_pre_build
+
+post-build : nspe_post_build
+
+#secondary-outputs : nspe_post_build
 
 tfm_clean:
 	-${RM} *.{hex,bin,elf,axf,sh,ld,c}

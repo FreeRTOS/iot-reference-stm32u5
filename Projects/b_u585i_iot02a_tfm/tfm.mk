@@ -68,7 +68,7 @@ NUM_PROCESSORS = 8
 		spe_clean spe_distclean \
 		tfm_generated_files \
 		nspe_build_reqs nspe_build_reqs_clean \
-		spe_signed nspe_signed update factory_signed \
+		spe_signed nspe_signed update factory ota \
 		tfm_scripts \
 		all
 
@@ -319,6 +319,9 @@ update : ${BUILD_PATH}/${PROJECT_NAME}_s_update.hex \
 	     ${BUILD_PATH}/${PROJECT_NAME}_ns_update.hex \
 		 ${BUILD_PATH}/${PROJECT_NAME}_s_ns_update.hex
 
+ota: ${BUILD_PATH}/${PROJECT_NAME}_s_ota.bin \
+	 ${BUILD_PATH}/${PROJECT_NAME}_ns_ota.bin
+
 factory : ${BUILD_PATH}/${PROJECT_NAME}_s_signed.hex \
 	      ${BUILD_PATH}/${PROJECT_NAME}_ns_signed.hex \
 		  ${BUILD_PATH}/${PROJECT_NAME}_s_ns_signed.hex \
@@ -351,6 +354,24 @@ ${BUILD_PATH}/${PROJECT_NAME}_s_signed.bin : ${BUILD_PATH}/${PROJECT_NAME}_s.bin
 		--align 16 --pad --pad-header \
 		--header-size 0x400 \
 		--security-counter 1 \
+		--confirm \
+		--dependencies "(1,0.0.0+0)" \
+		$< \
+		$@
+
+###############################################################################
+# Rule to sign SPE OTA images (note lack of --confirm argument)
+###############################################################################
+${BUILD_PATH}/${PROJECT_NAME}_s_ota.bin : ${BUILD_PATH}/${PROJECT_NAME}_s.bin
+	source ${TOOLS_PATH}/env_setup.sh && \
+	python ${PROJECT_PATH}/tfm/scripts/wrapper/wrapper.py \
+		--version ${SPE_VERSION} \
+		--layout "${abspath ${PROJECT_PATH}}/tfm/layout_files/signing_layout_s.o" \
+		--key "${S_REGION_SIGNING_KEY}" \
+		--public-key-format full \
+		--align 16 --pad --pad-header \
+		--header-size 0x400 \
+		--security-counter 1 \
 		--dependencies "(1,0.0.0+0)" \
 		$< \
 		$@
@@ -359,6 +380,24 @@ ${BUILD_PATH}/${PROJECT_NAME}_s_signed.bin : ${BUILD_PATH}/${PROJECT_NAME}_s.bin
 # Rule to sign NSPE / non-secure envronment images
 ###############################################################################
 ${BUILD_PATH}/${PROJECT_NAME}_ns_signed.bin : ${BUILD_PATH}/${PROJECT_NAME}_ns.bin
+	source ${TOOLS_PATH}/env_setup.sh && \
+	python ${PROJECT_PATH}/tfm/scripts/wrapper/wrapper.py \
+		--version ${NSPE_VERSION} \
+		--layout ${abspath "${PROJECT_PATH}"}/tfm/layout_files/signing_layout_ns.o \
+		--key ${NS_REGION_SIGNING_KEY} \
+		--public-key-format full \
+		--align 16 --pad --pad-header \
+		--header-size 0x400 \
+		--security-counter 1 \
+		--confirm \
+		--dependencies "(0,${SPE_VERSION}+0)" \
+		$< \
+		$@
+
+###############################################################################
+# Rule to sign NSPE OTA images (note lack of --confirm argument)
+###############################################################################
+${BUILD_PATH}/${PROJECT_NAME}_ns_ota.bin : ${BUILD_PATH}/${PROJECT_NAME}_ns.bin
 	source ${TOOLS_PATH}/env_setup.sh && \
 	python ${PROJECT_PATH}/tfm/scripts/wrapper/wrapper.py \
 		--version ${NSPE_VERSION} \
@@ -416,6 +455,6 @@ nspe_build_reqs : ${BL2_BIN} \
 				  ${BUILD_PATH}/stm32u5xx_ns.ld \
 				  ${BUILD_PATH}/image_defs.sh
 
-all: info spe_build_reqs nspe_build_reqs spe_signed nspe_signed update factory_signed
+all: info spe_build_reqs nspe_build_reqs spe_signed nspe_signed update factory ota
 clean: spe_clean spe_patch_libs_clean nspe_build_reqs_clean
 distclean : clean tfm_distclean spe_patch_libs_distclean
