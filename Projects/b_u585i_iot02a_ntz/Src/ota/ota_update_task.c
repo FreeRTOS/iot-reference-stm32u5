@@ -442,10 +442,6 @@ const AppVersion32_t appFirmwareVersion =
     .u.x.build = APP_VERSION_BUILD,
 };
 
-/*
- * @brief Singleton handle for MQTT Agent operations.
- */
-static MQTTAgentHandle_t xMQTTAgentHandle;
 /*---------------------------------------------------------*/
 
 static BaseType_t prvOTAEventBufferPoolInit( OtaEventBufferPool_t * pxBufferPool )
@@ -839,35 +835,43 @@ static OtaMqttStatus_t prvMQTTSubscribe( const char * pTopicFilter,
     MQTTStatus_t mqttStatus;
     OtaMqttStatus_t otaRet = OtaMqttSuccess;
     IncomingPubCallback_t xPublishCallback;
+    MQTTAgentHandle_t xMQTTAgentHandle = NULL;
 
     configASSERT( pTopicFilter != NULL );
     configASSERT( topicFilterLength > 0 );
-    configASSERT( xMQTTAgentHandle != NULL );
-
 
     xPublishCallback = prvGetPublishCallbackFromTopic( pTopicFilter, topicFilterLength );
-    configASSERT( xPublishCallback != NULL );
 
-    mqttStatus = MqttAgent_SubscribeSync( xMQTTAgentHandle,
-                                          pTopicFilter,
-                                          ucQoS,
-                                          xPublishCallback,
-                                          NULL );
+    xMQTTAgentHandle = xGetMqttAgentHandle();
 
-    if( mqttStatus != MQTTSuccess )
+    if( ( xMQTTAgentHandle == NULL ) ||
+        ( xPublishCallback == NULL ) )
     {
-        LogError( ( "Failed to SUBSCRIBE to topic with error = %u.",
-                    mqttStatus ) );
-
         otaRet = OtaMqttSubscribeFailed;
     }
     else
     {
-        LogInfo( ( "Subscribed to topic %.*s.\n\n",
-                   topicFilterLength,
-                   pTopicFilter ) );
+        mqttStatus = MqttAgent_SubscribeSync( xMQTTAgentHandle,
+                                              pTopicFilter,
+                                              ucQoS,
+                                              xPublishCallback,
+                                              NULL );
 
-        otaRet = OtaMqttSuccess;
+        if( mqttStatus != MQTTSuccess )
+        {
+            LogError( ( "Failed to SUBSCRIBE to topic with error = %u.",
+                        mqttStatus ) );
+
+            otaRet = OtaMqttSubscribeFailed;
+        }
+        else
+        {
+            LogInfo( ( "Subscribed to topic %.*s.\n\n",
+                       topicFilterLength,
+                       pTopicFilter ) );
+
+            otaRet = OtaMqttSuccess;
+        }
     }
 
     return otaRet;
@@ -886,8 +890,7 @@ static OtaMqttStatus_t prvMQTTPublish( const char * const pacTopic,
     MQTTAgentCommandInfo_t xCommandParams = { 0 };
     uint32_t ulNotifyValue = 0UL;
     MQTTAgentCommandContext_t xCommandContext = { 0 };
-
-    configASSERT( xMQTTAgentHandle != NULL );
+    MQTTAgentHandle_t xMQTTAgentHandle = NULL;
 
     publishInfo.pTopicName = pacTopic;
     publishInfo.topicNameLength = topicLen;
@@ -904,38 +907,47 @@ static OtaMqttStatus_t prvMQTTPublish( const char * const pacTopic,
     xCommandParams.cmdCompleteCallback = prvCommandCallback;
     xCommandParams.pCmdCompleteCallbackContext = &xCommandContext;
 
-    mqttStatus = MQTTAgent_Publish( xMQTTAgentHandle,
-                                    &publishInfo,
-                                    &xCommandParams );
+    xMQTTAgentHandle = xGetMqttAgentHandle();
 
-    /* Wait for command to complete so MQTTSubscribeInfo_t remains in scope for the
-     * duration of the command. */
-    if( mqttStatus == MQTTSuccess )
+    if( xMQTTAgentHandle == NULL )
     {
-        result = xTaskNotifyWait( 0, otaexampleMAX_UINT32, &ulNotifyValue, pdMS_TO_TICKS( otaexampleMQTT_TIMEOUT_MS ) );
-
-        if( result != pdTRUE )
-        {
-            mqttStatus = MQTTSendFailed;
-        }
-        else
-        {
-            mqttStatus = ( MQTTStatus_t ) ( ulNotifyValue );
-        }
-    }
-
-    if( mqttStatus != MQTTSuccess )
-    {
-        LogError( ( "Failed to send PUBLISH packet to broker with error = %u.", mqttStatus ) );
         otaRet = OtaMqttPublishFailed;
     }
     else
     {
-        LogInfo( ( "Sent PUBLISH packet to broker %.*s to broker.\n\n",
-                   topicLen,
-                   pacTopic ) );
+        mqttStatus = MQTTAgent_Publish( xMQTTAgentHandle,
+                                        &publishInfo,
+                                        &xCommandParams );
 
-        otaRet = OtaMqttSuccess;
+        /* Wait for command to complete so MQTTSubscribeInfo_t remains in scope for the
+         * duration of the command. */
+        if( mqttStatus == MQTTSuccess )
+        {
+            result = xTaskNotifyWait( 0, otaexampleMAX_UINT32, &ulNotifyValue, pdMS_TO_TICKS( otaexampleMQTT_TIMEOUT_MS ) );
+
+            if( result != pdTRUE )
+            {
+                mqttStatus = MQTTSendFailed;
+            }
+            else
+            {
+                mqttStatus = ( MQTTStatus_t ) ( ulNotifyValue );
+            }
+        }
+
+        if( mqttStatus != MQTTSuccess )
+        {
+            LogError( ( "Failed to send PUBLISH packet to broker with error = %u.", mqttStatus ) );
+            otaRet = OtaMqttPublishFailed;
+        }
+        else
+        {
+            LogInfo( ( "Sent PUBLISH packet to broker %.*s to broker.\n\n",
+                       topicLen,
+                       pacTopic ) );
+
+            otaRet = OtaMqttSuccess;
+        }
     }
 
     return otaRet;
@@ -948,35 +960,44 @@ static OtaMqttStatus_t prvMQTTUnsubscribe( const char * pTopicFilter,
     MQTTStatus_t mqttStatus;
     OtaMqttStatus_t otaRet = OtaMqttSuccess;
     IncomingPubCallback_t xPublishCallback;
+    MQTTAgentHandle_t xMQTTAgentHandle = NULL;
 
     configASSERT( pTopicFilter != NULL );
     configASSERT( topicFilterLength > 0 );
-    configASSERT( xMQTTAgentHandle != NULL );
 
     xPublishCallback = prvGetPublishCallbackFromTopic( pTopicFilter, topicFilterLength );
-    configASSERT( xPublishCallback != NULL );
 
-    mqttStatus = MqttAgent_UnSubscribeSync( xMQTTAgentHandle,
-                                            pTopicFilter,
-                                            xPublishCallback,
-                                            NULL );
+    xMQTTAgentHandle = xGetMqttAgentHandle();
 
-    if( mqttStatus != MQTTSuccess )
+    if( ( xMQTTAgentHandle == NULL ) ||
+        ( xPublishCallback == NULL ) )
     {
-        LogError( ( "Failed to UNSUBSCRIBE from topic %.*s with error = %u.",
-                    topicFilterLength,
-                    pTopicFilter,
-                    mqttStatus ) );
-
         otaRet = OtaMqttUnsubscribeFailed;
     }
     else
     {
-        LogInfo( ( "UNSUBSCRIBED from topic %.*s.\n\n",
-                   topicFilterLength,
-                   pTopicFilter ) );
+        mqttStatus = MqttAgent_UnSubscribeSync( xMQTTAgentHandle,
+                                                pTopicFilter,
+                                                xPublishCallback,
+                                                NULL );
 
-        otaRet = OtaMqttSuccess;
+        if( mqttStatus != MQTTSuccess )
+        {
+            LogError( ( "Failed to UNSUBSCRIBE from topic %.*s with error = %u.",
+                        topicFilterLength,
+                        pTopicFilter,
+                        mqttStatus ) );
+
+            otaRet = OtaMqttUnsubscribeFailed;
+        }
+        else
+        {
+            LogInfo( ( "UNSUBSCRIBED from topic %.*s.\n\n",
+                       topicFilterLength,
+                       pTopicFilter ) );
+
+            otaRet = OtaMqttSuccess;
+        }
     }
 
     return otaRet;
@@ -1036,7 +1057,6 @@ static inline BaseType_t xIsOtaAgentActive( void )
     switch( OTA_GetState() )
     {
         case OtaAgentStateRequestingJob:
-        case OtaAgentStateWaitingForJob:
         case OtaAgentStateCreatingFile:
         case OtaAgentStateRequestingFileBlock:
         case OtaAgentStateWaitingForFileBlock:
@@ -1044,6 +1064,7 @@ static inline BaseType_t xIsOtaAgentActive( void )
             xResult = pdTRUE;
             break;
 
+        case OtaAgentStateWaitingForJob:
         case OtaAgentStateNoTransition:
         case OtaAgentStateInit:
         case OtaAgentStateReady:
@@ -1074,6 +1095,8 @@ void vOTAUpdateTask( void * pvParam )
     OtaInterfaces_t otaInterfaces;
 
     MQTTStatus_t xMQTTStatus = MQTTBadParameter;
+
+    MQTTAgentHandle_t xMQTTAgentHandle = NULL;
 
     /**
      * @brief Structure containing all application allocated buffers used by the OTA agent.
@@ -1109,15 +1132,29 @@ void vOTAUpdateTask( void * pvParam )
 
     if( xResult == pdPASS )
     {
-        LogInfo( "Waiting until MQTT Agent is connected." );
-        vSleepUntilMQTTAgentConnected();
-        LogInfo( "MQTT Agent is connected. Resuming..." );
+        EventBits_t uxEvents = xEventGroupWaitBits( xSystemEvents,
+                                                    EVT_MASK_MQTT_CONNECTED,
+                                                    pdFALSE,
+                                                    pdTRUE,
+                                                    pdMS_TO_TICKS( otaexampleTASK_DELAY_MS ) );
 
-        xMQTTAgentHandle = xGetMqttAgentHandle();
-        configASSERT( xMQTTAgentHandle != NULL );
+        LogInfo( "Waiting until MQTT Agent is connected." );
+
+        if( uxEvents & EVT_MASK_MQTT_CONNECTED )
+        {
+            LogInfo( "MQTT Agent is connected. Resuming..." );
+            xMQTTAgentHandle = xGetMqttAgentHandle();
+            configASSERT( xMQTTAgentHandle != NULL );
+        }
+        else
+        {
+            xMQTTAgentHandle = NULL;
+            LogInfo( "Timed out while waiting for MQTT Agent connection." );
+        }
     }
 
-    if( xResult == pdPASS )
+    if( ( xResult == pdPASS ) &&
+        ( xMQTTAgentHandle != NULL ) )
     {
         xMQTTStatus = MqttAgent_SubscribeSync( xMQTTAgentHandle,
                                                OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER,
