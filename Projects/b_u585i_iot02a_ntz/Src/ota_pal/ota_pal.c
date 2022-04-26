@@ -604,7 +604,7 @@ BaseType_t prvValidateImageSignature( OtaImageContext_t * pImageContext,
 
 
 
-OtaPalStatus_t xOtaPalCreateImage( OtaFileContext_t * const pFileContext )
+OtaPalStatus_t otaPal_CreateFileForRx( OtaFileContext_t * const pFileContext )
 {
     OtaPalStatus_t otaStatus = OtaPalRxFileCreateFailed;
     HAL_StatusTypeDef status = HAL_ERROR;
@@ -639,7 +639,7 @@ OtaPalStatus_t xOtaPalCreateImage( OtaFileContext_t * const pFileContext )
     return otaStatus;
 }
 
-int16_t iOtaPalWriteImageBlock( OtaFileContext_t * const pFileContext,
+int16_t otaPal_WriteBlock( OtaFileContext_t * const pFileContext,
                                 uint32_t offset,
                                 uint8_t * const pData,
                                 uint32_t blockSize )
@@ -663,7 +663,7 @@ int16_t iOtaPalWriteImageBlock( OtaFileContext_t * const pFileContext,
     return bytesWritten;
 }
 
-OtaPalStatus_t xOtaPalFinalizeImage( OtaFileContext_t * const pFileContext )
+OtaPalStatus_t otaPal_CloseFile( OtaFileContext_t * const pFileContext )
 {
     OtaPalStatus_t otaStatus = OtaPalCommitFailed;
     BaseType_t signatureValidationStatus;
@@ -695,7 +695,7 @@ OtaPalStatus_t xOtaPalFinalizeImage( OtaFileContext_t * const pFileContext )
 }
 
 
-OtaPalStatus_t xOtaPalAbortImage( OtaFileContext_t * const pFileContext )
+OtaPalStatus_t otaPal_Abort( OtaFileContext_t * const pFileContext )
 {
     OtaImageContext_t * pContext = prvGetImageContext();
 
@@ -717,7 +717,7 @@ OtaPalStatus_t xOtaPalAbortImage( OtaFileContext_t * const pFileContext )
     return OtaPalSuccess;
 }
 
-OtaPalStatus_t xOtaPalActivateImage( OtaFileContext_t * const pFileContext )
+OtaPalStatus_t otaPal_ActivateNewImage( OtaFileContext_t * const pFileContext )
 {
     OtaPalStatus_t otaStatus = OtaPalActivateFailed;
     BaseType_t status = pdFALSE;
@@ -741,8 +741,8 @@ OtaPalStatus_t xOtaPalActivateImage( OtaFileContext_t * const pFileContext )
     return otaStatus;
 }
 
-OtaPalStatus_t xOtaPalSetImageState( OtaFileContext_t * const pFileContext,
-                                     OtaImageState_t eState )
+OtaPalStatus_t otaPal_SetPlatformImageState( OtaFileContext_t * const pFileContext,
+                                             OtaImageState_t eState )
 {
     OtaPalStatus_t otaStatus = OtaPalBadImageState;
     OtaImageContext_t * pContext = prvGetImageContext();
@@ -833,7 +833,7 @@ OtaPalStatus_t xOtaPalSetImageState( OtaFileContext_t * const pFileContext,
 }
 
 
-OtaPalImageState_t xOtaPalGetImageState( OtaFileContext_t * const pFileContext )
+OtaPalImageState_t otaPal_GetPlatformImageState( OtaFileContext_t * const pFileContext )
 {
     OtaPalImageState_t state = OtaPalImageStateUnknown;
     OtaImageContext_t * pContext = prvGetImageContext();
@@ -863,7 +863,7 @@ OtaPalImageState_t xOtaPalGetImageState( OtaFileContext_t * const pFileContext )
 }
 
 
-OtaPalStatus_t xOtaPalResetDevice( OtaFileContext_t * const pFileContext )
+OtaPalStatus_t otaPal_ResetDevice( OtaFileContext_t * const pFileContext )
 {
     OtaImageContext_t * pContext = prvGetImageContext();
     uint32_t activeBank = prvGetActiveBank();

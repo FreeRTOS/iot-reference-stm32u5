@@ -442,16 +442,6 @@ static uint32_t thingNameLength = 0UL;
 static MQTTAgentHandle_t xMQTTAgentHandle;
 
 
-/**
- * @brief OTA Application Firmware version identifier used during self test by OTA agent library.
- * The firmware version is maintained by each of the PAL for Non-TrustZone/TF-M versions.
- *
- * For Non-Trustzone, the  version is fetched from a static configuration built into code.
- * For PSA (TF-M) mode, the firmware version is queried using PSA API.
- */
-
-extern AppVersion32_t appFirmwareVersion;
-
 /*---------------------------------------------------------*/
 
 static BaseType_t prvOTAEventBufferPoolInit( OtaEventBufferPool_t * pxBufferPool )
