@@ -729,6 +729,8 @@ void vShadowDeviceTask( void * pvParameters )
     xShadowCtx.xShadowDeviceTaskHandle = xTaskGetCurrentTaskHandle();
 
     /* Wait for MqttAgent to be ready. */
+    vSleepUntilMQTTAgentReady();
+
     xShadowCtx.xAgentHandle = xGetMqttAgentHandle();
 
     xStatus = prvInitializeCtx( &xShadowCtx );

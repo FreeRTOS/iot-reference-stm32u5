@@ -272,6 +272,8 @@ void vEnvironmentSensorPublishTask( void * pvParameters )
         xExitFlag = pdTRUE;
     }
 
+    vSleepUntilMQTTAgentReady();
+
     xAgentHandle = xGetMqttAgentHandle();
 
     while( xExitFlag == pdFALSE )
