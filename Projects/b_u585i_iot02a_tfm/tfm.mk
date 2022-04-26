@@ -47,6 +47,7 @@ MIDDLEWARE_PATH = $(realpath ${WORKSPACE_PATH}/Middleware)
 TFM_SRC_PATH = $(realpath ${MIDDLEWARE_PATH}/ARM/trusted-firmware-m)
 MBEDTLS_SRC_PATH = $(realpath ${MIDDLEWARE_PATH}/ARM/mbedtls)
 MCUBOOT_SRC_PATH = $(realpath ${MIDDLEWARE_PATH}/ARM/mcuboot)
+OTA_SRC_PATH     = $(realpath ${MIDDLEWARE_PATH}/AWS/OTA)
 PROJECT_PATH = ..
 TFM_BUILD_PATH = $(BUILD_PATH)/tfm_build
 S_REGION_SIGNING_KEY = ${TFM_SRC_PATH}/bl2/ext/mcuboot/root-RSA-3072.pem
@@ -86,12 +87,13 @@ info:
 	@echo "TFM_SRC_PATH:     ${TFM_SRC_PATH}"
 	@echo "MBEDTLS_SRC_PATH: ${MBEDTLS_SRC_PATH}"
 	@echo "MCUBOOT_SRC_PATH: ${MCUBOOT_SRC_PATH}"
+	@echo "OTA_SRC_PATH:     ${OTA_SRC_PATH}"
 	@echo "SHELLFLAGS:       ${.SHELLFLAGS}"
 	@echo "CFLAGS:			 ${CFLAGS}"
 	@echo "LDFLAGS:			 ${LDFLAGS}"
 
 ###############################################################################
-# Rules to apply TF-M patches to mcuboot and mbedtls
+# Rules to apply TF-M patches to mcuboot, mbedtls and OTA.
 ###############################################################################
 MBEDTLS_PATCHES := $(wildcard ${TFM_SRC_PATH}/lib/ext/mbedcrypto/*.patch)
 MBEDTLS_PATCH_FLAGS = $(foreach file,$(notdir ${MBEDTLS_PATCHES}),${MBEDTLS_SRC_PATH}/$(basename ${file}).patched)
@@ -115,6 +117,17 @@ ${MCUBOOT_SRC_PATH}/%.patched : ${TFM_SRC_PATH}/lib/ext/mcuboot/%.patch
 	cp $< $@
 	touch $@
 
+OTA_PATCHES := $(wildcard ${MIDDLEWARE_PATH}/AWS/*-OTA.patch)
+OTA_PATCH_FLAGS = $(foreach file,$(notdir ${OTA_PATCHES}),${OTA_SRC_PATH}/$(basename ${file}).patched)
+OTA_PATCHES_APPLIED = ${wildcard ${OTA_SRC_PATH}/*.patched}
+
+# Apply each OTA patch
+${OTA_SRC_PATH}/%.patched : ${MIDDLEWARE_PATH}/AWS/%.patch
+	@echo Applying OTA patch: $(notdir $<)
+	git -C ${OTA_SRC_PATH} apply --whitespace=nowarn $<
+	cp $< $@
+	touch $@
+
 # Remove any applied mcuboot and mbetls patches
 spe_patch_libs_clean :
 ifneq ($(MBEDTLS_PATCHES_APPLIED),)
@@ -129,17 +142,24 @@ ifneq ($(MCUBOOT_PATCHES_APPLIED),)
 	rm -f ${MCUBOOT_PATCHES_APPLIED}
 endif
 
+ifneq ($(OTA_PATCHES_APPLIED),)
+	@echo Removing applied OTA patches
+	git -C ${OTA_SRC_PATH} apply --reverse ${OTA_PATCHES_APPLIED}
+	rm -f ${OTA_PATCHES_APPLIED}
+endif
+
 # Forcibly remove all applied patches (will clobber any other local changes)
 spe_patch_libs_distclean :
 	git -C ${MBEDTLS_SRC_PATH} clean -f
 	git -C ${MCUBOOT_PATCHES} clean -f
+	git -C ${OTA_PATCHES} clean -f
 
 ###############################################################################
 # Generate the build system for TF-M "SPE" image
 ###############################################################################
 
 # Use cmake to generate the Makefile file
-${TFM_BUILD_PATH}/.ready : ${MBEDTLS_PATCH_FLAGS} ${MCUBOOT_PATCH_FLAGS}
+${TFM_BUILD_PATH}/.ready : ${MBEDTLS_PATCH_FLAGS} ${MCUBOOT_PATCH_FLAGS} ${OTA_PATCH_FLAGS}
 	@echo Calling cmake for artifact: $@ due to prereq: $?
 	${RM} ${TFM_BUILD_PATH}
 	mkdir -p ${TFM_BUILD_PATH}

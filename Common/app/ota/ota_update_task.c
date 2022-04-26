@@ -50,6 +50,8 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include "tls_transport_config.h"
+
 /* Kernel includes. */
 #include "FreeRTOS.h"
 #include "task.h"
@@ -71,6 +73,7 @@
 #include "ota_os_freertos.h"
 #include "ota_mqtt_interface.h"
 
+
 /* Include firmware version struct definition. */
 #include "ota_appversion32.h"
 
@@ -81,9 +84,12 @@
 
 #include "kvstore.h"
 
-#include "tls_transport_config.h"
-
+#ifdef MBEDTLS_TRANSPORT_PSA
 #include "psa/crypto.h"
+#include "tfm_fwu_defs.h"
+#include "application_version.h"
+#endif
+
 
 /*------------- Demo configurations -------------------------*/
 
@@ -412,8 +418,6 @@ static BaseType_t prvMatchClientIdentifierInTopic( const char * pTopic,
                                                    const char * pClientIdentifier,
                                                    size_t clientIdentifierLength );
 
-extern OtaPalStatus_t otaPal_Init( void );
-
 /**
  * @brief Static buffer allocated by application and used by OTA Agent.
  * Buffer is allocated in the global scope outside of function call stack.
@@ -436,6 +440,17 @@ static uint32_t thingNameLength = 0UL;
  * @brief Singleton handle for MQTT Agent operations.
  */
 static MQTTAgentHandle_t xMQTTAgentHandle;
+
+
+/**
+ * @brief OTA Application Firmware version identifier used during self test by OTA agent library.
+ * The firmware version is maintained by each of the PAL for Non-TrustZone/TF-M versions.
+ *
+ * For Non-Trustzone, the  version is fetched from a static configuration built into code.
+ * For PSA (TF-M) mode, the firmware version is queried using PSA API.
+ */
+
+extern AppVersion32_t appFirmwareVersion;
 
 /*---------------------------------------------------------*/
 
@@ -1049,20 +1064,26 @@ void vOTAUpdateTask( void * pvParam )
      */
     OtaAppBuffer_t otaAppBuffer = { 0 };
 
-    OtaPalStatus_t palStatus;
-
-
     /* Set OTA Library interfaces.*/
     prvSetOtaInterfaces( &otaInterfaces );
 
     /* Set OTA buffers for use by OTA agent. */
     prvSetOTAAppBuffer( &otaAppBuffer );
 
-/**
+#ifdef MBEDTLS_TRANSPORT_PSA
+    /*
+     * Query the firmware version for the non-secure image from PSA.
+     * Currently only non-secure partition update is supported.
+     */
+    GetImageVersionPSA( FWU_IMAGE_TYPE_NONSECURE );
+#endif
+
     LogInfo( ( "OTA over MQTT demo, Application version %u.%u.%u",
                appFirmwareVersion.u.x.major,
                appFirmwareVersion.u.x.minor,
-              appFirmwareVersion.u.x.build ) ); **/
+              appFirmwareVersion.u.x.build ) );
+
+
     /****************************** Init OTA Library. ******************************/
 
     if( xResult == pdPASS )
@@ -1118,16 +1139,6 @@ void vOTAUpdateTask( void * pvParam )
     {
         /* Initialize event buffer pool. */
         xResult = prvOTAEventBufferPoolInit( &xAppStaticBuffer.eventBufferPool );
-    }
-
-    if( xResult == pdPASS )
-    {
-    	palStatus = otaPal_Init();
-    	if( palStatus != OtaPalSuccess )
-    	{
-    		LogError( "Failed to initialize OTA PAL, error = %d", palStatus );
-    		xResult = pdFAIL;
-    	}
     }
 
     if( xResult == pdPASS )

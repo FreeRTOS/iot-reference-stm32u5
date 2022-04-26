@@ -1,0 +1,13 @@
+diff --git a/source/include/ota_appversion32.h b/source/include/ota_appversion32.h
+index d652a3e..8f87567 100644
+--- a/source/include/ota_appversion32.h
++++ b/source/include/ota_appversion32.h
+@@ -70,7 +70,7 @@ typedef struct
+     } u; /*!< @brief Version based on configuration in big endian or little endian. */
+ } AppVersion32_t;
+ 
+-extern const AppVersion32_t appFirmwareVersion; /*!< @brief Making the version number available globally through external linkage. */
++extern AppVersion32_t appFirmwareVersion; /*!< @brief Making the version number available globally through external linkage. */
+ 
+ /* *INDENT-OFF* */
+ #ifdef __cplusplus

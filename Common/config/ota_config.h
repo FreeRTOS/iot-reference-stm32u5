@@ -40,23 +40,11 @@
 
 
 /**
- *  @brief The version for the firmware which is running. OTA agent uses this
- * version number to perform anti-rollback validation. The firmware version for the
- * download image should be higher than the current version, otherwise the new image is
- * rejected in self test phase.1
- */
-
-#define APP_VERSION_MAJOR    0
-#define APP_VERSION_MINOR    9
-#define APP_VERSION_BUILD    0
-
-
-/**
  * @brief Log base 2 of the size of the file data block message (excluding the header).
  *
  * 10 bits yields a data block size of 1KB.
  */
-#define otaconfigLOG2_FILE_BLOCK_SIZE           10UL
+#define otaconfigLOG2_FILE_BLOCK_SIZE           11UL
 
 /**
  * @brief Size of the file data block message (excluding the header).
@@ -174,14 +162,5 @@
  */
 
 #define configOTA_PRIMARY_DATA_PROTOCOL    ( OTA_DATA_OVER_MQTT )
-
-/**
- * @brief Configuration for public key used to  validate the signature of OTA update images.
- * Public key should be PEM encoded with the format as below:
- * "-----BEGIN PUBLIC KEY-----\n"\
- * "...base64 data...\n"\
- * "-----END PUBLIC KEY-----\n"
- */
-#define configOTA_CODE_VERIFY_PUBLIC_KEY   " Plesase insert key here"
 
 #endif /* OTA_CONFIG_H_ */
