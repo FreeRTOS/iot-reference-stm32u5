@@ -280,6 +280,11 @@ void vSleepUntilMQTTAgentReady( void )
             break;
         }
     }
+
+    while( xGetMqttAgentHandle() == NULL )
+    {
+        vTaskDelay( 10 );
+    }
 }
 
 /*-----------------------------------------------------------*/
@@ -917,13 +922,6 @@ static MQTTStatus_t prvConfigureAgentTaskCtx( MQTTAgentTaskCtx_t * pxCtx,
 
 MQTTAgentHandle_t xGetMqttAgentHandle( void )
 {
-    vSleepUntilMQTTAgentReady();
-
-    while( xDefaultInstanceHandle == NULL )
-    {
-        vTaskDelay( 1 );
-    }
-
     return xDefaultInstanceHandle;
 }
 

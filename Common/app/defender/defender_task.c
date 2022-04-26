@@ -600,6 +600,8 @@ void vDefenderAgentTask( void * pvParameters )
 
     /* Wait for MqttAgent to be ready. */
 
+    vSleepUntilMQTTAgentReady();
+
     xCtx.xAgentHandle = xGetMqttAgentHandle();
 
     /* Subscribe to relevant topics */
