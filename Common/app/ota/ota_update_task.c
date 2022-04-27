@@ -1076,12 +1076,6 @@ void vOTAUpdateTask( void * pvParam )
     /* OTA interface context required for library interface functions.*/
     OtaInterfaces_t otaInterfaces;
 
-    /* OTA library packet statistics per job.*/
-    OtaAgentStatistics_t otaStatistics = { 0 };
-
-    /* OTA Agent state returned from calling OTA_GetAgentState.*/
-    OtaState_t state = OtaAgentStateStopped;
-
     MQTTStatus_t xMQTTStatus = MQTTBadParameter;
 
     /**
