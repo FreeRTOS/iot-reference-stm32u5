@@ -1165,16 +1165,6 @@ void vOTAUpdateTask( void * pvParam )
 
     if( xResult == pdPASS )
     {
-        LogInfo( "Waiting until MQTT Agent is connected." );
-        vSleepUntilMQTTAgentConnected();
-        LogInfo( "MQTT Agent is connected. Resuming..." );
-
-        xMQTTAgentHandle = xGetMqttAgentHandle();
-        configASSERT( xMQTTAgentHandle != NULL );
-    }
-
-    if( xResult == pdPASS )
-    {
         /* Fetch thing name from key value store. */
         pcThingName = KVStore_getStringHeap( CS_CORE_THING_NAME, &uxThingNameLength );
 
