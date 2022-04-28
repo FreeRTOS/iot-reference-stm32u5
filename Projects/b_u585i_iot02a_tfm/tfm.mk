@@ -88,13 +88,12 @@ info:
 	@echo "TFM_SRC_PATH:     ${TFM_SRC_PATH}"
 	@echo "MBEDTLS_SRC_PATH: ${MBEDTLS_SRC_PATH}"
 	@echo "MCUBOOT_SRC_PATH: ${MCUBOOT_SRC_PATH}"
-	@echo "OTA_SRC_PATH:     ${OTA_SRC_PATH}"
 	@echo "SHELLFLAGS:       ${.SHELLFLAGS}"
 	@echo "CFLAGS:			 ${CFLAGS}"
 	@echo "LDFLAGS:			 ${LDFLAGS}"
 
 ###############################################################################
-# Rules to apply TF-M patches to mcuboot, mbedtls and OTA.
+# Rules to apply TF-M patches to mcuboot, mbedtls.
 ###############################################################################
 MBEDTLS_PATCHES := $(wildcard ${TFM_SRC_PATH}/lib/ext/mbedcrypto/*.patch)
 MBEDTLS_PATCH_FLAGS = $(foreach file,$(notdir ${MBEDTLS_PATCHES}),${MBEDTLS_SRC_PATH}/$(basename ${file}).patched)
@@ -142,7 +141,7 @@ spe_patch_libs_distclean :
 ###############################################################################
 
 # Use cmake to generate the Makefile file
-${TFM_BUILD_PATH}/.ready : ${MBEDTLS_PATCH_FLAGS} ${MCUBOOT_PATCH_FLAGS} ${OTA_PATCH_FLAGS}
+${TFM_BUILD_PATH}/.ready : ${MBEDTLS_PATCH_FLAGS} ${MCUBOOT_PATCH_FLAGS}
 	@echo Calling cmake for artifact: $@ due to prereq: $?
 	${RM} ${TFM_BUILD_PATH}
 	mkdir -p ${TFM_BUILD_PATH}

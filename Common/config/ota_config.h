@@ -38,8 +38,6 @@
 
 #include "logging.h"
 
-#include "tls_transport_config.h"
-
 
 /**
  * @brief Log base 2 of the size of the file data block message (excluding the header).
@@ -117,8 +115,6 @@
  */
 #define otaconfigOTA_UPDATE_STATUS_FREQUENCY    25U
 
-
-
 /**
  * @brief Allow update to same or lower version.
  *
@@ -127,7 +123,7 @@
  * testing purpose and it is recommended to always update to higher version and keep this
  * configuration disabled.
  */
-#ifdef MBEDTLS_TRANSPORT_PSA
+#ifdef TFM_PSA_API
 
 /**
  * Use PSA PAL version validation of secure/non secure image instead of OTA Agent library version validation.

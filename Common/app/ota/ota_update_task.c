@@ -50,8 +50,6 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "tls_transport_config.h"
-
 /* Kernel includes. */
 #include "FreeRTOS.h"
 #include "task.h"
@@ -83,7 +81,7 @@
 
 #include "kvstore.h"
 
-#ifdef MBEDTLS_TRANSPORT_PSA
+#ifdef TFM_PSA_API
 #include "tfm_fwu_defs.h"
 #endif
 
@@ -592,7 +590,7 @@ static void otaAppCallback( OtaJobEvent_t event,
 
             LogInfo( ( "Received OtaJobEventStartTest callback from OTA Agent." ) );
 
-#ifdef MBEDTLS_TRANSPORT_PSA
+#ifdef TFM_PSA_API
             {
                 if( ( OtaPal_ImageVersionCheck( FWU_IMAGE_TYPE_SECURE ) == true ) &&
                     ( OtaPal_ImageVersionCheck( FWU_IMAGE_TYPE_NONSECURE ) == true ) )
@@ -604,11 +602,11 @@ static void otaAppCallback( OtaJobEvent_t event,
                     err = OTA_SetImageState( OtaImageStateRejected );
                 }
             }
-#else /* ifdef MBEDTLS_TRANSPORT_PSA */
+#else /* ifdef TFM_PSA_API */
             {
                 err = OTA_SetImageState( OtaImageStateAccepted );
             }
-#endif /* ifdef MBEDTLS_TRANSPORT_PSA */
+#endif /* ifdef TFM_PSA_API */
 
             if( err == OtaErrNone )
             {
@@ -1103,7 +1101,7 @@ void vOTAUpdateTask( void * pvParam )
     /* Set OTA buffers for use by OTA agent. */
     prvSetOTAAppBuffer( &otaAppBuffer );
 
-#ifndef MBEDTLS_TRANSPORT_PSA
+#ifndef TFM_PSA_API
     {
         /*
          * Application defined firmware version is only used in Non-Trustzone.
@@ -1126,7 +1124,7 @@ void vOTAUpdateTask( void * pvParam )
                    xNSVersion.u.x.minor,
                    xNSVersion.u.x.build ) );
     }
-#endif /* ifndef MBEDTLS_TRANSPORT_PSA */
+#endif /* ifndef TFM_PSA_API */
 
 
     /****************************** Init OTA Library. ******************************/
