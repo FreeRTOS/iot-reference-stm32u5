@@ -469,6 +469,15 @@
 			</matcher>
 		</filter>
 		<filter>
+			<id>1651120387976</id>
+			<name>Libraries/ota-pal-psa</name>
+			<type>10</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-version</arguments>
+			</matcher>
+		</filter>
+		<filter>
 			<id>1634615308374</id>
 			<name>Libraries/tinycbor</name>
 			<type>5</type>

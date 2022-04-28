@@ -15,6 +15,7 @@
 #define OTA_SIGNING_KEY_ID         0x10000002UL
 #define PSA_TLS_CERT_ID            0x1000000000000101ULL
 #define PSA_TLS_ROOT_CA_CERT_ID    0x1000000000000201ULL
+
 /*
  * Define MBEDTLS_TRANSPORT_PKCS11 to enable certificate and key storage via the PKCS#11 API.
  */

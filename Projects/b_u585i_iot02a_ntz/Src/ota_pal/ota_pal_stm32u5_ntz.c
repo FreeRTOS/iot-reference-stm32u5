@@ -640,9 +640,9 @@ OtaPalStatus_t otaPal_CreateFileForRx( OtaFileContext_t * const pFileContext )
 }
 
 int16_t otaPal_WriteBlock( OtaFileContext_t * const pFileContext,
-                                uint32_t offset,
-                                uint8_t * const pData,
-                                uint32_t blockSize )
+                           uint32_t offset,
+                           uint8_t * const pData,
+                           uint32_t blockSize )
 {
     int16_t bytesWritten = 0;
     HAL_StatusTypeDef status = HAL_ERROR;

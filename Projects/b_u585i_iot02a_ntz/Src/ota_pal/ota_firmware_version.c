@@ -50,4 +50,3 @@ const AppVersion32_t appFirmwareVersion =
     .u.x.minor = APP_VERSION_MINOR,
     .u.x.build = APP_VERSION_BUILD,
 };
-

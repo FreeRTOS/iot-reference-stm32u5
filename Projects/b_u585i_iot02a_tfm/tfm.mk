@@ -47,7 +47,6 @@ MIDDLEWARE_PATH = $(realpath ${WORKSPACE_PATH}/Middleware)
 TFM_SRC_PATH = $(realpath ${MIDDLEWARE_PATH}/ARM/trusted-firmware-m)
 MBEDTLS_SRC_PATH = $(realpath ${MIDDLEWARE_PATH}/ARM/mbedtls)
 MCUBOOT_SRC_PATH = $(realpath ${MIDDLEWARE_PATH}/ARM/mcuboot)
-OTA_SRC_PATH     = $(realpath ${MIDDLEWARE_PATH}/AWS/OTA)
 PROJECT_PATH = ..
 TFM_BUILD_PATH = $(BUILD_PATH)/tfm_build
 S_REGION_SIGNING_KEY = ${TFM_SRC_PATH}/bl2/ext/mcuboot/root-RSA-3072.pem
@@ -57,7 +56,9 @@ NS_REGION_SIGNING_KEY = ${TFM_SRC_PATH}/bl2/ext/mcuboot/root-RSA-3072_1.pem
 # Version number definition
 ###############################################################################
 SPE_VERSION = "1.5.0"
+SPE_VERSION_OTA = "2.5.0"
 NSPE_VERSION = "1.0.0"
+NSPE_VERSION_OTA = "2.0.0"
 NUM_PROCESSORS = 8
 
 ###############################################################################
@@ -117,17 +118,6 @@ ${MCUBOOT_SRC_PATH}/%.patched : ${TFM_SRC_PATH}/lib/ext/mcuboot/%.patch
 	cp $< $@
 	touch $@
 
-OTA_PATCHES := $(wildcard ${MIDDLEWARE_PATH}/AWS/*-OTA.patch)
-OTA_PATCH_FLAGS = $(foreach file,$(notdir ${OTA_PATCHES}),${OTA_SRC_PATH}/$(basename ${file}).patched)
-OTA_PATCHES_APPLIED = ${wildcard ${OTA_SRC_PATH}/*.patched}
-
-# Apply each OTA patch
-${OTA_SRC_PATH}/%.patched : ${MIDDLEWARE_PATH}/AWS/%.patch
-	@echo Applying OTA patch: $(notdir $<)
-	git -C ${OTA_SRC_PATH} apply --whitespace=nowarn $<
-	cp $< $@
-	touch $@
-
 # Remove any applied mcuboot and mbetls patches
 spe_patch_libs_clean :
 ifneq ($(MBEDTLS_PATCHES_APPLIED),)
@@ -142,17 +132,10 @@ ifneq ($(MCUBOOT_PATCHES_APPLIED),)
 	rm -f ${MCUBOOT_PATCHES_APPLIED}
 endif
 
-ifneq ($(OTA_PATCHES_APPLIED),)
-	@echo Removing applied OTA patches
-	git -C ${OTA_SRC_PATH} apply --reverse ${OTA_PATCHES_APPLIED}
-	rm -f ${OTA_PATCHES_APPLIED}
-endif
-
 # Forcibly remove all applied patches (will clobber any other local changes)
 spe_patch_libs_distclean :
 	git -C ${MBEDTLS_SRC_PATH} clean -f
 	git -C ${MCUBOOT_PATCHES} clean -f
-	git -C ${OTA_PATCHES} clean -f
 
 ###############################################################################
 # Generate the build system for TF-M "SPE" image
@@ -385,7 +368,7 @@ ${BUILD_PATH}/${PROJECT_NAME}_s_signed.bin : ${BUILD_PATH}/${PROJECT_NAME}_s.bin
 ${BUILD_PATH}/${PROJECT_NAME}_s_ota.bin : ${BUILD_PATH}/${PROJECT_NAME}_s.bin
 	source ${TOOLS_PATH}/env_setup.sh && \
 	python ${PROJECT_PATH}/tfm/scripts/wrapper/wrapper.py \
-		--version ${SPE_VERSION} \
+		--version ${SPE_VERSION_OTA} \
 		--layout "${abspath ${PROJECT_PATH}}/tfm/layout_files/signing_layout_s.o" \
 		--key "${S_REGION_SIGNING_KEY}" \
 		--public-key-format full \
@@ -420,7 +403,7 @@ ${BUILD_PATH}/${PROJECT_NAME}_ns_signed.bin : ${BUILD_PATH}/${PROJECT_NAME}_ns.b
 ${BUILD_PATH}/${PROJECT_NAME}_ns_ota.bin : ${BUILD_PATH}/${PROJECT_NAME}_ns.bin
 	source ${TOOLS_PATH}/env_setup.sh && \
 	python ${PROJECT_PATH}/tfm/scripts/wrapper/wrapper.py \
-		--version ${NSPE_VERSION} \
+		--version ${NSPE_VERSION_OTA} \
 		--layout ${abspath "${PROJECT_PATH}"}/tfm/layout_files/signing_layout_ns.o \
 		--key ${NS_REGION_SIGNING_KEY} \
 		--public-key-format full \

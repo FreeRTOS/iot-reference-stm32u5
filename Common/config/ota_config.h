@@ -33,10 +33,12 @@
 
 /* define LOG_LEVEL here if you want to modify the logging level from the default */
 #ifndef LOG_LEVEL
-#define LOG_LEVEL    LOG_INFO
+    #define LOG_LEVEL    LOG_INFO
 #endif
 
 #include "logging.h"
+
+#include "tls_transport_config.h"
 
 
 /**
@@ -125,7 +127,18 @@
  * testing purpose and it is recommended to always update to higher version and keep this
  * configuration disabled.
  */
-#define otaconfigAllowDowngrade           0U
+#ifdef MBEDTLS_TRANSPORT_PSA
+
+/**
+ * Use PSA PAL version validation of secure/non secure image instead of OTA Agent library version validation.
+ */
+    #define otaconfigAllowDowngrade    1U
+
+#else
+
+    #define otaconfigAllowDowngrade    0U
+
+#endif
 
 /**
  * @brief The protocol selected for OTA control operations.
