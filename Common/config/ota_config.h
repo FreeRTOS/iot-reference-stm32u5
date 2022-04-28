@@ -40,18 +40,6 @@
 
 
 /**
- *  @brief The version for the firmware which is running. OTA agent uses this
- * version number to perform anti-rollback validation. The firmware version for the
- * download image should be higher than the current version, otherwise the new image is
- * rejected in self test phase.1
- */
-
-#define APP_VERSION_MAJOR    0
-#define APP_VERSION_MINOR    9
-#define APP_VERSION_BUILD    0
-
-
-/**
  * @brief Log base 2 of the size of the file data block message (excluding the header).
  *
  * 10 bits yields a data block size of 1KB.
@@ -127,8 +115,6 @@
  */
 #define otaconfigOTA_UPDATE_STATUS_FREQUENCY    25U
 
-
-
 /**
  * @brief Allow update to same or lower version.
  *
@@ -137,7 +123,18 @@
  * testing purpose and it is recommended to always update to higher version and keep this
  * configuration disabled.
  */
-#define otaconfigAllowDowngrade           0U
+#ifdef TFM_PSA_API
+
+/**
+ * Use PSA PAL version validation of secure/non secure image instead of OTA Agent library version validation.
+ */
+#define otaconfigAllowDowngrade    1U
+
+#else
+
+#define otaconfigAllowDowngrade    0U
+
+#endif
 
 /**
  * @brief The protocol selected for OTA control operations.

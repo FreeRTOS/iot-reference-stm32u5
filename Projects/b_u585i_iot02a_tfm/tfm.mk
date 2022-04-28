@@ -91,7 +91,7 @@ info:
 	@echo "LDFLAGS:			 ${LDFLAGS}"
 
 ###############################################################################
-# Rules to apply TF-M patches to mcuboot and mbedtls
+# Rules to apply TF-M patches to mcuboot, mbedtls.
 ###############################################################################
 MBEDTLS_PATCHES := $(wildcard ${TFM_SRC_PATH}/lib/ext/mbedcrypto/*.patch)
 MBEDTLS_PATCH_FLAGS = $(foreach file,$(notdir ${MBEDTLS_PATCHES}),${MBEDTLS_SRC_PATH}/$(basename ${file}).patched)

@@ -35,7 +35,7 @@
 
 #define CLI_UART_RX_STREAM_LEN        512
 
-#define CLI_UART_TX_STREAM_LEN        1280
+#define CLI_UART_TX_STREAM_LEN        2304
 
 void Task_CLI( void * pvParameters );
 

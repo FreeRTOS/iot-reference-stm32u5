@@ -59,9 +59,6 @@
 [submodule "Middleware/ARM/littlefs"]
 	path = Middleware/ARM/littlefs
 	url = https://github.com/littlefs-project/littlefs.git
-[submodule "Middleware/ARM/ota-pal-psa"]
-	path = Middleware/ARM/ota-pal-psa
-	url = https://github.com/Linaro/freertos-ota-pal-psa.git
 [submodule "Middleware/ARM/mcuboot"]
 	path = Middleware/ARM/mcuboot
 	url = https://github.com/mcu-tools/mcuboot.git
@@ -75,3 +72,6 @@
 [submodule "Middleware/http-parser"]
 	path = Middleware/http-parser
 	url = https://github.com/nodejs/http-parser.git
+[submodule "Middleware/ARM/ota-pal-psa"]
+	path = Middleware/ARM/ota-pal-psa
+	url = https://github.com/ravibhagavandas/freertos-ota-pal-psa.git

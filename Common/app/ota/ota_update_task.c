@@ -81,6 +81,11 @@
 
 #include "kvstore.h"
 
+#ifdef TFM_PSA_API
+#include "tfm_fwu_defs.h"
+#endif
+
+
 /*------------- Demo configurations -------------------------*/
 
 /**
@@ -174,7 +179,7 @@
 /**
  * @brief Task priority of OTA agent.
  */
-#define otaexampleAGENT_TASK_PRIORITY            ( tskIDLE_PRIORITY + 1 )
+#define otaexampleAGENT_TASK_PRIORITY            ( tskIDLE_PRIORITY + 3 )
 
 /**
  * @brief Maximum stack size of OTA agent task.
@@ -424,6 +429,7 @@ static BaseType_t prvMatchClientIdentifierInTopic( const char * pTopic,
                                                    const char * pClientIdentifier,
                                                    size_t clientIdentifierLength );
 
+
 /**
  * @brief Returns pdTRUE if the OTA Agent is currently executing a job.
  * @return pdTRUE if OTA agent is currently active.
@@ -446,17 +452,6 @@ static char * pcThingName = NULL;
  * @brief Variable which holds the length of the thing name.
  */
 static size_t uxThingNameLength = 0UL;
-
-
-/**
- * @brief Structure used for encoding firmware version.
- */
-const AppVersion32_t appFirmwareVersion =
-{
-    .u.x.major = APP_VERSION_MAJOR,
-    .u.x.minor = APP_VERSION_MINOR,
-    .u.x.build = APP_VERSION_BUILD,
-};
 
 /*---------------------------------------------------------*/
 
@@ -602,7 +597,23 @@ static void otaAppCallback( OtaJobEvent_t event,
 
             LogInfo( ( "Received OtaJobEventStartTest callback from OTA Agent." ) );
 
-            err = OTA_SetImageState( OtaImageStateAccepted );
+#ifdef TFM_PSA_API
+            {
+                if( ( OtaPal_ImageVersionCheck( FWU_IMAGE_TYPE_SECURE ) == true ) &&
+                    ( OtaPal_ImageVersionCheck( FWU_IMAGE_TYPE_NONSECURE ) == true ) )
+                {
+                    err = OTA_SetImageState( OtaImageStateAccepted );
+                }
+                else
+                {
+                    err = OTA_SetImageState( OtaImageStateRejected );
+                }
+            }
+#else /* ifdef TFM_PSA_API */
+            {
+                err = OTA_SetImageState( OtaImageStateAccepted );
+            }
+#endif /* ifdef TFM_PSA_API */
 
             if( err == OtaErrNone )
             {
@@ -1040,14 +1051,14 @@ static void prvSetOtaInterfaces( OtaInterfaces_t * pOtaInterfaces )
     pOtaInterfaces->mqtt.unsubscribe = prvMQTTUnsubscribe;
 
     /* Initialize the OTA library PAL Interface.*/
-    pOtaInterfaces->pal.getPlatformImageState = xOtaPalGetImageState;
-    pOtaInterfaces->pal.setPlatformImageState = xOtaPalSetImageState;
-    pOtaInterfaces->pal.writeBlock = iOtaPalWriteImageBlock;
-    pOtaInterfaces->pal.activate = xOtaPalActivateImage;
-    pOtaInterfaces->pal.closeFile = xOtaPalFinalizeImage;
-    pOtaInterfaces->pal.reset = xOtaPalResetDevice;
-    pOtaInterfaces->pal.abort = xOtaPalAbortImage;
-    pOtaInterfaces->pal.createFile = xOtaPalCreateImage;
+    pOtaInterfaces->pal.getPlatformImageState = otaPal_GetPlatformImageState;
+    pOtaInterfaces->pal.setPlatformImageState = otaPal_SetPlatformImageState;
+    pOtaInterfaces->pal.writeBlock = otaPal_WriteBlock;
+    pOtaInterfaces->pal.activate = otaPal_ActivateNewImage;
+    pOtaInterfaces->pal.closeFile = otaPal_CloseFile;
+    pOtaInterfaces->pal.reset = otaPal_ResetDevice;
+    pOtaInterfaces->pal.abort = otaPal_Abort;
+    pOtaInterfaces->pal.createFile = otaPal_CreateFileForRx;
 }
 
 static void prvSetOTAAppBuffer( OtaAppBuffer_t * pOtaAppBuffer )
@@ -1124,11 +1135,32 @@ void vOTAUpdateTask( void * pvParam )
     /* Set OTA buffers for use by OTA agent. */
     prvSetOTAAppBuffer( &otaAppBuffer );
 
+#ifndef TFM_PSA_API
+    {
+        /*
+         * Application defined firmware version is only used in Non-Trustzone.
+         */
 
-    LogInfo( ( "OTA Agent: Application version %u.%u.%u",
-               appFirmwareVersion.u.x.major,
-               appFirmwareVersion.u.x.minor,
-               appFirmwareVersion.u.x.build ) );
+        LogInfo( ( "OTA Agent: Application version %u.%u.%u",
+                   appFirmwareVersion.u.x.major,
+                   appFirmwareVersion.u.x.minor,
+                   appFirmwareVersion.u.x.build ) );
+    }
+#else
+    {
+        AppVersion32_t xSecureVersion = { 0 }, xNSVersion = { 0 };
+        otaPal_GetImageVersion( &xSecureVersion, &xNSVersion );
+        LogInfo( ( "OTA Agent: Secure Image version %u.%u.%u, Non-secure Image Version: %u.%u.%u",
+                   xSecureVersion.u.x.major,
+                   xSecureVersion.u.x.minor,
+                   xSecureVersion.u.x.build,
+                   xNSVersion.u.x.major,
+                   xNSVersion.u.x.minor,
+                   xNSVersion.u.x.build ) );
+    }
+#endif /* ifndef TFM_PSA_API */
+
+
     /****************************** Init OTA Library. ******************************/
 
     if( xResult == pdPASS )
