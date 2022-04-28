@@ -33,7 +33,7 @@
 
 /* define LOG_LEVEL here if you want to modify the logging level from the default */
 #ifndef LOG_LEVEL
-    #define LOG_LEVEL    LOG_INFO
+#define LOG_LEVEL    LOG_INFO
 #endif
 
 #include "logging.h"
@@ -132,11 +132,11 @@
 /**
  * Use PSA PAL version validation of secure/non secure image instead of OTA Agent library version validation.
  */
-    #define otaconfigAllowDowngrade    1U
+#define otaconfigAllowDowngrade    1U
 
 #else
 
-    #define otaconfigAllowDowngrade    0U
+#define otaconfigAllowDowngrade    0U
 
 #endif
 

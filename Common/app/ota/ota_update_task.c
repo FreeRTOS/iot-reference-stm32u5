@@ -84,7 +84,7 @@
 #include "kvstore.h"
 
 #ifdef MBEDTLS_TRANSPORT_PSA
-    #include "tfm_fwu_defs.h"
+#include "tfm_fwu_defs.h"
 #endif
 
 
@@ -592,23 +592,23 @@ static void otaAppCallback( OtaJobEvent_t event,
 
             LogInfo( ( "Received OtaJobEventStartTest callback from OTA Agent." ) );
 
-            #ifdef MBEDTLS_TRANSPORT_PSA
-                {
-                    if( ( OtaPal_ImageVersionCheck( FWU_IMAGE_TYPE_SECURE ) == true ) &&
-                        ( OtaPal_ImageVersionCheck( FWU_IMAGE_TYPE_NONSECURE ) == true ) )
-                    {
-                        err = OTA_SetImageState( OtaImageStateAccepted );
-                    }
-                    else
-                    {
-                        err = OTA_SetImageState( OtaImageStateRejected );
-                    }
-                }
-            #else  /* ifdef MBEDTLS_TRANSPORT_PSA */
+#ifdef MBEDTLS_TRANSPORT_PSA
+            {
+                if( ( OtaPal_ImageVersionCheck( FWU_IMAGE_TYPE_SECURE ) == true ) &&
+                    ( OtaPal_ImageVersionCheck( FWU_IMAGE_TYPE_NONSECURE ) == true ) )
                 {
                     err = OTA_SetImageState( OtaImageStateAccepted );
                 }
-            #endif /* ifdef MBEDTLS_TRANSPORT_PSA */
+                else
+                {
+                    err = OTA_SetImageState( OtaImageStateRejected );
+                }
+            }
+#else /* ifdef MBEDTLS_TRANSPORT_PSA */
+            {
+                err = OTA_SetImageState( OtaImageStateAccepted );
+            }
+#endif /* ifdef MBEDTLS_TRANSPORT_PSA */
 
             if( err == OtaErrNone )
             {
@@ -1103,30 +1103,30 @@ void vOTAUpdateTask( void * pvParam )
     /* Set OTA buffers for use by OTA agent. */
     prvSetOTAAppBuffer( &otaAppBuffer );
 
-    #ifndef MBEDTLS_TRANSPORT_PSA
-        {
-            /*
-             * Application defined firmware version is only used in Non-Trustzone.
-             */
+#ifndef MBEDTLS_TRANSPORT_PSA
+    {
+        /*
+         * Application defined firmware version is only used in Non-Trustzone.
+         */
 
-            LogInfo( ( "OTA Agent: Application version %u.%u.%u",
-                       appFirmwareVersion.u.x.major,
-                       appFirmwareVersion.u.x.minor,
-                       appFirmwareVersion.u.x.build ) );
-        }
-    #else
-        {
-            AppVersion32_t xSecureVersion = { 0 }, xNSVersion = { 0 };
-            otaPal_GetImageVersion( &xSecureVersion, &xNSVersion );
-            LogInfo( ( "OTA Agent: Secure Image version %u.%u.%u, Non-secure Image Version: %u.%u.%u",
-                       xSecureVersion.u.x.major,
-                       xSecureVersion.u.x.minor,
-                       xSecureVersion.u.x.build,
-                       xNSVersion.u.x.major,
-                       xNSVersion.u.x.minor,
-                       xNSVersion.u.x.build ) );
-        }
-    #endif /* ifndef MBEDTLS_TRANSPORT_PSA */
+        LogInfo( ( "OTA Agent: Application version %u.%u.%u",
+                   appFirmwareVersion.u.x.major,
+                   appFirmwareVersion.u.x.minor,
+                   appFirmwareVersion.u.x.build ) );
+    }
+#else
+    {
+        AppVersion32_t xSecureVersion = { 0 }, xNSVersion = { 0 };
+        otaPal_GetImageVersion( &xSecureVersion, &xNSVersion );
+        LogInfo( ( "OTA Agent: Secure Image version %u.%u.%u, Non-secure Image Version: %u.%u.%u",
+                   xSecureVersion.u.x.major,
+                   xSecureVersion.u.x.minor,
+                   xSecureVersion.u.x.build,
+                   xNSVersion.u.x.major,
+                   xNSVersion.u.x.minor,
+                   xNSVersion.u.x.build ) );
+    }
+#endif /* ifndef MBEDTLS_TRANSPORT_PSA */
 
 
     /****************************** Init OTA Library. ******************************/
