@@ -120,6 +120,8 @@ case "$1" in
             exit 1
         }
 
+        sleep 1
+
         echo "Writing Non-TrustZone image."
         prog_cli speed=fast mode=UR -d "${BUILD_PATH}/${TARGET_HEX}" || {
             echo "Error: Failed to program non-trustzone firmware image."
