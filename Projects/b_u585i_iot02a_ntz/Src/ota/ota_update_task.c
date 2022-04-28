@@ -181,6 +181,22 @@
  */
 #define otaexampleAGENT_TASK_STACK_SIZE          ( 4096 )
 
+static const char * pOtaAgentStateStrings[ OtaAgentStateAll + 1 ] =
+{
+    "Init",
+    "Ready",
+    "RequestingJob",
+    "WaitingForJob",
+    "CreatingFile",
+    "RequestingFileBlock",
+    "WaitingForFileBlock",
+    "ClosingFile",
+    "Suspended",
+    "ShuttingDown",
+    "Stopped",
+    "All"
+};
+
 /**
  * @brief A statically allocated array of event buffers used by the OTA agent.
  * Maximum number of buffers are determined by how many chunks are requested
@@ -565,8 +581,6 @@ static void otaAppCallback( OtaJobEvent_t event,
             /* Shutdown OTA Agent, if it is required that the unsubscribe operations are not
              * performed while shutting down please set the second parameter to 0 instead of 1. */
             OTA_Shutdown( 0, 1 );
-
-
             break;
 
         case OtaJobEventFail:
@@ -1141,8 +1155,6 @@ void vOTAUpdateTask( void * pvParam )
                                         pdTRUE,
                                         pdMS_TO_TICKS( otaexampleTASK_DELAY_MS ) );
 
-
-
         if( uxEvents & EVT_MASK_MQTT_CONNECTED )
         {
             LogInfo( "MQTT Agent is connected. Resuming..." );
@@ -1223,7 +1235,8 @@ void vOTAUpdateTask( void * pvParam )
             if( ( xIsOtaAgentActive() == pdTRUE ) &&
                 ( OTA_GetStatistics( &otaStatistics ) == OtaErrNone ) )
             {
-                LogInfo( ( " Received: %u   Queued: %u   Processed: %u   Dropped: %u",
+                LogInfo( ( "State: %s   Received: %u   Queued: %u   Processed: %u   Dropped: %u",
+                           pOtaAgentStateStrings[ OTA_GetState() ],
                            otaStatistics.otaPacketsReceived,
                            otaStatistics.otaPacketsQueued,
                            otaStatistics.otaPacketsProcessed,
