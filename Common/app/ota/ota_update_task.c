@@ -91,26 +91,26 @@
 /**
  * @brief The maximum size of the file paths used in the demo.
  */
-#define otaexampleMAX_FILE_PATH_SIZE                     ( 260 )
+#define otaexampleMAX_FILE_PATH_SIZE              ( 260 )
 
 /**
  * @brief The maximum size of the stream name required for downloading update file
  * from streaming service.
  */
-#define otaexampleMAX_STREAM_NAME_SIZE                   ( 128 )
+#define otaexampleMAX_STREAM_NAME_SIZE            ( 128 )
 
 /**
  * @brief The delay used in the OTA demo task to periodically output the OTA
  * statistics like number of packets received, dropped, processed and queued per connection.
  */
-#define otaexampleTASK_DELAY_MS                          ( 30 * 1000U )
+#define otaexampleTASK_DELAY_MS                   ( 30 * 1000U )
 
 /**
  * @brief The maximum time for which OTA demo waits for an MQTT operation to be complete.
  * This involves receiving an acknowledgment for broker for SUBSCRIBE, UNSUBSCRIBE and non
  * QOS0 publishes.
  */
-#define otaexampleMQTT_TIMEOUT_MS                        ( 10 * 1000U )
+#define otaexampleMQTT_TIMEOUT_MS                 ( 10 * 1000U )
 
 /**
  * @brief The common prefix for all OTA topics.
@@ -120,50 +120,48 @@
  * filter is used to match incoming packet received and route them to OTA.
  * Thing name is not needed for this matching.
  */
-#define OTA_TOPIC_PREFIX                                 "$aws/things"
+#define OTA_TOPIC_PREFIX                          "$aws/things"
 
 /**
  * @brief Length of OTA topics prefix.
  */
-#define OTA_PREFIX_LENGTH                                ( sizeof( OTA_TOPIC_PREFIX ) - 1UL )
+#define OTA_PREFIX_LENGTH                         ( sizeof( OTA_TOPIC_PREFIX ) - 1UL )
 
 /**
  * @brief Wildcard topic filter for job notification.
  * The filter is used to match the constructed job notify topic filter from OTA agent and register
  * appropriate callback for it.
  */
-#define OTA_JOB_NOTIFY_TOPIC_FILTER                      OTA_TOPIC_PREFIX "/+/jobs/notify-next"
+#define OTA_JOB_NOTIFY_TOPIC_FILTER               OTA_TOPIC_PREFIX "/+/jobs/notify-next"
 
 /**
  * @brief Length of job notification topic filter.
  */
-#define OTA_JOB_NOTIFY_TOPIC_FILTER_LENGTH               ( ( uint16_t ) ( sizeof( OTA_JOB_NOTIFY_TOPIC_FILTER ) - 1UL ) )
+#define OTA_JOB_NOTIFY_TOPIC_FILTER_LENGTH        ( ( uint16_t ) ( sizeof( OTA_JOB_NOTIFY_TOPIC_FILTER ) - 1UL ) )
 
 /**
  * @brief Wildcard topic filter for matching job response messages.
  * This topic filter is used to match the responses from OTA service for OTA agent job requests. THe
  * topic filter is a reserved topic which is not subscribed with MQTT broker.
- *
  */
-#define OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER           OTA_TOPIC_PREFIX "/+/jobs/$next/get/accepted"
+#define OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER    OTA_TOPIC_PREFIX "/+/jobs/$next/get/accepted"
 
 /**
- * @brief Length of job accepted response topic filter.
+ * @brief Wildcard topic filter for matching OTA job update messages (used to detect cancellation).
  */
-#define OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER_LENGTH    ( ( uint16_t ) ( sizeof( OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER ) - 1 ) )
-
+#define OTA_JOB_UPDATE_TOPIC_FILTER               OTA_TOPIC_PREFIX "/+/jobs/+/update/#"
 
 /**
  * @brief Wildcard topic filter for matching OTA data packets.
  *  The filter is used to match the constructed data stream topic filter from OTA agent and register
  * appropriate callback for it.
  */
-#define OTA_DATA_STREAM_TOPIC_FILTER           OTA_TOPIC_PREFIX "/+/streams/#"
+#define OTA_DATA_STREAM_TOPIC_FILTER              OTA_TOPIC_PREFIX "/+/streams/#"
 
 /**
  * @brief Length of data stream topic filter.
  */
-#define OTA_DATA_STREAM_TOPIC_FILTER_LENGTH    ( ( uint16_t ) ( sizeof( OTA_DATA_STREAM_TOPIC_FILTER ) - 1 ) )
+#define OTA_DATA_STREAM_TOPIC_FILTER_LENGTH       ( ( uint16_t ) ( sizeof( OTA_DATA_STREAM_TOPIC_FILTER ) - 1 ) )
 
 
 /**
@@ -1212,6 +1210,21 @@ void vOTAUpdateTask( void * pvParam )
         if( xMQTTStatus != MQTTSuccess )
         {
             LogError( "Failed to subscribe to Job Accepted response topic filter." );
+            xResult = pdFAIL;
+        }
+    }
+
+    if( xResult == pdPASS )
+    {
+        xMQTTStatus = MqttAgent_SubscribeSync( xMQTTAgentHandle,
+                                               OTA_JOB_UPDATE_TOPIC_FILTER,
+                                               MQTTQoS0,
+                                               prvProcessIncomingJobMessage,
+                                               NULL );
+
+        if( xMQTTStatus != MQTTSuccess )
+        {
+            LogError( "Failed to subscribe to Job Update topic filter." );
             xResult = pdFAIL;
         }
     }
