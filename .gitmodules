@@ -74,4 +74,4 @@
 	url = https://github.com/nodejs/http-parser.git
 [submodule "Middleware/ARM/ota-pal-psa"]
 	path = Middleware/ARM/ota-pal-psa
-	url = https://github.com/ravibhagavandas/freertos-ota-pal-psa.git 
+	url = https://github.com/ravibhagavandas/freertos-ota-pal-psa.git
