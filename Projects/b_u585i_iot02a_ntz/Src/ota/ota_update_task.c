@@ -1132,13 +1132,16 @@ void vOTAUpdateTask( void * pvParam )
 
     if( xResult == pdPASS )
     {
-        EventBits_t uxEvents = xEventGroupWaitBits( xSystemEvents,
-                                                    EVT_MASK_MQTT_CONNECTED,
-                                                    pdFALSE,
-                                                    pdTRUE,
-                                                    pdMS_TO_TICKS( otaexampleTASK_DELAY_MS ) );
-
+        EventBits_t uxEvents;
         LogInfo( "Waiting until MQTT Agent is connected." );
+
+        uxEvents = xEventGroupWaitBits( xSystemEvents,
+                                        EVT_MASK_MQTT_CONNECTED,
+                                        pdFALSE,
+                                        pdTRUE,
+                                        pdMS_TO_TICKS( otaexampleTASK_DELAY_MS ) );
+
+
 
         if( uxEvents & EVT_MASK_MQTT_CONNECTED )
         {
