@@ -25,6 +25,10 @@
  * for AWS OTA update library.
  */
 
+#include "logging_levels.h"
+#define LOG_LEVEL    LOG_ERROR
+#include "logging.h"
+
 #include <string.h>
 
 #include "FreeRTOS.h"
@@ -475,6 +479,8 @@ static BaseType_t prvValidateImageSignature( OtaImageContext_t * pImageContext,
             xResult = pdFALSE;
         }
     }
+
+    mbedtls_pk_free( &xPubKeyCtx );
 
     return xResult;
 }
