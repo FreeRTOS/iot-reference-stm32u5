@@ -46,10 +46,6 @@
  * rejected in self test phase.1
  */
 
-#define APP_VERSION_MAJOR 0
-#define APP_VERSION_MINOR 9
-#define APP_VERSION_BUILD 0
-
 #define TEST_AUTOMATION_INTEGRATION (1)
 #define otapalconfigCODE_SIGNING_CERTIFICATE ""
 #define keyCLIENT_PUBLIC_KEY_PEM ""
