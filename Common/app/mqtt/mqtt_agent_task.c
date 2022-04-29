@@ -377,6 +377,9 @@ static inline void prvCompressSubscriptionList( MQTTSubscribeInfo_t * pxSubList,
 
                     prvUpdateCallbackRefs( pxCallbacksList, pxSubList, uxLastOccupiedIndex, uxIdx );
 
+                    /* Increment count of active subscriptions */
+                    uxSubCount++;
+
                     /* Increment counter so we don't visit this location again */
                     uxLastOccupiedIndex++;
 
@@ -386,10 +389,10 @@ static inline void prvCompressSubscriptionList( MQTTSubscribeInfo_t * pxSubList,
         }
         else if( pxSubList[ uxIdx ].topicFilterLength != 0 )
         {
-            /* Count number of valid contexts */
+            /* Increment count of active subscriptions */
             uxSubCount++;
         }
-        else
+        else /*  pxSubList[ uxIdx ].topicFilterLength == 0 */
         {
             /* Continue iterating */
         }
@@ -437,6 +440,9 @@ static inline void prvCompressCallbackList( SubCallbackElement_t * pxCallbackLis
                     pxCallbackList[ uxLastOccupiedIndex ].pvIncomingPublishCallbackContext = NULL;
                     pxCallbackList[ uxLastOccupiedIndex ].xTaskHandle = NULL;
                     pxCallbackList[ uxLastOccupiedIndex ].pxSubInfo = NULL;
+
+                    /* Increment count of active callbacks */
+                    uxCallbackCount++;
 
                     /* Increment counter so we don't visit this empty location again */
                     uxLastOccupiedIndex++;
