@@ -573,7 +573,9 @@ static void otaAppCallback( OtaJobEvent_t event,
 
             /* Shutdown OTA Agent, if it is required that the unsubscribe operations are not
              * performed while shutting down please set the second parameter to 0 instead of 1. */
-            OTA_Shutdown( 0, 1 );
+/*            OTA_Shutdown( 0, 1 ); */
+            vTaskDelay( 100 );
+            NVIC_SystemReset();
             break;
 
         case OtaJobEventFail:
@@ -641,7 +643,9 @@ static void otaAppCallback( OtaJobEvent_t event,
 
             /* Shutdown OTA Agent, if it is required that the unsubscribe operations are not
              * performed while shutting down please set the second parameter to 0 instead of 1. */
-            OTA_Shutdown( 0, 1 );
+/*            OTA_Shutdown( 0, 1 ); */
+            vTaskDelay( 100 );
+            NVIC_SystemReset();
 
             break;
 
