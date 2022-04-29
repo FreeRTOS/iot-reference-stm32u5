@@ -512,9 +512,19 @@ PkiStatus_t xPkiReadPublicKey( mbedtls_pk_context * pxPkCtx,
 
     if( xStatus == PKI_SUCCESS )
     {
-        int lError = mbedtls_pk_parse_public_key( pxPkCtx,
+        int lError = 0;
+
+        if( pxPublicKey->xForm == OBJ_FORM_PEM )
+        {
+            lError = mbedtls_pk_parse_public_key( pxPkCtx,
                                                   pucPubKeyDer,
                                                   uxPubKeyLen );
+        }
+        else
+        {
+            unsigned char * pucPk = pucPubKeyDer;
+            lError = mbedtls_pk_parse_subpubkey( &pucPk, pucPk + uxPubKeyLen, pxPkCtx );
+        }
 
         MBEDTLS_LOG_IF_ERROR( lError, "Failed to parse the public key at memory address %p.",
                               pxPublicKey->pucBuffer );
