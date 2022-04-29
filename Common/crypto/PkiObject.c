@@ -70,9 +70,9 @@ PkiStatus_t xPrvMbedtlsErrToPkiStatus( int lError )
 }
 
 #ifdef TEST_AUTOMATION_INTEGRATION
-const char[] g_CodeSigningCert = otapalconfigCODE_SIGNING_CERTIFICATE;
-const char[] g_ClientPublicKey = keyCLIENT_PUBLIC_KEY_PEM;
-const char[] g_ClientPrivateKey = keyCLIENT_PRIVATE_KEY_PEM;
+char g_CodeSigningCert[] = otapalconfigCODE_SIGNING_CERTIFICATE;
+char g_ClientPublicKey[] = keyCLIENT_PUBLIC_KEY_PEM;
+char g_ClientPrivateKey[] = keyCLIENT_PRIVATE_KEY_PEM;
 #endif
 
 /*-----------------------------------------------------------*/
