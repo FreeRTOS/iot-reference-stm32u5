@@ -32,6 +32,8 @@
 
 #include "mbedtls/platform.h"
 
+#include "ota_config.h"
+
 /*-----------------------------------------------------------*/
 
 PkiStatus_t xPrvMbedtlsErrToPkiStatus( int lError )
@@ -83,11 +85,11 @@ PkiObject_t xPkiObjectFromLabel( const char * pcLabel )
     {
 #ifdef TEST_AUTOMATION_INTEGRATION
         if( ( strcmp( OTA_SIGNING_KEY_LABEL, pcLabel ) == 0 )
-            && ( strlen(g_CodeSigningCert) > 0))
+            && ( strlen(g_ClientPublicKey) > 0))
         {
             xPkiObject.xForm = OBJ_FORM_PEM;
-            xPkiObject.uxLen = strlen(g_CodeSigningCert)+1;
-            xPkiObject.pucBuffer = g_CodeSigningCert;
+            xPkiObject.uxLen = strlen(g_ClientPublicKey)+1;
+            xPkiObject.pucBuffer = g_ClientPublicKey;
             //xPkiObject.xPsaCryptoId = OTA_SIGNING_KEY_ID;
             return xPkiObject;
         }
