@@ -97,7 +97,7 @@ class OtaProject:
     custom_client_thing_name_pattern: str = "#define THING_NAME_DFLT"
 
     custom_client_credential_keys_path: Path = Path(src_root + "/Common/config/ota_config.h")
-    custom_client_credential_certificate_pem_pattern: str = "#define keyCLIENT_CERTIFICATE_PEM"
+    custom_client_credential_certificate_pem_pattern: str = "#define keyCLIENT_PUBLIC_KEY_PEM"
     custom_client_credential_certificate_private_key_pattern: str = "#define keyCLIENT_PRIVATE_KEY_PEM"
     custom_client_credential_jitr_authority_pem_pattern: str = None
 

@@ -968,9 +968,9 @@ static void vSubCommand_ImportCertificate( ConsoleIO_t * pxCIO,
     }
 }
 
-#ifdef keyCLIENT_CERTIFICATE_PEM
-const char g_signingKey[] = keyCLIENT_CERTIFICATE_PEM;
-#endif
+//#ifdef keyCLIENT_CERTIFICATE_PEM
+//const char g_signingKey[] = keyCLIENT_CERTIFICATE_PEM;
+//#endif
 
 static void vSubCommand_ImportPubKey( ConsoleIO_t * pxCIO,
                                       uint32_t ulArgc,
@@ -1011,7 +1011,7 @@ static void vSubCommand_ImportPubKey( ConsoleIO_t * pxCIO,
 
     if( xResult == pdTRUE )
     {
-#ifdef keyCLIENT_CERTIFICATE_PEM
+#if 0
         if (strcmp(pcPubKeyLabel, OTA_SIGNING_KEY_LABEL) == 0)
         {
             xResult = xReadPemFromBufferAsDer( pxCIO, g_signingKey, &pucDerBuffer, &uxDerDataLen );

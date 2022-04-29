@@ -40,8 +40,6 @@
 
 
 /**
-<<<<<<< HEAD
-=======
  *  @brief The version for the firmware which is running. OTA agent uses this
  * version number to perform anti-rollback validation. The firmware version for the
  * download image should be higher than the current version, otherwise the new image is
@@ -53,11 +51,10 @@
 #define APP_VERSION_BUILD 0
 
 #define otapalconfigCODE_SIGNING_CERTIFICATE ""
-#define keyCLIENT_CERTIFICATE_PEM ""
+#define keyCLIENT_PUBLIC_KEY_PEM ""
 #define keyCLIENT_PRIVATE_KEY_PEM ""
 
 /**
->>>>>>> initial creation of ota e2e test integration branch.
  * @brief Log base 2 of the size of the file data block message (excluding the header).
  *
  * 10 bits yields a data block size of 1KB.
