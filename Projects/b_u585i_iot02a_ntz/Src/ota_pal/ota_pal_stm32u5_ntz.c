@@ -36,8 +36,12 @@
 #include "stm32u5xx_hal_flash.h"
 #include "lfs.h"
 #include "fs/lfs_port.h"
-#include "core_pkcs11.h"
-#include "core_pki_utils.h"
+
+#include "mbedtls/pk.h"
+#include "mbedtls/md.h"
+#include "mbedtls_error_utils.h"
+
+#include "PkiObject.h"
 
 const char OTA_JsonFileSignatureKey[ OTA_FILE_SIG_KEY_STR_MAX_LENGTH ] = "sig-sha256-ecdsa";
 
@@ -261,6 +265,7 @@ static HAL_StatusTypeDef prvSwapBankAndBoot( void )
     return status;
 }
 
+
 static uint32_t prvGetActiveBank( void )
 {
     HAL_StatusTypeDef status = HAL_ERROR;
@@ -402,207 +407,77 @@ static HAL_StatusTypeDef prvEraseBank( uint32_t bankNumber )
     return status;
 }
 
-
-static CK_RV prvPKCS11GetPubKeyHandle( CK_SESSION_HANDLE xSession,
-                                       const char * pcLabelName,
-                                       CK_OBJECT_HANDLE_PTR pxpubKeyHandle )
+static BaseType_t prvValidateImageSignature( OtaImageContext_t * pImageContext,
+                                             const char * pcPubKeyLabel,
+                                             uint8_t * pucSignature,
+                                             size_t uxSignatureLength )
 {
-    CK_ATTRIBUTE xTemplate;
-    CK_RV xResult = CKR_OK;
-    CK_ULONG ulCount = 0;
-    CK_BBOOL xFindInit = CK_FALSE;
-    CK_FUNCTION_LIST_PTR xFunctionList;
+    BaseType_t xResult = pdTRUE;
+    PkiObject_t xOtaSigningPubKey;
+    mbedtls_pk_context xPubKeyCtx;
+    size_t uxHashLength = 0;
+    unsigned char pucHashBuffer[ MBEDTLS_MD_MAX_SIZE ];
 
-    xResult = C_GetFunctionList( &xFunctionList );
+    configASSERT( pcPubKeyLabel != NULL );
+    configASSERT( pImageContext != NULL );
+    configASSERT( pucSignature != NULL );
+    configASSERT( uxSignatureLength > 0 );
 
-    /* Get the public key handle. */
-    if( CKR_OK == xResult )
+    mbedtls_pk_init( &xPubKeyCtx );
+
+    xOtaSigningPubKey = xPkiObjectFromLabel( pcPubKeyLabel );
+
+    if( xPkiReadPublicKey( &xPubKeyCtx, &xOtaSigningPubKey ) != PKI_SUCCESS )
     {
-        xTemplate.type = CKA_LABEL;
-        xTemplate.ulValueLen = strlen( pcLabelName ) + 1;
-        xTemplate.pValue = ( char * ) pcLabelName;
-        xResult = xFunctionList->C_FindObjectsInit( xSession, &xTemplate, 1 );
+        LogError( ( "Failed to load OTA Signing public key." ) );
+        xResult = pdFALSE;
     }
 
-    if( CKR_OK == xResult )
+    /* Calculate the hash of the image */
+    if( xResult == pdTRUE )
     {
-        xFindInit = CK_TRUE;
-        xResult = xFunctionList->C_FindObjects( xSession,
-                                                ( CK_OBJECT_HANDLE_PTR ) pxpubKeyHandle,
-                                                1,
-                                                &ulCount );
+        const mbedtls_md_info_t * pxMdInfo = NULL;
+
+        pxMdInfo = mbedtls_md_info_from_type( MBEDTLS_MD_SHA256 );
+
+        if( pxMdInfo == NULL )
+        {
+            LogError( ( "Failed to initialize mbedtls md_info object." ) );
+            xResult = pdFALSE;
+        }
+        else
+        {
+            int lRslt = 0;
+
+            uxHashLength = mbedtls_md_get_size( pxMdInfo );
+
+            configASSERT( uxHashLength <= MBEDTLS_MD_MAX_SIZE );
+
+            lRslt = mbedtls_md( pxMdInfo, ( void * ) ( pImageContext->ulBaseAddress ), pImageContext->ulImageSize, pucHashBuffer );
+
+            MBEDTLS_MSG_IF_ERROR( lRslt, "Failed to compute hash of the staged firmware image." );
+
+            if( lRslt != 0 )
+            {
+                xResult = pdFALSE;
+            }
+        }
     }
 
-    if( ( CK_TRUE == xFindInit ) && ( xResult == 0 ) )
+    /* Verify the provided signature against the image hash */
+    if( xResult == pdTRUE )
     {
-        xResult = xFunctionList->C_FindObjectsFinal( xSession );
+        int lRslt = mbedtls_pk_verify( &xPubKeyCtx, MBEDTLS_MD_SHA256, pucHashBuffer, uxHashLength, pucSignature, uxSignatureLength );
+
+        if( lRslt != 0 )
+        {
+            MBEDTLS_MSG_IF_ERROR( lRslt, "OTA Image signature verification failed." );
+            xResult = pdFALSE;
+        }
     }
 
     return xResult;
 }
-
-static CK_RV prvOpenPKCS11Session( CK_SESSION_HANDLE_PTR pSession )
-{
-    /* Find the public key */
-    CK_RV xResult;
-    CK_FUNCTION_LIST_PTR xFunctionList;
-    CK_SLOT_ID xSlotId;
-    CK_ULONG xCount = 1;
-
-    xResult = C_GetFunctionList( &xFunctionList );
-
-    if( CKR_OK == xResult )
-    {
-        xResult = xFunctionList->C_Initialize( NULL );
-    }
-
-    if( ( CKR_OK == xResult ) || ( CKR_CRYPTOKI_ALREADY_INITIALIZED == xResult ) )
-    {
-        xResult = xFunctionList->C_GetSlotList( CK_TRUE, &xSlotId, &xCount );
-    }
-
-    if( CKR_OK == xResult )
-    {
-        xResult = xFunctionList->C_OpenSession( xSlotId, CKF_SERIAL_SESSION, NULL, NULL, pSession );
-    }
-
-    return xResult;
-}
-
-static CK_RV prvClosePKCS11Session( CK_SESSION_HANDLE xSession )
-{
-    CK_RV xResult = CKR_OK;
-    CK_FUNCTION_LIST_PTR xFunctionList;
-
-    xResult = C_GetFunctionList( &xFunctionList );
-
-    if( xResult == CKR_OK )
-    {
-        xResult = xFunctionList->C_CloseSession( xSession );
-    }
-
-    return xResult;
-}
-
-CK_RV prvVerifyImageSignatureUsingPKCS11( CK_SESSION_HANDLE session,
-                                          CK_OBJECT_HANDLE pubKeyHandle,
-                                          OtaImageContext_t * pImageContext,
-                                          uint8_t * pSignature,
-                                          size_t signatureLength )
-
-{
-    /* The ECDSA mechanism will be used to verify the message digest. */
-    CK_MECHANISM mechanism = { CKM_ECDSA, NULL, 0 };
-
-    /* SHA 256  will be used to calculate the digest. */
-    CK_MECHANISM xDigestMechanism = { CKM_SHA256, NULL, 0 };
-
-    /* The buffer used to hold the calculated SHA25 digest of the image. */
-    CK_BYTE digestResult[ pkcs11SHA256_DIGEST_LENGTH ] = { 0 };
-    CK_ULONG digestLength = pkcs11SHA256_DIGEST_LENGTH;
-
-    CK_RV result = CKR_OK;
-
-    CK_FUNCTION_LIST_PTR functionList;
-
-
-    result = C_GetFunctionList( &functionList );
-
-    /* Calculate the digest of the image. */
-    if( result == CKR_OK )
-    {
-        result = functionList->C_DigestInit( session,
-                                             &xDigestMechanism );
-    }
-
-    if( result == CKR_OK )
-    {
-        result = functionList->C_DigestUpdate( session,
-                                               pImageContext->ulBaseAddress,
-                                               pImageContext->ulImageSize );
-    }
-
-    if( result == CKR_OK )
-    {
-        result = functionList->C_DigestFinal( session,
-                                              digestResult,
-                                              &digestLength );
-    }
-
-    if( result == CKR_OK )
-    {
-        result = functionList->C_VerifyInit( session,
-                                             &mechanism,
-                                             pubKeyHandle );
-    }
-
-    if( result == CKR_OK )
-    {
-        result = functionList->C_Verify( session,
-                                         digestResult,
-                                         pkcs11SHA256_DIGEST_LENGTH,
-                                         pSignature,
-                                         signatureLength );
-    }
-
-    return result;
-}
-
-
-BaseType_t prvValidateImageSignature( OtaImageContext_t * pImageContext,
-                                      const char * pPubKeyLabel,
-                                      uint8_t * pSignature,
-                                      size_t signatureLength )
-{
-    CK_SESSION_HANDLE session = CKR_SESSION_HANDLE_INVALID;
-    CK_RV xPKCS11Status = CKR_OK;
-    CK_OBJECT_HANDLE pubKeyHandle;
-    BaseType_t result = pdTRUE;
-    uint8_t pkcs11Signature[ pkcs11ECDSA_P256_SIGNATURE_LENGTH ] = { 0 };
-
-    if( result == pdTRUE )
-    {
-        if( PKI_mbedTLSSignatureToPkcs11Signature( pkcs11Signature, pSignature ) != 0 )
-        {
-            LogError( ( "Cannot convert signature to PKCS11 format.\r\n" ) );
-            result = pdFALSE;
-        }
-    }
-
-    if( result == pdTRUE )
-    {
-        xPKCS11Status = prvOpenPKCS11Session( &session );
-
-        if( xPKCS11Status == CKR_OK )
-        {
-            xPKCS11Status = prvPKCS11GetPubKeyHandle( session, pPubKeyLabel, &pubKeyHandle );
-        }
-
-        if( xPKCS11Status == CKR_OK )
-        {
-            xPKCS11Status = prvVerifyImageSignatureUsingPKCS11( session,
-                                                                pubKeyHandle,
-                                                                pImageContext,
-                                                                pkcs11Signature,
-                                                                pkcs11ECDSA_P256_SIGNATURE_LENGTH );
-        }
-
-        if( xPKCS11Status != CKR_OK )
-        {
-            LogError( ( "Image verification failed with PKCS11 status: %d\r\n", xPKCS11Status ) );
-            result = pdFALSE;
-        }
-    }
-
-    if( session != CKR_SESSION_HANDLE_INVALID )
-    {
-        ( void ) prvClosePKCS11Session( session );
-    }
-
-    return result;
-}
-
-
 
 OtaPalStatus_t otaPal_CreateFileForRx( OtaFileContext_t * const pFileContext )
 {
