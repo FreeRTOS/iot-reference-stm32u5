@@ -353,10 +353,10 @@ void Task_CLI( void * pvParameters )
 
     if( xInitConsoleUart() == pdTRUE )
     {
-#ifdef keyCLIENT_CERTIFICATE_PEM
-        char tmp[] = "pki import key ota_signer_pub";
-        FreeRTOS_CLIProcessCommand( &xConsoleIO, tmp );
-#endif
+//#ifdef keyCLIENT_CERTIFICATE_PEM
+//        char tmp[] = "pki import key ota_signer_pub";
+//        FreeRTOS_CLIProcessCommand( &xConsoleIO, tmp );
+//#endif
         for( ; ; )
         {
             /* Read a line of input */

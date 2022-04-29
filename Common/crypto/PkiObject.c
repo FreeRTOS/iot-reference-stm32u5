@@ -67,6 +67,12 @@ PkiStatus_t xPrvMbedtlsErrToPkiStatus( int lError )
     return xStatus;
 }
 
+#ifdef TEST_AUTOMATION_INTEGRATION
+const char[] g_CodeSigningCert = otapalconfigCODE_SIGNING_CERTIFICATE;
+const char[] g_ClientPublicKey = keyCLIENT_PUBLIC_KEY_PEM;
+const char[] g_ClientPrivateKey = keyCLIENT_PRIVATE_KEY_PEM;
+#endif
+
 /*-----------------------------------------------------------*/
 
 PkiObject_t xPkiObjectFromLabel( const char * pcLabel )
@@ -75,6 +81,17 @@ PkiObject_t xPkiObjectFromLabel( const char * pcLabel )
 
     if( pcLabel != NULL )
     {
+#ifdef TEST_AUTOMATION_INTEGRATION
+        if( ( strcmp( OTA_SIGNING_KEY_LABEL, pcLabel ) == 0 )
+            && ( strlen(g_CodeSigningCert) > 0))
+        {
+            xPkiObject.xForm = OBJ_FORM_PEM;
+            xPkiObject.uxLen = strlen(g_CodeSigningCert)+1;
+            xPkiObject.pucBuffer = g_CodeSigningCert;
+            //xPkiObject.xPsaCryptoId = OTA_SIGNING_KEY_ID;
+            return xPkiObject;
+        }
+#endif
 #if defined( MBEDTLS_TRANSPORT_PKCS11 )
         xPkiObject.pcPkcs11Label = pcLabel;
         xPkiObject.uxLen = strnlen( pcLabel, configTLS_MAX_LABEL_LEN );
