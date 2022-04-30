@@ -242,13 +242,71 @@ void vInitTask( void * pvArgs )
     }
 }
 
+static uint32_t ulCsrFlags = 0;
+
+static void vDetermineResetSource()
+{
+    const char * pcResetSource = NULL;
+
+    ulCsrFlags &= ( RCC_CSR_LPWRRSTF_Msk | RCC_CSR_WWDGRSTF_Msk |
+                    RCC_CSR_IWDGRSTF_Msk | RCC_CSR_SFTRSTF_Msk |
+                    RCC_CSR_BORRSTF_Msk | RCC_CSR_PINRSTF_Msk |
+                    RCC_CSR_OBLRSTF_Msk );
+
+    if( ulCsrFlags & RCC_CSR_LPWRRSTF_Msk )
+    {
+        pcResetSource = "LPWRRSTF";
+    }
+    else if( ulCsrFlags & RCC_CSR_WWDGRSTF_Msk )
+    {
+        pcResetSource = "WWDGRSTF: Windowing Watchdog";
+    }
+    else if( ulCsrFlags & RCC_CSR_IWDGRSTF_Msk )
+    {
+        pcResetSource = "IWDGRSTF: Independent Watchdog";
+    }
+    else if( ulCsrFlags & RCC_CSR_SFTRSTF_Msk )
+    {
+        pcResetSource = "SFTRSTF: Software";
+    }
+    else if( ulCsrFlags & RCC_CSR_BORRSTF_Msk )
+    {
+        pcResetSource = "BORRSTF: Brownout";
+    }
+    else if( ulCsrFlags & RCC_CSR_PINRSTF_Msk )
+    {
+        pcResetSource = "PINRSTF: NSRT Pin";
+    }
+    else if( ulCsrFlags & RCC_CSR_OBLRSTF_Msk )
+    {
+        pcResetSource = "OBLRSTF: Option Byte Load";
+    }
+    else
+    {
+        pcResetSource = "Unknown";
+    }
+
+    LogSys( "Reset Source: 0x%x : %s.", ulCsrFlags, pcResetSource );
+}
+
+uint32_t ulGetResetSource( void )
+{
+    return ulCsrFlags;
+}
+
 int main( void )
 {
+    ulCsrFlags = RCC->CSR;
+
+    __HAL_RCC_CLEAR_RESET_FLAGS();
+
     hw_init();
 
     vRelocateVectorTable();
 
     vLoggingInit();
+
+    vDetermineResetSource();
 
     LogInfo( "HW Init Complete." );
 
@@ -342,6 +400,7 @@ void vApplicationMallocFailedHook( void )
         __NOP();
     }
 }
+
 /*-----------------------------------------------------------*/
 
 void vApplicationStackOverflowHook( TaskHandle_t xTask,
@@ -352,9 +411,8 @@ void vApplicationStackOverflowHook( TaskHandle_t xTask,
 
     taskENTER_CRITICAL();
 
-    LogDebug( "Stack overflow in %s", pcTaskName );
+    LogSys( "Stack overflow in %s", pcTaskName );
     ( void ) xTask;
-    ( void ) pcTaskName; /* Remove compiler warnings if LogDebug() is not defined. */
 
     while( ulSetToZeroToStepOut != 0 )
     {
@@ -363,3 +421,17 @@ void vApplicationStackOverflowHook( TaskHandle_t xTask,
 
     taskEXIT_CRITICAL();
 }
+
+/*-----------------------------------------------------------*/
+#if configUSE_IDLE_HOOK == 1
+void vApplicationIdleHook( void )
+{
+    /* Check / pet the watchdog */
+    if( pxHwndIwdg != NULL )
+    {
+        HAL_IWDG_Refresh( pxHwndIwdg );
+    }
+}
+#endif /* configUSE_IDLE_HOOK == 1 */
+
+/*-----------------------------------------------------------*/

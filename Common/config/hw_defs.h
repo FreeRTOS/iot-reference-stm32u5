@@ -30,6 +30,7 @@ extern UART_HandleTypeDef * pxHndlUart1;
 extern DCACHE_HandleTypeDef * pxHndlDCache;
 extern DMA_HandleTypeDef * pxHndlGpdmaCh4;
 extern DMA_HandleTypeDef * pxHndlGpdmaCh5;
+extern IWDG_HandleTypeDef * pxHwndIwdg;
 
 static inline uint32_t timer_get_count( TIM_HandleTypeDef * pxHndl )
 {

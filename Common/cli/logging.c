@@ -58,6 +58,12 @@ void vDyingGasp( void )
 {
     BaseType_t xNumBytes = 0;
 
+    /* Pet the watchdog so that the message is not lost */
+    if( pxHwndIwdg != NULL )
+    {
+        HAL_IWDG_Refresh( pxHwndIwdg );
+    }
+
     pxEarlyUart = vInitUartEarly();
 
     do
@@ -65,6 +71,12 @@ void vDyingGasp( void )
         xNumBytes = xMessageBufferReceiveFromISR( xLogMBuf, pcPrintBuff, dlMAX_PRINT_STRING_LENGTH, 0 );
         ( void ) HAL_UART_Transmit( pxEarlyUart, ( uint8_t * ) pcPrintBuff, xNumBytes, 10 * 1000 );
         ( void ) HAL_UART_Transmit( pxEarlyUart, ( uint8_t * ) "\r\n", 2, 10 * 1000 );
+
+        /* Pet the watchdog */
+        if( pxHwndIwdg != NULL )
+        {
+            HAL_IWDG_Refresh( pxHwndIwdg );
+        }
     }
     while( xNumBytes != 0 );
 

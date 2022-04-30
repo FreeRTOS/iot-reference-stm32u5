@@ -40,6 +40,7 @@ DMA_HandleTypeDef * pxHndlGpdmaCh5 = NULL;
 RNG_HandleTypeDef * pxHndlRng = NULL;
 #endif /* ! defined( TFM_PSA_API ) */
 TIM_HandleTypeDef * pxHndlTim5 = NULL;
+IWDG_HandleTypeDef * pxHwndIwdg = NULL;
 
 /* local function prototypes */
 static void SystemClock_Config( void );
@@ -52,6 +53,7 @@ static void hw_spi2_msp_init( SPI_HandleTypeDef * pxHndlSpi );
 static void hw_spi2_msp_deinit( SPI_HandleTypeDef * pxHndlSpi );
 static void hw_spi_init( void );
 static void hw_tim5_init( void );
+static void hw_watchdog_init( void );
 
 #ifndef TFM_PSA_API
 static void hw_rng_init( void );
@@ -93,6 +95,8 @@ void hw_init( void )
 #endif
 
     hw_tim5_init();
+
+    hw_watchdog_init();
 }
 
 static void SystemClock_Config( void )
@@ -630,6 +634,34 @@ static void hw_tim5_init( void )
     if( xResult == HAL_OK )
     {
         pxHndlTim5 = &xTim5Handle;
+    }
+}
+
+static void hw_watchdog_init( void )
+{
+    HAL_StatusTypeDef xResult = HAL_OK;
+
+    /* Default LSI clock = 32kHz, / 1024 => 31.25 hz => 32ms / tick
+     */
+    /* Set timeout to 10 seconds */
+
+    static IWDG_HandleTypeDef xIwdgHandle =
+    {
+        .Instance       = IWDG,
+        .Init.Prescaler = IWDG_PRESCALER_1024,
+        .Init.Window    = IWDG_WINDOW_DISABLE,
+        /* Reload value is 12-bit -> 0 - 4095 */
+        .Init.Reload    = 315,
+        .Init.EWI       = 0
+    };
+
+    xResult = HAL_IWDG_Init( &xIwdgHandle );
+
+    configASSERT( xResult == HAL_OK );
+
+    if( xResult == HAL_OK )
+    {
+        pxHwndIwdg = &xIwdgHandle;
     }
 }
 
