@@ -279,3 +279,18 @@ void vApplicationStackOverflowHook( TaskHandle_t xTask,
 
     taskEXIT_CRITICAL();
 }
+
+/*-----------------------------------------------------------*/
+
+#if configUSE_IDLE_HOOK == 1
+void vApplicationIdleHook( void )
+{
+    /* Check / pet the watchdog */
+    if( pxHwndIwdg != NULL )
+    {
+        HAL_IWDG_Refresh( pxHwndIwdg );
+    }
+}
+#endif /* configUSE_IDLE_HOOK == 1 */
+
+/*-----------------------------------------------------------*/

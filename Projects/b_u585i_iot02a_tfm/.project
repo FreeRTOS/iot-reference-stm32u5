@@ -232,6 +232,11 @@
 			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_icache.c</locationURI>
 		</link>
 		<link>
+			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_iwdg.c</name>
+			<type>1</type>
+			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_iwdg.c</locationURI>
+		</link>
+		<link>
 			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_pwr_ex.c</name>
 			<type>1</type>
 			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_pwr_ex.c</locationURI>
@@ -285,6 +290,11 @@
 			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_uart_ex.c</name>
 			<type>1</type>
 			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_uart_ex.c</locationURI>
+		</link>
+		<link>
+			<name>Libraries/STM32U5_HAL/stm32u5xx_hal_wwdg.c</name>
+			<type>1</type>
+			<locationURI>WORKSPACE_LOC/Drivers/STM32U5xx_HAL/Src/stm32u5xx_hal_wwdg.c</locationURI>
 		</link>
 		<link>
 			<name>Libraries/freertos_kernel/event_groups.c</name>
