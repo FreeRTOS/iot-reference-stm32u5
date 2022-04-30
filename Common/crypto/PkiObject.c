@@ -71,7 +71,7 @@ PkiStatus_t xPrvMbedtlsErrToPkiStatus( int lError )
 
 #ifdef TEST_AUTOMATION_INTEGRATION
 char g_CodeSigningCert[] = otapalconfigCODE_SIGNING_CERTIFICATE;
-char g_ClientPublicKey[] = keyCLIENT_PUBLIC_KEY_PEM;
+char g_SignerPublicKey[] = keyOTA_SIGNER_PUB_KEY_PEM;
 char g_ClientPrivateKey[] = keyCLIENT_PRIVATE_KEY_PEM;
 #endif
 
@@ -85,11 +85,29 @@ PkiObject_t xPkiObjectFromLabel( const char * pcLabel )
     {
 #ifdef TEST_AUTOMATION_INTEGRATION
         if( ( strcmp( OTA_SIGNING_KEY_LABEL, pcLabel ) == 0 )
-            && ( strlen(g_ClientPublicKey) > 0))
+            && ( strlen(g_SignerPublicKey) > 0))
         {
             xPkiObject.xForm = OBJ_FORM_PEM;
-            xPkiObject.uxLen = strlen(g_ClientPublicKey)+1;
-            xPkiObject.pucBuffer = g_ClientPublicKey;
+            xPkiObject.uxLen = strlen(g_SignerPublicKey)+1;
+            xPkiObject.pucBuffer = g_SignerPublicKey;
+            //xPkiObject.xPsaCryptoId = OTA_SIGNING_KEY_ID;
+            return xPkiObject;
+        }
+        if( ( strcmp( TLS_KEY_PRV_LABEL, pcLabel ) == 0 )
+            && ( strlen(g_ClientPrivateKey) > 0))
+        {
+            xPkiObject.xForm = OBJ_FORM_PEM;
+            xPkiObject.uxLen = strlen(g_ClientPrivateKey)+1;
+            xPkiObject.pucBuffer = g_ClientPrivateKey;
+            //xPkiObject.xPsaCryptoId = OTA_SIGNING_KEY_ID;
+            return xPkiObject;
+        }
+        if( ( strcmp( TLS_CERT_LABEL, pcLabel ) == 0 )
+            && ( strlen(g_CodeSigningCert) > 0))
+        {
+            xPkiObject.xForm = OBJ_FORM_PEM;
+            xPkiObject.uxLen = strlen(g_CodeSigningCert)+1;
+            xPkiObject.pucBuffer = g_CodeSigningCert;
             //xPkiObject.xPsaCryptoId = OTA_SIGNING_KEY_ID;
             return xPkiObject;
         }
