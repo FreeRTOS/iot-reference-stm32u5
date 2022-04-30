@@ -135,7 +135,7 @@ const CLI_Command_Definition_t xCommandDef_assert =
 {
     "assert",
     "assert\r\n"
-    "   Cause a a failed assertion.\r\n\n",
+    "   Cause a failed assertion.\r\n\n",
     vAssertCommand
 };
 
