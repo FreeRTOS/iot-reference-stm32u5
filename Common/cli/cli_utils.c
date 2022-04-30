@@ -62,6 +62,11 @@ static void vUptimeCommand( ConsoleIO_t * const pxCIO,
                             uint32_t ulArgc,
                             char * ppcArgv[] );
 
+static void vAssertCommand( ConsoleIO_t * const pxCIO,
+                            uint32_t ulArgc,
+                            char * ppcArgv[] );
+
+
 
 const CLI_Command_Definition_t xCommandDef_ps =
 {
@@ -124,6 +129,14 @@ const CLI_Command_Definition_t xCommandDef_uptime =
     "uptime\r\n"
     "    Display system uptime.\r\n\n",
     vUptimeCommand
+};
+
+const CLI_Command_Definition_t xCommandDef_assert =
+{
+    "assert",
+    "assert\r\n"
+    "   Cause a a failed assertion.\r\n\n",
+    vAssertCommand
 };
 
 /*-----------------------------------------------------------*/
@@ -647,4 +660,11 @@ static void vUptimeCommand( ConsoleIO_t * const pxCIO,
     {
         pxCIO->write( pcCliScratchBuffer, ( size_t ) lRslt );
     }
+}
+
+static void vAssertCommand( ConsoleIO_t * const pxCIO,
+                            uint32_t ulArgc,
+                            char * ppcArgv[] )
+{
+    configASSERT( 0 );
 }
