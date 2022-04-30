@@ -48,7 +48,7 @@
 
 #define TEST_AUTOMATION_INTEGRATION (1)
 #define otapalconfigCODE_SIGNING_CERTIFICATE ""
-#define keyOTA_SIGNER_PUB_KEY_PEM ""
+#define keyCLIENT_CERTIFICATE_PEM ""
 #define keyCLIENT_PRIVATE_KEY_PEM ""
 
 /**
