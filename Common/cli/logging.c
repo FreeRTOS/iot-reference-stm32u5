@@ -59,10 +59,7 @@ void vDyingGasp( void )
     BaseType_t xNumBytes = 0;
 
     /* Pet the watchdog so that the message is not lost */
-    if( pxHwndIwdg != NULL )
-    {
-        HAL_IWDG_Refresh( pxHwndIwdg );
-    }
+    vPetWatchdog();
 
     pxEarlyUart = vInitUartEarly();
 
@@ -73,10 +70,7 @@ void vDyingGasp( void )
         ( void ) HAL_UART_Transmit( pxEarlyUart, ( uint8_t * ) "\r\n", 2, 10 * 1000 );
 
         /* Pet the watchdog */
-        if( pxHwndIwdg != NULL )
-        {
-            HAL_IWDG_Refresh( pxHwndIwdg );
-        }
+        vPetWatchdog();
     }
     while( xNumBytes != 0 );
 
