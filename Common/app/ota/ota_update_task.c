@@ -1211,7 +1211,8 @@ void vOTAUpdateTask( void * pvParam )
         }
     }
 
-    if( xResult == pdPASS )
+    if( ( xResult == pdPASS ) &&
+        ( xMQTTAgentHandle != NULL ) )
     {
         xMQTTStatus = MqttAgent_SubscribeSync( xMQTTAgentHandle,
                                                OTA_JOB_NOTIFY_TOPIC_FILTER,
