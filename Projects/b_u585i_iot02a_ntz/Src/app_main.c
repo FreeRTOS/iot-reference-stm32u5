@@ -179,6 +179,8 @@ extern void vShadowDeviceTask( void * );
 extern void vOTAUpdateTask( void * pvParam );
 extern void vDefenderAgentTask( void * );
 
+extern void otaPal_EarlyInit( void );
+
 void vInitTask( void * pvArgs )
 {
     BaseType_t xResult;
@@ -199,6 +201,8 @@ void vInitTask( void * pvArgs )
         FLASH_WaitForLastOperation( 1000 );
 
         LogInfo( "File System mounted." );
+
+        otaPal_EarlyInit();
 
         ( void ) xEventGroupSetBits( xSystemEvents, EVT_MASK_FS_READY );
 
