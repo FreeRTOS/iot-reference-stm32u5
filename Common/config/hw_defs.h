@@ -52,5 +52,16 @@ void GPIO_EXTI_Register_Callback( uint16_t usGpioPinMask,
                                   GPIOInterruptCallback_t pvCallback,
                                   void * pvContext );
 
+void vDoSystemReset( void );
+
+static inline void vPetWatchdog( void )
+{
+    /* Check / pet the watchdog */
+    if( pxHwndIwdg != NULL )
+    {
+        HAL_IWDG_Refresh( pxHwndIwdg );
+    }
+}
+
 
 #endif /* __HW_DEFS */

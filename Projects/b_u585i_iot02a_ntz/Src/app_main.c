@@ -273,13 +273,13 @@ static void vDetermineResetSource()
     {
         pcResetSource = "BORRSTF: Brownout";
     }
-    else if( ulCsrFlags & RCC_CSR_PINRSTF_Msk )
-    {
-        pcResetSource = "PINRSTF: NSRT Pin";
-    }
     else if( ulCsrFlags & RCC_CSR_OBLRSTF_Msk )
     {
         pcResetSource = "OBLRSTF: Option Byte Load";
+    }
+    else if( ulCsrFlags & RCC_CSR_PINRSTF_Msk )
+    {
+        pcResetSource = "PINRSTF: NSRT Pin";
     }
     else
     {
@@ -426,12 +426,30 @@ void vApplicationStackOverflowHook( TaskHandle_t xTask,
 #if configUSE_IDLE_HOOK == 1
 void vApplicationIdleHook( void )
 {
-    /* Check / pet the watchdog */
-    if( pxHwndIwdg != NULL )
-    {
-        HAL_IWDG_Refresh( pxHwndIwdg );
-    }
+    vPetWatchdog();
 }
 #endif /* configUSE_IDLE_HOOK == 1 */
+
+/*-----------------------------------------------------------*/
+
+void vDoSystemReset( void )
+{
+    /*TODO: Disconnect MQTT */
+    /*TODO: Disconnect from WiFi */
+
+    vPetWatchdog();
+
+    if( xTaskGetSchedulerState() == taskSCHEDULER_RUNNING )
+    {
+        vTaskSuspendAll();
+    }
+
+    LogSys( "System Reset in progress." );
+
+    /* Drain log buffers */
+    vDyingGasp();
+
+    NVIC_SystemReset();
+}
 
 /*-----------------------------------------------------------*/
