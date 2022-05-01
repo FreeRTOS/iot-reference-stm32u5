@@ -26,7 +26,7 @@
  */
 
 #include "logging_levels.h"
-#define LOG_LEVEL    LOG_ERROR
+#define LOG_LEVEL    LOG_INFO
 #include "logging.h"
 
 #include <string.h>
@@ -47,150 +47,303 @@
 
 #include "PkiObject.h"
 
-const char OTA_JsonFileSignatureKey[ OTA_FILE_SIG_KEY_STR_MAX_LENGTH ] = "sig-sha256-ecdsa";
-
-#define FLASH_START_CURRENT_BANK    ( ( uint32_t ) FLASH_BASE )
-
-#define FLASH_START_PASSIVE_BANK    ( ( uint32_t ) ( FLASH_BASE + FLASH_BANK_SIZE ) )
+#define FLASH_START_INACTIVE_BANK    ( ( uint32_t ) ( FLASH_BASE + FLASH_BANK_SIZE ) )
 
 #define NUM_QUAD_WORDS( length )         ( length >> 4UL )
 
 #define NUM_REMAINING_BYTES( length )    ( length & 0x0F )
 
-#define ALTERNATE_BANK( bank )           ( ( bank == FLASH_BANK_1 ) ? FLASH_BANK_2 : FLASH_BANK_1 )
-
 #define IMAGE_CONTEXT_FILE_NAME    "/ota/image_state"
 
-typedef enum OtaPalImageStateInternal
-{
-    OTA_PAL_IMAGE_STATE_UNKNOWN = 0,
-    OTA_PAL_IMAGE_STATE_PROGRAMMING,
-    OTA_PAL_IMAGE_STATE_PENDING_COMMIT,
-    OTA_PAL_IMAGE_STATE_COMMITTED,
-    OTA_PAL_IMAGE_STATE_INVALID
-} OtaPalImageStateInternal_t;
+#define OTA_IMAGE_MIN_SIZE         ( 16 )
 
-typedef struct OtaImageContext
+
+typedef enum
 {
-    uint32_t ulBank;
+    OTA_PAL_NOT_INITIALIZED = 0,
+    OTA_PAL_READY,
+    OTA_PAL_FILE_OPEN,
+    OTA_PAL_PENDING_ACTIVATION,
+    OTA_PAL_PENDING_SELF_TEST,
+    OTA_PAL_PROTECTIVE_SWAPPED_BACK,
+    OTA_PAL_ACCEPTED,
+    OTA_PAL_REJECTED,
+    OTA_PAL_INVALID
+} OtaPalState_t;
+
+static const char * ppcPalStateString[] =
+{
+    "Not Initialized",
+    "Ready",
+    "File Open",
+    "Pending Activation",
+    "Pending Self Test",
+    "Accepted",
+    "Rejected",
+    "Invalid"
+};
+
+typedef struct
+{
+    OtaPalState_t xPalState;
+    uint32_t ulFileTargetBank;
+} OtaPalNvContext_t;
+
+typedef struct
+{
+    uint32_t ulTargetBank;
     uint32_t ulBaseAddress;
     uint32_t ulImageSize;
-    OtaPalImageStateInternal_t state;
-} OtaImageContext_t;
+    OtaPalState_t xPalState;
+    BaseType_t xObLaunchPending;
+} OtaPalContext_t;
 
-static FLASH_OBProgramInitTypeDef OBInit;
 
-static BaseType_t prvLoadImageContextFromFlash( OtaImageContext_t * pContext )
+const char OTA_JsonFileSignatureKey[] = "sig-sha256-ecdsa";
+
+static OtaPalContext_t xPalContext =
 {
-    lfs_ssize_t lReturn = LFS_ERR_CORRUPT;
-    BaseType_t status = pdFALSE;
-    lfs_t * pLfsCtx = pxGetDefaultFsCtx();
-    const char * pcFileName = IMAGE_CONTEXT_FILE_NAME;
+    .xPalState        = OTA_PAL_NOT_INITIALIZED,
+    .ulTargetBank     = 0,
+    .ulBaseAddress    = 0,
+    .ulImageSize      = 0,
+    .xObLaunchPending = pdFALSE,
+};
 
-    lfs_file_t xFile = { 0 };
+static uint32_t ulBankAtBootup = 0;
 
-    /* Open the file */
-    lReturn = lfs_file_open( pLfsCtx, &xFile, pcFileName, LFS_O_RDONLY );
+/* Static function forward declarations */
 
-    /* Read the header */
-    if( lReturn == LFS_ERR_OK )
+/* Load/Save/Delete */
+static BaseType_t prvInitializePalContext( OtaPalContext_t * pxContext );
+static BaseType_t prvWritePalNvContext( OtaPalContext_t * pxContext );
+static BaseType_t prvDeleteImageNvContext( void );
+static OtaPalContext_t * prvGetImageContext( void );
+
+/* Active / Inactive bank helpers */
+static uint32_t prvGetActiveBank( void );
+static uint32_t prvGetInactiveBank( void );
+
+/* STM32 HAL Wrappers */
+static HAL_StatusTypeDef prvFlashSetDualBankMode( void );
+static BaseType_t prvSelectBank( uint32_t ulNewBank );
+static uint32_t prvGetBankSettingFromOB( void );
+
+static void prvOptionByteApply( void );
+
+/* Flash write./erase */
+static HAL_StatusTypeDef prvWriteToFlash( uint32_t destination,
+                                          uint8_t * pSource,
+                                          uint32_t length );
+
+static BaseType_t prvEraseBank( uint32_t bankNumber );
+
+/* Verify signature */
+static OtaPalStatus_t prvValidateSignature( const char * pcPubKeyLabel,
+                                            const unsigned char * pucSignature,
+                                            const size_t uxSignatureLength,
+                                            const unsigned char * pucImageHash,
+                                            const size_t uxHashLength );
+
+static BaseType_t xCalculateImageHash( const unsigned char * pucImageAddress,
+                                       const size_t uxImageLength,
+                                       unsigned char * pucHashBuffer,
+                                       size_t uxHashBufferLength,
+                                       size_t * puxHashLength );
+
+static const char * pcPalStateToString( OtaPalState_t xPalState )
+{
+    const char * pcStateString = "";
+
+    if( xPalState <= OTA_PAL_INVALID )
     {
-        lReturn = lfs_file_read( pLfsCtx, &xFile, pContext, sizeof( OtaImageContext_t ) );
-
-        if( lReturn == sizeof( OtaImageContext_t ) )
-        {
-            status = pdTRUE;
-        }
-        else
-        {
-            LogError( ( " Failed to read OTA image context from file %s, error = %d.\r\n ", pcFileName, lReturn ) );
-        }
-
-        ( void ) lfs_file_close( pLfsCtx, &xFile );
+        pcStateString = ppcPalStateString[ xPalState ];
     }
 
-    return status;
+    return pcStateString;
 }
 
-static BaseType_t prvSaveImageContextToFlash( OtaImageContext_t * pContext )
+static inline uint32_t ulGetOtherBank( uint32_t ulBankNumber )
 {
-    lfs_ssize_t lReturn = LFS_ERR_CORRUPT;
-    BaseType_t status = pdFALSE;
-    lfs_t * pLfsCtx = pxGetDefaultFsCtx();
-    const char * pcFileName = IMAGE_CONTEXT_FILE_NAME;
+    uint32_t ulRevertBank;
 
-    lfs_file_t xFile = { 0 };
-
-    /* Open the file */
-    lReturn = lfs_file_open( pLfsCtx, &xFile, pcFileName, ( LFS_O_WRONLY | LFS_O_CREAT | LFS_O_TRUNC ) );
-
-    /* Read the header */
-    if( lReturn == LFS_ERR_OK )
+    if( ulBankNumber == FLASH_BANK_2 )
     {
-        lReturn = lfs_file_write( pLfsCtx, &xFile, pContext, sizeof( OtaImageContext_t ) );
-
-        if( lReturn == sizeof( OtaImageContext_t ) )
-        {
-            status = pdTRUE;
-        }
-        else
-        {
-            LogError( ( "Failed to save OTA image context to file %s, error = %d.\r\n", pcFileName, lReturn ) );
-        }
-
-        ( void ) lfs_file_close( pLfsCtx, &xFile );
+        ulRevertBank = FLASH_BANK_1;
+    }
+    else if( ulBankNumber == FLASH_BANK_1 )
+    {
+        ulRevertBank = FLASH_BANK_2;
     }
     else
     {
-        LogError( ( "Failed to open file %s to save OTA image context, error = %d.\r\n ", pcFileName, lReturn ) );
+        ulRevertBank = 0;
     }
 
-    return status;
+    return ulRevertBank;
 }
 
-static BaseType_t prvRemoveImageContextFromFlash( void )
+static BaseType_t prvInitializePalContext( OtaPalContext_t * pxContext )
 {
-    lfs_ssize_t lReturn = LFS_ERR_CORRUPT;
-    BaseType_t status = pdFALSE;
-    lfs_t * pLfsCtx = pxGetDefaultFsCtx();
-    const char * pcFileName = IMAGE_CONTEXT_FILE_NAME;
-    struct lfs_info xFileInfo = { 0 };
+    BaseType_t xResult = pdTRUE;
+    lfs_t * pxLfsCtx = NULL;
 
-    if( lfs_stat( pLfsCtx, pcFileName, &xFileInfo ) == LFS_ERR_OK )
+    configASSERT( pxContext != NULL );
+
+    pxLfsCtx = pxGetDefaultFsCtx();
+
+    if( pxLfsCtx == NULL )
     {
+        LogError( "File system is not ready" );
+        xResult = pdFALSE;
+    }
+    else
+    {
+        lfs_file_t xFile = { 0 };
+        lfs_ssize_t xLfsErr = LFS_ERR_CORRUPT;
+
+        pxContext->xPalState = OTA_PAL_READY;
+        pxContext->ulTargetBank = 0;
+        pxContext->ulBaseAddress = 0;
+        pxContext->ulImageSize = 0;
+        pxContext->xObLaunchPending = pdFALSE;
+
         /* Open the file */
-        lReturn = lfs_remove( pLfsCtx, pcFileName );
+        xLfsErr = lfs_file_open( pxLfsCtx, &xFile, IMAGE_CONTEXT_FILE_NAME, LFS_O_RDONLY );
 
-        if( lReturn == LFS_ERR_OK )
+        if( xLfsErr != LFS_ERR_OK )
         {
-            status = pdTRUE;
+            LogInfo( "OTA PAL NV context file not found. Using defaults." );
+        }
+        else
+        {
+            OtaPalNvContext_t xNvContext = { 0 };
+
+            xLfsErr = lfs_file_read( pxLfsCtx, &xFile, &xNvContext, sizeof( OtaPalNvContext_t ) );
+
+            if( xLfsErr != sizeof( OtaPalNvContext_t ) )
+            {
+                LogError( " Failed to read OTA image context from file: %s, rc: %d", IMAGE_CONTEXT_FILE_NAME, xLfsErr );
+            }
+            else
+            {
+                pxContext->xPalState = xNvContext.xPalState;
+                pxContext->ulTargetBank = xNvContext.ulFileTargetBank;
+                pxContext->ulBaseAddress = 0;
+                pxContext->ulImageSize = 0;
+            }
+
+            ( void ) lfs_file_close( pxLfsCtx, &xFile );
+        }
+    }
+
+    return xResult;
+}
+
+static BaseType_t prvWritePalNvContext( OtaPalContext_t * pxContext )
+{
+    BaseType_t xResult = pdTRUE;
+    lfs_t * pxLfsCtx = pxGetDefaultFsCtx();
+
+    configASSERT( pxContext != NULL );
+
+    if( pxLfsCtx == NULL )
+    {
+        xResult = pdFALSE;
+        LogError( "File system not ready." );
+    }
+    else
+    {
+        lfs_ssize_t xLfsErr = LFS_ERR_CORRUPT;
+        lfs_file_t xFile = { 0 };
+        OtaPalNvContext_t xNvContext;
+
+        xNvContext.ulFileTargetBank = pxContext->ulTargetBank;
+        xNvContext.xPalState = pxContext->xPalState;
+
+        /* Open the file */
+        xLfsErr = lfs_file_open( pxLfsCtx, &xFile, IMAGE_CONTEXT_FILE_NAME, ( LFS_O_WRONLY | LFS_O_CREAT | LFS_O_TRUNC ) );
+
+        if( xLfsErr == LFS_ERR_OK )
+        {
+            xLfsErr = lfs_file_write( pxLfsCtx, &xFile, &xNvContext, sizeof( OtaPalNvContext_t ) );
+
+            if( xLfsErr != sizeof( OtaPalNvContext_t ) )
+            {
+                LogError( "Failed to save OTA image context to file %s, error = %d.", IMAGE_CONTEXT_FILE_NAME, xLfsErr );
+                xResult = pdFALSE;
+            }
+
+            ( void ) lfs_file_close( pxLfsCtx, &xFile );
+        }
+        else
+        {
+            LogError( "Failed to open file %s to save OTA image context, error = %d. ", IMAGE_CONTEXT_FILE_NAME, xLfsErr );
+        }
+    }
+
+    return xResult;
+}
+
+static BaseType_t prvDeleteImageNvContext( void )
+{
+    BaseType_t xResult = pdTRUE;
+    lfs_t * pxLfsCtx = NULL;
+
+    pxLfsCtx = pxGetDefaultFsCtx();
+
+    if( pxLfsCtx == NULL )
+    {
+        xResult = pdFALSE;
+        LogError( "File system not ready." );
+    }
+    else
+    {
+        struct lfs_info xFileInfo = { 0 };
+
+        lfs_ssize_t xLfsErr = LFS_ERR_CORRUPT;
+
+        xLfsErr = lfs_stat( pxLfsCtx, IMAGE_CONTEXT_FILE_NAME, &xFileInfo );
+
+        if( xLfsErr == LFS_ERR_OK )
+        {
+            xLfsErr = lfs_remove( pxLfsCtx, IMAGE_CONTEXT_FILE_NAME );
+
+            if( xLfsErr != LFS_ERR_OK )
+            {
+                xResult = pdFALSE;
+            }
+        }
+    }
+
+    return xResult;
+}
+
+
+static OtaPalContext_t * prvGetImageContext( void )
+{
+    OtaPalContext_t * pxCtx = NULL;
+
+    if( xPalContext.xPalState == OTA_PAL_NOT_INITIALIZED )
+    {
+        if( prvInitializePalContext( &xPalContext ) == pdTRUE )
+        {
+            pxCtx = &xPalContext;
         }
     }
     else
     {
-        status = pdTRUE;
+        pxCtx = &xPalContext;
     }
 
-    return status;
-}
-
-
-static OtaImageContext_t * prvGetImageContext( void )
-{
-    static OtaImageContext_t imageContext = { 0 };
-
-    if( imageContext.state == OTA_PAL_IMAGE_STATE_UNKNOWN )
-    {
-        ( void ) prvLoadImageContextFromFlash( &imageContext );
-    }
-
-    return &imageContext;
+    return pxCtx;
 }
 
 
 static HAL_StatusTypeDef prvFlashSetDualBankMode( void )
 {
     HAL_StatusTypeDef status = HAL_ERROR;
+    FLASH_OBProgramInitTypeDef xObContext;
 
     /* Allow Access to Flash control registers and user Flash */
     status = HAL_FLASH_Unlock();
@@ -203,14 +356,14 @@ static HAL_StatusTypeDef prvFlashSetDualBankMode( void )
         if( status == HAL_OK )
         {
             /* Get the Dual bank configuration status */
-            HAL_FLASHEx_OBGetConfig( &OBInit );
+            HAL_FLASHEx_OBGetConfig( &xObContext );
 
-            if( ( OBInit.USERConfig & OB_DUALBANK_DUAL ) != OB_DUALBANK_DUAL )
+            if( ( xObContext.USERConfig & OB_DUALBANK_DUAL ) != OB_DUALBANK_DUAL )
             {
-                OBInit.OptionType = OPTIONBYTE_USER;
-                OBInit.USERType = OB_USER_DUALBANK;
-                OBInit.USERConfig = OB_DUALBANK_DUAL;
-                status = HAL_FLASHEx_OBProgram( &OBInit );
+                xObContext.OptionType = OPTIONBYTE_USER;
+                xObContext.USERType = OB_USER_DUALBANK;
+                xObContext.USERConfig = OB_DUALBANK_DUAL;
+                status = HAL_FLASHEx_OBProgram( &xObContext );
             }
 
             ( void ) HAL_FLASH_OB_Lock();
@@ -222,103 +375,163 @@ static HAL_StatusTypeDef prvFlashSetDualBankMode( void )
     return status;
 }
 
-static HAL_StatusTypeDef prvSwapBankAndBoot( void )
+static BaseType_t prvSelectBank( uint32_t ulNewBank )
 {
-    HAL_StatusTypeDef status = HAL_ERROR;
+    FLASH_OBProgramInitTypeDef xObContext = { 0 };
+    BaseType_t xResult = pdTRUE;
 
-    /* Allow Access to Flash control registers and user Flash */
-    status = HAL_FLASH_Unlock();
-
-    if( status == HAL_OK )
+    /* Validate selected bank */
+    if( ( ulNewBank != FLASH_BANK_1 ) &&
+        ( ulNewBank != FLASH_BANK_2 ) )
     {
-        /* Allow Access to option bytes sector */
-        status = HAL_FLASH_OB_Unlock();
+        xResult = pdFALSE;
+    }
+    else if( prvGetBankSettingFromOB() != ulNewBank )
+    {
+        HAL_StatusTypeDef xHalStatus = HAL_ERROR;
 
-        if( status == HAL_OK )
+        /* Allow Access to Flash control registers and user Flash */
+        xHalStatus = HAL_FLASH_Unlock();
+
+        if( xHalStatus != HAL_OK )
         {
-            /* Get the Dual boot configuration status */
-            HAL_FLASHEx_OBGetConfig( &OBInit );
+            /* Lock on error */
+            ( void ) HAL_FLASH_Lock();
+        }
+        else /* xHalStatus == HAL_OK */
+        {
+            /* Allow Access to option bytes sector */
+            xHalStatus = HAL_FLASH_OB_Unlock();
 
-            OBInit.OptionType = OPTIONBYTE_USER;
-            OBInit.USERType = OB_USER_SWAP_BANK;
-
-            if( ( ( OBInit.USERConfig ) & ( OB_SWAP_BANK_ENABLE ) ) != OB_SWAP_BANK_ENABLE )
+            if( xHalStatus != HAL_OK )
             {
-                OBInit.USERConfig = OB_SWAP_BANK_ENABLE;
+                /* Lock on error */
+                ( void ) HAL_FLASH_Lock();
             }
-            else
-            {
-                OBInit.USERConfig = OB_SWAP_BANK_DISABLE;
-            }
-
-            status = HAL_FLASHEx_OBProgram( &OBInit );
-
-            if( status == HAL_OK )
-            {
-                /* Generate System Reset to load the new option byte values ***************/
-                /* On successful option bytes loading the system should reset and control should not return from this function. */
-                status = HAL_FLASH_OB_Launch();
-            }
-
-            ( void ) HAL_FLASH_OB_Lock();
         }
 
-        ( void ) HAL_FLASH_Lock();
+        if( xHalStatus == HAL_OK )
+        {
+            /* Get the SWAP_BANK status */
+            HAL_FLASHEx_OBGetConfig( &xObContext );
+
+            xObContext.OptionType = OPTIONBYTE_USER;
+            xObContext.USERType = OB_USER_SWAP_BANK;
+
+            if( ulNewBank == FLASH_BANK_2 )
+            {
+                xObContext.USERConfig = OB_SWAP_BANK_ENABLE;
+            }
+            else /* ulNewBank == FLASH_BANK_1  */
+            {
+                xObContext.USERConfig = OB_SWAP_BANK_DISABLE;
+            }
+
+            xHalStatus = HAL_FLASHEx_OBProgram( &xObContext );
+
+            ( void ) HAL_FLASH_OB_Lock();
+            ( void ) HAL_FLASH_Lock();
+        }
+
+        xResult = ( xHalStatus == HAL_OK ) ? pdTRUE : pdFALSE;
     }
 
-    return status;
+    return xResult;
 }
 
+static void prvOptionByteApply( void )
+{
+    vPetWatchdog();
+
+    if( xTaskGetSchedulerState() == taskSCHEDULER_RUNNING )
+    {
+        vTaskSuspendAll();
+    }
+
+    LogSys( "Option Byte Launch in progress." );
+
+    /* Drain log buffers */
+    vDyingGasp();
+
+
+    ( void ) HAL_FLASH_Unlock();
+    ( void ) HAL_FLASH_OB_Unlock();
+    /* Generate System Reset to load the new option byte values ***************/
+    /* On successful option bytes loading the system should reset and control should not return from this function. */
+    ( void ) HAL_FLASH_OB_Launch();
+}
 
 static uint32_t prvGetActiveBank( void )
 {
-    HAL_StatusTypeDef status = HAL_ERROR;
-    uint32_t ulBank = 0UL;
-
-    status = HAL_FLASH_Unlock();
-
-    if( status == HAL_OK )
+    if( ulBankAtBootup == 0 )
     {
-        status = HAL_FLASH_OB_Unlock();
-
-        if( status == HAL_OK )
-        {
-            /* Get the Dual boot configuration status */
-            HAL_FLASHEx_OBGetConfig( &OBInit );
-            ulBank = ( ( OBInit.USERConfig & OB_SWAP_BANK_ENABLE ) == OB_SWAP_BANK_ENABLE ) ? FLASH_BANK_2 : FLASH_BANK_1;
-
-            ( void ) HAL_FLASH_OB_Lock();
-        }
-
-        ( void ) HAL_FLASH_Lock();
+        ulBankAtBootup = prvGetBankSettingFromOB();
     }
 
-    return ulBank;
+    return ulBankAtBootup;
 }
 
-static uint32_t prvGetPassiveBank( void )
+static uint32_t prvGetBankSettingFromOB( void )
 {
-    uint32_t activeBank = prvGetActiveBank();
+    uint32_t ulCurrentBank = 0UL;
+    FLASH_OBProgramInitTypeDef xObContext = { 0 };
 
-    return ALTERNATE_BANK( activeBank );
+    /* Get the Dual boot configuration status */
+    HAL_FLASHEx_OBGetConfig( &xObContext );
+
+    if( ( xObContext.USERConfig & OB_SWAP_BANK_ENABLE ) == OB_SWAP_BANK_ENABLE )
+    {
+        ulCurrentBank = FLASH_BANK_2;
+    }
+    else
+    {
+        ulCurrentBank = FLASH_BANK_1;
+    }
+
+    return ulCurrentBank;
+}
+
+static uint32_t prvGetInactiveBank( void )
+{
+    uint32_t ulActiveBank = prvGetActiveBank();
+
+    uint32_t ulInactiveBank;
+
+    if( ulActiveBank == FLASH_BANK_1 )
+    {
+        ulInactiveBank = FLASH_BANK_2;
+    }
+    else if( ulActiveBank == FLASH_BANK_2 )
+    {
+        ulInactiveBank = FLASH_BANK_1;
+    }
+    else
+    {
+        ulInactiveBank = 0UL;
+    }
+
+    return ulInactiveBank;
 }
 
 
 static HAL_StatusTypeDef prvWriteToFlash( uint32_t destination,
                                           uint8_t * pSource,
-                                          uint32_t length )
+                                          uint32_t ulLength )
 {
     HAL_StatusTypeDef status = HAL_OK;
     uint32_t i = 0U;
     uint8_t quadWord[ 16 ] = { 0 };
-    uint32_t numQuadWords = NUM_QUAD_WORDS( length );
-    uint32_t remainingBytes = NUM_REMAINING_BYTES( length );
+    uint32_t numQuadWords = NUM_QUAD_WORDS( ulLength );
+    uint32_t remainingBytes = NUM_REMAINING_BYTES( ulLength );
 
     /* Unlock the Flash to enable the flash control register access *************/
     HAL_FLASH_Unlock();
 
     for( i = 0U; i < numQuadWords; i++ )
     {
+        /* Pet the watchdog */
+        vPetWatchdog();
+
         /* Device voltage range supposed to be [2.7V to 3.6V], the operation will
          * be done by word */
 
@@ -375,57 +588,107 @@ static HAL_StatusTypeDef prvWriteToFlash( uint32_t destination,
     return status;
 }
 
-static HAL_StatusTypeDef prvEraseBank( uint32_t bankNumber )
+static BaseType_t prvEraseBank( uint32_t bankNumber )
 {
-    uint32_t errorCode = 0U, pageError = 0U;
-    FLASH_EraseInitTypeDef pEraseInit;
-    HAL_StatusTypeDef status = HAL_ERROR;
+    BaseType_t xResult = pdTRUE;
 
-    /* Unlock the Flash to enable the flash control register access *************/
-    status = HAL_FLASH_Unlock();
+    configASSERT( ( bankNumber == FLASH_BANK_1 ) || ( bankNumber == FLASH_BANK_2 ) );
 
-    if( status == HAL_OK )
+    if( HAL_FLASH_Unlock() == HAL_OK )
     {
+        uint32_t pageError = 0U;
+        FLASH_EraseInitTypeDef pEraseInit;
+
         pEraseInit.Banks = bankNumber;
         pEraseInit.NbPages = FLASH_PAGE_NB;
         pEraseInit.Page = 0U;
         pEraseInit.TypeErase = FLASH_TYPEERASE_MASSERASE;
 
-        status = HAL_FLASHEx_Erase( &pEraseInit, &pageError );
-
-        /* Lock the Flash to disable the flash control register access (recommended
-         *  to protect the FLASH memory against possible unwanted operation) *********/
-        ( void ) HAL_FLASH_Lock();
-
-        if( status != HAL_OK )
+        if( HAL_FLASHEx_Erase( &pEraseInit, &pageError ) != HAL_OK )
         {
-            errorCode = HAL_FLASH_GetError();
-            LogError( ( "Failed to erase the flash bank, errorCode = %u, pageError = %u.\r\n", errorCode, pageError ) );
+            LogError( "Failed to erase the flash bank, errorCode = %u, pageError = %u.", HAL_FLASH_GetError(), pageError );
+            xResult = pdFALSE;
         }
+
+        ( void ) HAL_FLASH_Lock();
     }
     else
     {
-        LogError( ( "Failed to lock flash for erase, errorCode = %u.\r\n", HAL_FLASH_GetError() ) );
+        LogError( "Failed to lock flash for erase, errorCode = %u.", HAL_FLASH_GetError() );
+        xResult = pdFALSE;
     }
 
-    return status;
+    return xResult;
 }
 
-static BaseType_t prvValidateImageSignature( OtaImageContext_t * pImageContext,
-                                             const char * pcPubKeyLabel,
-                                             uint8_t * pucSignature,
-                                             size_t uxSignatureLength )
+static BaseType_t xCalculateImageHash( const unsigned char * pucImageAddress,
+                                       const size_t uxImageLength,
+                                       unsigned char * pucHashBuffer,
+                                       size_t uxHashBufferLength,
+                                       size_t * puxHashLength )
 {
     BaseType_t xResult = pdTRUE;
+    const mbedtls_md_info_t * pxMdInfo = NULL;
+
+    pxMdInfo = mbedtls_md_info_from_type( MBEDTLS_MD_SHA256 );
+
+    configASSERT( pucHashBuffer != NULL );
+    configASSERT( pucImageAddress != NULL );
+    configASSERT( uxImageLength > 0 );
+    configASSERT( uxHashBufferLength > 0 );
+
+    if( pxMdInfo == NULL )
+    {
+        LogError( "Failed to initialize mbedtls md_info object." );
+        xResult = pdFALSE;
+    }
+    else if( mbedtls_md_get_size( pxMdInfo ) > uxHashBufferLength )
+    {
+        LogError( "Hash buffer is too small." );
+        xResult = pdFALSE;
+    }
+    else
+    {
+        int lRslt = 0;
+        size_t uxHashLength = 0;
+
+        uxHashLength = mbedtls_md_get_size( pxMdInfo );
+
+        configASSERT( uxHashLength <= MBEDTLS_MD_MAX_SIZE );
+
+        lRslt = mbedtls_md( pxMdInfo, pucImageAddress, uxImageLength, pucHashBuffer );
+
+        MBEDTLS_MSG_IF_ERROR( lRslt, "Failed to compute hash of the staged firmware image." );
+
+        if( lRslt != 0 )
+        {
+            xResult = pdFALSE;
+        }
+        else
+        {
+            *puxHashLength = uxHashLength;
+        }
+    }
+
+    return xResult;
+}
+
+static OtaPalStatus_t prvValidateSignature( const char * pcPubKeyLabel,
+                                            const unsigned char * pucSignature,
+                                            const size_t uxSignatureLength,
+                                            const unsigned char * pucImageHash,
+                                            const size_t uxHashLength )
+{
+    OtaPalStatus_t xStatus = OtaPalSuccess;
+
     PkiObject_t xOtaSigningPubKey;
     mbedtls_pk_context xPubKeyCtx;
-    size_t uxHashLength = 0;
-    unsigned char pucHashBuffer[ MBEDTLS_MD_MAX_SIZE ];
 
     configASSERT( pcPubKeyLabel != NULL );
-    configASSERT( pImageContext != NULL );
     configASSERT( pucSignature != NULL );
     configASSERT( uxSignatureLength > 0 );
+    configASSERT( pucImageHash != NULL );
+    configASSERT( uxHashLength > 0 );
 
     mbedtls_pk_init( &xPubKeyCtx );
 
@@ -433,332 +696,431 @@ static BaseType_t prvValidateImageSignature( OtaImageContext_t * pImageContext,
 
     if( xPkiReadPublicKey( &xPubKeyCtx, &xOtaSigningPubKey ) != PKI_SUCCESS )
     {
-        LogError( ( "Failed to load OTA Signing public key." ) );
-        xResult = pdFALSE;
-    }
-
-    /* Calculate the hash of the image */
-    if( xResult == pdTRUE )
-    {
-        const mbedtls_md_info_t * pxMdInfo = NULL;
-
-        pxMdInfo = mbedtls_md_info_from_type( MBEDTLS_MD_SHA256 );
-
-        if( pxMdInfo == NULL )
-        {
-            LogError( ( "Failed to initialize mbedtls md_info object." ) );
-            xResult = pdFALSE;
-        }
-        else
-        {
-            int lRslt = 0;
-
-            uxHashLength = mbedtls_md_get_size( pxMdInfo );
-
-            configASSERT( uxHashLength <= MBEDTLS_MD_MAX_SIZE );
-
-            lRslt = mbedtls_md( pxMdInfo, ( void * ) ( pImageContext->ulBaseAddress ), pImageContext->ulImageSize, pucHashBuffer );
-
-            MBEDTLS_MSG_IF_ERROR( lRslt, "Failed to compute hash of the staged firmware image." );
-
-            if( lRslt != 0 )
-            {
-                xResult = pdFALSE;
-            }
-        }
+        LogError( "Failed to load OTA Signing public key." );
+        xStatus = OtaPalBadSignerCert;
     }
 
     /* Verify the provided signature against the image hash */
-    if( xResult == pdTRUE )
+    if( xStatus == OtaPalSuccess )
     {
-        int lRslt = mbedtls_pk_verify( &xPubKeyCtx, MBEDTLS_MD_SHA256, pucHashBuffer, uxHashLength, pucSignature, uxSignatureLength );
+        int lRslt = mbedtls_pk_verify( &xPubKeyCtx, MBEDTLS_MD_SHA256,
+                                       pucImageHash, uxHashLength,
+                                       pucSignature, uxSignatureLength );
 
         if( lRslt != 0 )
         {
             MBEDTLS_MSG_IF_ERROR( lRslt, "OTA Image signature verification failed." );
-            xResult = pdFALSE;
+            xStatus = OTA_PAL_COMBINE_ERR( OtaPalSignatureCheckFailed, lRslt );
         }
     }
 
     mbedtls_pk_free( &xPubKeyCtx );
 
-    return xResult;
+    return xStatus;
 }
 
-OtaPalStatus_t otaPal_CreateFileForRx( OtaFileContext_t * const pFileContext )
+OtaPalStatus_t otaPal_CreateFileForRx( OtaFileContext_t * const pxFileContext )
 {
-    OtaPalStatus_t otaStatus = OtaPalRxFileCreateFailed;
-    HAL_StatusTypeDef status = HAL_ERROR;
-    uint32_t ulPassiveBank = prvGetPassiveBank();
-    OtaImageContext_t * pContext = prvGetImageContext();
+    OtaPalStatus_t xOtaStatus = OtaPalSuccess;
+    OtaPalContext_t * pxContext = prvGetImageContext();
 
 
-    if( ( pFileContext->pFile == NULL ) &&
-        ( pFileContext->fileSize <= FLASH_BANK_SIZE ) &&
-        ( pContext->state != OTA_PAL_IMAGE_STATE_PROGRAMMING ) )
+    LogInfo( "CreateFileForRx" );
+
+    if( ( pxFileContext->fileSize > FLASH_BANK_SIZE ) ||
+        ( pxFileContext->fileSize < OTA_IMAGE_MIN_SIZE ) )
     {
-        /* Set dual bank mode if not already set. */
-        status = prvFlashSetDualBankMode();
+        xOtaStatus = OtaPalRxFileTooLarge;
+    }
+    else if( strncmp( "/", ( char * ) pxFileContext->pFilePath, pxFileContext->filePathMaxSize ) != 0 )
+    {
+        xOtaStatus = OtaPalRxFileCreateFailed;
+    }
+    else if( ( pxContext == NULL ) ||
+             ( pxContext->xPalState != OTA_PAL_READY ) )
+    {
+        xOtaStatus = OtaPalRxFileCreateFailed;
+    }
+    else
+    {
+        uint32_t ulTargetBank = 0UL;
 
-        if( status == HAL_OK )
+        /* Set dual bank mode if not already set. */
+        if( prvFlashSetDualBankMode() != HAL_OK )
         {
-            /* Get Alternate bank and erase the flash. */
-            status = prvEraseBank( ulPassiveBank );
+            xOtaStatus = OtaPalRxFileCreateFailed;
         }
 
-        if( status == HAL_OK )
+        if( xOtaStatus == OtaPalSuccess )
         {
-            pContext->ulBank = ulPassiveBank;
-            pContext->ulBaseAddress = FLASH_START_PASSIVE_BANK;
-            pContext->ulImageSize = pFileContext->fileSize;
-            pContext->state = OTA_PAL_IMAGE_STATE_PROGRAMMING;
-            pFileContext->pFile = ( uint8_t * ) pContext;
-            otaStatus = OtaPalSuccess;
+            ulTargetBank = prvGetInactiveBank();
+
+            if( ulTargetBank == 0UL )
+            {
+                xOtaStatus = OtaPalRxFileCreateFailed;
+            }
+        }
+
+        if( ( xOtaStatus == OtaPalSuccess ) &&
+            ( prvEraseBank( ulTargetBank ) != pdTRUE ) )
+        {
+            xOtaStatus = OtaPalRxFileCreateFailed;
+        }
+
+        if( xOtaStatus == OtaPalSuccess )
+        {
+            pxContext->ulTargetBank = ulTargetBank;
+            pxContext->xObLaunchPending = pdFALSE;
+            pxContext->ulBaseAddress = FLASH_START_INACTIVE_BANK;
+            pxContext->ulImageSize = pxFileContext->fileSize;
+            pxContext->xPalState = OTA_PAL_FILE_OPEN;
+            pxFileContext->pFile = pxContext;
+        }
+
+        if( xOtaStatus == OtaPalSuccess )
+        {
+            if( prvWritePalNvContext( pxContext ) == pdFALSE )
+            {
+                xOtaStatus = OtaPalBootInfoCreateFailed;
+            }
         }
     }
 
-    return otaStatus;
+    return xOtaStatus;
 }
 
-int16_t otaPal_WriteBlock( OtaFileContext_t * const pFileContext,
+int16_t otaPal_WriteBlock( OtaFileContext_t * const pxFileContext,
                            uint32_t offset,
                            uint8_t * const pData,
                            uint32_t blockSize )
 {
-    int16_t bytesWritten = 0;
-    HAL_StatusTypeDef status = HAL_ERROR;
-    OtaImageContext_t * pContext = prvGetImageContext();
+    int16_t sBytesWritten = -1;
+    OtaPalContext_t * pxContext = prvGetImageContext();
 
-    if( ( pFileContext->pFile == ( uint8_t * ) ( pContext ) ) &&
-        ( ( offset + blockSize ) <= pContext->ulImageSize ) &&
-        ( pContext->state == OTA_PAL_IMAGE_STATE_PROGRAMMING ) )
+    configASSERT( blockSize < INT16_MAX );
+
+    if( ( pxFileContext == NULL ) ||
+        ( pxFileContext->pFile != ( uint8_t * ) ( pxContext ) ) )
     {
-        status = prvWriteToFlash( ( pContext->ulBaseAddress + offset ), pData, blockSize );
-
-        if( status == HAL_OK )
-        {
-            bytesWritten = blockSize;
-        }
+        LogError( "File context is invalid." );
+    }
+    else if( pxContext == NULL )
+    {
+        LogError( "PAL context is invalid." );
+    }
+    else if( ( offset + blockSize ) > pxContext->ulImageSize )
+    {
+        LogError( "Offset and blockSize exceeds image size" );
+    }
+    else if( pxContext->xPalState != OTA_PAL_FILE_OPEN )
+    {
+        LogError( "Invalid PAL State. otaPal_WriteBlock may only occur when file is open." );
+    }
+    else if( pData == NULL )
+    {
+        LogError( "pData is NULL." );
+    }
+    else if( prvWriteToFlash( ( pxContext->ulBaseAddress + offset ), pData, blockSize ) == HAL_OK )
+    {
+        sBytesWritten = ( int16_t ) blockSize;
     }
 
-    return bytesWritten;
+    return sBytesWritten;
 }
 
-OtaPalStatus_t otaPal_CloseFile( OtaFileContext_t * const pFileContext )
+OtaPalStatus_t otaPal_CloseFile( OtaFileContext_t * const pxFileContext )
 {
-    OtaPalStatus_t otaStatus = OtaPalCommitFailed;
-    BaseType_t signatureValidationStatus;
-    OtaImageContext_t * pContext = prvGetImageContext();
+    OtaPalStatus_t xOtaStatus = OtaPalSuccess;
 
-    if( ( pFileContext->pFile == ( uint8_t * ) ( pContext ) ) &&
-        ( pContext->state == OTA_PAL_IMAGE_STATE_PROGRAMMING ) )
+    OtaPalContext_t * pxContext = prvGetImageContext();
+
+    configASSERT( pxFileContext );
+    configASSERT( pxContext );
+    configASSERT( pxFileContext->pSignature );
+
+    if( ( pxFileContext->pFile == ( uint8_t * ) ( pxContext ) ) &&
+        ( pxContext->xPalState == OTA_PAL_FILE_OPEN ) )
 
     {
-        LogInfo( ( "Validating the integrity of OTA image using digital signature.\r\n" ) );
+        unsigned char pucHashBuffer[ MBEDTLS_MD_MAX_SIZE ];
+        BaseType_t xImageIsValid = pdFALSE;
+        size_t uxHashLength = 0;
 
-        signatureValidationStatus = prvValidateImageSignature( pContext,
-                                                               ( char * ) pFileContext->pCertFilepath,
-                                                               pFileContext->pSignature->data,
-                                                               pFileContext->pSignature->size );
-
-        if( signatureValidationStatus == pdPASS )
+        if( xCalculateImageHash( ( unsigned char * ) ( pxContext->ulBaseAddress ),
+                                 ( size_t ) pxContext->ulImageSize,
+                                 pucHashBuffer, MBEDTLS_MD_MAX_SIZE, &uxHashLength ) != pdTRUE )
         {
-            pContext->state = OTA_PAL_IMAGE_STATE_PENDING_COMMIT;
-            otaStatus = OtaPalSuccess;
+            xOtaStatus = OtaPalFileClose;
+        }
+
+        if( xOtaStatus == OtaPalSuccess )
+        {
+            xOtaStatus = prvValidateSignature( ( char * ) pxFileContext->pCertFilepath,
+                                               pxFileContext->pSignature->data,
+                                               pxFileContext->pSignature->size,
+                                               pucHashBuffer,
+                                               uxHashLength );
+        }
+
+        if( xOtaStatus == OtaPalSuccess )
+        {
+            pxContext->xPalState = OTA_PAL_PENDING_ACTIVATION;
+            prvWritePalNvContext( pxContext );
         }
         else
         {
-            otaStatus = OTA_PAL_COMBINE_ERR( OtaPalSignatureCheckFailed, signatureValidationStatus );
+            otaPal_SetPlatformImageState( pxFileContext, OtaImageStateRejected );
         }
     }
-
-    return otaStatus;
-}
-
-
-OtaPalStatus_t otaPal_Abort( OtaFileContext_t * const pFileContext )
-{
-    OtaImageContext_t * pContext = prvGetImageContext();
-
-    if( pContext->state != OTA_PAL_IMAGE_STATE_UNKNOWN )
+    else
     {
-        /*
-         * Erase the bank and set the image state to invalid, if its being programmed or
-         * pending reboot after validation.
-         */
-        if( pFileContext->pFile != NULL )
-        {
-            ( void ) prvEraseBank( pContext->ulBank );
-            pFileContext->pFile = NULL;
-        }
-
-        pContext->state = OTA_PAL_IMAGE_STATE_INVALID;
     }
 
-    return OtaPalSuccess;
+    return xOtaStatus;
 }
 
-OtaPalStatus_t otaPal_ActivateNewImage( OtaFileContext_t * const pFileContext )
-{
-    OtaPalStatus_t otaStatus = OtaPalActivateFailed;
-    BaseType_t status = pdFALSE;
-    OtaImageContext_t * pContext = prvGetImageContext();
 
-    if( ( pContext->state == OTA_PAL_IMAGE_STATE_PENDING_COMMIT ) &&
-        ( pContext->ulBank == prvGetPassiveBank() ) )
+OtaPalStatus_t otaPal_Abort( OtaFileContext_t * const pxFileContext )
+{
+    return otaPal_SetPlatformImageState( pxFileContext, OtaImageStateAborted );
+}
+
+OtaPalStatus_t otaPal_ActivateNewImage( OtaFileContext_t * const pxFileContext )
+{
+    OtaPalStatus_t xOtaStatus = OtaPalActivateFailed;
+
+    OtaPalContext_t * pxContext = prvGetImageContext();
+
+    LogInfo( "ActivateNewImage xPalState: %s", pcPalStateToString( pxContext->xPalState ) );
+
+    if( ( pxContext != NULL ) &&
+        ( pxContext->xPalState == OTA_PAL_PENDING_ACTIVATION ) )
     {
         /** Save current image context to flash so as to fetch the context after boot. */
-        status = prvSaveImageContextToFlash( pContext );
-
-        if( status == pdTRUE )
+        if( prvWritePalNvContext( pxContext ) == pdTRUE )
         {
-            ( void ) prvSwapBankAndBoot();
-
-            /** Boot failed. Removed the save context from flash. */
-            ( void ) prvRemoveImageContextFromFlash();
+            if( prvSelectBank( pxContext->ulTargetBank ) == pdTRUE )
+            {
+                pxContext->xPalState = OTA_PAL_PENDING_SELF_TEST;
+                pxContext->xObLaunchPending = pdTRUE;
+                xOtaStatus = otaPal_ResetDevice( pxFileContext );
+            }
+            else
+            {
+                /* Failed to select Bank */
+                prvDeleteImageNvContext();
+            }
         }
     }
 
-    return otaStatus;
+    return xOtaStatus;
 }
 
-OtaPalStatus_t otaPal_SetPlatformImageState( OtaFileContext_t * const pFileContext,
-                                             OtaImageState_t eState )
+void otaPal_EarlyInit( void )
 {
-    OtaPalStatus_t otaStatus = OtaPalBadImageState;
-    OtaImageContext_t * pContext = prvGetImageContext();
-    uint32_t activeBank = prvGetActiveBank();
-    uint32_t passiveBank = ALTERNATE_BANK( activeBank );
+    OtaPalContext_t * pxCtx = prvGetImageContext();
 
-    if( pContext->state != OTA_PAL_IMAGE_STATE_UNKNOWN )
+    ulBankAtBootup = prvGetActiveBank();
+
+    /* Check that context is valid */
+    if( ( pxCtx != NULL ) &&
+        ( pxCtx->xPalState == OTA_PAL_PENDING_SELF_TEST ) )
     {
-        switch( eState )
+        /* Set bank back to original bank until self test has completed. */
+        ( void ) prvSelectBank( ulGetOtherBank( pxCtx->ulTargetBank ) );
+
+        pxCtx->xPalState = OTA_PAL_PROTECTIVE_SWAPPED_BACK;
+        prvWritePalNvContext( pxCtx );
+    }
+
+    LogSys( "Booting from flash bank: %ld.", ulBankAtBootup );
+}
+
+OtaPalStatus_t otaPal_SetPlatformImageState( OtaFileContext_t * const pxFileContext,
+                                             OtaImageState_t xDesiredState )
+{
+    OtaPalStatus_t xOtaStatus = OtaPalBadImageState;
+
+    OtaPalContext_t * pxContext = prvGetImageContext();
+
+    LogInfo( "SetPlatformImageState: %d, %s", xDesiredState, pcPalStateToString( pxContext->xPalState ) );
+
+    ( void ) pxFileContext;
+
+    if( pxContext != NULL )
+    {
+        switch( xDesiredState )
         {
-            case OtaImageStateTesting:
-
-                if( ( pContext->state == OTA_PAL_IMAGE_STATE_PENDING_COMMIT ) &&
-                    ( pContext->ulBank == activeBank ) )
-                {
-                    /** New image bank is booted successfully and it's pending for commit. */
-                    otaStatus = OtaPalSuccess;
-                }
-
-                break;
-
             case OtaImageStateAccepted:
 
-                if( ( pContext->state == OTA_PAL_IMAGE_STATE_PENDING_COMMIT ) &&
-                    ( pContext->ulBank == activeBank ) )
+                /* Handle self test success or failure */
+                if( ( pxContext->xPalState == OTA_PAL_PENDING_SELF_TEST ) ||
+                    ( pxContext->xPalState == OTA_PAL_PROTECTIVE_SWAPPED_BACK ) )
                 {
-                    /** New image bank is booted successfully and it have passed self test. Make it as accepted
-                     * by removing the image context from flash and setting image state to valid. */
+                    if( prvSelectBank( pxContext->ulTargetBank ) == pdTRUE )
+                    {
+                        xOtaStatus = OtaPalSuccess;
+                        pxContext->xPalState = OTA_PAL_ACCEPTED;
+                    }
 
-                    prvRemoveImageContextFromFlash();
-
-                    ( void ) prvEraseBank( passiveBank );
-                    pContext->state = OTA_PAL_IMAGE_STATE_COMMITTED;
-                    otaStatus = OtaPalSuccess;
-                }
-                else
-                {
-                    otaStatus = OtaPalCommitFailed;
+                    /* Delete context from flash */
+                    ( void ) prvDeleteImageNvContext();
                 }
 
                 break;
 
             case OtaImageStateRejected:
 
-                /* Make sure the image is not committed already. A committed image cannot be aborted or rejected. */
-                if( pContext->state != OTA_PAL_IMAGE_STATE_COMMITTED )
+                switch( pxContext->xPalState )
                 {
-                    /*
-                     *  Remove the persisted state of image from flash.
-                     */
-                    prvRemoveImageContextFromFlash();
-                    pContext->state = OTA_PAL_IMAGE_STATE_INVALID;
-                    otaStatus = OtaPalSuccess;
+                    case OTA_PAL_PENDING_SELF_TEST:
+                    case OTA_PAL_PROTECTIVE_SWAPPED_BACK:
+                    case OTA_PAL_PENDING_ACTIVATION:
+                    case OTA_PAL_FILE_OPEN:
+
+                        if( ( prvSelectBank( ulGetOtherBank( pxContext->ulTargetBank ) ) == pdTRUE ) &&
+                            ( prvEraseBank( pxContext->ulTargetBank ) == pdTRUE ) &&
+                            ( prvDeleteImageNvContext() == pdTRUE ) )
+                        {
+                            xOtaStatus = OtaPalSuccess;
+                            pxContext->xPalState = OTA_PAL_REJECTED;
+                        }
+
+                        break;
+
+                    case OTA_PAL_REJECTED:
+                        xOtaStatus = OtaPalSuccess;
+                        break;
+
+                    default:
+                        break;
                 }
-                else
+
+                break;
+
+            case OtaImageStateTesting:
+
+                switch( pxContext->xPalState )
                 {
-                    otaStatus = OtaPalRejectFailed;
+                    case OTA_PAL_PENDING_ACTIVATION:
+                    case OTA_PAL_PENDING_SELF_TEST:
+
+                        /* Select target bank to start testing */
+                        if( prvSelectBank( pxContext->ulTargetBank ) == pdTRUE )
+                        {
+                            xOtaStatus = OtaPalSuccess;
+                            pxContext->xPalState = OTA_PAL_PENDING_SELF_TEST;
+                        }
+
+                        break;
+
+                    default:
+                        break;
                 }
 
                 break;
 
             case OtaImageStateAborted:
 
-                /* Make sure the image is not committed already. A committed image cannot be aborted or rejected. */
-                if( pContext->state != OTA_PAL_IMAGE_STATE_COMMITTED )
+                switch( pxContext->xPalState )
                 {
-                    /*
-                     *  Remove the persisted state of image from flash.
-                     */
-                    prvRemoveImageContextFromFlash();
-                    pContext->state = OTA_PAL_IMAGE_STATE_INVALID;
-                    otaStatus = OtaPalSuccess;
-                }
-                else
-                {
-                    otaStatus = OtaPalAbortFailed;
+                    case OTA_PAL_READY:
+                    case OTA_PAL_REJECTED:
+                    case OTA_PAL_ACCEPTED:
+                        xOtaStatus = OtaPalSuccess;
+                        break;
+
+                    case OTA_PAL_FILE_OPEN:
+                    case OTA_PAL_PENDING_ACTIVATION:
+                    case OTA_PAL_PENDING_SELF_TEST:
+                    case OTA_PAL_PROTECTIVE_SWAPPED_BACK:
+
+                        if( ( prvSelectBank( ulGetOtherBank( pxContext->ulTargetBank ) ) == pdTRUE ) &&
+                            ( prvEraseBank( pxContext->ulTargetBank ) == pdTRUE ) &&
+                            ( prvDeleteImageNvContext() == pdTRUE ) )
+                        {
+                            xOtaStatus = OtaPalSuccess;
+                            pxContext->xPalState = OTA_PAL_READY;
+                        }
+
+                        break;
+
+                    default:
+                        break;
                 }
 
                 break;
 
             default:
-                LogError( ( "Unknown state transition, current state = %d, expected state = %d.\r\n", pContext->state, eState ) );
+                pxContext->xPalState = OTA_PAL_INVALID;
                 break;
         }
     }
 
-    return otaStatus;
+    return xOtaStatus;
 }
 
 
-OtaPalImageState_t otaPal_GetPlatformImageState( OtaFileContext_t * const pFileContext )
+OtaPalImageState_t otaPal_GetPlatformImageState( OtaFileContext_t * const pxFileContext )
 {
-    OtaPalImageState_t state = OtaPalImageStateUnknown;
-    OtaImageContext_t * pContext = prvGetImageContext();
+    OtaPalImageState_t xOtaState = OtaPalImageStateUnknown;
+    OtaPalContext_t * pxContext = prvGetImageContext();
 
-    switch( pContext->state )
+    ( void ) pxFileContext;
+
+    configASSERT( pxFileContext );
+
+    if( pxContext != NULL )
     {
-        case OTA_PAL_IMAGE_STATE_PENDING_COMMIT:
-            state = OtaPalImageStatePendingCommit;
-            break;
+        switch( pxContext->xPalState )
+        {
+            case OTA_PAL_NOT_INITIALIZED:
+            case OTA_PAL_INVALID:
+            default:
+                xOtaState = OtaPalImageStateUnknown;
+                break;
 
-        case OTA_PAL_IMAGE_STATE_COMMITTED:
-            state = OtaPalImageStateValid;
-            break;
+            case OTA_PAL_READY:
+            case OTA_PAL_FILE_OPEN:
+            case OTA_PAL_REJECTED:
+                xOtaState = OtaPalImageStateInvalid;
+                break;
 
-        case OTA_PAL_IMAGE_STATE_INVALID:
-            state = OtaPalImageStateInvalid;
-            break;
+            case OTA_PAL_PENDING_ACTIVATION:
+            case OTA_PAL_PENDING_SELF_TEST:
+            case OTA_PAL_PROTECTIVE_SWAPPED_BACK:
+                xOtaState = OtaPalImageStatePendingCommit;
+                break;
 
-        case OTA_PAL_IMAGE_STATE_PROGRAMMING:
-        case OTA_PAL_IMAGE_STATE_UNKNOWN:
-        default:
-            state = OtaPalImageStateUnknown;
-            break;
+            case OTA_PAL_ACCEPTED:
+                ( void ) prvSelectBank( pxContext->ulTargetBank );
+                xOtaState = OtaPalImageStateValid;
+                break;
+        }
+
+        LogInfo( "GetPlatformImageState: %d: %s", xOtaState, pcPalStateToString( pxContext->xPalState ) );
     }
 
-    return state;
+    return xOtaState;
 }
 
 
-OtaPalStatus_t otaPal_ResetDevice( OtaFileContext_t * const pFileContext )
+OtaPalStatus_t otaPal_ResetDevice( OtaFileContext_t * const pxFileContext )
 {
-    OtaImageContext_t * pContext = prvGetImageContext();
-    uint32_t activeBank = prvGetActiveBank();
+    ( void ) pxFileContext;
+    OtaPalContext_t * pxContext = prvGetImageContext();
 
-    if( ( pContext->state != OTA_PAL_IMAGE_STATE_COMMITTED ) &&
-        ( pContext->ulBank == activeBank ) )
+    LogSys( "OTA PAL reset request received." );
+
+    /* Perform Option Byte Launch if pending. */
+    if( ( pxContext != NULL ) &&
+        ( pxContext->xObLaunchPending == pdTRUE ) )
     {
-        prvSwapBankAndBoot();
+        prvOptionByteApply();
     }
     else
     {
-        /*
-         * TODO: Just Boot.
-         */
+        vDoSystemReset();
     }
 
     return OtaPalUninitialized;
