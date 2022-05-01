@@ -144,12 +144,15 @@
  * This topic filter is used to match the responses from OTA service for OTA agent job requests. THe
  * topic filter is a reserved topic which is not subscribed with MQTT broker.
  */
-#define OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER    OTA_TOPIC_PREFIX "/+/jobs/$next/get/accepted"
+#define OTA_JOB_ACCEPTED_RESPONSE_TOPIC_FILTER    OTA_TOPIC_PREFIX "/+/jobs/$next/get/#"
 
 /**
  * @brief Wildcard topic filter for matching OTA job update messages (used to detect cancellation).
  */
-#define OTA_JOB_UPDATE_TOPIC_FILTER               OTA_TOPIC_PREFIX "/+/jobs/+/update/#"
+#define OTA_JOB_UPDATE_TOPIC_FILTER               OTA_TOPIC_PREFIX "/+/jobs/+/update/rejected"
+
+#define OTA_JOB_TOPIC_FILTER                      OTA_TOPIC_PREFIX "/+/jobs/#"
+#define OTA_JOB_TOPIC_FILTER_LEN                  ( sizeof( OTA_TOPIC_PREFIX "/+/jobs/#" ) - 1 )
 
 /**
  * @brief Wildcard topic filter for matching OTA data packets.
@@ -570,12 +573,6 @@ static void otaAppCallback( OtaJobEvent_t event,
              * and shuts down the OTA agent.
              */
             LogError( ( "New image activation failed." ) );
-
-            /* Shutdown OTA Agent, if it is required that the unsubscribe operations are not
-             * performed while shutting down please set the second parameter to 0 instead of 1. */
-/*            OTA_Shutdown( 0, 1 ); */
-            vTaskDelay( 100 );
-            NVIC_SystemReset();
             break;
 
         case OtaJobEventFail:
@@ -640,13 +637,10 @@ static void otaAppCallback( OtaJobEvent_t event,
             /* Requires manual activation of previous image as self-test for
              * new image downloaded failed.*/
             LogError( ( "OTA Self-test failed for new image. shutting down OTA Agent." ) );
+            break;
 
-            /* Shutdown OTA Agent, if it is required that the unsubscribe operations are not
-             * performed while shutting down please set the second parameter to 0 instead of 1. */
-/*            OTA_Shutdown( 0, 1 ); */
-            vTaskDelay( 100 );
-            NVIC_SystemReset();
-
+        case OtaJobEventUpdateComplete:
+            LogInfo( "OTA Update Complete" );
             break;
 
         default:
@@ -779,8 +773,8 @@ static IncomingPubCallback_t prvGetPublishCallbackFromTopic( const char * pcTopi
 
     ( void ) MQTT_MatchTopic( pcTopicFilter,
                               usTopicFilterLength,
-                              OTA_JOB_NOTIFY_TOPIC_FILTER,
-                              OTA_JOB_NOTIFY_TOPIC_FILTER_LENGTH,
+                              OTA_JOB_TOPIC_FILTER,
+                              OTA_JOB_TOPIC_FILTER_LEN,
                               &xIsMatch );
 
     if( xIsMatch == true )
@@ -1193,7 +1187,6 @@ void vOTAUpdateTask( void * pvParam )
         {
             LogInfo( "MQTT Agent is connected. Resuming..." );
             xMQTTAgentHandle = xGetMqttAgentHandle();
-            configASSERT( xMQTTAgentHandle != NULL );
         }
         else
         {
@@ -1221,7 +1214,7 @@ void vOTAUpdateTask( void * pvParam )
     if( xResult == pdPASS )
     {
         xMQTTStatus = MqttAgent_SubscribeSync( xMQTTAgentHandle,
-                                               OTA_JOB_UPDATE_TOPIC_FILTER,
+                                               OTA_JOB_NOTIFY_TOPIC_FILTER,
                                                MQTTQoS0,
                                                prvProcessIncomingJobMessage,
                                                NULL );
