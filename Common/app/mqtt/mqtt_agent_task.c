@@ -1397,7 +1397,7 @@ MQTTStatus_t MqttAgent_SubscribeSync( MQTTAgentHandle_t xHandle,
     MQTTAgentTaskCtx_t * pxTaskCtx = ( MQTTAgentTaskCtx_t * ) xHandle;
     SubMgrCtx_t * pxCtx = &( pxTaskCtx->xSubMgrCtx );
 
-    if( ( pxCtx == NULL ) ||
+    if( ( xHandle == NULL ) ||
         ( pcTopicFilter == NULL ) ||
         ( pxCallback == NULL ) ||
         !prvValidateQoS( xRequestedQoS ) )
@@ -1647,7 +1647,7 @@ MQTTStatus_t MqttAgent_UnSubscribeSync( MQTTAgentHandle_t xHandle,
     SubMgrCtx_t * pxCtx = &( pxTaskCtx->xSubMgrCtx );
     BaseType_t xDoUnsubscibeFlag = pdFALSE;
 
-    if( ( pxCtx == NULL ) ||
+    if( ( xHandle == NULL ) ||
         ( pcTopicFilter == NULL ) ||
         ( pxCallback == NULL ) )
     {
