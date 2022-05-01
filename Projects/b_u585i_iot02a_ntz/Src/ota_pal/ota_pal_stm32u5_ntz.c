@@ -65,7 +65,8 @@ typedef enum
     OTA_PAL_FILE_OPEN,
     OTA_PAL_PENDING_ACTIVATION,
     OTA_PAL_PENDING_SELF_TEST,
-    OTA_PAL_PROTECTIVE_SWAPPED_BACK,
+    OTA_PAL_NEW_IMAGE_BOOTED,
+    OTA_PAL_NEW_IMAGE_WDT_RESET,
     OTA_PAL_ACCEPTED,
     OTA_PAL_REJECTED,
     OTA_PAL_INVALID
@@ -78,6 +79,8 @@ static const char * ppcPalStateString[] =
     "File Open",
     "Pending Activation",
     "Pending Self Test",
+    "New Image Booted",
+    "Watchdog Reset",
     "Accepted",
     "Rejected",
     "Invalid"
@@ -779,7 +782,7 @@ OtaPalStatus_t otaPal_CreateFileForRx( OtaFileContext_t * const pxFileContext )
 
         if( xOtaStatus == OtaPalSuccess )
         {
-            if( prvWritePalNvContext( pxContext ) == pdFALSE )
+            if( prvDeleteImageNvContext() == pdFALSE )
             {
                 xOtaStatus = OtaPalBootInfoCreateFailed;
             }
@@ -865,7 +868,6 @@ OtaPalStatus_t otaPal_CloseFile( OtaFileContext_t * const pxFileContext )
         if( xOtaStatus == OtaPalSuccess )
         {
             pxContext->xPalState = OTA_PAL_PENDING_ACTIVATION;
-            prvWritePalNvContext( pxContext );
         }
         else
         {
@@ -902,6 +904,7 @@ OtaPalStatus_t otaPal_ActivateNewImage( OtaFileContext_t * const pxFileContext )
             if( prvSelectBank( pxContext->ulTargetBank ) == pdTRUE )
             {
                 pxContext->xPalState = OTA_PAL_PENDING_SELF_TEST;
+                ( void ) prvWritePalNvContext( pxContext );
                 pxContext->xObLaunchPending = pdTRUE;
                 xOtaStatus = otaPal_ResetDevice( pxFileContext );
             }
@@ -923,17 +926,39 @@ void otaPal_EarlyInit( void )
     ulBankAtBootup = prvGetActiveBank();
 
     /* Check that context is valid */
-    if( ( pxCtx != NULL ) &&
-        ( pxCtx->xPalState == OTA_PAL_PENDING_SELF_TEST ) )
+    if( pxCtx != NULL )
     {
-        /* Set bank back to original bank until self test has completed. */
-        ( void ) prvSelectBank( ulGetOtherBank( pxCtx->ulTargetBank ) );
+        LogSys( "OTA EarlyInit: State: %s, Current Bank: %d, Target Bank: %d.", pcPalStateToString( pxCtx->xPalState ), ulBankAtBootup, pxCtx->ulTargetBank );
 
-        pxCtx->xPalState = OTA_PAL_PROTECTIVE_SWAPPED_BACK;
-        prvWritePalNvContext( pxCtx );
+        if( pxCtx->xPalState == OTA_PAL_PENDING_SELF_TEST )
+        {
+            configASSERT( pxCtx->ulTargetBank == ulBankAtBootup );
+
+            /* Update the state to show that the new image was booted successfully */
+            pxCtx->xPalState = OTA_PAL_NEW_IMAGE_BOOTED;
+            prvWritePalNvContext( pxCtx );
+        }
+        else if( pxCtx->xPalState == OTA_PAL_NEW_IMAGE_BOOTED )
+        {
+            uint32_t ulRevertBank = ulGetOtherBank( pxCtx->ulTargetBank );
+
+            pxCtx->xPalState = OTA_PAL_NEW_IMAGE_WDT_RESET;
+            prvWritePalNvContext( pxCtx );
+
+            LogError( "Detected a watchdog reset during first boot of new image. Reverting to bank: %d", ulRevertBank );
+
+            /* Set bank back to original bank until self test has completed. */
+            if( prvSelectBank( ulRevertBank ) == pdTRUE )
+            {
+                pxCtx->xObLaunchPending = pdTRUE;
+                otaPal_ResetDevice( NULL );
+            }
+        }
+        else
+        {
+            /* Empty */
+        }
     }
-
-    LogSys( "Booting from flash bank: %ld.", ulBankAtBootup );
 }
 
 OtaPalStatus_t otaPal_SetPlatformImageState( OtaFileContext_t * const pxFileContext,
@@ -955,7 +980,7 @@ OtaPalStatus_t otaPal_SetPlatformImageState( OtaFileContext_t * const pxFileCont
 
                 /* Handle self test success or failure */
                 if( ( pxContext->xPalState == OTA_PAL_PENDING_SELF_TEST ) ||
-                    ( pxContext->xPalState == OTA_PAL_PROTECTIVE_SWAPPED_BACK ) )
+                    ( pxContext->xPalState == OTA_PAL_NEW_IMAGE_BOOTED ) )
                 {
                     if( prvSelectBank( pxContext->ulTargetBank ) == pdTRUE )
                     {
@@ -974,7 +999,8 @@ OtaPalStatus_t otaPal_SetPlatformImageState( OtaFileContext_t * const pxFileCont
                 switch( pxContext->xPalState )
                 {
                     case OTA_PAL_PENDING_SELF_TEST:
-                    case OTA_PAL_PROTECTIVE_SWAPPED_BACK:
+                    case OTA_PAL_NEW_IMAGE_BOOTED:
+                    case OTA_PAL_NEW_IMAGE_WDT_RESET:
                     case OTA_PAL_PENDING_ACTIVATION:
                     case OTA_PAL_FILE_OPEN:
 
@@ -1010,6 +1036,7 @@ OtaPalStatus_t otaPal_SetPlatformImageState( OtaFileContext_t * const pxFileCont
                         {
                             xOtaStatus = OtaPalSuccess;
                             pxContext->xPalState = OTA_PAL_PENDING_SELF_TEST;
+                            ( void ) prvWritePalNvContext( pxContext );
                         }
 
                         break;
@@ -1033,7 +1060,8 @@ OtaPalStatus_t otaPal_SetPlatformImageState( OtaFileContext_t * const pxFileCont
                     case OTA_PAL_FILE_OPEN:
                     case OTA_PAL_PENDING_ACTIVATION:
                     case OTA_PAL_PENDING_SELF_TEST:
-                    case OTA_PAL_PROTECTIVE_SWAPPED_BACK:
+                    case OTA_PAL_NEW_IMAGE_BOOTED:
+                    case OTA_PAL_NEW_IMAGE_WDT_RESET:
 
                         if( ( prvSelectBank( ulGetOtherBank( pxContext->ulTargetBank ) ) == pdTRUE ) &&
                             ( prvEraseBank( pxContext->ulTargetBank ) == pdTRUE ) &&
@@ -1083,12 +1111,13 @@ OtaPalImageState_t otaPal_GetPlatformImageState( OtaFileContext_t * const pxFile
             case OTA_PAL_READY:
             case OTA_PAL_FILE_OPEN:
             case OTA_PAL_REJECTED:
+            case OTA_PAL_NEW_IMAGE_WDT_RESET:
                 xOtaState = OtaPalImageStateInvalid;
                 break;
 
             case OTA_PAL_PENDING_ACTIVATION:
             case OTA_PAL_PENDING_SELF_TEST:
-            case OTA_PAL_PROTECTIVE_SWAPPED_BACK:
+            case OTA_PAL_NEW_IMAGE_BOOTED:
                 xOtaState = OtaPalImageStatePendingCommit;
                 break;
 
