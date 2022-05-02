@@ -847,7 +847,6 @@ OtaPalStatus_t otaPal_CloseFile( OtaFileContext_t * const pxFileContext )
 
     {
         unsigned char pucHashBuffer[ MBEDTLS_MD_MAX_SIZE ];
-        BaseType_t xImageIsValid = pdFALSE;
         size_t uxHashLength = 0;
 
         if( xCalculateImageHash( ( unsigned char * ) ( pxContext->ulBaseAddress ),
