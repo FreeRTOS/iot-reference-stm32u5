@@ -1181,7 +1181,7 @@ void vOTAUpdateTask( void * pvParam )
                                         EVT_MASK_MQTT_CONNECTED,
                                         pdFALSE,
                                         pdTRUE,
-                                        pdMS_TO_TICKS( otaexampleTASK_DELAY_MS ) );
+                                        pdMS_TO_TICKS( 120*1000 ) );
 
         if( uxEvents & EVT_MASK_MQTT_CONNECTED )
         {

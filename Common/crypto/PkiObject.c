@@ -618,7 +618,10 @@ PkiStatus_t xPkiReadPublicKeyDer( unsigned char ** ppucPubKeyDer,
                 }
                 else
                 {
-                    *ppucPubKeyDer = ( unsigned char * ) pxPublicKey->pucBuffer;
+                    void *pvBuf = pvPortMalloc(pxPublicKey->uxLen);
+                    memcpy(pvBuf, pxPublicKey->pucBuffer, pxPublicKey->uxLen);
+
+                    *ppucPubKeyDer = ( unsigned char * ) pvBuf;
                     *puxPubKeyDerLen = pxPublicKey->uxLen;
                 }
 

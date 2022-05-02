@@ -998,21 +998,21 @@ TlsTransportStatus_t mbedtls_transport_configure( NetworkContext_t * pxNetworkCo
         xStatus = lMbedtlsErrToTransportError( lError );
     }
 
-    /* Set Maximum Fragment Length if enabled. */
-#ifdef MBEDTLS_SSL_MAX_FRAGMENT_LENGTH
-    if( xStatus == TLS_TRANSPORT_SUCCESS )
-    {
-        /* Enable the max fragment extension. 4096 bytes is currently the largest fragment size permitted.
-         * See RFC 8449 https://tools.ietf.org/html/rfc8449 for more information.
-         *
-         * Smaller values can be found in "mbedtls/include/ssl.h".
-         */
-        lError = mbedtls_ssl_conf_max_frag_len( pxSslConfig, MBEDTLS_SSL_MAX_FRAG_LEN_4096 );
-
-        MBEDTLS_MSG_IF_ERROR( lError, "Failed to configure maximum fragment length extension, " );
-        xStatus = lMbedtlsErrToTransportError( lError );
-    }
-#endif /* MBEDTLS_SSL_MAX_FRAGMENT_LENGTH */
+//    /* Set Maximum Fragment Length if enabled. */
+//#ifdef MBEDTLS_SSL_MAX_FRAGMENT_LENGTH
+//    if( xStatus == TLS_TRANSPORT_SUCCESS )
+//    {
+//        /* Enable the max fragment extension. 4096 bytes is currently the largest fragment size permitted.
+//         * See RFC 8449 https://tools.ietf.org/html/rfc8449 for more information.
+//         *
+//         * Smaller values can be found in "mbedtls/include/ssl.h".
+//         */
+//        lError = mbedtls_ssl_conf_max_frag_len( pxSslConfig, MBEDTLS_SSL_MAX_FRAG_LEN_4096 );
+//
+//        MBEDTLS_MSG_IF_ERROR( lError, "Failed to configure maximum fragment length extension, " );
+//        xStatus = lMbedtlsErrToTransportError( lError );
+//    }
+//#endif /* MBEDTLS_SSL_MAX_FRAGMENT_LENGTH */
 
     /* Load CA certificate chain. */
     if( xStatus == TLS_TRANSPORT_SUCCESS )

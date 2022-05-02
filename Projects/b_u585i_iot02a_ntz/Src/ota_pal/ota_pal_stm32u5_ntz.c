@@ -735,7 +735,7 @@ OtaPalStatus_t otaPal_CreateFileForRx( OtaFileContext_t * const pxFileContext )
     {
         xOtaStatus = OtaPalRxFileTooLarge;
     }
-    else if( strncmp( "/", ( char * ) pxFileContext->pFilePath, pxFileContext->filePathMaxSize ) != 0 )
+    else if( strncmp( "b_u585i_iot02a_ntz.bin", ( char * ) pxFileContext->pFilePath, pxFileContext->filePathMaxSize ) != 0 )
     {
         xOtaStatus = OtaPalRxFileCreateFailed;
     }
