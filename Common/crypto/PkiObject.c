@@ -73,6 +73,7 @@ PkiStatus_t xPrvMbedtlsErrToPkiStatus( int lError )
 char g_CodeSigningCert[] = otapalconfigCODE_SIGNING_CERTIFICATE;
 char g_ClientCertificate[] = keyCLIENT_CERTIFICATE_PEM;
 char g_ClientPrivateKey[] = keyCLIENT_PRIVATE_KEY_PEM;
+char g_CaRootCert[] = keyCA_ROOT_CERT_PEM;
 #endif
 
 /*-----------------------------------------------------------*/
@@ -108,6 +109,15 @@ PkiObject_t xPkiObjectFromLabel( const char * pcLabel )
             xPkiObject.xForm = OBJ_FORM_PEM;
             xPkiObject.uxLen = strlen(g_ClientCertificate)+1;
             xPkiObject.pucBuffer = g_ClientCertificate;
+            //xPkiObject.xPsaCryptoId = OTA_SIGNING_KEY_ID;
+            return xPkiObject;
+        }
+        if( ( strcmp( TLS_ROOT_CA_CERT_LABEL, pcLabel ) == 0 )
+            && ( strlen(g_CaRootCert) > 0))
+        {
+            xPkiObject.xForm = OBJ_FORM_PEM;
+            xPkiObject.uxLen = strlen(g_CaRootCert)+1;
+            xPkiObject.pucBuffer = g_CaRootCert;
             //xPkiObject.xPsaCryptoId = OTA_SIGNING_KEY_ID;
             return xPkiObject;
         }

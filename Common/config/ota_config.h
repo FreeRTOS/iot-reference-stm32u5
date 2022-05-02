@@ -50,6 +50,7 @@
 #define otapalconfigCODE_SIGNING_CERTIFICATE ""
 #define keyCLIENT_CERTIFICATE_PEM ""
 #define keyCLIENT_PRIVATE_KEY_PEM ""
+#define keyCA_ROOT_CERT_PEM ""
 
 /**
  * @brief Log base 2 of the size of the file data block message (excluding the header).
