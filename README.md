@@ -182,7 +182,7 @@ Download and install the latest version of each of the following packages:
 - [git](https://git-scm.com/downloads)
 - [7-zip](https://www.7-zip.org/download.html)
 
-### #Windows: Installation with Scoop Package Manager
+#### Windows: Installation with Scoop Package Manager
 With [scoop](https://scoop.sh/) package manager installed, run the following command from your preferred shell.
 ```
 scoop install python cmake git ninja 7zip perl
@@ -429,7 +429,8 @@ xattr -c /Applications/STM32CubeIDE.app
 > Note: If you are not asked to select a workspace when STM32CubeIDE start, you may access this dialog via the ***File -> Switch Workspace -> Other*** menu item.
 3. Select ***File -> Import***.
 4. Select ***General -> Existing Projects Into Workspace*** in the ***Select an Import Wizard*** dialog and click **Next >**.
-5. Click the check box next to both the *b_u585i_iot02a_ntz* and *b_u585i_iot02a_tfm* projects and then click **Next >**.
+5. Click **Browse** next to the *Select root directory* box and navigate to the root of this repository.
+6. Click the check box next to both the *b_u585i_iot02a_ntz* and *b_u585i_iot02a_tfm* projects and then click **Finish**.
 > Note: Ensure that *copy projects into workspace* is not selected
 
 ## Step 8: Build Firmware image and Flash your development board
@@ -441,7 +442,7 @@ For more information about the [Trust Zone Enabled](Projects/b_u585i_iot02a_tfm)
 
 ## Step 9: Provision Your Board
 
-### Option A: Provision automatically with provision.py
+### Option 9A: Provision automatically with provision.py
 
 The simplest way to provision your board is to run the tools/provision.py script.
 
@@ -495,7 +496,7 @@ optional arguments:
   --aws-access-key-secret AWS_ACCESS_KEY_SECRET
   ```
 
-### Option B: Provision manually via CLI
+### Option 9B: Provision manually via CLI
 Open the target board's serial port with your favorite serial terminal. Some common options are terraterm, putty, screen, minicom, and picocom. Additionally a serial terminal is included in the pyserial package installed in the workspace python environment.
 
 To use the pyserial utility, run the following command to interactively list available serial devices:
@@ -619,6 +620,203 @@ aws iot attach-policy \
     --target certificateArn \
     --policy-name AllowAllDev
 ```
+
+# Setting up FreeRTOS OTA
+
+## Generate a Code Signing key
+
+Devices uses digital signatures to verify the authenticity of the firmware updates sent over the air. Images are signed by an authorized source who creats the image, and device can verify the signature of the image, using the corresponding public key of the source. Steps below shows how to setup and provision the code signing credentials so as to enable cloud to digitally sign the image and the device to verify the image signature before boot.
+
+1. In your working directory, use the following text to create a file named *cert_config.txt*. Replace *test_signer@amazon.com* with your email address:
+
+```
+[ req ]
+prompt             = no
+distinguished_name = my_dn
+
+[ my_dn ]
+commonName = test_signer@amazon.com
+
+[ my_exts ]
+keyUsage         = digitalSignature
+extendedKeyUsage = codeSigning
+```
+2. Create an ECDSA code-signing private key:
+
+```
+openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -pkeyopt ec_param_enc:named_curve -outform PEM -out ecdsasigner-priv-key.pem
+```
+
+3. Generate the corresponding public key from the private key:
+```
+openssl ec -inform pem -in ecdsasigner-priv-key.pem -pubout -outform pem -out ecdsasigner-pub-key.pem
+```
+
+4. Create an ECDSA code-signing certificate to be uploaded to the AWS ACM service:
+
+```
+openssl req -new -x509 -config cert_config.txt -extensions my_exts -nodes -days 365 -key ecdsasigner-priv-key.pem -out ecdsasigner.crt
+
+```
+
+5. Import the code-signing certificate and private key into AWS Certificate Manager:
+
+> Note: This command displays an ARN for your certificate. You will need this ARN when you create an OTA update job later.
+
+```
+aws acm import-certificate --certificate fileb://ecdsasigner.crt --private-key fileb://ecdsasigner-priv-key.pem
+```
+
+6. Connect to the target device via a serial terminal. On the command line prompt type following command to import the OTA signing key:
+
+```
+> pki import key ota_signer_pub
+# Press `Enter` then paste the contents of the PEM public key file `ecdsasigner-pub-key.pem` into the terminal.
+# Press `Enter` again.
+```
+
+> Note: `ota_signer_pub` is the label used to refer to the code signing key during verification of the firmware update.
+
+7. Create a signing profile in AWS to sign the firmware image.
+
+```
+aws signer put-signing-profile --profile-name <your profile name> --signing-material certificateArn=<certificate arn created in step 4> --platform AmazonFreeRTOS-Default --signing-parameters certname=ota_signer_pub
+```
+
+## Setup OTA S3 bucket, Service role and policies in AWS
+
+1. S3 bucket is used to store the new firmware image to be updated. To create a new S3 bucket follow these steps here: https://docs.aws.amazon.com/freertos/latest/userguide/dg-ota-bucket.html
+
+2. Create a service role which grants permission for OTA service to access the firmware image: https://docs.aws.amazon.com/freertos/latest/userguide/create-service-role.html
+
+3. Create an OTA update policy using the documentatio here: https://docs.aws.amazon.com/freertos/latest/userguide/create-ota-user-policy.html
+
+4. Add a policy for AWS IoT to access the code signing profile: https://docs.aws.amazon.com/freertos/latest/userguide/code-sign-policy.html
+
+## Create a code signed firmware update job
+
+1. Bump up the version of the new firmware image to be updated. From the demo project, open File Common/config/ota_config.h and set APP_VERSION_MAJOR to 1 higher than current version. Build the firmware image using STM32Cube IDE.
+
+2. Upload the new image to the s3 bucket created in the previous section.
+
+```
+aws s3 cp <image binary path> s3://<s3 bucket for image>/
+
+```
+
+Get the latest s3 file version of the binary image by executing the command below. The command returns an array of json structs containing details of all version. To get the latest version ID, look for *VersionId* field in the json struct where *isLatest* field is *true*.
+
+```
+aws s3api  list-object-versions --bucket <s3 bucket for image> --prefix <image binary name>
+```
+
+3. Create a new OTA Update job configuration json file (Example: ota-update-job-config.json) in your filesystem as below. Substitue the parameters with the output obtained from steps above.
+
+```
+{
+     "otaUpdateId": "<A unique job ID for the OTA job>",
+     "targets": [
+         "arn:aws:iot:<region>:<account id>:thing/<thing name>"
+     ],
+     "targetSelection": "SNAPSHOT",
+     "files": [{
+         "fileName": "<image binary name>",
+         "fileType": 0,
+         "fileVersion": "1",
+         "fileLocation": {
+             "s3Location": {
+                 "bucket": "<s3 image bucket created above>",
+                 "key": "<image binary name>",
+                 "version": "<latest s3 file version of binary image>"
+             }
+         },
+         "codeSigning": {
+             "startSigningJobParameter": {
+                 "signingProfileName": "<signing profile name>",
+                 "destination": {
+                     "s3Destination": {
+                         "bucket": "<s3 image bucket created above>"
+                     }
+                 }
+             }
+         }
+     }],
+     "roleArn": "<ARN of the OTA service role created above>"
+ }
+
+```
+
+Create a new OTA update job from the configuration file:
+```
+aws iot create-ota-update --cli-input-json file://<ota job configuration file path in your filesystem>
+```
+
+The command on success returns the OTA Update identifier and status of the Job as `CREATE_PENDING`. To get the corresponding job ID of the OTA Job, execute the following command and look for `awsIotJobId` field in json document returned.
+
+```
+aws iot get-ota-update --ota-update-id=<ota update id created above>
+```
+Note down the job ID to check the status of the job later.
+
+
+#### Monitoring and Verification of firmware update
+
+ Once the job is created on the terminal logs, you will see that OTA job is accepted and device starts downloading image.
+
+
+ Create a new OTA update job from the configuration file:
+
+ ```
+ aws iot create-ota-update --cli-input-json file://<ota job configuration file path in your filesystem>
+ ```
+
+ The command on success returns the OTA Update identifier and status of the Job as *CREATE_PENDING*. To get the corresponding job ID of the OTA Job, execute the following command and look for *awsIotJobId* field in json document returned.
+
+ ```
+ aws iot get-ota-update --ota-update-id=<ota update id created above>
+ ```
+ Note down the job ID to check the status of the job later.
+
+ ## Monitoring and Verification of firmware update
+
+ 1. Once the job is created on the terminal logs, you will see that OTA job is accepted and device starts downloading image.
+
+```
+<INF>    16351 [OTAAgent] Current State=[WaitingForFileBlock], Event=[RequestFileBlock], New state=[WaitingForFileBlock] (ota.c:2834)
+<INF>    15293 [OTAAgent] Extracted parameter: [key: value]=[execution.jobDocument.afr_ota.streamname: AFR_OTA-eb53bc47-6918-4b2c-9c85-a4c74c44a04c] (ota.c:1642)
+<INF>    15294 [OTAAgent] Extracted parameter: [key: value]=[execution.jobDocument.afr_ota.protocols: ["MQTT"]] (ota.c:1642)
+<INF>    15296 [OTAAgent] Extracted parameter: [key: value]=[filepath: b_u585i_iot02a_ntz.bin] (ota.c:1642)
+<INF>    17784 [OTAAgent] Current State=[WaitingForFileBlock], Event=[RequestFileBlock], New state=[WaitingForFileBlock] (ota.c:2834)
+<INF>    15297 [OTAAgent] Extracted parameter: [key: value]=[fileid: 0] (ota.c:1683)
+<INF>    15298 [OTAAgent] Extracted parameter: [key: value]=[certfile: ota_signer_pub] (ota.c:1642)
+<INF>    15300 [OTAAgent] Extracted parameter [ sig-sha256-ecdsa: MEUCIGWRkFqcumdPZhoZ93ov5Npvsjj7... ] (ota.c:1573)
+<INF>    15301 [OTAAgent] Extracted parameter: [key: value]=[fileType: 0] (ota.c:1683)
+<INF>    15301 [OTAAgent] Job document was accepted. Attempting to begin the update. (ota.c:2199)
+<INF>    16533 [OTAAgent] Number of blocks remaining: 306 (ota.c:2683)
+<INF>    15450 [OTAAgent] Setting OTA data interface. (ota.c:938)
+<INF>    15450 [OTAAgent] Current State=[Creating
+
+```
+2. Once the full image has been downloaded, the OTA library verifies the image signature and activates the new image in the unused flash bank.
+
+```
+<INF>    67405 [OTAAgent] Received final block of the update. (ota.c:2633)
+<INF>    67405 [OTAAgent] Validating the integrity of OTA image using digital signature. (ota_pal.c:681)
+<INF>    69643 [OTAAgent] Received entire update and validated the signature. (ota.c:2654)
+```
+
+3. New image boots up and performs a self test, here it checks the version is higher than previous. If so it sets the new image as valid.
+
+```
+<INF>    15487 [OTAAgent] In self test mode. (ota.c:2102)
+<INF>    15487 [OTAAgent] New image has a higher version number than the current image: New image version=1.9.0, Previous image version=0.9.0 (ota.c:1932)
+```
+4. Checking the job status, should show the job as succeeded:
+
+```
+aws iot describe-job-execution --job-id=<Job ID created above> --thing-name=<thing name>
+```
+
 
 # Component Licensing
 
