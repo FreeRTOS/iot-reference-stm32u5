@@ -151,6 +151,9 @@
  */
 #define OTA_JOB_UPDATE_TOPIC_FILTER               OTA_TOPIC_PREFIX "/+/jobs/+/update/rejected"
 
+#define OTA_JOB_TOPIC_FILTER                      OTA_TOPIC_PREFIX "/+/jobs/#"
+#define OTA_JOB_TOPIC_FILTER_LEN                  ( sizeof( OTA_TOPIC_PREFIX "/+/jobs/#" ) - 1 )
+
 /**
  * @brief Wildcard topic filter for matching OTA data packets.
  *  The filter is used to match the constructed data stream topic filter from OTA agent and register
