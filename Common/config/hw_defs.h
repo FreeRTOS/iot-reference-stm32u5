@@ -40,7 +40,7 @@ static inline uint32_t timer_get_count( TIM_HandleTypeDef * pxHndl )
     }
     else
     {
-      return 0;
+        return 0;
     }
 }
 

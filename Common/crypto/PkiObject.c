@@ -85,43 +85,46 @@ PkiObject_t xPkiObjectFromLabel( const char * pcLabel )
     if( pcLabel != NULL )
     {
 #ifdef TEST_AUTOMATION_INTEGRATION
-        if( ( strcmp( OTA_SIGNING_KEY_LABEL, pcLabel ) == 0 )
-            && ( strlen(g_CodeSigningCert) > 0))
+        if( ( strcmp( OTA_SIGNING_KEY_LABEL, pcLabel ) == 0 ) &&
+            ( strlen( g_CodeSigningCert ) > 0 ) )
         {
             xPkiObject.xForm = OBJ_FORM_PEM;
-            xPkiObject.uxLen = strlen(g_CodeSigningCert)+1;
+            xPkiObject.uxLen = strlen( g_CodeSigningCert ) + 1;
             xPkiObject.pucBuffer = g_CodeSigningCert;
-            //xPkiObject.xPsaCryptoId = OTA_SIGNING_KEY_ID;
+            /*xPkiObject.xPsaCryptoId = OTA_SIGNING_KEY_ID; */
             return xPkiObject;
         }
-        if( ( strcmp( TLS_KEY_PRV_LABEL, pcLabel ) == 0 )
-            && ( strlen(g_ClientPrivateKey) > 0))
+
+        if( ( strcmp( TLS_KEY_PRV_LABEL, pcLabel ) == 0 ) &&
+            ( strlen( g_ClientPrivateKey ) > 0 ) )
         {
             xPkiObject.xForm = OBJ_FORM_PEM;
-            xPkiObject.uxLen = strlen(g_ClientPrivateKey)+1;
+            xPkiObject.uxLen = strlen( g_ClientPrivateKey ) + 1;
             xPkiObject.pucBuffer = g_ClientPrivateKey;
-            //xPkiObject.xPsaCryptoId = OTA_SIGNING_KEY_ID;
+            /*xPkiObject.xPsaCryptoId = OTA_SIGNING_KEY_ID; */
             return xPkiObject;
         }
-        if( ( strcmp( TLS_CERT_LABEL, pcLabel ) == 0 )
-            && ( strlen(g_ClientCertificate) > 0))
+
+        if( ( strcmp( TLS_CERT_LABEL, pcLabel ) == 0 ) &&
+            ( strlen( g_ClientCertificate ) > 0 ) )
         {
             xPkiObject.xForm = OBJ_FORM_PEM;
-            xPkiObject.uxLen = strlen(g_ClientCertificate)+1;
+            xPkiObject.uxLen = strlen( g_ClientCertificate ) + 1;
             xPkiObject.pucBuffer = g_ClientCertificate;
-            //xPkiObject.xPsaCryptoId = OTA_SIGNING_KEY_ID;
+            /*xPkiObject.xPsaCryptoId = OTA_SIGNING_KEY_ID; */
             return xPkiObject;
         }
-        if( ( strcmp( TLS_ROOT_CA_CERT_LABEL, pcLabel ) == 0 )
-            && ( strlen(g_CaRootCert) > 0))
+
+        if( ( strcmp( TLS_ROOT_CA_CERT_LABEL, pcLabel ) == 0 ) &&
+            ( strlen( g_CaRootCert ) > 0 ) )
         {
             xPkiObject.xForm = OBJ_FORM_PEM;
-            xPkiObject.uxLen = strlen(g_CaRootCert)+1;
+            xPkiObject.uxLen = strlen( g_CaRootCert ) + 1;
             xPkiObject.pucBuffer = g_CaRootCert;
-            //xPkiObject.xPsaCryptoId = OTA_SIGNING_KEY_ID;
+            /*xPkiObject.xPsaCryptoId = OTA_SIGNING_KEY_ID; */
             return xPkiObject;
         }
-#endif
+#endif /* ifdef TEST_AUTOMATION_INTEGRATION */
 #if defined( MBEDTLS_TRANSPORT_PKCS11 )
         xPkiObject.pcPkcs11Label = pcLabel;
         xPkiObject.uxLen = strnlen( pcLabel, configTLS_MAX_LABEL_LEN );
@@ -618,8 +621,8 @@ PkiStatus_t xPkiReadPublicKeyDer( unsigned char ** ppucPubKeyDer,
                 }
                 else
                 {
-                    void *pvBuf = pvPortMalloc(pxPublicKey->uxLen);
-                    memcpy(pvBuf, pxPublicKey->pucBuffer, pxPublicKey->uxLen);
+                    void * pvBuf = pvPortMalloc( pxPublicKey->uxLen );
+                    memcpy( pvBuf, pxPublicKey->pucBuffer, pxPublicKey->uxLen );
 
                     *ppucPubKeyDer = ( unsigned char * ) pvBuf;
                     *puxPubKeyDerLen = pxPublicKey->uxLen;

@@ -106,9 +106,9 @@
 #define otaexampleTASK_DELAY_MS                   ( 30 * 1000U )
 
 /**
- * @brief The timeout for an OTA job in the OTA demo task 
+ * @brief The timeout for an OTA job in the OTA demo task
  */
-#define otaexampleOTA_UPDATE_TIMEOUT_MS                   ( 120 * 1000U )
+#define otaexampleOTA_UPDATE_TIMEOUT_MS           ( 120 * 1000U )
 
 /**
  * @brief The maximum time for which OTA demo waits for an MQTT operation to be complete.
