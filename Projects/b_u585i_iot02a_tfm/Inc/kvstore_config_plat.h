@@ -26,11 +26,17 @@
 #ifndef _KVSTORE_CONFIG_PLAT_H
 #define _KVSTORE_CONFIG_PLAT_H
 
+#include "ota_config.h"
+
 /* Define KV_STORE_CACHE_ENABLE to 1 to enable an in-memory cache of all Key / Value pairs */
 #define KV_STORE_CACHE_ENABLE       1
 
 /* Define KV_STORE_NVIMPL_ENABLE to 1 to enable storage of all key / value pairs in non-volatile storage */
+#if TEST_AUTOMATION_INTEGRATION == 0
+#define KV_STORE_NVIMPL_ENABLE      1
+#else
 #define KV_STORE_NVIMPL_ENABLE      0
+#endif
 
 #define KV_STORE_NVIMPL_LITTLEFS    0
 

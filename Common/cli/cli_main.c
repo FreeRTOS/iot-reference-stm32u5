@@ -30,7 +30,6 @@
 
 #include "tls_transport_config.h"
 
-#include "ota_config.h"
 #include <string.h>
 
 typedef struct xCOMMAND_INPUT_LIST
@@ -353,10 +352,6 @@ void Task_CLI( void * pvParameters )
 
     if( xInitConsoleUart() == pdTRUE )
     {
-//#ifdef keyCLIENT_CERTIFICATE_PEM
-//        char tmp[] = "pki import key ota_signer_pub";
-//        FreeRTOS_CLIProcessCommand( &xConsoleIO, tmp );
-//#endif
         for( ; ; )
         {
             /* Read a line of input */

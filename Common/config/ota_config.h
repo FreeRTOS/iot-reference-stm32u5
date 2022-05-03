@@ -46,7 +46,7 @@
  * rejected in self test phase.1
  */
 
-#define TEST_AUTOMATION_INTEGRATION (1)
+#define TEST_AUTOMATION_INTEGRATION (0)
 #define otapalconfigCODE_SIGNING_CERTIFICATE ""
 #define keyCLIENT_CERTIFICATE_PEM ""
 #define keyCLIENT_PRIVATE_KEY_PEM ""
