@@ -49,7 +49,7 @@ class OtaProject:
 #"GPKW495jOCH88DwmBefNAZAEMb3PmFRulr99WAkU6NeZLlrX7Y9t71JU\n"\
 #"-----END PRIVATE KEY-----\n"
     ecdsa_untrusted_signer_certificate_arn: str = "CHANGEME" # example "arn:aws:acm:us-west-2:270533122096:certificate/ee8e9df2-6795-4450-8c9e-b74f96575035"
-    rsa_signer_certificate_arn: str = ""  
+    rsa_signer_certificate_arn: str = ""
     rsa_untrusted_signer_certificate_arn: str = ""
     signer_platform: str = "AmazonFreeRTOS-Default"
     signer_certificate_file_name: str = "ota_signer_pub" # REQUIRED
@@ -146,7 +146,7 @@ class OtaProject:
     custom_ota_task_path: Path = Path(src_root + "/Projects/b_u585i_iot02a_ntz/Src/ota/ota_update_task.c")
     custom_ota_task_name_pattern: str = "static void prvOTAAgentTask("
     custom_ota_task_code_pattern: str = "OTA_EventProcessingTask( pvParam );"
-    
+
     custom_freertos_config_path: Path = Path(src_root + "/Common/config/FreeRTOSConfig.h")
     custom_freertos_config_network_interface_to_use_pattern: str = "#define configNETWORK_INTERFACE_TO_USE"
 
