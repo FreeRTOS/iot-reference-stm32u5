@@ -8,7 +8,8 @@ from pathlib import Path
 from pprint import pformat
 
 from otaendtoend.helpers.logger import logger
-from otaendtoend.helpers.utils import get_dir_otaendtoend, get_git_revision_hash
+from otaendtoend.helpers.utils import (get_dir_otaendtoend,
+                                       get_git_revision_hash)
 
 
 @dataclass
