@@ -34,14 +34,14 @@ extern IWDG_HandleTypeDef * pxHwndIwdg;
 
 static inline uint32_t timer_get_count( TIM_HandleTypeDef * pxHndl )
 {
-//    if( pxHndl )
-//    {
-//        return __HAL_TIM_GetCounter( pxHndl );
-//    }
-//    else
-//    {
-        return 0;
-//    }
+    if( pxHndl )
+    {
+        return __HAL_TIM_GetCounter( pxHndlTim5 );
+    }
+    else
+    {
+      return 0;
+    }
 }
 
 void hw_init( void );

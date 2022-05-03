@@ -106,6 +106,11 @@
 #define otaexampleTASK_DELAY_MS                   ( 30 * 1000U )
 
 /**
+ * @brief The timeout for an OTA job in the OTA demo task 
+ */
+#define otaexampleOTA_UPDATE_TIMEOUT_MS                   ( 120 * 1000U )
+
+/**
  * @brief The maximum time for which OTA demo waits for an MQTT operation to be complete.
  * This involves receiving an acknowledgment for broker for SUBSCRIBE, UNSUBSCRIBE and non
  * QOS0 publishes.
@@ -1181,7 +1186,7 @@ void vOTAUpdateTask( void * pvParam )
                                         EVT_MASK_MQTT_CONNECTED,
                                         pdFALSE,
                                         pdTRUE,
-                                        pdMS_TO_TICKS( 120*1000 ) );
+                                        pdMS_TO_TICKS( otaexampleOTA_UPDATE_TIMEOUT_MS ) );
 
         if( uxEvents & EVT_MASK_MQTT_CONNECTED )
         {
