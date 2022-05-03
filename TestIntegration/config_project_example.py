@@ -3,12 +3,13 @@ Search for CHANGEME below and replace it with something approprate for your test
 Note comments with REQUIRED are for fields which are required for testing. CHANGEME implied REQUIRED.
 """
 
-from pprint import pformat
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from dataclasses import dataclass, asdict
+from pprint import pformat
 
 from otaendtoend.helpers.logger import logger
-from otaendtoend.helpers.utils import get_dir_otaendtoend, get_git_revision_hash
+from otaendtoend.helpers.utils import (get_dir_otaendtoend,
+                                       get_git_revision_hash)
 
 
 @dataclass
@@ -40,12 +41,6 @@ class OtaProject:
     # "1hjyluPeYzgh/PA8JgXnzQGQBDG9z5hUbpa/fVgJFOjXmS5a1+2Pbe9SVA==\n"\
     # "-----END PUBLIC KEY-----\n"
     ecdsa_signer_certificate_private_key_sec1: str = "CHANGEME"
-    # example
-    # "-----BEGIN PRIVATE KEY-----\n"\
-    # "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgtvC6v89dM5LauNTQ\n"\
-    # "DalI06rusWO/j1U8MJklRFhgi/OhRANCAATrASiGYVq6K6IwvLBTvlteL5FXRDXW\n"\
-    # "GPKW495jOCH88DwmBefNAZAEMb3PmFRulr99WAkU6NeZLlrX7Y9t71JU\n"\
-    # "-----END PRIVATE KEY-----\n"
     ecdsa_untrusted_signer_certificate_arn: str = "CHANGEME"  # example "arn:aws:acm:us-west-2:270533122096:certificate/ee8e9df2-6795-4450-8c9e-b74f96575035"
     rsa_signer_certificate_arn: str = ""
     rsa_untrusted_signer_certificate_arn: str = ""
