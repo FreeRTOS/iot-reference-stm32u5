@@ -120,7 +120,7 @@ static uint32_t ulBankAtBootup = 0;
 /* Load/Save/Delete */
 static BaseType_t prvInitializePalContext( OtaPalContext_t * pxContext );
 static BaseType_t prvWritePalNvContext( OtaPalContext_t * pxContext );
-static BaseType_t prvDeleteImageNvContext( void );
+static BaseType_t prvDeletePalNvContext( void );
 static OtaPalContext_t * prvGetImageContext( void );
 
 /* Active / Inactive bank helpers */
@@ -288,7 +288,7 @@ static BaseType_t prvWritePalNvContext( OtaPalContext_t * pxContext )
     return xResult;
 }
 
-static BaseType_t prvDeleteImageNvContext( void )
+static BaseType_t prvDeletePalNvContext( void )
 {
     BaseType_t xResult = pdTRUE;
     lfs_t * pxLfsCtx = NULL;
@@ -742,6 +742,7 @@ OtaPalStatus_t otaPal_CreateFileForRx( OtaFileContext_t * const pxFileContext )
     else if( ( pxContext == NULL ) ||
              ( pxContext->xPalState != OTA_PAL_READY ) )
     {
+        LogError( "OTA PAL context is NULL or not in the OTA_PAL_READY state." );
         xOtaStatus = OtaPalRxFileCreateFailed;
     }
     else
@@ -782,7 +783,7 @@ OtaPalStatus_t otaPal_CreateFileForRx( OtaFileContext_t * const pxFileContext )
 
         if( xOtaStatus == OtaPalSuccess )
         {
-            if( prvDeleteImageNvContext() == pdFALSE )
+            if( prvDeletePalNvContext() == pdFALSE )
             {
                 xOtaStatus = OtaPalBootInfoCreateFailed;
             }
@@ -910,7 +911,7 @@ OtaPalStatus_t otaPal_ActivateNewImage( OtaFileContext_t * const pxFileContext )
             else
             {
                 /* Failed to select Bank */
-                prvDeleteImageNvContext();
+                prvDeletePalNvContext();
             }
         }
     }
@@ -946,7 +947,6 @@ void otaPal_EarlyInit( void )
 
             LogError( "Detected a watchdog reset during first boot of new image. Reverting to bank: %d", ulRevertBank );
 
-            /* Set bank back to original bank until self test has completed. */
             if( prvSelectBank( ulRevertBank ) == pdTRUE )
             {
                 pxCtx->xObLaunchPending = pdTRUE;
@@ -977,18 +977,22 @@ OtaPalStatus_t otaPal_SetPlatformImageState( OtaFileContext_t * const pxFileCont
         {
             case OtaImageStateAccepted:
 
-                /* Handle self test success or failure */
+                /* Handle self test success */
                 if( ( pxContext->xPalState == OTA_PAL_PENDING_SELF_TEST ) ||
                     ( pxContext->xPalState == OTA_PAL_NEW_IMAGE_BOOTED ) )
                 {
-                    if( prvSelectBank( pxContext->ulTargetBank ) == pdTRUE )
-                    {
-                        xOtaStatus = OtaPalSuccess;
-                        pxContext->xPalState = OTA_PAL_ACCEPTED;
-                    }
+                    xOtaStatus = OtaPalSuccess;
+                    pxContext->xPalState = OTA_PAL_ACCEPTED;
 
                     /* Delete context from flash */
-                    ( void ) prvDeleteImageNvContext();
+                    if( prvDeletePalNvContext() != pdTRUE )
+                    {
+                        xOtaStatus = OtaPalCommitFailed;
+                    }
+                }
+                else
+                {
+                    xOtaStatus = OtaPalCommitFailed;
                 }
 
                 break;
@@ -1005,7 +1009,7 @@ OtaPalStatus_t otaPal_SetPlatformImageState( OtaFileContext_t * const pxFileCont
 
                         if( ( prvSelectBank( ulGetOtherBank( pxContext->ulTargetBank ) ) == pdTRUE ) &&
                             ( prvEraseBank( pxContext->ulTargetBank ) == pdTRUE ) &&
-                            ( prvDeleteImageNvContext() == pdTRUE ) )
+                            ( prvDeletePalNvContext() == pdTRUE ) )
                         {
                             xOtaStatus = OtaPalSuccess;
                             pxContext->xPalState = OTA_PAL_REJECTED;
@@ -1028,16 +1032,19 @@ OtaPalStatus_t otaPal_SetPlatformImageState( OtaFileContext_t * const pxFileCont
                 switch( pxContext->xPalState )
                 {
                     case OTA_PAL_PENDING_ACTIVATION:
-                    case OTA_PAL_PENDING_SELF_TEST:
 
                         /* Select target bank to start testing */
-                        if( prvSelectBank( pxContext->ulTargetBank ) == pdTRUE )
+                        if( ( prvSelectBank( pxContext->ulTargetBank ) == pdTRUE ) &&
+                            ( prvWritePalNvContext( pxContext ) == pdTRUE ) )
                         {
                             xOtaStatus = OtaPalSuccess;
                             pxContext->xPalState = OTA_PAL_PENDING_SELF_TEST;
-                            ( void ) prvWritePalNvContext( pxContext );
                         }
 
+                        break;
+
+                    case OTA_PAL_PENDING_SELF_TEST:
+                        xOtaStatus = OtaPalSuccess;
                         break;
 
                     default:
@@ -1064,7 +1071,7 @@ OtaPalStatus_t otaPal_SetPlatformImageState( OtaFileContext_t * const pxFileCont
 
                         if( ( prvSelectBank( ulGetOtherBank( pxContext->ulTargetBank ) ) == pdTRUE ) &&
                             ( prvEraseBank( pxContext->ulTargetBank ) == pdTRUE ) &&
-                            ( prvDeleteImageNvContext() == pdTRUE ) )
+                            ( prvDeletePalNvContext() == pdTRUE ) )
                         {
                             xOtaStatus = OtaPalSuccess;
                             pxContext->xPalState = OTA_PAL_READY;
@@ -1121,7 +1128,6 @@ OtaPalImageState_t otaPal_GetPlatformImageState( OtaFileContext_t * const pxFile
                 break;
 
             case OTA_PAL_ACCEPTED:
-                ( void ) prvSelectBank( pxContext->ulTargetBank );
                 xOtaState = OtaPalImageStateValid;
                 break;
         }
