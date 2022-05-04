@@ -89,18 +89,23 @@ PkiObject_t xPkiObjectFromLabel( const char * pcLabel )
             ( strlen( g_CodeSigningCert ) > 0 ) )
         {
 #if defined( MBEDTLS_TRANSPORT_PSA )
-            int lError = 0;
-            mbedtls_pk_context xPkContext;
-            mbedtls_pk_init( &xPkContext );
-            lError = mbedtls_pk_parse_public_key( &xPkContext,
-                                                  g_CodeSigningCert,
-                                                  sizeof( g_CodeSigningCert ) );
+            psa_key_attributes_t xKeyAttrs = { 0 };
+            LogError("xPkiObjectFromLabel");
 
-            configASSERT( lError == 0 );
+            if( psa_get_key_attributes( OTA_SIGNING_KEY_ID, &xKeyAttrs ) != 0 )
+            {
+                int lError = 0;
+                mbedtls_pk_context xPkContext;
+                mbedtls_pk_init( &xPkContext );
+                lError = mbedtls_pk_parse_public_key( &xPkContext,
+                                                      g_CodeSigningCert,
+                                                      sizeof( g_CodeSigningCert ) - 1 );
+                LogError("mbedtls_pk_parse_public_key: %ld", lError);
 
-            ( void ) psa_destroy_key( OTA_SIGNING_KEY_ID );
-            lError = lWritePublicKeyToPSACrypto( OTA_SIGNING_KEY_ID, &xPkContext );
-            configASSERT( lError == 0 );
+                lError = lWritePublicKeyToPSACrypto( OTA_SIGNING_KEY_ID, &xPkContext );
+                LogError("lWritePublicKeyToPSACrypto: %ld", lError);
+            }
+
             xPkiObject.xForm = OBJ_FORM_PSA_CRYPTO;
             xPkiObject.xPsaCryptoId = OTA_SIGNING_KEY_ID;
 #else
