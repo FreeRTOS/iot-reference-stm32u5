@@ -29,6 +29,8 @@
 
 #ifdef MBEDTLS_TRANSPORT_PSA
 
+#include "ota_config.h"
+
 #include "FreeRTOS.h"
 
 /* Standard Includes */

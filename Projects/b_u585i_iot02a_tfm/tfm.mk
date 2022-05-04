@@ -35,6 +35,8 @@ SHELL = /bin/bash
 .ONESHELL:
 .DEFAULT_GOAL = all
 
+-include project_defs.mk
+
 # Normalize Paths
 BUILD_PATH := .
 WORKSPACE_PATH := $(realpath $(WORKSPACE_PATH))
@@ -49,14 +51,17 @@ MBEDTLS_SRC_PATH = $(realpath ${MIDDLEWARE_PATH}/ARM/mbedtls)
 MCUBOOT_SRC_PATH = $(realpath ${MIDDLEWARE_PATH}/ARM/mcuboot)
 PROJECT_PATH = ..
 TFM_BUILD_PATH = $(BUILD_PATH)/tfm_build
-S_REGION_SIGNING_KEY = ${TFM_SRC_PATH}/bl2/ext/mcuboot/root-RSA-3072.pem
-NS_REGION_SIGNING_KEY = ${TFM_SRC_PATH}/bl2/ext/mcuboot/root-RSA-3072_1.pem
+
+S_REGION_SIGNING_KEY ?= ${TFM_SRC_PATH}/bl2/ext/mcuboot/root-RSA-3072.pem
+NS_REGION_SIGNING_KEY ?= ${TFM_SRC_PATH}/bl2/ext/mcuboot/root-RSA-3072_1.pem
 
 ###############################################################################
 # Version number definition
 ###############################################################################
-SPE_VERSION = "1.5.0"
-NSPE_VERSION = "1.0.0"
+SPE_VERSION ?= "1.5.0"
+NSPE_VERSION ?= "1.0.0"
+SPE_SECURITY_COUNTER ?= 1
+NSPE_SECURITY_COUNTER ?= 1
 NUM_PROCESSORS = 8
 
 ###############################################################################
@@ -353,7 +358,7 @@ ${BUILD_PATH}/${PROJECT_NAME}_s_signed.bin : ${BUILD_PATH}/${PROJECT_NAME}_s.bin
 		--public-key-format full \
 		--align 16 --pad --pad-header \
 		--header-size 0x400 \
-		--security-counter 1 \
+		--security-counter ${SPE_SECURITY_COUNTER} \
 		--confirm \
 		--dependencies "(1,0.0.0+0)" \
 		$< \
@@ -371,7 +376,7 @@ ${BUILD_PATH}/${PROJECT_NAME}_s_ota.bin : ${BUILD_PATH}/${PROJECT_NAME}_s.bin
 		--public-key-format full \
 		--align 16 --pad --pad-header \
 		--header-size 0x400 \
-		--security-counter 1 \
+		--security-counter ${SPE_SECURITY_COUNTER} \
 		--dependencies "(1,0.0.0+0)" \
 		$< \
 		$@
@@ -388,7 +393,7 @@ ${BUILD_PATH}/${PROJECT_NAME}_ns_signed.bin : ${BUILD_PATH}/${PROJECT_NAME}_ns.b
 		--public-key-format full \
 		--align 16 --pad --pad-header \
 		--header-size 0x400 \
-		--security-counter 1 \
+		--security-counter ${NSPE_SECURITY_COUNTER} \
 		--confirm \
 		--dependencies "(0,${SPE_VERSION}+0)" \
 		$< \
@@ -406,7 +411,7 @@ ${BUILD_PATH}/${PROJECT_NAME}_ns_ota.bin : ${BUILD_PATH}/${PROJECT_NAME}_ns.bin
 		--public-key-format full \
 		--align 16 --pad --pad-header \
 		--header-size 0x400 \
-		--security-counter 1 \
+		--security-counter ${NSPE_SECURITY_COUNTER} \
 		--dependencies "(0,${SPE_VERSION}+0)" \
 		$< \
 		$@

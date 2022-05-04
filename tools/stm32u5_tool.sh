@@ -46,9 +46,9 @@ fi
 # shellcheck disable=SC2154
 if [ -n "${BuildArtifactFileBaseName}" ]; then
     # shellcheck disable=SC2154
-    PROJECT_NAME="${ProjName}"
-elif [ -n "${ProjName}" ]; then
-    PROJECT_NAME="${ProjName}"
+    PROJECT_NAME="${BuildArtifactFileBaseName}"
+elif [ -n "${BuildArtifactFileBaseName}" ]; then
+    PROJECT_NAME="${BuildArtifactFileBaseName}"
 else
     PROJECT_NAME=$(basename "${PWD}")
 fi
@@ -119,6 +119,8 @@ case "$1" in
             echo "Error: Failed to program non-trustzone firmware image."
             exit 1
         }
+
+        sleep 1
 
         echo "Writing Non-TrustZone image."
         prog_cli speed=fast mode=UR -d "${BUILD_PATH}/${TARGET_HEX}" || {

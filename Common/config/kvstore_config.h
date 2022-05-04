@@ -40,11 +40,13 @@ typedef enum KvStoreEnum
 } KVStoreKey_t;
 
 /* Define default values for common attributes */
-#define THING_NAME_DFLT        ""
-#define MQTT_ENDOPOINT_DFLT    ""
+#define THING_NAME_DFLT       ""
+#define MQTT_ENDPOINT_DFLT    ""
+#define MQTT_PORT_DFLT        8883
 
-#define WIFI_SSID_DFLT         ""
-#define WIFI_PASSWORD_DFLT     ""
+#define WIFI_SSID_DFLT        ""
+#define WIFI_PASSWORD_DFLT    ""
+#define WIFI_SECURITY_DFLT
 
 /* Array to map between strings and KVStoreKey_t IDs */
 #define KV_STORE_STRINGS   \
@@ -57,14 +59,14 @@ typedef enum KvStoreEnum
         "time_hwm"         \
     }
 
-#define KV_STORE_DEFAULTS                                                           \
-    {                                                                               \
-        KV_DFLT( KV_TYPE_STRING, THING_NAME_DFLT ),     /* CS_CORE_THING_NAME */    \
-        KV_DFLT( KV_TYPE_STRING, MQTT_ENDOPOINT_DFLT ), /* CS_CORE_MQTT_ENDPOINT */ \
-        KV_DFLT( KV_TYPE_UINT32, 8883 ),                /* CS_CORE_MQTT_PORT */     \
-        KV_DFLT( KV_TYPE_STRING, WIFI_SSID_DFLT ),      /* CS_WIFI_SSID */          \
-        KV_DFLT( KV_TYPE_STRING, WIFI_PASSWORD_DFLT ),  /* CS_WIFI_CREDENTIAL */    \
-        KV_DFLT( KV_TYPE_UINT32, 0 ),                   /* CS_TIME_HWM_S_1970 */    \
+#define KV_STORE_DEFAULTS                                                          \
+    {                                                                              \
+        KV_DFLT( KV_TYPE_STRING, THING_NAME_DFLT ),    /* CS_CORE_THING_NAME */    \
+        KV_DFLT( KV_TYPE_STRING, MQTT_ENDPOINT_DFLT ), /* CS_CORE_MQTT_ENDPOINT */ \
+        KV_DFLT( KV_TYPE_UINT32, MQTT_PORT_DFLT ),     /* CS_CORE_MQTT_PORT */     \
+        KV_DFLT( KV_TYPE_STRING, WIFI_SSID_DFLT ),     /* CS_WIFI_SSID */          \
+        KV_DFLT( KV_TYPE_STRING, WIFI_PASSWORD_DFLT ), /* CS_WIFI_CREDENTIAL */    \
+        KV_DFLT( KV_TYPE_UINT32, 0 ),                  /* CS_TIME_HWM_S_1970 */    \
     }
 
 #endif /* _KVSTORE_CONFIG_H */

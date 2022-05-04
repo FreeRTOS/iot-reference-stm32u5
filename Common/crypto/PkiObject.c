@@ -32,6 +32,8 @@
 
 #include "mbedtls/platform.h"
 
+#include "ota_config.h"
+
 /*-----------------------------------------------------------*/
 
 PkiStatus_t xPrvMbedtlsErrToPkiStatus( int lError )
@@ -67,6 +69,13 @@ PkiStatus_t xPrvMbedtlsErrToPkiStatus( int lError )
     return xStatus;
 }
 
+#if TEST_AUTOMATION_INTEGRATION == 1
+char g_CodeSigningCert[] = otapalconfigCODE_SIGNING_CERTIFICATE;
+char g_ClientCertificate[] = keyCLIENT_CERTIFICATE_PEM;
+char g_ClientPrivateKey[] = keyCLIENT_PRIVATE_KEY_PEM;
+char g_CaRootCert[] = keyCA_ROOT_CERT_PEM;
+#endif
+
 /*-----------------------------------------------------------*/
 
 PkiObject_t xPkiObjectFromLabel( const char * pcLabel )
@@ -75,6 +84,66 @@ PkiObject_t xPkiObjectFromLabel( const char * pcLabel )
 
     if( pcLabel != NULL )
     {
+#if TEST_AUTOMATION_INTEGRATION == 1
+        if( ( strcmp( OTA_SIGNING_KEY_LABEL, pcLabel ) == 0 ) &&
+            ( strlen( g_CodeSigningCert ) > 0 ) )
+        {
+#if defined( MBEDTLS_TRANSPORT_PSA )
+            psa_key_attributes_t xKeyAttrs = { 0 };
+
+            if( psa_get_key_attributes( OTA_SIGNING_KEY_ID, &xKeyAttrs ) != 0 )
+            {
+                int lError = 0;
+                mbedtls_pk_context xPkContext;
+                mbedtls_pk_init( &xPkContext );
+                lError = mbedtls_pk_parse_public_key( &xPkContext,
+                                                      g_CodeSigningCert,
+                                                      sizeof( g_CodeSigningCert ) );
+
+                lError = lWritePublicKeyToPSACrypto( OTA_SIGNING_KEY_ID, &xPkContext );
+            }
+
+            xPkiObject.xForm = OBJ_FORM_PSA_CRYPTO;
+            xPkiObject.xPsaCryptoId = OTA_SIGNING_KEY_ID;
+#else /* if defined( MBEDTLS_TRANSPORT_PSA ) */
+            xPkiObject.xForm = OBJ_FORM_PEM;
+            xPkiObject.uxLen = strlen( g_CodeSigningCert ) + 1;
+            xPkiObject.pucBuffer = g_CodeSigningCert;
+            /*xPkiObject.xPsaCryptoId = OTA_SIGNING_KEY_ID; */
+#endif /* if defined( MBEDTLS_TRANSPORT_PSA ) */
+            return xPkiObject;
+        }
+
+        if( ( strcmp( TLS_KEY_PRV_LABEL, pcLabel ) == 0 ) &&
+            ( strlen( g_ClientPrivateKey ) > 0 ) )
+        {
+            xPkiObject.xForm = OBJ_FORM_PEM;
+            xPkiObject.uxLen = strlen( g_ClientPrivateKey ) + 1;
+            xPkiObject.pucBuffer = g_ClientPrivateKey;
+            /*xPkiObject.xPsaCryptoId = OTA_SIGNING_KEY_ID; */
+            return xPkiObject;
+        }
+
+        if( ( strcmp( TLS_CERT_LABEL, pcLabel ) == 0 ) &&
+            ( strlen( g_ClientCertificate ) > 0 ) )
+        {
+            xPkiObject.xForm = OBJ_FORM_PEM;
+            xPkiObject.uxLen = strlen( g_ClientCertificate ) + 1;
+            xPkiObject.pucBuffer = g_ClientCertificate;
+            /*xPkiObject.xPsaCryptoId = OTA_SIGNING_KEY_ID; */
+            return xPkiObject;
+        }
+
+        if( ( strcmp( TLS_ROOT_CA_CERT_LABEL, pcLabel ) == 0 ) &&
+            ( strlen( g_CaRootCert ) > 0 ) )
+        {
+            xPkiObject.xForm = OBJ_FORM_PEM;
+            xPkiObject.uxLen = strlen( g_CaRootCert ) + 1;
+            xPkiObject.pucBuffer = g_CaRootCert;
+            /*xPkiObject.xPsaCryptoId = OTA_SIGNING_KEY_ID; */
+            return xPkiObject;
+        }
+#endif /* ifdef TEST_AUTOMATION_INTEGRATION */
 #if defined( MBEDTLS_TRANSPORT_PKCS11 )
         xPkiObject.pcPkcs11Label = pcLabel;
         xPkiObject.uxLen = strnlen( pcLabel, configTLS_MAX_LABEL_LEN );
@@ -571,7 +640,10 @@ PkiStatus_t xPkiReadPublicKeyDer( unsigned char ** ppucPubKeyDer,
                 }
                 else
                 {
-                    *ppucPubKeyDer = ( unsigned char * ) pxPublicKey->pucBuffer;
+                    void * pvBuf = pvPortMalloc( pxPublicKey->uxLen );
+                    memcpy( pvBuf, pxPublicKey->pucBuffer, pxPublicKey->uxLen );
+
+                    *ppucPubKeyDer = ( unsigned char * ) pvBuf;
                     *puxPubKeyDerLen = pxPublicKey->uxLen;
                 }
 

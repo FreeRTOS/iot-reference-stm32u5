@@ -563,6 +563,7 @@ static void vSubCommand_GenerateKey( ConsoleIO_t * pxCIO,
     }
 }
 
+
 static BaseType_t xReadPemFromCliAsDer( ConsoleIO_t * pxCIO,
                                         unsigned char ** ppucDerBuffer,
                                         size_t * puxDerLen )

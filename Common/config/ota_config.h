@@ -40,6 +40,19 @@
 
 
 /**
+ *  @brief The version for the firmware which is running. OTA agent uses this
+ * version number to perform anti-rollback validation. The firmware version for the
+ * download image should be higher than the current version, otherwise the new image is
+ * rejected in self test phase.1
+ */
+
+#define TEST_AUTOMATION_INTEGRATION             ( 0 )
+#define otapalconfigCODE_SIGNING_CERTIFICATE    ""
+#define keyCLIENT_CERTIFICATE_PEM               ""
+#define keyCLIENT_PRIVATE_KEY_PEM               ""
+#define keyCA_ROOT_CERT_PEM                     ""
+
+/**
  * @brief Log base 2 of the size of the file data block message (excluding the header).
  *
  * 10 bits yields a data block size of 1KB.
@@ -87,7 +100,7 @@
  *  Please note that this must be set larger than zero.
  *
  */
-#define otaconfigMAX_NUM_BLOCKS_REQUEST         1U
+#define otaconfigMAX_NUM_BLOCKS_REQUEST         2U
 
 /**
  * @brief The maximum number of requests allowed to send without a response before we abort.
@@ -170,6 +183,6 @@
  * Note - use OTA_DATA_OVER_HTTP for HTTP as primary data protocol.
  */
 
-#define configOTA_PRIMARY_DATA_PROTOCOL    ( OTA_DATA_OVER_MQTT )
+#define configOTA_PRIMARY_DATA_PROTOCOL    OTA_DATA_OVER_MQTT
 
 #endif /* OTA_CONFIG_H_ */

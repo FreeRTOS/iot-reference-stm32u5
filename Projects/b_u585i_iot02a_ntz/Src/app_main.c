@@ -189,6 +189,7 @@ void vInitTask( void * pvArgs )
     ( void ) pvArgs;
 
     xResult = xTaskCreate( Task_CLI, "cli", 2048, NULL, 10, NULL );
+    configASSERT( xResult == pdTRUE );
 
     xMountStatus = fs_init();
 
@@ -222,7 +223,6 @@ void vInitTask( void * pvArgs )
     configASSERT( xResult == pdTRUE );
 
     xResult = xTaskCreate( vMQTTAgentTask, "MQTTAgent", 2048, NULL, 10, NULL );
-
     configASSERT( xResult == pdTRUE );
 
     xResult = xTaskCreate( vOTAUpdateTask, "OTAUpdate", 4096, NULL, tskIDLE_PRIORITY + 1, NULL );
