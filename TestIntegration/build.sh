@@ -1,8 +1,8 @@
-#!/bin/bash -x
+#!/bin/bash
 
 SCRIPT_DIR=$(dirname "${0}")
 SCRIPT_DIR=$(realpath "${SCRIPT_DIR}")
-PATH_TO_STM32CUBEIDE=$(which stm32cubeide)
+PATH_TO_STM32CUBEIDE=$(command -v stm32cubeide)
 
 if test -z "${PATH_TO_STM32CUBEIDE}"; then
     echo "ERROR: stm32cubeide must be in your path."
