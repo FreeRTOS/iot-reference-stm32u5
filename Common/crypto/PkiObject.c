@@ -98,7 +98,7 @@ PkiObject_t xPkiObjectFromLabel( const char * pcLabel )
                 mbedtls_pk_init( &xPkContext );
                 lError = mbedtls_pk_parse_public_key( &xPkContext,
                                                       g_CodeSigningCert,
-                                                      sizeof( g_CodeSigningCert ) - 1 );
+                                                      sizeof( g_CodeSigningCert ) );
 
                 lError = lWritePublicKeyToPSACrypto( OTA_SIGNING_KEY_ID, &xPkContext );
             }
