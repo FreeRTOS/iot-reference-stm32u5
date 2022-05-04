@@ -88,10 +88,26 @@ PkiObject_t xPkiObjectFromLabel( const char * pcLabel )
         if( ( strcmp( OTA_SIGNING_KEY_LABEL, pcLabel ) == 0 ) &&
             ( strlen( g_CodeSigningCert ) > 0 ) )
         {
+#if defined( MBEDTLS_TRANSPORT_PSA )
+            int lError = 0;
+            mbedtls_pk_context xPkContext;
+            mbedtls_pk_init( &xPkContext );
+            lError = mbedtls_pk_parse_public_key( &xPkContext,
+                                                  g_CodeSigningCert,
+                                                  sizeof( g_CodeSigningCert ) );
+
+            configASSERT( lError == 0 );
+
+            lError = lWritePublicKeyToPSACrypto( OTA_SIGNING_KEY_ID, &xPkContext );
+            configASSERT( lError == 0 );
+            xPkiObject.xForm = OBJ_FORM_PSA_CRYPTO;
+            xPkiObject.xPsaCryptoId = OTA_SIGNING_KEY_ID;
+#else
             xPkiObject.xForm = OBJ_FORM_PEM;
             xPkiObject.uxLen = strlen( g_CodeSigningCert ) + 1;
             xPkiObject.pucBuffer = g_CodeSigningCert;
             /*xPkiObject.xPsaCryptoId = OTA_SIGNING_KEY_ID; */
+#endif
             return xPkiObject;
         }
 
