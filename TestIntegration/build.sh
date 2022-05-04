@@ -1,3 +1,13 @@
 #!/bin/bash
 
-/home/adamds/st/stm32cubeide_1.9.0/headless-build.sh -data /home/adamds/repos/lab-iot-reference-stm32u5 -build b_u585i_iot02a_ntz/Debug
+SCRIPT_DIR=`dirname $0`
+PATHTO_STM32CUBEIDE=`which stm32cubeide`
+
+if test -z "${PATHTO_STM32CUBEIDE}"; then
+    echo "ERROR: stm32cubeide must be in your path."
+    exit -1
+fi
+
+STM32CUBEIDEDIR=`dirname ${PATHTO_STM32CUBEIDE}`
+
+${STM32CUBEIDEDIR}/headless-build.sh -data ${SCRIPT_DIR}/.. -build b_u585i_iot02a_ntz/Debug
