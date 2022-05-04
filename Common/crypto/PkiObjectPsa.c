@@ -29,6 +29,8 @@
 
 #ifdef MBEDTLS_TRANSPORT_PSA
 
+#include "ota_config.h"
+
 #include "FreeRTOS.h"
 
 /* Standard Includes */
@@ -394,8 +396,13 @@ int32_t lWritePublicKeyToPSACrypto( psa_key_id_t xPubKeyId,
 
         psa_set_key_id( &xKeyAttributes, xPubKeyId );
 
+#if TEST_AUTOMATION_INTEGRATION == 1
+        psa_set_key_lifetime( &xKeyAttributes, PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION(
+                               PSA_KEY_LIFETIME_VOLATILE, PSA_KEY_LOCATION_LOCAL_STORAGE ) );
+#else
         psa_set_key_lifetime( &xKeyAttributes, PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION(
                                   PSA_KEY_LIFETIME_PERSISTENT, PSA_KEY_LOCATION_LOCAL_STORAGE ) );
+#endif
 
         psa_set_key_bits( &xKeyAttributes, mbedtls_pk_get_bitlen( pxPublicKeyContext ) );
 

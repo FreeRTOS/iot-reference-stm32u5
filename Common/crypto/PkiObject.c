@@ -69,7 +69,7 @@ PkiStatus_t xPrvMbedtlsErrToPkiStatus( int lError )
     return xStatus;
 }
 
-#ifdef TEST_AUTOMATION_INTEGRATION
+#if TEST_AUTOMATION_INTEGRATION == 1
 char g_CodeSigningCert[] = otapalconfigCODE_SIGNING_CERTIFICATE;
 char g_ClientCertificate[] = keyCLIENT_CERTIFICATE_PEM;
 char g_ClientPrivateKey[] = keyCLIENT_PRIVATE_KEY_PEM;
@@ -84,7 +84,7 @@ PkiObject_t xPkiObjectFromLabel( const char * pcLabel )
 
     if( pcLabel != NULL )
     {
-#ifdef TEST_AUTOMATION_INTEGRATION
+#if TEST_AUTOMATION_INTEGRATION == 1
         if( ( strcmp( OTA_SIGNING_KEY_LABEL, pcLabel ) == 0 ) &&
             ( strlen( g_CodeSigningCert ) > 0 ) )
         {
@@ -98,6 +98,7 @@ PkiObject_t xPkiObjectFromLabel( const char * pcLabel )
 
             configASSERT( lError == 0 );
 
+            ( void ) psa_destroy_key( OTA_SIGNING_KEY_ID );
             lError = lWritePublicKeyToPSACrypto( OTA_SIGNING_KEY_ID, &xPkContext );
             configASSERT( lError == 0 );
             xPkiObject.xForm = OBJ_FORM_PSA_CRYPTO;
