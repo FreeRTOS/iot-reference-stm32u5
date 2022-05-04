@@ -418,7 +418,8 @@ class AwsHelper:
 
         if not policyFound:
             policy = self.iot_client.create_policy(
-                policyName="AllowAllDev", policyDocument=json.dumps(policyDocument),
+                policyName="AllowAllDev",
+                policyDocument=json.dumps(policyDocument),
             )
 
     # Register a device with IoT core and return the certificate

@@ -105,12 +105,12 @@ PkiObject_t xPkiObjectFromLabel( const char * pcLabel )
 
             xPkiObject.xForm = OBJ_FORM_PSA_CRYPTO;
             xPkiObject.xPsaCryptoId = OTA_SIGNING_KEY_ID;
-#else
+#else /* if defined( MBEDTLS_TRANSPORT_PSA ) */
             xPkiObject.xForm = OBJ_FORM_PEM;
             xPkiObject.uxLen = strlen( g_CodeSigningCert ) + 1;
             xPkiObject.pucBuffer = g_CodeSigningCert;
             /*xPkiObject.xPsaCryptoId = OTA_SIGNING_KEY_ID; */
-#endif
+#endif /* if defined( MBEDTLS_TRANSPORT_PSA ) */
             return xPkiObject;
         }
 
