@@ -682,7 +682,7 @@ static OtaPalStatus_t prvValidateSignature( const char * pcPubKeyLabel,
                                             const unsigned char * pucImageHash,
                                             const size_t uxHashLength )
 {
-    OtaPalStatus_t xStatus = OtaPalSuccess;
+    OtaPalStatus_t uxStatus = OTA_PAL_COMBINE_ERR( OtaPalSuccess, 0 );
 
     PkiObject_t xOtaSigningPubKey;
     mbedtls_pk_context xPubKeyCtx;
@@ -700,11 +700,11 @@ static OtaPalStatus_t prvValidateSignature( const char * pcPubKeyLabel,
     if( xPkiReadPublicKey( &xPubKeyCtx, &xOtaSigningPubKey ) != PKI_SUCCESS )
     {
         LogError( "Failed to load OTA Signing public key." );
-        xStatus = OtaPalBadSignerCert;
+        uxStatus = OTA_PAL_COMBINE_ERR( OtaPalBadSignerCert, 0 );
     }
 
     /* Verify the provided signature against the image hash */
-    if( xStatus == OtaPalSuccess )
+    if( OTA_PAL_MAIN_ERR( uxStatus ) == OtaPalSuccess )
     {
         int lRslt = mbedtls_pk_verify( &xPubKeyCtx, MBEDTLS_MD_SHA256,
                                        pucImageHash, uxHashLength,
@@ -713,18 +713,18 @@ static OtaPalStatus_t prvValidateSignature( const char * pcPubKeyLabel,
         if( lRslt != 0 )
         {
             MBEDTLS_MSG_IF_ERROR( lRslt, "OTA Image signature verification failed." );
-            xStatus = OTA_PAL_COMBINE_ERR( OtaPalSignatureCheckFailed, lRslt );
+            uxStatus = OTA_PAL_COMBINE_ERR( OtaPalSignatureCheckFailed, lRslt );
         }
     }
 
     mbedtls_pk_free( &xPubKeyCtx );
 
-    return xStatus;
+    return uxStatus;
 }
 
 OtaPalStatus_t otaPal_CreateFileForRx( OtaFileContext_t * const pxFileContext )
 {
-    OtaPalStatus_t xOtaStatus = OtaPalSuccess;
+    OtaPalStatus_t uxOtaStatus = OTA_PAL_COMBINE_ERR( OtaPalSuccess, 0 );
     OtaPalContext_t * pxContext = prvGetImageContext();
 
 
@@ -733,17 +733,17 @@ OtaPalStatus_t otaPal_CreateFileForRx( OtaFileContext_t * const pxFileContext )
     if( ( pxFileContext->fileSize > FLASH_BANK_SIZE ) ||
         ( pxFileContext->fileSize < OTA_IMAGE_MIN_SIZE ) )
     {
-        xOtaStatus = OtaPalRxFileTooLarge;
+        uxOtaStatus = OTA_PAL_COMBINE_ERR( OtaPalRxFileTooLarge, 0 );
     }
     else if( strncmp( "b_u585i_iot02a_ntz.bin", ( char * ) pxFileContext->pFilePath, pxFileContext->filePathMaxSize ) != 0 )
     {
-        xOtaStatus = OtaPalRxFileCreateFailed;
+        uxOtaStatus = OTA_PAL_COMBINE_ERR( OtaPalRxFileCreateFailed, 0 );
     }
     else if( ( pxContext == NULL ) ||
              ( pxContext->xPalState != OTA_PAL_READY ) )
     {
         LogError( "OTA PAL context is NULL or not in the OTA_PAL_READY state." );
-        xOtaStatus = OtaPalRxFileCreateFailed;
+        uxOtaStatus = OTA_PAL_COMBINE_ERR( OtaPalRxFileCreateFailed, 0 );
     }
     else
     {
@@ -752,26 +752,26 @@ OtaPalStatus_t otaPal_CreateFileForRx( OtaFileContext_t * const pxFileContext )
         /* Set dual bank mode if not already set. */
         if( prvFlashSetDualBankMode() != HAL_OK )
         {
-            xOtaStatus = OtaPalRxFileCreateFailed;
+            uxOtaStatus = OTA_PAL_COMBINE_ERR( OtaPalRxFileCreateFailed, 0 );
         }
 
-        if( xOtaStatus == OtaPalSuccess )
+        if( OTA_PAL_MAIN_ERR( uxOtaStatus ) == OtaPalSuccess )
         {
             ulTargetBank = prvGetInactiveBank();
 
             if( ulTargetBank == 0UL )
             {
-                xOtaStatus = OtaPalRxFileCreateFailed;
+                uxOtaStatus = OTA_PAL_COMBINE_ERR( OtaPalRxFileCreateFailed, 0 );
             }
         }
 
-        if( ( xOtaStatus == OtaPalSuccess ) &&
+        if( ( OTA_PAL_MAIN_ERR( uxOtaStatus ) == OtaPalSuccess ) &&
             ( prvEraseBank( ulTargetBank ) != pdTRUE ) )
         {
-            xOtaStatus = OtaPalRxFileCreateFailed;
+            uxOtaStatus = OTA_PAL_COMBINE_ERR( OtaPalRxFileCreateFailed, 0 );
         }
 
-        if( xOtaStatus == OtaPalSuccess )
+        if( OTA_PAL_MAIN_ERR( uxOtaStatus ) == OtaPalSuccess )
         {
             pxContext->ulTargetBank = ulTargetBank;
             pxContext->xObLaunchPending = pdFALSE;
@@ -781,16 +781,16 @@ OtaPalStatus_t otaPal_CreateFileForRx( OtaFileContext_t * const pxFileContext )
             pxFileContext->pFile = pxContext;
         }
 
-        if( xOtaStatus == OtaPalSuccess )
+        if( OTA_PAL_MAIN_ERR( uxOtaStatus ) == OtaPalSuccess )
         {
             if( prvDeletePalNvContext() == pdFALSE )
             {
-                xOtaStatus = OtaPalBootInfoCreateFailed;
+                uxOtaStatus = OTA_PAL_COMBINE_ERR( OtaPalBootInfoCreateFailed, 0 );
             }
         }
     }
 
-    return xOtaStatus;
+    return uxOtaStatus;
 }
 
 int16_t otaPal_WriteBlock( OtaFileContext_t * const pxFileContext,
@@ -834,7 +834,7 @@ int16_t otaPal_WriteBlock( OtaFileContext_t * const pxFileContext,
 
 OtaPalStatus_t otaPal_CloseFile( OtaFileContext_t * const pxFileContext )
 {
-    OtaPalStatus_t xOtaStatus = OtaPalSuccess;
+    OtaPalStatus_t uxOtaStatus = OTA_PAL_COMBINE_ERR( OtaPalSuccess, 0 );
 
     OtaPalContext_t * pxContext = prvGetImageContext();
 
@@ -853,19 +853,19 @@ OtaPalStatus_t otaPal_CloseFile( OtaFileContext_t * const pxFileContext )
                                  ( size_t ) pxContext->ulImageSize,
                                  pucHashBuffer, MBEDTLS_MD_MAX_SIZE, &uxHashLength ) != pdTRUE )
         {
-            xOtaStatus = OtaPalFileClose;
+            uxOtaStatus = OTA_PAL_COMBINE_ERR( OtaPalFileClose, 0 );
         }
 
-        if( xOtaStatus == OtaPalSuccess )
+        if( OTA_PAL_MAIN_ERR( uxOtaStatus ) == OtaPalSuccess )
         {
-            xOtaStatus = prvValidateSignature( ( char * ) pxFileContext->pCertFilepath,
-                                               pxFileContext->pSignature->data,
-                                               pxFileContext->pSignature->size,
-                                               pucHashBuffer,
-                                               uxHashLength );
+            uxOtaStatus = prvValidateSignature( ( char * ) pxFileContext->pCertFilepath,
+                                                pxFileContext->pSignature->data,
+                                                pxFileContext->pSignature->size,
+                                                pucHashBuffer,
+                                                uxHashLength );
         }
 
-        if( xOtaStatus == OtaPalSuccess )
+        if( OTA_PAL_MAIN_ERR( uxOtaStatus ) == OtaPalSuccess )
         {
             pxContext->xPalState = OTA_PAL_PENDING_ACTIVATION;
         }
@@ -874,11 +874,16 @@ OtaPalStatus_t otaPal_CloseFile( OtaFileContext_t * const pxFileContext )
             otaPal_SetPlatformImageState( pxFileContext, OtaImageStateRejected );
         }
     }
+    else if( pxFileContext == NULL )
+    {
+        uxOtaStatus = OTA_PAL_COMBINE_ERR( OtaPalNullFileContext, 0 );
+    }
     else
     {
+        uxOtaStatus = OTA_PAL_COMBINE_ERR( OtaPalFileClose, 0 );
     }
 
-    return xOtaStatus;
+    return uxOtaStatus;
 }
 
 
@@ -889,7 +894,7 @@ OtaPalStatus_t otaPal_Abort( OtaFileContext_t * const pxFileContext )
 
 OtaPalStatus_t otaPal_ActivateNewImage( OtaFileContext_t * const pxFileContext )
 {
-    OtaPalStatus_t xOtaStatus = OtaPalActivateFailed;
+    OtaPalStatus_t uxOtaStatus = OTA_PAL_COMBINE_ERR( OtaPalActivateFailed, 0 );
 
     OtaPalContext_t * pxContext = prvGetImageContext();
 
@@ -906,7 +911,7 @@ OtaPalStatus_t otaPal_ActivateNewImage( OtaFileContext_t * const pxFileContext )
                 pxContext->xPalState = OTA_PAL_PENDING_SELF_TEST;
                 ( void ) prvWritePalNvContext( pxContext );
                 pxContext->xObLaunchPending = pdTRUE;
-                xOtaStatus = otaPal_ResetDevice( pxFileContext );
+                uxOtaStatus = otaPal_ResetDevice( pxFileContext );
             }
             else
             {
@@ -916,7 +921,7 @@ OtaPalStatus_t otaPal_ActivateNewImage( OtaFileContext_t * const pxFileContext )
         }
     }
 
-    return xOtaStatus;
+    return uxOtaStatus;
 }
 
 void otaPal_EarlyInit( void )
@@ -963,7 +968,7 @@ void otaPal_EarlyInit( void )
 OtaPalStatus_t otaPal_SetPlatformImageState( OtaFileContext_t * const pxFileContext,
                                              OtaImageState_t xDesiredState )
 {
-    OtaPalStatus_t xOtaStatus = OtaPalBadImageState;
+    OtaPalStatus_t uxOtaStatus = OTA_PAL_COMBINE_ERR( OtaPalBadImageState, 0 );
 
     OtaPalContext_t * pxContext = prvGetImageContext();
 
@@ -981,18 +986,18 @@ OtaPalStatus_t otaPal_SetPlatformImageState( OtaFileContext_t * const pxFileCont
                 if( ( pxContext->xPalState == OTA_PAL_PENDING_SELF_TEST ) ||
                     ( pxContext->xPalState == OTA_PAL_NEW_IMAGE_BOOTED ) )
                 {
-                    xOtaStatus = OtaPalSuccess;
+                    uxOtaStatus = OTA_PAL_COMBINE_ERR( OtaPalSuccess, 0 );
                     pxContext->xPalState = OTA_PAL_ACCEPTED;
 
                     /* Delete context from flash */
                     if( prvDeletePalNvContext() != pdTRUE )
                     {
-                        xOtaStatus = OtaPalCommitFailed;
+                        uxOtaStatus = OTA_PAL_COMBINE_ERR( OtaPalCommitFailed, 0 );
                     }
                 }
                 else
                 {
-                    xOtaStatus = OtaPalCommitFailed;
+                    uxOtaStatus = OTA_PAL_COMBINE_ERR( OtaPalCommitFailed, 0 );
                 }
 
                 break;
@@ -1011,14 +1016,14 @@ OtaPalStatus_t otaPal_SetPlatformImageState( OtaFileContext_t * const pxFileCont
                             ( prvEraseBank( pxContext->ulTargetBank ) == pdTRUE ) &&
                             ( prvDeletePalNvContext() == pdTRUE ) )
                         {
-                            xOtaStatus = OtaPalSuccess;
+                            uxOtaStatus = OTA_PAL_COMBINE_ERR( OtaPalSuccess, 0 );
                             pxContext->xPalState = OTA_PAL_REJECTED;
                         }
 
                         break;
 
                     case OTA_PAL_REJECTED:
-                        xOtaStatus = OtaPalSuccess;
+                        uxOtaStatus = OTA_PAL_COMBINE_ERR( OtaPalSuccess, 0 );
                         break;
 
                     default:
@@ -1037,14 +1042,14 @@ OtaPalStatus_t otaPal_SetPlatformImageState( OtaFileContext_t * const pxFileCont
                         if( ( prvSelectBank( pxContext->ulTargetBank ) == pdTRUE ) &&
                             ( prvWritePalNvContext( pxContext ) == pdTRUE ) )
                         {
-                            xOtaStatus = OtaPalSuccess;
+                            uxOtaStatus = OTA_PAL_COMBINE_ERR( OtaPalSuccess, 0 );
                             pxContext->xPalState = OTA_PAL_PENDING_SELF_TEST;
                         }
 
                         break;
 
                     case OTA_PAL_PENDING_SELF_TEST:
-                        xOtaStatus = OtaPalSuccess;
+                        uxOtaStatus = OTA_PAL_COMBINE_ERR( OtaPalSuccess, 0 );
                         break;
 
                     default:
@@ -1060,7 +1065,7 @@ OtaPalStatus_t otaPal_SetPlatformImageState( OtaFileContext_t * const pxFileCont
                     case OTA_PAL_READY:
                     case OTA_PAL_REJECTED:
                     case OTA_PAL_ACCEPTED:
-                        xOtaStatus = OtaPalSuccess;
+                        uxOtaStatus = OTA_PAL_COMBINE_ERR( OtaPalSuccess, 0 );
                         break;
 
                     case OTA_PAL_FILE_OPEN:
@@ -1073,7 +1078,7 @@ OtaPalStatus_t otaPal_SetPlatformImageState( OtaFileContext_t * const pxFileCont
                             ( prvEraseBank( pxContext->ulTargetBank ) == pdTRUE ) &&
                             ( prvDeletePalNvContext() == pdTRUE ) )
                         {
-                            xOtaStatus = OtaPalSuccess;
+                            uxOtaStatus = OTA_PAL_COMBINE_ERR( OtaPalSuccess, 0 );
                             pxContext->xPalState = OTA_PAL_READY;
                         }
 
@@ -1091,7 +1096,7 @@ OtaPalStatus_t otaPal_SetPlatformImageState( OtaFileContext_t * const pxFileCont
         }
     }
 
-    return xOtaStatus;
+    return uxOtaStatus;
 }
 
 
@@ -1157,5 +1162,5 @@ OtaPalStatus_t otaPal_ResetDevice( OtaFileContext_t * const pxFileContext )
         vDoSystemReset();
     }
 
-    return OtaPalUninitialized;
+    return OTA_PAL_COMBINE_ERR( OtaPalUninitialized, 0 );
 }
