@@ -356,7 +356,8 @@ static inline void prvCompressSubscriptionList( MQTTSubscribeInfo_t * pxSubList,
 
     for( size_t uxIdx = 0U; uxIdx < MQTT_AGENT_MAX_SUBSCRIPTIONS; uxIdx++ )
     {
-        if( ( pxSubList[ uxIdx ].topicFilterLength == 0 ) &&
+        if( ( pxSubList[ uxIdx ].pTopicFilter == NULL ) &&
+            ( pxSubList[ uxIdx ].topicFilterLength == 0 ) &&
             ( uxLastOccupiedIndex < MQTT_AGENT_MAX_SUBSCRIPTIONS ) )
         {
             if( uxLastOccupiedIndex <= uxIdx )
@@ -387,7 +388,8 @@ static inline void prvCompressSubscriptionList( MQTTSubscribeInfo_t * pxSubList,
                 }
             }
         }
-        else if( pxSubList[ uxIdx ].topicFilterLength != 0 )
+        else if( ( pxSubList[ uxIdx ].pTopicFilter != NULL ) &&
+                 ( pxSubList[ uxIdx ].topicFilterLength != 0 ) )
         {
             /* Increment count of active subscriptions */
             uxSubCount++;
