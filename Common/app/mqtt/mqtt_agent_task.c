@@ -90,6 +90,11 @@
  */
 #define RETRY_BACKOFF_MULTIPLIER    ( 100U )
 
+/**
+ * @brief The maximum number of retries for network operation with server.
+ */
+#define RETRY_MAX_ATTEMPTS          ( 5U )
+
 static_assert( RETRY_BACKOFF_BASE < UINT16_MAX );
 static_assert( RETRY_MAX_BACKOFF_DELAY < UINT16_MAX );
 static_assert( ( ( uint64_t ) RETRY_BACKOFF_MULTIPLIER * ( uint64_t ) RETRY_MAX_BACKOFF_DELAY ) < UINT32_MAX );
@@ -1081,7 +1086,7 @@ void vMQTTAgentTask( void * pvParameters )
         BackoffAlgorithm_InitializeParams( &xReconnectParams,
                                            RETRY_BACKOFF_BASE,
                                            RETRY_MAX_BACKOFF_DELAY,
-                                           BACKOFF_ALGORITHM_RETRY_FOREVER );
+                                           RETRY_MAX_ATTEMPTS );
 
         xTlsStatus = TLS_TRANSPORT_UNKNOWN_ERROR;
 
@@ -1193,7 +1198,7 @@ void vMQTTAgentTask( void * pvParameters )
             BackoffAlgorithm_InitializeParams( &xReconnectParams,
                                                RETRY_BACKOFF_BASE,
                                                RETRY_MAX_BACKOFF_DELAY,
-                                               BACKOFF_ALGORITHM_RETRY_FOREVER );
+                                               RETRY_MAX_ATTEMPTS );
 
             /* MQTTAgent_CommandLoop() is effectively the agent implementation.  It
              * will manage the MQTT protocol until such time that an error occurs,
@@ -1261,6 +1266,8 @@ void vMQTTAgentTask( void * pvParameters )
     ( void ) xEventGroupClearBits( xSystemEvents, EVT_MASK_MQTT_INIT | EVT_MASK_MQTT_CONNECTED );
 
     LogError( "Terminating MqttAgentTask." );
+
+    configASSERT( 0 );
 
     vTaskDelete( NULL );
 }
