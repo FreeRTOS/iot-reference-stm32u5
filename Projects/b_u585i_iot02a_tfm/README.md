@@ -3,7 +3,23 @@ The b_u585i_iot02a_tfm project utilizes [ARM Trusted Firmware M](https://www.tru
 
 In this project, Trusted Firmware-M is configured to use the [ Large Profile ](https://tf-m-user-guide.trustedfirmware.org/docs/technical_references/design_docs/profiles/tfm_profile_large.html) with [ Isolation Level 2 ](https://tf-m-user-guide.trustedfirmware.org/docs/technical_references/design_docs/ff_isolation.html). Isolation Level 3 support is likely to be implemented for the STM32U5 MCU at some point in the future.
 
-TF-M utilizes the TrustZone features of the Cortex-M33 core to provide isolation between code running in the NSPE (Non Secure Processing Environment) amd code running in the Secure Processing Environment (SPE). In addition, the secure region MPU is used to provide isolation between different portions of the SPE (Secure Processing Environment) firmware.
+TF-M utilizes the TrustZone features of the Cortex-M33 core to provide isolation between code running in the NSPE (Non Secure Processing Environment) amd code running in the Secure Processing Environment (SPE).
+In addition, the secure region MPU is used to provide isolation between different portions of the SPE (Secure Processing Environment) firmware.
+
+## Definitions
+**NSPE**: Non Secure Processing Environment
+
+**SPE**: Secure Processing Environment
+
+**Secure Boot**: The combination of signed application images, an immutable public key(s), and an immutable bootloader which verifies the signature appended to each application image against the relevant public key(s) prior to installation and execution.
+
+**PSA**: ARM's Platform Security Architecture
+
+**PSA APIs**: ARM's [PSA Crypto](https://armmbed.github.io/mbed-crypto/html/), [FWU (Firmware Update)](https://developer.arm.com/documentation/ihi0093/0000/),
+
+**PSA Root of Trust (PRoT)**: The security sensitive portions of the SPE firmware provided by Trusted Firmware M.
+
+**Application Root of Trust (ARoT)**: The remaining portions of the SPE firmware provided by Trusted Firmware M and the application developer.
 
 ## Features
 
@@ -29,45 +45,95 @@ Bulk symmetric crypto, signature verification, and key negotiation operations oc
 
 ### BL2 Bootloader / mcuboot
 
-### FreeRTOS OTA Server Platform Abstraction Layer implementation
+### FreeRTOS OTA Platform Abstraction Layer implementation
 
-## Term Definitions
-**NSPE**: Non Secure Processing Environment
-
-**SPE**: Secure Processing Environment
-
-**Secure Boot**: The combination of signed application images, an immutable public key(s), and an immutable bootloader which verifies the signature appended to each application image against the immutable private key(s) prior to installation and execution.
-
-**PSA**: ARM's Platform Security Architecture
-
-**PSA APIs**: A set of High-Level APIs which provide cryptographic, storage, firmware update, attestation, and other security related services.
-
-**PSA Root of Trust (PRoT)**: The security sensitive portions of the SPE firmware provided by Trusted Firmware M.
-
-**Application Root of Trust (ARoT)**: The remaining portions of the SPE firmware provided by Trusted Firmware M and the application developer.
+The OTA Platform Abstraction Layer implementation is primarily defined by
 
 # Project Configuration
+
+## Flash Protection Mechanisms
+### Flash Memory Layout
+The internal NOR flash memory on the STM32U5 is separated into two bank of 1024 KB for a total of 2MB of NOR flash. Each bank is further separated into 128 pages of 8 KB.
+
+Programming Operations require a minimum block size of 4 32-bit Words or 16 Bytes.
+
+Erase Operations require a minimum size of 1 page = 8 KB.
+### SECWM: Secure Watermark
+When TrustZone is enabled (with the TZEN=1 option bit), Secure Watermark flash area protection can be enabled. This restricts read and write access to code running when the processor is in the *Secure* state. The STM32U5 has two Secure Watermark regions defined by the SECWM1_PSTRT, SECWM1_PEND, SECWM2_PSTRT, and SECWM2_PEND option bits.
+
+The contents of SECWMx_PSTRT defines the starting page (8K) of the SECWM area for flash bank x, while SECWMx_PEND defines the ending page of the SECWM area for bank x. Both SECWMx_PSTRT and SECWMx_PEND are 7 bits wide.
+
+Setting the HDPx_ACCDIS option bit will result in the SECWM configuration being locked until the next reset occurs.
+
+### HDP: Secure Hide Protection
+When a valid SECWM region is defined, Secure Hide Protection (HDP) can be enabled for part or all of a given SECWM region. HDP is typically enabled at runtime via the HDPx_ACCDIS bit in the FLASH_SECHDPCR register to protect bootloader code and data from modification after the bootloader has completed running.
+
+The beginning page number of an HDP area is defined by the corresponding SECWMx_PSTRT option bits while the ending page is defined by the HDPx_PEND option bits.
+
+The HDPxEN option bit is used to enable or disable the specified HDP region in a persistent way. The HDPx_ACCDIS is always cleared to 0 after a reset. Both the HDPxEN option bit and HDPx_ACCDIS register bit must be true for Secure Hide Protection to be enabled.
+
+### Write Protection (WRP)
+Each flash bank may have up to two write-protected regions referred to as regions A and B. Given that the STM32U5 has two flash banks, there are four total WRP regions available: WRP1A, WRP1B, WRP2A, WRP2B. Similar to the SECWM feature, Write Protection regions are defined by a starting and ending page.
+
+The WRPxy_PSTRT option bits defines the starting page number of a WRP region, while the WRPxy_PEND option bits define the ending page number of a given region.
+
+The UNLOCK bit in the FLASH_WRPxyR option byte register can be cleared to 0 to write protect an area of flash until an RDP regression from Level 1 to Level 0 occurs. This mechanism is used to protect most of of the BL2 bootloader.
+
+### Readout Protection (RDP)
+The ReDdout Protection level is the way in which the microcontroller may be *locked* to a particular configuration. In addition, the RDP level determines whether or not access to S / NS memory is possible via
+
+| RDP Level | Description                   | SPE Debug | NSPE Debug    | Option Bytes |
+|-----------|-------------------------------|-----------|---------------|--------------|
+| 0         | Open / Unlocked               | Enabled   | Enabled       | Modifiable   |
+| 0.5       | NSPE Debug only               | Blocked   | Enabled       | Modifiable   |
+| 1         | SPE / NSPE memory protected   | Blocked   | Blocked*      | Modifiable   |
+| 2         | Locked                        | Blocked   | Blocked       | Read-Only*   |
+
+If an OEM1 or OEM2 key is provisioned prior to entering RDP Level 2, regressing back to level 0 is possible with a mass erase of all of the STM32U5 internal flash.
+
+### Flash Privilege Protection
+The FLASH_PRIVCFGR register contains two bits NSPRIV and SPRIV which determine whether flash registers may be accessed by code running in non-privileged mode. Privilege level is separate from the TrustZone Secure / Non-Secure state.  When the SPRIV or NSPRIV bits are set, access to the S or NS flash registers requires that the MCU be in privileged mode (determined by nPRIV in the CONTROL register).
+
+FLASH_PRIVCFGR is not used by this demo.
+
+### Block based Flash protection
+Block based flash protection is organized into 4 32 bit registers per flash bank. This means that each bit controls access to a single 8 KB flash page.
+
+The FLASH_PRIVBB1Rx and FLASH_PRIVBB2Rx registers control the privilege level required to access a given page of flash.
+
+Similarly, the FLASH_SECBB1Rx and FLASH_SECBB2Rx registers control the Security state of the processor required to access a given page of flash.
+
+Both Security Block Based protection and Privlege level Block Based protection must be configured at runtime.
+
 
 ## Flash Memory Layout
 The following table summarizes the flash layout used in this project:
 
-| Offset     | Region Name                     | Size (Dec.) | Size (Hex.) |
-|------------|---------------------------------|-------------|-------------|
-| 0x00000000 | Scratch                         |    64 KB    |   0x10000   |
-| 0x00010000 | BL2 - counters                  |    16 KB    |   0x04000   |
-| 0x00014000 | BL2 - MCUBoot                   |   124 KB    |   0x1F000   |
-| 0x00033000 | OTP Write Protect               |     4 KB    |   0x01000   |
-| 0x0002E000 | NV counters area                |    16 KB    |   0x04000   |
-| 0x00032000 | Secure Storage Area             |    16 KB    |   0x04000   |
-| 0x00036000 | Internal Trusted Storage Area   |    16 KB    |   0x04000   |
-| 0x0003A000 | Secure image     primary slot   |   256 KB    |   0x40000   |
-| 0x0007A000 | Non-secure image primary slot   |   640 KB    |   0xA0000   |
-| 0x0011A000 | Secure image     secondary slot |   256 KB    |   0x40000   |
-| 0x0015A000 | Non-secure image secondary slot |   640 KB    |   0xA0000   |
+| Offset     | Bank |  Pages  | Region Name                     | Size (Dec.) | Size (Hex.) | Image Suffix | Flash Protection |
+|------------|------|---------|---------------------------------|-------------|-------------|------------  | -----------------|
+| 0x00000000 | 1    | 0, 7    | Scratch                         |    64 KB    |   0x10000   | N/A          | SECWM            |
+| 0x00010000 | 1    | 8, 8    | BL2 - NV Counters               |     8 KB    |   0x02000   |              |                  |
+| 0x00012000 | 1    | 9, 9    | BL2 - NV Counters inital value  |     8 KB    |   0x02000   | _bl2.bin     | SECWM, HDP, WRP  |
+| 0x00014000 | 1    | 10, 21  | BL2 - MCUBoot HDP Code          |    96 KB    |   0x18000   | _bl2.bin     | SECWM, HDP, WRP  |
+| 0x0002C000 | 1    | 22, 25  | BL2 - SPE Shared Code           |    28 KB    |   0x07000   | _bl2.bin     |
+| 0x00033000 | 1    | 25, 25  | OTP Write Protect               |     4 KB    |   0x01000   |              |
+| 0x00034000 | 1    | 26, 27  | NV counters area                |    16 KB    |   0x04000   |              |
+| 0x00038000 | 1    | 28, 29  | Secure Storage Area             |    16 KB    |   0x04000   |              |
+| 0x0003C000 | 1    | 30, 31  | Internal Trusted Storage Area   |    16 KB    |   0x04000   |              |
+| 0x00040000 | 1    | 32, 63  | Secure image     primary slot   |   256 KB    |   0x40000   |              |
+| 0x00080000 | 1-2  | 64, 16  | Non-secure image primary slot   |   640 KB    |   0xA0000   |              |
+| 0x00120000 | 2    | 17, 48  | Secure image     secondary slot |   256 KB    |   0x40000   |              |
+| 0x00160000 | 2    | 49, 127 | Non-secure image secondary slot |   640 KB    |   0xA0000   |              |
 
-## Flash Opotion Byte Configuration
+## Flash Option Byte Configuration
+The STM32U5 microcontroller uses option bytes to enable and configure various hardware features, particularly security related features.
+
+Refer to the ST RM0456 document for a more exhaustive description of each option byte.
+
+
 ### TrustZone Enable (TZEN)
-### Readout Protection (RDP)
+The TZEN option byte controls whether or not TrustZone is enabled on the STM32U5 MCU.
+Refer to
 ### Secure Watermark (SECWM)
 ### Secure Hide Protection (HDP)
 ### Secure Boot Address (SECBOOTADD0)
@@ -77,17 +143,21 @@ The following table summarizes the flash layout used in this project:
 
 After importing the b_u585i_iot02a_ntz project into STM32CubeIDE, Build the project by highlighting it in the *Project Explorer* pane and then clicking **Project -> Build Project** from the menu at the top of STM32CubeIDE.
 
-## Customizing the Firmware Signing Keys
-### Generate S and NS signing keys with openssl
+## Customizing the Firmware Metadata for mcuboot
+### Using custom firmware region Signing Keys
 Run the following openssl commands to generate a new set of RSA 3072 bit signing keys:
 ```
-openssl genrsa -out spe_signing_key.pem 3072
-openssl genrsa -out nspe_signing_key.pem 3072
+imgtool keygen -t rsa-3072 -k spe_signing_key.pem
+imgtool keygen -t rsa-3072 -k nspe_signing_key.pem
+
 ```
 
-Then modify the [tfm.mk](tfm.mk) file and set the S_REGION_SIGNING_KEY and NS_REGION_SIGNING_KEY to the absolute paths to your newly generated signing keys.
+Then modify the S_REGION_SIGNING_KEY and NS_REGION_SIGNING_KEY variables in the [project_defs.mk](project_defs.mk) file so that they contain the absolute paths to the relevant region signing keys.
 
 ## Setting the version number and Anti-Rollback counter for each image
+Modify the SPE_VERSION and NSPE_VERSION variables in [project_defs.mk](project_defs.mk) to set the version number encoded in the image header.
+
+Similarly, you can modify the anti rollback counter for each image by setting the SPE_SECURITY_COUNTER and NSPE_SECURITY_COUNTER variables.
 
 
 ## Build Artifacts
@@ -134,7 +204,7 @@ Subsequent updates may use either the s_update, ns_update, s_ns_update, s_signed
 
 When building an image for use with the FreeRTOS OTA service, please use the b_u585i_iot02a_tfm_ns_ota.bin and b_u585i_iot02a_tfm_s_ota.bin images.
 
-## Flashing the Image from the commandline
+## Flashing the Image from the command line
 
 Check that the STM32Programmer_CLI binary is in your PATH and run the following:
 ```
