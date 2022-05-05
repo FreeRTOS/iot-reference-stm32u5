@@ -1688,6 +1688,29 @@ MQTTStatus_t MqttAgent_UnSubscribeSync( MQTTAgentHandle_t xHandle,
                 }
             }
 
+            ( void ) xUnlockSubCtx( pxCtx );
+        }
+        else
+        {
+            xStatus = MQTTIllegalState;
+            LogError( "Failed to acquire MQTTAgent mutex." );
+        }
+
+        /* Send unsubscribe request if only one callbacks left for this subscription */
+        if( ( xStatus == MQTTSuccess ) &&
+            ( pxCtx->pulSubCbCount[ uxSubInfoIdx ] == 1 ) )
+        {
+            /* TODO: Use a reasonable timeout value here */
+            xStatus = prvSendUnsubRequest( &( pxTaskCtx->xAgentContext ),
+                                        pcTopicFilter,
+                                        xTopicFilterLen,
+                                        pxSubInfo->qos,
+                                        portMAX_DELAY );
+        }
+        
+        /* Acquire mutex */
+        if( xLockSubCtx( pxCtx ) )
+        {
             if( xStatus == MQTTSuccess )
             {
                 xStatus = MQTTNoDataAvailable;
@@ -1751,18 +1774,6 @@ MQTTStatus_t MqttAgent_UnSubscribeSync( MQTTAgentHandle_t xHandle,
         {
             xStatus = MQTTIllegalState;
             LogError( "Failed to acquire MQTTAgent mutex." );
-        }
-
-        /* Send unsubscribe request if no other callbacks exist for this subscription */
-        if( ( xStatus == MQTTSuccess ) &&
-            ( xDoUnsubscibeFlag == pdTRUE ) )
-        {
-            /* TODO: Use a reasonable timeout value here */
-            xStatus = prvSendUnsubRequest( &( pxTaskCtx->xAgentContext ),
-                                           pcTopicFilter,
-                                           xTopicFilterLen,
-                                           pxSubInfo->qos,
-                                           portMAX_DELAY );
         }
     }
 
