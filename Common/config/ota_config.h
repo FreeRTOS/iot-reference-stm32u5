@@ -117,7 +117,7 @@
  * This configurations parameter sets the maximum number of static data buffers used by
  * the OTA agent for job and file data blocks received.
  */
-#define otaconfigMAX_NUM_OTA_DATA_BUFFERS       2U
+#define otaconfigMAX_NUM_OTA_DATA_BUFFERS       ( otaconfigMAX_NUM_BLOCKS_REQUEST + 1 )
 
 /**
  * @brief How frequently the device will report its OTA progress to the cloud.
