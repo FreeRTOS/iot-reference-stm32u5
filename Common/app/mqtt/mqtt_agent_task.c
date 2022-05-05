@@ -1702,12 +1702,12 @@ MQTTStatus_t MqttAgent_UnSubscribeSync( MQTTAgentHandle_t xHandle,
         {
             /* TODO: Use a reasonable timeout value here */
             xStatus = prvSendUnsubRequest( &( pxTaskCtx->xAgentContext ),
-                                        pcTopicFilter,
-                                        xTopicFilterLen,
-                                        pxSubInfo->qos,
-                                        portMAX_DELAY );
+                                           pcTopicFilter,
+                                           xTopicFilterLen,
+                                           pxSubInfo->qos,
+                                           portMAX_DELAY );
         }
-        
+
         /* Acquire mutex */
         if( xLockSubCtx( pxCtx ) )
         {
