@@ -1428,12 +1428,11 @@ MQTTStatus_t MqttAgent_SubscribeSync( MQTTAgentHandle_t xHandle,
         {
             MQTTSubscribeInfo_t * const pxSubInfo = &( pxCtx->pxSubscriptions[ uxSubIdx ] );
 
-            if( ( pxCtx->pulSubCbCount[ uxSubIdx ] == 0 ) &&
+            if( ( pxCtx->pxSubscriptions[ uxSubIdx ].pTopicFilter == NULL ) &&
                 ( uxTargetSubIdx == MQTT_AGENT_MAX_SUBSCRIPTIONS ) )
             {
                 /* Check that the current context is indeed empty */
                 configASSERT( pxCtx->pxSubscriptions[ uxSubIdx ].topicFilterLength == 0 );
-                configASSERT( pxCtx->pxSubscriptions[ uxSubIdx ].pTopicFilter == NULL );
 
                 uxTargetSubIdx = uxSubIdx;
                 xStatus = MQTTSuccess;
@@ -1645,7 +1644,7 @@ MQTTStatus_t MqttAgent_UnSubscribeSync( MQTTAgentHandle_t xHandle,
     size_t xTopicFilterLen = 0;
     MQTTAgentTaskCtx_t * pxTaskCtx = ( MQTTAgentTaskCtx_t * ) xHandle;
     SubMgrCtx_t * pxCtx = &( pxTaskCtx->xSubMgrCtx );
-    BaseType_t xDoUnsubscibeFlag = pdFALSE;
+    uint32_t ulCallbackCount = 0;
 
     if( ( xHandle == NULL ) ||
         ( pcTopicFilter == NULL ) ||
@@ -1665,9 +1664,6 @@ MQTTStatus_t MqttAgent_UnSubscribeSync( MQTTAgentHandle_t xHandle,
 
     if( xStatus == MQTTSuccess )
     {
-        MQTTSubscribeInfo_t * pxSubInfo = NULL;
-        size_t uxSubInfoIdx = MQTT_AGENT_MAX_SUBSCRIPTIONS;
-
         xStatus = MQTTNoDataAvailable;
 
         /* Acquire mutex */
@@ -1681,9 +1677,14 @@ MQTTStatus_t MqttAgent_UnSubscribeSync( MQTTAgentHandle_t xHandle,
                                pcTopicFilter,
                                pxCtx->pxSubscriptions[ uxIdx ].topicFilterLength ) == 0 ) )
                 {
-                    uxSubInfoIdx = uxIdx;
+                    ulCallbackCount = pxCtx->pulSubCbCount[ uxIdx ];
+
+                    if( ulCallbackCount > 0 )
+                    {
+                        pxCtx->pulSubCbCount[ uxIdx ] = ulCallbackCount - 1;
+                    }
+
                     xStatus = MQTTSuccess;
-                    pxSubInfo = &( pxCtx->pxSubscriptions[ uxIdx ] );
                     break;
                 }
             }
@@ -1696,21 +1697,40 @@ MQTTStatus_t MqttAgent_UnSubscribeSync( MQTTAgentHandle_t xHandle,
             LogError( "Failed to acquire MQTTAgent mutex." );
         }
 
-        /* Send unsubscribe request if only one callbacks left for this subscription */
+        /* Send unsubscribe request if only one callback is left for this subscription */
         if( ( xStatus == MQTTSuccess ) &&
-            ( pxCtx->pulSubCbCount[ uxSubInfoIdx ] == 1 ) )
+            ( ulCallbackCount == 1 ) )
         {
             /* TODO: Use a reasonable timeout value here */
             xStatus = prvSendUnsubRequest( &( pxTaskCtx->xAgentContext ),
                                            pcTopicFilter,
                                            xTopicFilterLen,
-                                           pxSubInfo->qos,
+                                           MQTTQoS1,
                                            portMAX_DELAY );
         }
 
         /* Acquire mutex */
         if( xLockSubCtx( pxCtx ) )
         {
+            MQTTSubscribeInfo_t * pxSubInfo = NULL;
+            size_t uxSubInfoIdx = MQTT_AGENT_MAX_SUBSCRIPTIONS;
+
+            /* Find matching subscription context again */
+            for( size_t uxIdx = 0U; uxIdx < MQTT_AGENT_MAX_SUBSCRIPTIONS; uxIdx++ )
+            {
+                if( ( pxCtx->pulSubCbCount[ uxIdx ] == 0 ) &&
+                    ( xTopicFilterLen == pxCtx->pxSubscriptions[ uxIdx ].topicFilterLength ) &&
+                    ( strncmp( pxCtx->pxSubscriptions[ uxIdx ].pTopicFilter,
+                               pcTopicFilter,
+                               pxCtx->pxSubscriptions[ uxIdx ].topicFilterLength ) == 0 ) )
+                {
+                    uxSubInfoIdx = uxIdx;
+                    pxSubInfo = &( pxCtx->pxSubscriptions[ uxIdx ] );
+                    xStatus = MQTTSuccess;
+                    break;
+                }
+            }
+
             if( xStatus == MQTTSuccess )
             {
                 xStatus = MQTTNoDataAvailable;
@@ -1728,13 +1748,6 @@ MQTTStatus_t MqttAgent_UnSubscribeSync( MQTTAgentHandle_t xHandle,
                         pxCbCtx->pxSubInfo = NULL;
                         pxCbCtx->xTaskHandle = NULL;
 
-                        configASSERT( pxCtx->pulSubCbCount[ uxSubInfoIdx ] > 0 );
-
-                        if( pxCtx->pulSubCbCount[ uxSubInfoIdx ] > 0 )
-                        {
-                            pxCtx->pulSubCbCount[ uxSubInfoIdx ]--;
-                        }
-
                         configASSERT( pxCtx->uxCallbackCount > 0 );
 
                         pxCtx->uxCallbackCount--;
@@ -1746,15 +1759,14 @@ MQTTStatus_t MqttAgent_UnSubscribeSync( MQTTAgentHandle_t xHandle,
                     }
                 }
 
-                if( pxCtx->pulSubCbCount[ uxSubInfoIdx ] == 0 )
+                if( ( xStatus == MQTTSuccess ) &&
+                    ( ulCallbackCount == 1 ) &&
+                    ( pxCtx->pulSubCbCount[ uxSubInfoIdx ] == 0 ) )
                 {
-                    xDoUnsubscibeFlag = pdTRUE;
-
                     /* Free heap allocated topic filter */
                     vPortFree( ( void * ) pxSubInfo->pTopicFilter );
 
                     pxSubInfo->pTopicFilter = NULL;
-
                     pxSubInfo->topicFilterLength = 0;
                     pxSubInfo->qos = 0;
                     pxCtx->pxSubAckStatus[ uxSubInfoIdx ] = MQTTSubAckFailure;
