@@ -31,6 +31,7 @@ The demo projects both connect to AWS IoT core via the included Wi-Fi module and
 ### Logging
 
 ### Command Line Interface (CLI)
+The CLI interface located in the Common/cli directory is used to provision the device. It also provides other Unix-like utilities. See [Common/cli](Common/cli/ReadMe.md) for details. 
 
 ### Key-Value Store
 The key-value store located in the Common/kvstore directory is used to store runtime configuration values in non-volatile flash memory.
@@ -38,54 +39,6 @@ See [Common/kvstore](Common/kvstore/ReadMe.md) for details.
 
 ### PkiObject API
 The PkiObject API takes care of some of the mundane tasks in converting between different representations of cryptographic objects such as public keys, private keys, and certificates. See [Common/crypto](Common/crypto/ReadMe.md) for details.
-
-### Other Unix-like utilities
-The following other utilities are also available in this image:
-
-```
-ps
-    List the status of all running tasks and related runtime statistics.
-
-kill
-    kill [ -SIGNAME ] <Task ID>
-        Signal a task with the named signal and the specified task id.
-
-    kill [ -n ] <Task ID>
-        Signal a task with the given signal number and the specified task id.
-
-killall
-    killall [ -SIGNAME ] <Task Name>
-    killall [ -n ] <Task Name>
-        Signal a task with a given name with the signal number or signal name given.
-
-heapstat
-    heapstat [-b | --byte]
-        Display heap statistics in bytes.
-
-    heapstat -h | -k | --kibi
-        Display heap statistics in Kibibytes (KiB).
-
-    heapstat -m | --mebi
-        Display heap statistics in Mebibytes (MiB).
-
-    heapstat --kilo
-        Display heap statistics in Kilobytes (KB).
-
-    heapstat --mega
-        Display heap statistics in Megabytes (MB).
-
-reset
-    Reset (reboot) the system.
-
-uptime
-    Display system uptime.
-
-rngtest <number of bytes>
-    Read the specified number of bytes from the rng and output them base64 encoded.
-
-assert
-   Cause a failed assertion.
-```
 
 ### Mbedtls Transport
 The *Common/net/mbedtls_transport.c* file contains a transport layer implementation for coreMQTT and coreHTTP which uses mbedtls to encrypt the connection in a way supported by AWS IoT Core.
