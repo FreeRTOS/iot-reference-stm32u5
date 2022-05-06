@@ -83,6 +83,7 @@
 
 #ifdef TFM_PSA_API
 #include "tfm_fwu_defs.h"
+#include "psa/update.h"
 #endif
 
 
@@ -601,6 +602,10 @@ static void otaAppCallback( OtaJobEvent_t event,
 
 #ifdef TFM_PSA_API
             {
+                /*
+                 * Do version check validation here, given that OTA Agent library does not handle
+                 * runtime version check of secure or non-secure images.
+                 */
                 if( ( OtaPal_ImageVersionCheck( FWU_IMAGE_TYPE_SECURE ) == true ) &&
                     ( OtaPal_ImageVersionCheck( FWU_IMAGE_TYPE_NONSECURE ) == true ) )
                 {
@@ -609,6 +614,19 @@ static void otaAppCallback( OtaJobEvent_t event,
                 else
                 {
                     err = OTA_SetImageState( OtaImageStateRejected );
+
+                    if( err == OtaErrNone )
+                    {
+                        /* Slight delay to flush the logs. */
+                        vTaskDelay( pdMS_TO_TICKS( 500 ) );
+                        /*  Reset the device, to revert back to the old image. */
+                        psa_fwu_request_reboot();
+                        LogError( ( "Failed to reset the device to revert the image." ) );
+                    }
+                    else
+                    {
+                        LogError( ( "Unable to reject the image which failed self test." ) );
+                    }
                 }
             }
 #else /* ifdef TFM_PSA_API */
