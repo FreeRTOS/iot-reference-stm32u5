@@ -44,11 +44,11 @@ fi
 
 # Determine build artifact name
 # shellcheck disable=SC2154
-if [ -n "${BuildArtifactFileBaseName}" ]; then
+if [ -n "${ProjName}" ]; then
     # shellcheck disable=SC2154
-    PROJECT_NAME="${BuildArtifactFileBaseName}"
-elif [ -n "${BuildArtifactFileBaseName}" ]; then
-    PROJECT_NAME="${BuildArtifactFileBaseName}"
+    PROJECT_NAME="${ProjName}"
+elif [ -n "${ProjName}" ]; then
+    PROJECT_NAME="${ProjName}"
 else
     PROJECT_NAME=$(basename "${PWD}")
 fi
