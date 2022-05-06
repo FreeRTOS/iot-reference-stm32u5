@@ -24,12 +24,11 @@ For more details on the feature, see the [ ST Featured IoT Reference Integration
 * Motion Sensor Publishing
 
 ## Key Software Components
-
 ### LWIP TCP/IP Stack
+See [ lwIP ](https://github.com/lwip-tcpip/lwip) for details. 
 
 ### Mbedtls 3.1.0 TLS and Cryptography library
-
-### Logging
+See [ MbedTLS ](https://github.com/Mbed-TLS/mbedtls/tree/d65aeb37349ad1a50e0f6c9b694d4b5290d60e49) for details. 
 
 ### Command Line Interface (CLI)
 The CLI interface located in the Common/cli directory is used to provision the device. It also provides other Unix-like utilities. See [Common/cli](Common/cli/ReadMe.md) for details. 
