@@ -13,40 +13,12 @@ This includes demonstration tasks for the following AWS services:
 * [MQTT File Delivery](https://docs.aws.amazon.com/iot/latest/developerguide/mqtt-based-file-delivery.html)
 * [AWS IoT OTA Update](https://docs.aws.amazon.com/freertos/latest/userguide/freertos-ota-dev.html)
 
-The demo projects both connect to AWS IoT core via the included Wi-Fi module and use the [CoreMQTT-Agent](https://github.com/FreeRTOS/coreMQTT-Agent) library to share a single MQTT connection among multiple tasks. These tasks publish data from a subset of the sensor available on the development board, and demonstrate use of the AWS IoT Device Shadow and Device Defender services.
+The demo projects both connect to AWS IoT core via the included Wi-Fi module and use the [CoreMQTT-Agent](https://github.com/FreeRTOS/coreMQTT-Agent) library to share a single MQTT connection among multiple tasks. These tasks publish environemnt and motion sensor data from a subset of the sensor available on the development board, and demonstrate use of the AWS IoT Device Shadow and Device Defender services.
 
 ## Hardware Description
-The [STM32U585 IoT Discovery kit](https://www.st.com/en/evaluation-tools/b-u585i-iot02a.html) integrates an [STM32U585AII6Q](https://www.st.com/en/microcontrollers-microprocessors/stm32u585ai.html) ARM Cortex-M33 microcontroller with 2048 KB of internal flash memory, 786 kB of SRAM, and the latest in security features.
+The [STM32U585 IoT Discovery Kit](https://www.st.com/en/evaluation-tools/b-u585i-iot02a.html) integrates an [STM32U585AII6Q](https://www.st.com/en/microcontrollers-microprocessors/stm32u585ai.html) ARM Cortex-M33 microcontroller with 2048 KB of internal flash memory, 786 kB of SRAM, and the latest in security features. 
 
-### Sensors
-In addition to the STM32U5 microcontroller, the STM32U5 IoT Discovery Kit is equipped with a variety of sensors including:
-* 2 x [MP23DB01HPTR](https://www.st.com/en/mems-and-sensors/mp23db01hp.html) MEMS Microphones
-* 1 x [HTS221](https://www.st.com/en/mems-and-sensors/hts221.html) Capacitive Humidity and Temperature sensor
-* 1 x [IIS2MDCTR](https://www.st.com/en/mems-and-sensors/iis2mdc.html) 3-Axis Magnetometer
-* 1 x [ISM330DHCX](https://www.st.com/en/mems-and-sensors/ism330dhcx.html) 3D Accelerometer and Gyroscope
-* 1 x [LPS22HH](https://www.st.com/en/mems-and-sensors/lps22hh.html) MEMS Barometric Pressure sensor.
-* 1 x [VL53L5CXV0GC/1](https://www.st.com/en/imaging-and-photonics-solutions/vl53l5cx.html) Time Of Flight Ranging sensor.
-* 1 x [VEML6030](https://www.vishay.com/optical-sensors/list/product-84366/) Ambient Light sensor
-
-### Peripherals
-In addition, the STM32U5 Discovery Kit is also equipped with the following external peripherals:
-* 1 x [EMW3080B](https://www.st.com/en/development-tools/x-wifi-emw3080b.html) WiFi Module
-* 1 x [STM32WB5MMGH6TR](https://www.st.com/en/microcontrollers-microprocessors/stm32wb5mmg.html) Bluetooth Module
-* 1 x [M24128-DFMC6TP](https://www.st.com/en/memories/m24128-df.html) 128kb I2C EEPROM
-* 1 x [STSAFE-A110](https://www.st.com/en/secure-mcus/stsafe-a110.html) Secure Element
-* 1 x [TCPP03](https://www.st.com/en/protections-and-emi-filters/tcpp03-m20.html) USB-C controller
-* 1 x [MX25LM51245GXDI005](https://www.macronix.com/en-us/products/NOR-Flash/Serial-NOR-Flash/Pages/spec.aspx?p=MX25LM51245G&m=Serial%20NOR%20Flash&n=PM2357) 512 Mb (64 MB) Octal-SPI NOR Flash.
-* 1 x [APS6408L-3OB-BA](http://www.apmemory.com/wp-content/uploads/APM_PSRAM_E3_OPI_Xccela-APS6408L-3OBMx-v3.6-PKG.pdf) 64 Mbit (8 MB) Octo-SPI PSRAM
-* 1 x STLINK-V3E Debug Interface
-
-### Expansion
-The STM32U5 Discovery Kit also includes the following expansion connectors:
-* 1 x ARDUINO Uno V3 compatible connector
-* 2 x STMod+ connectors
-* 1 x Pmod expansion connector
-* 1 x ST [MB1379](https://www.st.com/en/development-tools/b-cams-omv.html) camera module connector
-
-### STM32U585 IoT Discovery Kit Resources
+### STM32U585 IoT Discovery kit Resources
 For more information on the STM32U585 IoT Discovery Kit and B-U585I-IOT02A development board, please refer to the following resources:
 * [B-U585I-IOT02A Product Page](https://www.st.com/en/evaluation-tools/b-u585i-iot02a.html)
 * [B-U585I-IOT02A Product Specification](https://www.st.com/resource/en/data_brief/b-u585i-iot02a.pdf)
@@ -61,11 +33,11 @@ For more details about the STM32U5 series of microcontrollers, please refer to t
 * [STM32U575xx and STM32U585xx Device Errata ](https://www.st.com/resource/en/errata_sheet/es0499-stm32u575xx-and-stm32u585xx-device-errata-stmicroelectronics.pdf)
 
 ## AWS IoT Core Demo Tasks
-### MQTT Agent
-### IoT Defender
-### OTA Update
-### Environment Sensor Publishing
-### Motion Sensor Publishing
+* MQTT Agent
+* IoT Defender
+* OTA Update
+* Environment Sensor Publishing
+* Motion Sensor Publishing
 
 ## Key Software Components
 
