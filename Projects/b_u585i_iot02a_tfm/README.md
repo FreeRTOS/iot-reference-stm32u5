@@ -27,7 +27,7 @@ In addition, the secure region MPU is used to provide isolation between differen
 In this project, TF-M is primarily used primarily for secure boot, firmware update functionality, and private key operations (key generation and signing). The [ mcuboot ](https://www.mcuboot.com/) library forms a core part of the BL2 bootloader component of TF-M and forms the basis of the secure boot and firmware update implementation. Mcuboot defines the metadata format used for the header and trailer of each firmware image. This metadata include a digest (hash) of the firmware, cryptographic signature, version number, list of dependencies on other modules, and a variety of other flags. The BL2 bootloader verifies each image prior to every boot.
 
 ### Anti-Rollback
-Anti Rollback is achieved using the MCUboot and TF-M "Security Counter" Implementation detailed on the https://tf-m-user-guide.trustedfirmware.org/docs/technical_references/design_docs/tfm_secure_boot.html page.
+Anti Rollback is achieved using the MCUboot and TF-M [ **Security Counter** ](https://tf-m-user-guide.trustedfirmware.org/docs/technical_references/design_docs/tfm_secure_boot.html) implementation.
 For each region (SPE and NSPE), updates must have a security counter value which is greater than or equal to the current security counter for that region.
 
 During an OTA update, an invalid image security counter will result in the update image will be rejected and the BL2 will revert to the previous image for that region. After an OTA update is booted and "confirmed" via a self-test, the corresponding security counter is incremented to prevent rollback during the next reset cycle. The FreeRTOS OTA implementation included in this project performs this reset automatically.
@@ -39,20 +39,8 @@ Private Key operations are performed via calls to the [ ARM PSA Cryptography API
 
 Bulk symmetric crypto, signature verification, and key negotiation operations occur in the NSPE using the same version of the mbedtls library used in the SPE. Trusted Firmware-M also has the ability to perform symmetric crypto and key negotiation but this functionality is not currently used.
 
-## Software Components
-
-### ARM Trusted Firmware M
-
-### BL2 Bootloader / mcuboot
-
-### FreeRTOS OTA Platform Abstraction Layer implementation
-
-The OTA Platform Abstraction Layer implementation is primarily defined by
-
 # Project Configuration
-
 ## Flash Protection Mechanisms
-### Flash Memory Layout
 The internal NOR flash memory on the STM32U5 is separated into two bank of 1024 KB for a total of 2MB of NOR flash. Each bank is further separated into 128 pages of 8 KB.
 
 Programming Operations require a minimum block size of 4 32-bit Words or 16 Bytes.
@@ -105,42 +93,31 @@ Similarly, the FLASH_SECBB1Rx and FLASH_SECBB2Rx registers control the Security 
 
 Both Security Block Based protection and Privlege level Block Based protection must be configured at runtime.
 
-
 ## Flash Memory Layout
 The following table summarizes the flash layout used in this project:
 
-| Offset     | Bank |  Pages  | Region Name                     | Size (Dec.) | Size (Hex.) | Image Suffix | Flash Protection |
-|------------|------|---------|---------------------------------|-------------|-------------|------------  | -----------------|
-| 0x00000000 | 1    | 0, 7    | Scratch                         |    64 KB    |   0x10000   | N/A          | SECWM            |
-| 0x00010000 | 1    | 8, 8    | BL2 - NV Counters               |     8 KB    |   0x02000   |              |                  |
-| 0x00012000 | 1    | 9, 9    | BL2 - NV Counters inital value  |     8 KB    |   0x02000   | _bl2.bin     | SECWM, HDP, WRP  |
-| 0x00014000 | 1    | 10, 21  | BL2 - MCUBoot HDP Code          |    96 KB    |   0x18000   | _bl2.bin     | SECWM, HDP, WRP  |
+| Offset     | Bank |  Pages  | Region Name                     | Size (Dec.) | Size (Hex.) | Image Suffix |
+|------------|------|---------|---------------------------------|-------------|-------------|------------  |
+| 0x00000000 | 1    | 0, 7    | Scratch                         |    64 KB    |   0x10000   | N/A          |
+| 0x00010000 | 1    | 8, 8    | BL2 - NV Counters               |     8 KB    |   0x02000   |              |
+| 0x00012000 | 1    | 9, 9    | BL2 - NV Counters inital value  |     8 KB    |   0x02000   | _bl2.bin     |
+| 0x00014000 | 1    | 10, 21  | BL2 - MCUBoot HDP Code          |    96 KB    |   0x18000   | _bl2.bin     |
 | 0x0002C000 | 1    | 22, 25  | BL2 - SPE Shared Code           |    28 KB    |   0x07000   | _bl2.bin     |
-| 0x00033000 | 1    | 25, 25  | OTP Write Protect               |     4 KB    |   0x01000   |              |
-| 0x00034000 | 1    | 26, 27  | NV counters area                |    16 KB    |   0x04000   |              |
-| 0x00038000 | 1    | 28, 29  | Secure Storage Area             |    16 KB    |   0x04000   |              |
-| 0x0003C000 | 1    | 30, 31  | Internal Trusted Storage Area   |    16 KB    |   0x04000   |              |
-| 0x00040000 | 1    | 32, 63  | Secure image     primary slot   |   256 KB    |   0x40000   |              |
-| 0x00080000 | 1-2  | 64, 16  | Non-secure image primary slot   |   640 KB    |   0xA0000   |              |
-| 0x00120000 | 2    | 17, 48  | Secure image     secondary slot |   256 KB    |   0x40000   |              |
-| 0x00160000 | 2    | 49, 127 | Non-secure image secondary slot |   640 KB    |   0xA0000   |              |
+| 0x00033000 | 1    | 25, 25  | OTP Write Protect               |     4 KB    |   0x01000   | N/A          |
+| 0x00034000 | 1    | 26, 27  | NV counters area                |    16 KB    |   0x04000   | N/A          |
+| 0x00038000 | 1    | 28, 29  | Secure Storage Area             |    16 KB    |   0x04000   | N/A          |
+| 0x0003C000 | 1    | 30, 31  | Internal Trusted Storage Area   |    16 KB    |   0x04000   | N/A          |
+| 0x00040000 | 1    | 32, 63  | Secure image     primary slot   |   256 KB    |   0x40000   | _s_signed    |
+| 0x00080000 | 1-2  | 64, 16  | Non-secure image primary slot   |   640 KB    |   0xA0000   | _ns_signed   |
+| 0x00120000 | 2    | 17, 48  | Secure image     secondary slot |   256 KB    |   0x40000   | s_update     |
+| 0x00160000 | 2    | 49, 127 | Non-secure image secondary slot |   640 KB    |   0xA0000   | ns_update    |
 
 ## Flash Option Byte Configuration
 The STM32U5 microcontroller uses option bytes to enable and configure various hardware features, particularly security related features.
 
 Refer to the ST RM0456 document for a more exhaustive description of each option byte.
 
-
-### TrustZone Enable (TZEN)
-The TZEN option byte controls whether or not TrustZone is enabled on the STM32U5 MCU.
-Refer to
-### Secure Watermark (SECWM)
-### Secure Hide Protection (HDP)
-### Secure Boot Address (SECBOOTADD0)
-### Flash Write Protection (WRP)
-
 ## Building the Firmware Images
-
 After importing the b_u585i_iot02a_ntz project into STM32CubeIDE, Build the project by highlighting it in the *Project Explorer* pane and then clicking **Project -> Build Project** from the menu at the top of STM32CubeIDE.
 
 ## Customizing the Firmware Metadata for mcuboot
