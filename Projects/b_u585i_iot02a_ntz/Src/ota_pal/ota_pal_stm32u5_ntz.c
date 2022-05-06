@@ -1298,13 +1298,12 @@ OtaPalStatus_t otaPal_ResetDevice( OtaFileContext_t * const pxFileContext )
                 break;
 
             case OTA_PAL_SELF_TEST_FAILED:
-                configASSERT( prvGetActiveBank() == ulGetOtherBank( pxContext->ulTargetBank ) );
+                pxContext->ulPendingBank = ulGetOtherBank( pxContext->ulTargetBank );
 
                 if( prvDeletePalNvContext() == pdFALSE )
                 {
                     uxStatus = OTA_PAL_COMBINE_ERR( OtaPalActivateFailed, 0 );
                 }
-
                 break;
 
             case OTA_PAL_READY:
