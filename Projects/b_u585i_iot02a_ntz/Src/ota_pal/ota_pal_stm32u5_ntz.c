@@ -789,7 +789,8 @@ OtaPalStatus_t otaPal_CreateFileForRx( OtaFileContext_t * const pxFileContext )
     OtaPalContext_t * pxContext = prvGetImageContext();
 
     /* Handle back to back updates */
-    if( pxContext->xPalState == OTA_PAL_ACCEPTED )
+    if( ( pxContext->xPalState == OTA_PAL_ACCEPTED ) ||
+        ( pxContext->xPalState == OTA_PAL_REJECTED ) )
     {
         pxContext->xPalState = OTA_PAL_READY;
     }
