@@ -749,10 +749,13 @@ static OtaPalStatus_t prvValidateSignature( const char * pcPubKeyLabel,
     mbedtls_pk_context xPubKeyCtx;
 
     configASSERT( pcPubKeyLabel != NULL );
-    configASSERT( pucSignature != NULL );
-    configASSERT( uxSignatureLength > 0 );
     configASSERT( pucImageHash != NULL );
     configASSERT( uxHashLength > 0 );
+
+    if ((pucSignature == NULL) || (uxSignatureLength <= 0)) {
+        uxStatus = OTA_PAL_COMBINE_ERR( OtaPalBadSignerCert, 0 );
+        return uxStatus;
+    }
 
     mbedtls_pk_init( &xPubKeyCtx );
 
