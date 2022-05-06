@@ -1,5 +1,5 @@
 # Non-TrustZone Demo Project
-The following Readme.md contains instructions on getting the (b_u585i_iot02a_ntz) version without trustzone enabled of the project up and running. It connects to AWS IoT Core and publishes sensor data.
+The following Readme.md contains instructions on getting the non-trustzone (b_u585i_iot02a_ntz) version of the project up and running. It connects to AWS IoT Core and publishes sensor data.
 
 ## Software Components
 
