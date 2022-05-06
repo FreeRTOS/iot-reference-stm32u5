@@ -617,7 +617,8 @@ static void otaAppCallback( OtaJobEvent_t event,
 
                     if( err == OtaErrNone )
                     {
-                        vDyingGasp();
+                        /* Slight delay to flush the logs. */
+                        vTaskDelay( pdMS_TO_TICKS( 500 ) );
                         /*  Reset the device, to revert back to the old image. */
                         psa_fwu_request_reboot();
                         LogError( ( "Failed to reset the device to revert the image." ) );
