@@ -1,5 +1,5 @@
 # Non-TrustZone Demo Project
-The following Readme.md contains instructions on getting the non-secure(b_u585i_iot02a_ntz) version of the project up and running. It connects to AWS IoT Core and publishes sensor data.
+The following Readme.md contains instructions on getting the (b_u585i_iot02a_ntz) version without trustzone enabled of the project up and running. It connects to AWS IoT Core and publishes sensor data.
 
 ## Software Components
 
@@ -9,13 +9,12 @@ The littlefs library is used as a flash filesystem to demonstrate the external O
 The littlefs port for this board can be found in the [Src/fs](Src/fs) directory.
 
 ### CorePKCS11
-The CorePKCS11 library is used to ease integration and simulate the PKCS11 API that a secure element sdk might provide by handling cryptographic opoerations with mbedtls.
+The CorePKCS11 library is used to ease integration and simulate the PKCS11 API that a secure element sdk might provide by handling cryptographic operations with mbedtls.
 
 The CorePKSA11 PAL implementation that is used in the port can be found in the [Src/crypto/core_pkcs11_pal_littlefs.c](Src/crypto/core_pkcs11_pal_littlefs.c) file.
 
 ### FreeRTOS OTA Platform Abstraction Layer implementation
-
-## Flash Memory Layout
+The OTA PAL is implemented to leverage the dual bank architecture. The internal flash memory is divided into two banks of size 1MB each, an active bank and a non-active bank. The bank split is achieved by setting the Dual Bank Option Byte Register to the enabled state. The loader starts the execution of the image from a well-defined start address in the flash layout. At factory reset, a valid image is programmed into the first bank and the bank is mapped to the start address known to the loader. During an OTA Update, the new firmware image is first staged to the second bank by the current program, running on the active bank. This is achieved by the dual bank feature of the platform, which allows execution in place from one bank while programming flash on the other bank. Once the new image is staged and its signature is verified, the current firmware swaps the bank by oggling the SWAP_BANK option byte register. Toggling the SWAP_BANK register remaps the second bank transparently onto the starting address already known to the loader. On the next reset, the loader starts execution of the new image from the second bank and tests that the image is good and can connect to AWS IoT core.
 
 ## Importing the projects into STM32CubeIDE
 
@@ -47,7 +46,7 @@ stn32u5_tool.sh flash_ntz
 
 The project shows an IoT reference implementation of how to integrate FreeRTOS libraries on STM32U5 platform to perform OTA update with AWS IoT using the *non trustzone* hardware capablities.
 
-The demo runs FreeRTOS OTA agent as one of the RTOS tasks in background, which waits for OTA updates from cloud.
+The demo runs FreeRTOS OTA agent as one of the RTOS tasks in background, which waits for OTA updates from cloud.  
 
 The non-trustzone version of the demo leverages the dual-bank architecutre of the internal flash memory. The 2MB internal flash is split into two banks of 1MB each.
 
