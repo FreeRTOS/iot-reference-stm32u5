@@ -1309,7 +1309,7 @@ OtaPalStatus_t otaPal_ResetDevice( OtaFileContext_t * const pxFileContext )
             case OTA_PAL_READY:
             case OTA_PAL_FILE_OPEN:
             case OTA_PAL_PENDING_ACTIVATION:
-                configASSERT( prvGetActiveBank() == ulGetOtherBank( pxContext->ulTargetBank ) );
+                pxContext->ulPendingBank = ulGetOtherBank( pxContext->ulTargetBank );
 
             default:
             case OTA_PAL_NOT_INITIALIZED:
