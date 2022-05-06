@@ -24,7 +24,7 @@ In addition, the secure region MPU is used to provide isolation between differen
 ## Features
 
 ### Secure Boot / Secure Firmware Update
-In this project, TF-M is primarily used primarily for secure boot, firmware update functionality, and private key operations (key generation and signing). The [ mcuboot ](https://www.mcuboot.com/) library forms a core part of the BL2 bootloader component of TF-M and forms the basis of the secure boot and firmware update implementation. Mcuboot defines the metadata format used for the header and trailer of each firmware image. This metadata include a digest (hash) of the firmware, cryptographic signature, version number, list of dependencies on other modules, and a variety of other flags. The BL2 bootloader verifies each image prior to every boot.
+In this project, TF-M is primarily used primarily for secure boot, firmware update functionality, and private key operations (key generation and signing). The [mcuboot](https://www.mcuboot.com/) library forms a core part of the BL2 bootloader component of TF-M and forms the basis of the secure boot and firmware update implementation. Mcuboot defines the metadata format used for the header and trailer of each firmware image. This metadata include a digest (hash) of the firmware, cryptographic signature, version number, list of dependencies on other modules, and a variety of other flags. The BL2 bootloader verifies each image prior to every boot.
 
 ### Anti-Rollback
 Anti Rollback is achieved using the MCUboot and TF-M "Security Counter" Implementation detailed on the https://tf-m-user-guide.trustedfirmware.org/docs/technical_references/design_docs/tfm_secure_boot.html page.
