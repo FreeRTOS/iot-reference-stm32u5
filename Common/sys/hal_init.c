@@ -28,6 +28,7 @@
 #include "FreeRTOS.h"
 #include "stm32u5xx_hal.h"
 #include "hw_defs.h"
+#include "task.h"
 
 /* Global peripheral handles */
 RTC_HandleTypeDef * pxHndlRtc = NULL;
@@ -582,7 +583,7 @@ static void hw_rng_init( void )
         .State                    = HAL_RNG_STATE_RESET,
         .RandomNumber             = 0
     };
-    volatile uint32_t ulDummyValue = 0;
+    uint32_t ulDummyValue = 0;
 
     PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RNG;
     PeriphClkInit.RngClockSelection = RCC_RNGCLKSOURCE_HSI48;
@@ -601,6 +602,8 @@ static void hw_rng_init( void )
 
     /* Ignore first random value returned */
     ( void ) HAL_RNG_GenerateRandomNumber( &xRngHandle, &ulDummyValue );
+
+    ( void ) ulDummyValue;
 
     if( xResult == HAL_OK )
     {
@@ -715,6 +718,39 @@ void HAL_I2C_MspInit( I2C_HandleTypeDef * pxHndlI2c )
 
             /* Peripheral clock enable */
             __HAL_RCC_I2C2_CLK_ENABLE();
+        }
+    }
+}
+
+/* Override HAL Tick weak functions */
+HAL_StatusTypeDef HAL_InitTick( uint32_t TickPriority )
+{
+    ( void ) TickPriority;
+    ( void ) SysTick_Config( SystemCoreClock / 1000 );
+    return HAL_OK;
+}
+
+
+void HAL_Delay( uint32_t ulDelayMs )
+{
+    if( xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED )
+    {
+        vTaskDelay( pdMS_TO_TICKS( ulDelayMs ) );
+    }
+    else
+    {
+        uint32_t ulStartTick = HAL_GetTick();
+        uint32_t ulTicksWaited = ulDelayMs;
+
+        /* Add a freq to guarantee minimum wait */
+        if( ulTicksWaited < HAL_MAX_DELAY )
+        {
+            ulTicksWaited += ( uint32_t ) ( HAL_GetTickFreq() );
+        }
+
+        while( ( HAL_GetTick() - ulStartTick ) < ulTicksWaited )
+        {
+            __NOP();
         }
     }
 }
