@@ -752,7 +752,8 @@ static OtaPalStatus_t prvValidateSignature( const char * pcPubKeyLabel,
     configASSERT( pucImageHash != NULL );
     configASSERT( uxHashLength > 0 );
 
-    if ((pucSignature == NULL) || (uxSignatureLength <= 0)) {
+    if( ( pucSignature == NULL ) || ( uxSignatureLength <= 0 ) )
+    {
         uxStatus = OTA_PAL_COMBINE_ERR( OtaPalBadSignerCert, 0 );
         return uxStatus;
     }
@@ -1307,6 +1308,7 @@ OtaPalStatus_t otaPal_ResetDevice( OtaFileContext_t * const pxFileContext )
                 {
                     uxStatus = OTA_PAL_COMBINE_ERR( OtaPalActivateFailed, 0 );
                 }
+
                 break;
 
             case OTA_PAL_READY:
