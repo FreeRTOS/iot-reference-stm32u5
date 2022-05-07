@@ -47,11 +47,11 @@ Optionally, client key / certificate authentication may be used with the mbedtls
 ### Cloning the Repository
 To clone using HTTPS:
 ```
-git clone https://github.com/FreeRTOS/lab-iot-reference-stm32u5.git --recurse-submodules
+git clone https://github.com/FreeRTOS/iot-reference-stm32u5.git --recurse-submodules
 ```
 Using SSH:
 ```
-git clone git@github.com:FreeRTOS/lab-iot-reference-stm32u5 --recurse-submodules
+git clone git@github.com:FreeRTOS/iot-reference-stm32u5 --recurse-submodules
 ```
 If you have downloaded the repo without using the `--recurse-submodules` argument, you should run:
 ```
@@ -61,7 +61,7 @@ git submodule update --init --recursive
 To get started running demos, see the [Getting Started Guide](Getting_Started_Guide.md).
 
 ## Contribution
-See [CONTRIBUTING](https://github.com/FreeRTOS/lab-iot-reference-nxp-rt1060/blob/main/CONTRIBUTING.md) for more information.
+See [CONTRIBUTING](https://github.com/FreeRTOS/iot-reference-stm32u5/blob/main/CONTRIBUTING.md) for more information.
 
 ## License
 Source code located in the *Projects*, *Common*, *Middleware/AWS*, and *Middleware/FreeRTOS* directories are available under the terms of the MIT License. See the LICENSE file for more details.
