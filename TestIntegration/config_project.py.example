@@ -32,15 +32,15 @@ class OtaProject:
 
     # AWS configuration
     s3_bucket_name: str = "CHANGEME"  # example "otatest001"
-    ota_update_role_arn: str = "CHANGEME" # example "arn:aws:iam::270533122096:role/OTATestRole001"
-    ecdsa_signer_certificate_arn: str = "CHANGEME" # example "arn:aws:acm:us-west-2:270533122096:certificate/9985e7e0-2cf5-48ee-9768-2dbf6fc7c1ac"
+    ota_update_role_arn: str = "CHANGEME" # example "arn:aws:iam::ACCTID:role/OTATestRole001"
+    ecdsa_signer_certificate_arn: str = "CHANGEME" # example "arn:aws:acm:us-west-2:ACCTID:certificate/9985e7e0-2cf5-48ee-9768-2dbf6fc7c1ac"
     ecdsa_signer_certificate_public_key: str = \
     "-----BEGIN PUBLIC KEY-----\n"\
     "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE6wEohmFauiuiMLywU75bXi+RV0Q1\n"\
     "1hjyluPeYzgh/PA8JgXnzQGQBDG9z5hUbpa/fVgJFOjXmS5a1+2Pbe9SVA==\n"\
     "-----END PUBLIC KEY-----\n"
     ecdsa_signer_certificate_private_key_sec1: str = "CHANGEME"
-    ecdsa_untrusted_signer_certificate_arn: str = "CHANGEME" # example "arn:aws:acm:us-west-2:270533122096:certificate/ee8e9df2-6795-4450-8c9e-b74f96575035"
+    ecdsa_untrusted_signer_certificate_arn: str = "CHANGEME" # example "arn:aws:acm:us-west-2:ACCTID:certificate/ee8e9df2-6795-4450-8c9e-b74f96575035"
     rsa_signer_certificate_arn: str = ""
     rsa_untrusted_signer_certificate_arn: str = ""
     signer_platform: str = "AmazonFreeRTOS-Default"
