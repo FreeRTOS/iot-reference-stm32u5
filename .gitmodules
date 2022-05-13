@@ -87,3 +87,6 @@
 [submodule "Drivers/BSP/Components/Common"]
 	path = Drivers/BSP/Components/Common
 	url = https://github.com/STMicroelectronics/stm32-bsp-common.git
+[submodule "Drivers/BSP/Components/hts221"]
+	path = Drivers/BSP/Components/hts221
+	url = https://github.com/STMicroelectronics/stm32-hts221
