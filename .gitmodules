@@ -75,3 +75,12 @@
 [submodule "Middleware/ARM/ota-pal-psa"]
 	path = Middleware/ARM/ota-pal-psa
 	url = https://github.com/ravibhagavandas/freertos-ota-pal-psa.git
+[submodule "Drivers/BSP/B-U585I-IOT02A"]
+	path = Drivers/BSP/B-U585I-IOT02A
+	url = https://github.com/STMicroelectronics/b-u585i-iot02a-bsp.git
+[submodule "Drivers/BSP/Components/veml6030"]
+	path = Drivers/BSP/Components/veml6030
+	url = https://github.com/STMicroelectronics/stm32-veml6030.git
+[submodule "Drivers/BSP/Components/ism330dhcx"]
+	path = Drivers/BSP/Components/ism330dhcx
+	url = https://github.com/STMicroelectronics/stm32-ism330dhcx
