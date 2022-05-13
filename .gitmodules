@@ -84,3 +84,6 @@
 [submodule "Drivers/BSP/Components/ism330dhcx"]
 	path = Drivers/BSP/Components/ism330dhcx
 	url = https://github.com/STMicroelectronics/stm32-ism330dhcx
+[submodule "Drivers/BSP/Components/Common"]
+	path = Drivers/BSP/Components/Common
+	url = https://github.com/STMicroelectronics/stm32-bsp-common.git
