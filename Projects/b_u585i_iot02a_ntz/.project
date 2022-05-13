@@ -57,9 +57,9 @@
 			<locationURI>WORKSPACE_LOC/Drivers/BSP/Components/iis2mdc</locationURI>
 		</link>
 		<link>
-			<name>Drivers/ism330dlc</name>
+			<name>Drivers/ism330dhcx</name>
 			<type>2</type>
-			<locationURI>WORKSPACE_LOC/Drivers/BSP/Components/ism330dlc</locationURI>
+			<locationURI>WORKSPACE_LOC/Drivers/BSP/Components/ism330dhcx</locationURI>
 		</link>
 		<link>
 			<name>Drivers/lps22hh</name>
