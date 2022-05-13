@@ -90,3 +90,6 @@
 [submodule "Drivers/BSP/Components/hts221"]
 	path = Drivers/BSP/Components/hts221
 	url = https://github.com/STMicroelectronics/stm32-hts221
+[submodule "Drivers/BSP/Components/iis2mdc"]
+	path = Drivers/BSP/Components/iis2mdc
+	url = https://github.com/STMicroelectronics/stm32-iis2mdc
