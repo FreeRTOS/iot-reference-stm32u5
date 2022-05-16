@@ -96,3 +96,6 @@
 [submodule "Drivers/BSP/Components/lsm6dso"]
 	path = Drivers/BSP/Components/lsm6dso
 	url = https://github.com/STMicroelectronics/stm32-lsm6dso
+[submodule "Drivers/BSP/Components/lps22hh"]
+	path = Drivers/BSP/Components/lps22hh
+	url = https://github.com/STMicroelectronics/stm32-lps22hh
