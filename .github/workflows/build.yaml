@@ -25,11 +25,9 @@ jobs:
           - os: ubuntu-latest
             ide_pkg_name: "st-stm32cubeide_1.9.0_12015_20220302_0855_amd64"
             ide_pkg_url: "https://www.st.com/content/ccc/resource/technical/software/sw_development_suite/group0/6c/ed/b5/05/5d/2f/44/f3/stm32cubeide_lnx/files/st-stm32cubeide_1.9.0_12015_20220302_0855_amd64.sh.zip/jcr:content/translations/en.st-stm32cubeide_1.9.0_12015_20220302_0855_amd64.sh.zip"
-            ide_bin: "stm32cubeide"
             apt_pkg_deps: "unzip wget cmake ninja-build python3 python3-pip python3-virtualenv rsync"
     env:
       IDE_PKG_NAME: ${{ matrix.ide_pkg_name }}
-      IDE_BIN: ${{ matrix.ide_bin }}
       PROJECT_PATH: ${{ github.workspace }}/Projects/${{ matrix.project }}
     steps:
       - name: Checkout Target Project
@@ -66,16 +64,15 @@ jobs:
         run: |
           mkdir -p STM32CubeIDE
           tar -xzf ~/cache/st-stm32cubeide_1.9.0_12015_20220302_0855_amd64.tar.gz --directory STM32CubeIDE
-      - name: Import Projects into STM32CubeIDE
+      - name: Import Project and Build with STM32CubeIDE
         shell: bash
         run: |
-          CUBEIDE="STM32CubeIDE/${IDE_BIN} --launcher.suppressErrors -nosplash -application org.eclipse.cdt.managedbuilder.core.headlessbuild -data ${GITHUB_WORKSPACE} -verbose"
-          ${CUBEIDE} -import "${GITHUB_WORKSPACE}/Projects/${{ matrix.project }}"
-      - name: Build
-        shell: bash
-        run: |
-          CUBEIDE="STM32CubeIDE/${IDE_BIN} --launcher.suppressErrors -nosplash -application org.eclipse.cdt.managedbuilder.core.headlessbuild -data ${GITHUB_WORKSPACE} -verbose"
-          $CUBEIDE -build "${{ matrix.project }}/.*"
+          export PATH=${PWD}/STM32CubeIDE:${PATH}
+          stm32cubeide --launcher.suppressErrors -nosplash -verbose \
+            -application org.eclipse.cdt.managedbuilder.core.headlessbuild \
+            -data "${GITHUB_WORKSPACE}" \
+            -import "${GITHUB_WORKSPACE}/Projects/${{ matrix.project }}" \
+            -build "${{ matrix.project }}/.*"
           echo "Listing artifacts: "
           ls -1 "${{ github.workspace }}/Projects/${{ matrix.project }}/Debug/${{ matrix.project }}"*
       - name: Copy Artifacts
@@ -93,6 +90,7 @@ jobs:
 
   windows:
     runs-on: windows-latest
+    continue-on-error: true
     strategy:
       matrix:
         project: [b_u585i_iot02a_ntz, b_u585i_iot02a_tfm]
@@ -100,13 +98,10 @@ jobs:
           - os: windows-latest
             ide_pkg_name: "st-stm32cubeide_1.9.0_12015_20220302_0855_x86_64"
             ide_pkg_url: "https://www.st.com/content/ccc/resource/technical/software/sw_development_suite/group0/1e/53/08/15/0f/e2/4c/a6/stm32cubeide_win/files/st-stm32cubeide_1.9.0_12015_20220302_0855_x86_64.exe.zip/jcr:content/translations/en.st-stm32cubeide_1.9.0_12015_20220302_0855_x86_64.exe.zip"
-            ide_bin: "stm32cubeidec.exe"
-            choco_pkg_deps: "cmake wget git python3 7zip ninja rsync"
             scoop_pkg_deps: "cmake wget git python 7zip ninja"
             pip_pkg_deps: "virtualenv"
     env:
       IDE_PKG_NAME: ${{ matrix.ide_pkg_name }}
-      IDE_BIN: ${{ matrix.ide_bin }}
     steps:
       - name: Enable windows long path
         shell: bash
@@ -135,8 +130,7 @@ jobs:
       - name: Fetch Packages
         shell: bash
         run: |
-          export PATH="~/scoop/shims:${PATH}"
-          echo "~/scoop/shims" >> $GITHUB_PATH
+          export PATH="$(realpath ~/scoop)/shims:${PATH}"
           for pkg in "${{ matrix.scoop_pkg_deps }}"; do
             scoop install $pkg
           done
@@ -144,6 +138,7 @@ jobs:
       - name: Initialize python virtualenv
         shell: bash
         run: |
+          export PATH="$(realpath ~/scoop)/shims:${PATH}"
           cd ${GITHUB_WORKSPACE}
           source tools/env_setup.sh
       - name: Download and unzip IDE
@@ -157,22 +152,18 @@ jobs:
       - name: Extract IDE
         shell: bash
         run: |
+          cd $GITHUB_WORKSPACE/../
           7z x ~/cache/${{ matrix.ide_pkg_name }}.exe
-      - name: Import Projects into STM32CubeIDE
-        shell: bash
+      - name: Import and Build
+        shell: cmd
         run: |
-          CUBEIDE="STM32CubeIDE/${IDE_BIN} --launcher.suppressErrors -nosplash -application org.eclipse.cdt.managedbuilder.core.headlessbuild -data ${GITHUB_WORKSPACE} -verbose"
-          echo "CUBEIDE=${CUBEIDE}"
-          echo "GITHUB_WORKSPACE=${GITHUB_WORKSPACE}"
-          ${CUBEIDE} -removeAll "${GITHUB_WORKSPACE}\Projects"
-          ${CUBEIDE} -import "${GITHUB_WORKSPACE}\Projects\${{ matrix.project }}"
-          ${CUBEIDE} -import "${GITHUB_WORKSPACE}\Projects\${{ matrix.project }}"
-      - name: Build
-        shell: bash
-        run: |
-          CUBEIDE="STM32CubeIDE/${IDE_BIN} --launcher.suppressErrors -nosplash -application org.eclipse.cdt.managedbuilder.core.headlessbuild -data ${GITHUB_WORKSPACE} -verbose -no-indexer"
-          ${CUBEIDE} -build "${{ matrix.project }}/.*"
-          ${CUBEIDE} -build "${{ matrix.project }}/.*"
+          cd %GITHUB_WORKSPACE%
+          cd ..
+          set PATH=%CD%\STM32CubeIDE;%PATH%
+          set PATH=%HOMEDRIVE%%HOMEPATH%\scoop\shims;%PATH%
+          .venv\Scripts\activate.bat
+          SET
+          stm32cubeidec --launcher.suppressErrors -nosplash -application org.eclipse.cdt.managedbuilder.core.headlessbuild -data %GITHUB_WORKSPACE% -verbose -no-indexer -importAll %GITHUB_WORKSPACE%\Projects -cleanBuild "${{ matrix.project }}/.*"
       - name: Copy Artifacts
         shell: bash
         run: |
