@@ -1,4 +1,4 @@
-#!python
+#!/usr/bin/env python3
 #  FreeRTOS STM32 Reference Integration
 #
 #  Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
