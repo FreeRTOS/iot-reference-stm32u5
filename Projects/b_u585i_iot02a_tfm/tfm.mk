@@ -92,8 +92,9 @@ info:
 	@echo "MBEDTLS_SRC_PATH: ${MBEDTLS_SRC_PATH}"
 	@echo "MCUBOOT_SRC_PATH: ${MCUBOOT_SRC_PATH}"
 	@echo "SHELLFLAGS:       ${.SHELLFLAGS}"
-	@echo "CFLAGS:			 ${CFLAGS}"
-	@echo "LDFLAGS:			 ${LDFLAGS}"
+	@echo "CFLAGS:           ${CFLAGS}"
+	@echo "LDFLAGS:          ${LDFLAGS}"
+	@echo "SHELL:            ${SHELL}"
 
 ###############################################################################
 # Rules to apply TF-M patches to mcuboot, mbedtls.
@@ -106,8 +107,8 @@ MBEDTLS_PATCHES_APPLIED = ${wildcard ${MBEDTLS_SRC_PATH}/*.patched}
 ${MBEDTLS_SRC_PATH}/%.patched : ${TFM_SRC_PATH}/lib/ext/mbedcrypto/%.patch
 	@echo Applying mbedtls patch: $(notdir $<)
 	git -C ${MBEDTLS_SRC_PATH} apply --whitespace=nowarn $<
-	cp $< $@
-	touch $@
+	cp "$<" "$@"
+	touch "$@"
 
 MCUBOOT_PATCHES := $(wildcard ${TFM_SRC_PATH}/lib/ext/mcuboot/*.patch)
 MCUBOOT_PATCH_FLAGS = $(foreach file,$(notdir ${MCUBOOT_PATCHES}),${MCUBOOT_SRC_PATH}/$(basename ${file}).patched)
@@ -117,8 +118,8 @@ MCUBOOT_PATCHES_APPLIED = ${wildcard ${MCUBOOT_SRC_PATH}/*.patched}
 ${MCUBOOT_SRC_PATH}/%.patched : ${TFM_SRC_PATH}/lib/ext/mcuboot/%.patch
 	@echo Applying mcuboot patch: $(notdir $<)
 	git -C ${MCUBOOT_SRC_PATH} apply --whitespace=nowarn $<
-	cp $< $@
-	touch $@
+	cp "$<" "$@"
+	touch "$@"
 
 # Remove any applied mcuboot and mbetls patches
 spe_patch_libs_clean :
@@ -146,10 +147,12 @@ spe_patch_libs_distclean :
 # Use cmake to generate the Makefile file
 ${TFM_BUILD_PATH}/.ready : ${MBEDTLS_PATCH_FLAGS} ${MCUBOOT_PATCH_FLAGS}
 	@echo Calling cmake for artifact: $@ due to prereq: $?
-	${RM} ${TFM_BUILD_PATH}
+	${RM} -rf ${TFM_BUILD_PATH}
 	mkdir -p ${TFM_BUILD_PATH}
 
-	source ${TOOLS_PATH}/env_setup.sh
+	bash -c "${TOOLS_PATH}/env_setup.sh"
+
+	source ${TOOLS_PATH}/env_setup.sh && \
 	cmake -S ${TFM_SRC_PATH} -B ${TFM_BUILD_PATH} \
 		-DTFM_SPM_LOG_LEVEL_DEBUG=1 \
 		-DTFM_PLATFORM=stm/b_u585i_iot02a \
@@ -167,6 +170,8 @@ ${TFM_BUILD_PATH}/.ready : ${MBEDTLS_PATCH_FLAGS} ${MCUBOOT_PATCH_FLAGS}
 		-G"Unix Makefiles" \
 		-DCONFIG_TFM_FP=hard \
 		-DTFM_EXCEPTION_INFO_DUMP=on \
+		-DCMAKE_OBJECT_PATH_MAX=1024 \
+		-DCMAKE_OBJECT_NAME_MAX=1019 \
 		-DNS=0 && touch $@
 	sleep 1
 
@@ -300,7 +305,7 @@ ${BUILD_PATH}/image_macros_preprocessed_bl2.c : ${TFM_BUILD_PATH}/image_macros_t
 # Export the macros from image_macros_to_preprocess_bl2.c into a shell script
 ###############################################################################
 ${BUILD_PATH}/image_defs.sh : ${BUILD_PATH}/image_macros_preprocessed_bl2.c
-	source ${TOOLS_PATH}/env_setup.sh
+	source ${TOOLS_PATH}/env_setup.sh && \
 	python ${TOOLS_PATH}/macro_to_kvfile.py ${BUILD_PATH}/image_defs.sh ${BUILD_PATH}/image_macros_preprocessed_bl2.c
 
 nspe_build_reqs_clean:
@@ -339,7 +344,7 @@ factory : ${BUILD_PATH}/${PROJECT_NAME}_s_signed.hex \
 # Rule to generate combined s and ns "factory" images
 ###############################################################################
 ${BUILD_PATH}/${PROJECT_NAME}_s_ns% : ${BUILD_PATH}/${PROJECT_NAME}_s% ${BUILD_PATH}/${PROJECT_NAME}_ns%
-	source ${TOOLS_PATH}/env_setup.sh
+	source ${TOOLS_PATH}/env_setup.sh && \
 	python ${PROJECT_PATH}/tfm/scripts/assemble.py \
 		--layout ${abspath "${PROJECT_PATH}"}/tfm/layout_files/signing_layout_s.o \
 		-s ${BUILD_PATH}/${PROJECT_NAME}_s$* \
@@ -420,35 +425,35 @@ ${BUILD_PATH}/${PROJECT_NAME}_ns_ota.bin : ${BUILD_PATH}/${PROJECT_NAME}_ns.bin
 # Convert signed images from bin to hex format
 ###############################################################################
 ${BUILD_PATH}/${PROJECT_NAME}_s_update.hex : ${BUILD_PATH}/${PROJECT_NAME}_s_signed.bin ${BUILD_PATH}/image_defs.sh
-	source ${BUILD_PATH}/image_defs.sh
-	source ${TOOLS_PATH}/env_setup.sh
+	source ${BUILD_PATH}/image_defs.sh && \
+	source ${TOOLS_PATH}/env_setup.sh && \
 	bin2hex.py --offset $$RE_IMAGE_FLASH_SECURE_UPDATE $< $@
 
 ${BUILD_PATH}/${PROJECT_NAME}_ns_update.hex : ${BUILD_PATH}/${PROJECT_NAME}_ns_signed.bin ${BUILD_PATH}/image_defs.sh
-	source ${BUILD_PATH}/image_defs.sh
-	source ${TOOLS_PATH}/env_setup.sh
+	source ${BUILD_PATH}/image_defs.sh && \
+	source ${TOOLS_PATH}/env_setup.sh && \
 	bin2hex.py --offset $$RE_IMAGE_FLASH_NON_SECURE_UPDATE $< $@
 
 ${BUILD_PATH}/${PROJECT_NAME}_s_signed.hex : ${BUILD_PATH}/${PROJECT_NAME}_s_signed.bin ${BUILD_PATH}/image_defs.sh
-	source ${BUILD_PATH}/image_defs.sh
-	source ${TOOLS_PATH}/env_setup.sh
+	source ${BUILD_PATH}/image_defs.sh && \
+	source ${TOOLS_PATH}/env_setup.sh && \
 	bin2hex.py --offset $$RE_IMAGE_FLASH_ADDRESS_SECURE $< $@
 
 ${BUILD_PATH}/${PROJECT_NAME}_ns_signed.hex : ${BUILD_PATH}/${PROJECT_NAME}_ns_signed.bin ${BUILD_PATH}/image_defs.sh
-	source ${BUILD_PATH}/image_defs.sh
-	source ${TOOLS_PATH}/env_setup.sh
+	source ${BUILD_PATH}/image_defs.sh && \
+	source ${TOOLS_PATH}/env_setup.sh && \
 	bin2hex.py --offset $$RE_IMAGE_FLASH_ADDRESS_NON_SECURE $< $@
 
 ${BUILD_PATH}/${PROJECT_NAME}_s_ns_signed.hex : ${BUILD_PATH}/${PROJECT_NAME}_s_signed.hex ${BUILD_PATH}/${PROJECT_NAME}_ns_signed.hex
-	source ${TOOLS_PATH}/env_setup.sh
+	source ${TOOLS_PATH}/env_setup.sh && \
 	hexmerge.py $^ -o $@
 
 ${BUILD_PATH}/${PROJECT_NAME}_s_ns_update.hex : ${BUILD_PATH}/${PROJECT_NAME}_s_update.hex ${BUILD_PATH}/${PROJECT_NAME}_ns_update.hex
-	source ${TOOLS_PATH}/env_setup.sh
+	source ${TOOLS_PATH}/env_setup.sh && \
 	hexmerge.py $^ -o $@
 
 ${BUILD_PATH}/${PROJECT_NAME}_bl2_s_ns_factory.hex : ${BUILD_PATH}/${PROJECT_NAME}_s_signed.hex ${BUILD_PATH}/${PROJECT_NAME}_ns_signed.hex ${BUILD_PATH}/${PROJECT_NAME}_bl2.hex
-	source ${TOOLS_PATH}/env_setup.sh
+	source ${TOOLS_PATH}/env_setup.sh && \
 	hexmerge.py $^ -o $@
 
 spe_build_reqs : ${TFM_BUILD_PATH}/.ready
