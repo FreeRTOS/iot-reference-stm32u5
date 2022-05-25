@@ -12,7 +12,6 @@ pre-build : nspe_pre_build
 
 post-build : nspe_post_build
 
-#secondary-outputs : nspe_post_build
-
 tfm_clean:
 	-${RM} *.{hex,bin,elf,axf,sh,ld,c}
+	-${MAKE} -f ../tfm.mk clean
