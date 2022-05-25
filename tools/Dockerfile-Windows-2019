@@ -1,0 +1,29 @@
+# Indicates that the windowsservercore image will be used as the base image.
+FROM mcr.microsoft.com/windows/servercore:ltsc2019
+
+# Metadata indicating an image maintainer.
+LABEL maintainer="none@none.com"
+
+RUN setx /M CYGWIN "winsymlinks:lnk"
+RUN powershell New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
+RUN powershell iwr get.scoop.sh -outfile install.ps1
+RUN powershell .\install.ps1 -RunAsAdmin
+RUN scoop install cmake wget git python 7zip ninja perl
+RUN reg import %USERPROFILE%\scoop\apps\python\current\install-pep-514.reg
+RUN scoop shim add bash %USERPROFILE%\scoop\apps\git\current\bin\bash.exe
+RUN scoop cache rm *
+RUN setx /M PATH %USERPROFILE%\scoop\apps\git\current\bin;%PATH%
+RUN python -m pip install virtualenv
+
+RUN [ "bash", "-c", "\
+      wget 'https://www.st.com/content/ccc/resource/technical/software/sw_development_suite/group0/1e/53/08/15/0f/e2/4c/a6/stm32cubeide_win/files/st-stm32cubeide_1.9.0_12015_20220302_0855_x86_64.exe.zip/jcr:content/translations/en.st-stm32cubeide_1.9.0_12015_20220302_0855_x86_64.exe.zip'; \
+      7z x en.st-stm32cubeide_1.9.0_12015_20220302_0855_x86_64.exe.zip; \
+      rm en.st-stm32cubeide_1.9.0_12015_20220302_0855_x86_64.exe.zip; \
+      7z x st-stm32cubeide_1.9.0_12015_20220302_0855_x86_64.exe; \
+      rm st-stm32cubeide_1.9.0_12015_20220302_0855_x86_64.exe; \
+      " ]
+RUN scoop shim add stm32cubeidec %SYSTEMDRIVE%\STM32CubeIDE\stm32cubeidec.exe
+RUN setx PATH %SYSTEMDRIVE%\STM32CubeIDE;%PATH%
+
+# Sets a command or process that will run each time a container is run from the new image.
+CMD [ "bash" ]
