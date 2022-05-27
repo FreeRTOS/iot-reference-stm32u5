@@ -73,6 +73,9 @@ void hw_init( void )
     HAL_Init();
     HAL_PWREx_EnableVddIO2();
 
+    __HAL_RCC_BACKUPRESET_FORCE();
+    __HAL_RCC_BACKUPRESET_RELEASE();
+
     /* PendSV_IRQn interrupt configuration */
     HAL_NVIC_SetPriority( PendSV_IRQn, 7, 0 );
 
@@ -90,7 +93,7 @@ void hw_init( void )
     hw_gpio_init();
 
     hw_gpdma_init();
-/*    hw_rtc_init(); */
+    hw_rtc_init();
     hw_spi_init();
 
 #ifndef TFM_PSA_API
@@ -262,8 +265,22 @@ static void hw_rtc_init( void )
         .Init.BinMode        = RTC_BINARY_NONE,
     };
 
+    static RTC_PrivilegeStateTypeDef xRtcPriv =
+    {
+        .rtcPrivilegeFull         = RTC_PRIVILEGE_FULL_NO,
+        .backupRegisterPrivZone   = RTC_PRIVILEGE_BKUP_ZONE_NONE,
+        .backupRegisterStartZone2 = RTC_BKP_DR0,
+        .backupRegisterStartZone3 = RTC_BKP_DR0,
+    };
+
     xResult = HAL_RTC_Init( &xHndlRtc );
     configASSERT( xResult == HAL_OK );
+
+    if( xResult == HAL_OK )
+    {
+        xResult = HAL_RTCEx_PrivilegeModeSet( &xHndlRtc, &xRtcPriv );
+        configASSERT( xResult == HAL_OK );
+    }
 
     /* Export handle on success */
     if( xResult == HAL_OK )
@@ -728,6 +745,27 @@ void HAL_I2C_MspInit( I2C_HandleTypeDef * pxHndlI2c )
         }
     }
 }
+
+void HAL_RTC_MspInit( RTC_HandleTypeDef * pxHndlRtc )
+{
+    HAL_StatusTypeDef xResult = HAL_OK;
+    RCC_PeriphCLKInitTypeDef xPeriphClockInit =
+    {
+        .PeriphClockSelection = RCC_PERIPHCLK_RTC,
+        .RTCClockSelection    = RCC_RTCCLKSOURCE_LSI,
+    };
+
+    xResult = HAL_RCCEx_PeriphCLKConfig( &xPeriphClockInit );
+
+    configASSERT( xResult == HAL_OK );
+
+    __HAL_RCC_RTC_ENABLE();
+    __HAL_RCC_RTCAPB_CLK_ENABLE();
+
+    HAL_NVIC_DisableIRQ( RTC_IRQn );
+}
+
+
 
 /* Override HAL Tick weak functions */
 HAL_StatusTypeDef HAL_InitTick( uint32_t TickPriority )
