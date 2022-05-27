@@ -35,8 +35,6 @@ SHELL = /bin/bash
 .ONESHELL:
 .DEFAULT_GOAL = all
 
--include project_defs.mk
-
 # Normalize Paths
 BUILD_PATH := .
 WORKSPACE_PATH := $(realpath $(WORKSPACE_PATH))
@@ -51,6 +49,11 @@ MBEDTLS_SRC_PATH = $(realpath ${MIDDLEWARE_PATH}/ARM/mbedtls)
 MCUBOOT_SRC_PATH = $(realpath ${MIDDLEWARE_PATH}/ARM/mcuboot)
 PROJECT_PATH = ..
 TFM_BUILD_PATH = $(BUILD_PATH)/tfm_build
+
+###############################################################################
+# Include customizations
+###############################################################################
+-include ${PROJECT_PATH}/project_defs.mk
 
 S_REGION_SIGNING_KEY ?= ${TFM_SRC_PATH}/bl2/ext/mcuboot/root-RSA-3072.pem
 NS_REGION_SIGNING_KEY ?= ${TFM_SRC_PATH}/bl2/ext/mcuboot/root-RSA-3072_1.pem
