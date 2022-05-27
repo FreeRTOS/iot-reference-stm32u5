@@ -44,7 +44,7 @@
 #include "kvstore.h"
 
 
-#define TIME_SYNC_INTERVAL_S        ( 28800UL ) /* Sync time every 8 hours */
+#define TIME_SYNC_INTERVAL_S        ( 60UL ) /* Sync time every 8 hours */
 #define REQUEST_HEADER_BUF_LEN      ( 256U )
 #define RESPONSE_BUF_LEN            ( 1024U )
 #define ARRAY_COUNT( x )            ( sizeof( x ) / sizeof( x[ 0 ] ) )
@@ -64,7 +64,7 @@ typedef struct HttpRequestCtx
 extern char * strptime(const char *buf, const char *fmt, struct tm *tm);
 
 /*
- * Parse a timestamp from a returned http header
+ * Parse a time stamp from a returned http header
  *
  * Defined in RFC 7231 Section 7.1.1.1
  *
@@ -141,8 +141,8 @@ static HTTPStatus_t xInitRequestCtx( HttpRequestCtx_t * pxHttpCtx,
     pxHttpCtx->xInfo.pHost = pcHostname;
     pxHttpCtx->xInfo.hostLen = strnlen( pcHostname, HOSTNAME_MAX_LEN );
 
-    pxHttpCtx->xInfo.pPath = "/"; // TODO Can this be null?
-    pxHttpCtx->xInfo.pathLen = 1;
+    pxHttpCtx->xInfo.pPath = NULL;
+    pxHttpCtx->xInfo.pathLen = 0;
 
     xStatus = HTTPClient_InitializeRequestHeaders( &( pxHttpCtx->xHeaders ),
                                                    &( pxHttpCtx->xInfo ) );
@@ -186,8 +186,8 @@ static time_t xGetHttpNetworkTime( HttpRequestCtx_t * pxRequestCtx )
         if( xStatus == HTTPSuccess )
         {
             xStatus = HTTPClient_ReadHeader( &( pxRequestCtx->xResponse ),
-                                             "Date",
-                                             strlen( "Date" ),
+                                             "date",
+                                             strlen( "date" ),
                                              &pcTimestamp,
                                              &uxTimestampLen );
             if( uxTimestampLen == 0 ||
@@ -320,8 +320,6 @@ void vTimeSyncTask( void * pvArgs )
                                       pdTRUE,
                                       portMAX_DELAY );
 
-        LogError(">>>>>>>>>Testing 1234567");
-
         vTaskSetTimeOutState( &xTimeOut );
 
         xTimeFromNetwork = xGetHttpNetworkTime( &xRqstCtx );
@@ -415,5 +413,11 @@ void vTimeSyncTask( void * pvArgs )
     }
 
     LogInfo( "TimeSyncTask ending." );
+
+    if( pcHostname != NULL )
+    {
+        vPortFree( pcHostname );
+    }
+
     vTaskDelete( NULL );
 }

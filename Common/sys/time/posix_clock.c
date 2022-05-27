@@ -75,8 +75,6 @@ static inline int clock_settime_rtc( const struct timespec * tp  );
 
 clock_t clock( void )
 {
-    /* This function is currently unsupported. It will always return -1. */
-
     return ( clock_t ) -1;
 }
 
@@ -578,13 +576,6 @@ int clock_gettime( clockid_t clock_id,
 #ifdef CLOCK_REALTIME
             case CLOCK_REALTIME:
                 lError = clock_gettime_rtc( tp );
-#ifdef CLOCK_HWM
-                /* If the RTC failed, estimate from HWM */
-                if( lError != 0 )
-                {
-                    lError = clock_gettime_hwm( tp );
-                }
-#endif /* CLOCK_HWM */
 #endif /* CLOCK_REALTIME */
                 break;
 
@@ -599,32 +590,6 @@ int clock_gettime( clockid_t clock_id,
                 lError = clock_gettime_monotonic( tp );
                 break;
 #endif /* CLOCK_MONOTONIC */
-
-            default:
-                lError = -1;
-                errno = EINVAL;
-                break;
-        }
-        switch( clock_id )
-        {
-#ifdef CLOCK_MONOTONIC
-            case CLOCK_MONOTONIC:
-                lError = clock_gettime_monotonic( tp );
-                break;
-    #endif
-            case CLOCK_REALTIME:
-                lError = clock_gettime_rtc( tp );
-
-                /* If the RTC failed, estimate from HWM */
-                if( lError != 0 )
-                {
-                    lError = clock_gettime_hwm( tp );
-                }
-                break;
-
-            case CLOCK_HWM:
-                lError = clock_gettime_hwm( tp );
-                break;
 
             default:
                 lError = -1;
@@ -684,10 +649,8 @@ int clock_settime( clockid_t clock_id,
 
 #ifdef CLOCK_MONOTONIC
             case CLOCK_MONOTONIC:
-                /* Intentional fall-through */
-
+            /* Intentional fall-through */
 #endif /* CLOCK_MONOTONIC */
-
             default:
                 lError = -1;
                 errno = EINVAL;
@@ -705,4 +668,32 @@ int clock_settime( clockid_t clock_id,
     return lError;
 }
 
+/*-----------------------------------------------------------*/
+
+time_t time( time_t * pxTimeBuffer )
+{
+    struct timespec xTimeSpec = { 0 };
+
+    if( ( clock_gettime( CLOCK_REALTIME, &xTimeSpec ) != 0 ) &&
+        ( clock_gettime( CLOCK_HWM, &xTimeSpec ) != 0 ) )
+    {
+        xTimeSpec.tv_sec = TIME_T_INVALID;
+    }
+
+    if( xTimeSpec.tv_sec != TIME_T_INVALID )
+    {
+        /* Round seconds based on nanoseconds count */
+        if( xTimeSpec.tv_nsec > ( NANOSECONDS_PER_SECOND / 2 ) )
+        {
+            xTimeSpec.tv_sec++;
+        }
+    }
+
+    if( pxTimeBuffer != NULL )
+    {
+        *pxTimeBuffer = xTimeSpec.tv_sec;
+    }
+
+    return xTimeSpec.tv_sec;
+}
 /*-----------------------------------------------------------*/
