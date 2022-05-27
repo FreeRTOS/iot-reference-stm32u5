@@ -38,9 +38,17 @@
 #else
 #include "mbedtls/config.h"
 #endif
+
 #include "mbedtls/entropy.h"
 
+#ifdef MBEDTLS_PLATFORM_GMTIME_R_ALT
+#include "mbedtls/platform_time.h"
+#include <time.h>
+#endif
+
 #include "mbedtls_freertos_port.h"
+
+
 
 /*-----------------------------------------------------------*/
 
@@ -178,6 +186,17 @@ static int mbedtls_platform_mutex_unlock( mbedtls_threading_mutex_t * pMutex )
 
     return 0;
 }
+
+/*-----------------------------------------------------------*/
+
+#ifdef MBEDTLS_PLATFORM_GMTIME_R_ALT
+struct tm *mbedtls_platform_gmtime_r( const mbedtls_time_t *tt,
+                                      struct tm *tm_buf )
+{
+    return gmtime_r( tt, tm_buf );
+}
+
+#endif /* MBEDTLS_PLATFORM_GMTIME_R_ALT */
 
 /*-----------------------------------------------------------*/
 
