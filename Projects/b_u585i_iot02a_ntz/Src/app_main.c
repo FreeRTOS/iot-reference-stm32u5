@@ -178,6 +178,7 @@ extern void vEnvironmentSensorPublishTask( void * );
 extern void vShadowDeviceTask( void * );
 extern void vOTAUpdateTask( void * pvParam );
 extern void vDefenderAgentTask( void * );
+extern void vTimeSyncTask( void * );
 
 extern void otaPal_EarlyInit( void );
 
@@ -238,6 +239,9 @@ void vInitTask( void * pvArgs )
     configASSERT( xResult == pdTRUE );
 
     xResult = xTaskCreate( vDefenderAgentTask, "AWSDefender", 2048, NULL, 5, NULL );
+    configASSERT( xResult == pdTRUE );
+
+    xResult = xTaskCreate( vTimeSyncTask, "TimeSync", 2048, NULL, 3, NULL );
     configASSERT( xResult == pdTRUE );
 
     while( 1 )

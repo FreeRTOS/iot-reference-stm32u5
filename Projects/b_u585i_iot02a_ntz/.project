@@ -97,6 +97,11 @@
 			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/backoffAlgorithm/source</locationURI>
 		</link>
 		<link>
+			<name>Libraries/coreHTTP</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/coreHTTP/source</locationURI>
+		</link>
+		<link>
 			<name>Libraries/coreJSON</name>
 			<type>2</type>
 			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/coreJSON/source</locationURI>
@@ -130,6 +135,11 @@
 			<name>Libraries/freertos_kernel</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>Libraries/http-parser</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Middleware/http-parser</locationURI>
 		</link>
 		<link>
 			<name>Libraries/lwip</name>
@@ -399,7 +409,7 @@
 	</linkedResources>
 	<filteredResources>
 		<filter>
-			<id>1649178521185</id>
+			<id>1653512105597</id>
 			<name></name>
 			<type>6</type>
 			<matcher>
@@ -441,6 +451,33 @@
 			<matcher>
 				<id>org.eclipse.ui.ide.multiFilter</id>
 				<arguments>1.0-name-matches-false-false-include</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1653511987240</id>
+			<name>Libraries/http-parser</name>
+			<type>5</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-http_parser.c</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1653511987246</id>
+			<name>Libraries/http-parser</name>
+			<type>5</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-http_parser.h</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1653511987249</id>
+			<name>Libraries/http-parser</name>
+			<type>10</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-*</arguments>
 			</matcher>
 		</filter>
 		<filter>
