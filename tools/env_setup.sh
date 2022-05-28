@@ -65,7 +65,9 @@ env_init() {
     unset VIRTUAL_ENV
     VIRTUAL_ENV="${VENV_PATH}"
 
-     OSTYPE=$(uname -o | tr '[:upper:]' '[:lower:]')
+    OSTYPE=$(uname -o 2> /dev/null | tr '[:upper:]' '[:lower:]')
+
+    echo "OSTYPE: ${OSTYPE}"
 
     [ -n "${DEBUG}" ] && echo "OSTYPE: ${OSTYPE}"
 
