@@ -28,4 +28,4 @@ conf:
         Commit staged config changes to nonvolatile memory.
 ```
 
-Additional runtime configuration keys can be added in the [Common/config/kvstore_config.h](Common/config/kvstore_config.h) file.
+Additional runtime configuration keys can be added in the [Common/config/kvstore_config.h](../config/kvstore_config.h) file.
