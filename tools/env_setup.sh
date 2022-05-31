@@ -87,6 +87,10 @@ env_init() {
     fi
 
     if [ ! -d "${VENV_PATH}" ]; then
+        if ! ${pycmd} -m virtualenv --version > /dev/null 2>&1; then
+            echo "Attempting to install the virtualenv package with pip."
+            ${pycmd} -m pip install --user virtualenv
+        fi
         echo "Setting up python virtual environment"
         ${pycmd} -m virtualenv "${VENV_PATH}" || {
             return 1
