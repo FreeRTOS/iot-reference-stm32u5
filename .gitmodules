@@ -102,3 +102,6 @@
 [submodule "Drivers/BSP/Components/aps6408"]
 	path = Drivers/BSP/Components/aps6408
 	url = https://github.com/STMicroelectronics/stm32-aps6408.git
+[submodule "Drivers/BSP/Components/mx25lm51245g"]
+	path = Drivers/BSP/Components/mx25lm51245g
+	url = https://github.com/STMicroelectronics/stm32-mx25lm51245g.git
