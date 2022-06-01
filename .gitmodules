@@ -99,3 +99,6 @@
 [submodule "Drivers/BSP/Components/lps22hh"]
 	path = Drivers/BSP/Components/lps22hh
 	url = https://github.com/STMicroelectronics/stm32-lps22hh
+[submodule "Drivers/BSP/Components/aps6408"]
+	path = Drivers/BSP/Components/aps6408
+	url = https://github.com/STMicroelectronics/stm32-aps6408.git
