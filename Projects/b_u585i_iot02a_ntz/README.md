@@ -20,7 +20,7 @@ The OTA PAL is implemented to leverage the dual bank architecture. The internal 
 
 The b_u585i_iot02a_ntz project does not use the TrustZone capabilities of the STM32U5 microcontroller.
 
-Follow the instructions in the repository [README.md](../README.md) to import the Projects into STM32CubeIDE.
+Follow the instructions in the repository [README.md](../../README.md) to import the Projects into STM32CubeIDE.
 
 ## Building and Flashing the Firmware Image
 
