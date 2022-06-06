@@ -46,6 +46,7 @@ The internal NOR flash memory on the STM32U5 is separated into two bank of 1024 
 Programming Operations require a minimum block size of 4 32-bit Words or 16 Bytes.
 
 Erase Operations require a minimum size of 1 page = 8 KB.
+
 ### SECWM: Secure Watermark
 When TrustZone is enabled (with the TZEN=1 option bit), Secure Watermark flash area protection can be enabled. This restricts read and write access to code running when the processor is in the *Secure* state. The STM32U5 has two Secure Watermark regions defined by the SECWM1_PSTRT, SECWM1_PEND, SECWM2_PSTRT, and SECWM2_PEND option bits.
 
