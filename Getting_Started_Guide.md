@@ -49,7 +49,6 @@ Using your platform's package manager, install the following prerequisites:
 - perl
 - cmake
 - git
-- libusb
 
 ### Windows
 There are many options for downloading and installing packages on windows. Use the approach you are most comfortable with.
@@ -67,7 +66,7 @@ Download and install the latest version of each of the following packages:
 #### Windows: Installation with Scoop Package Manager
 With [scoop](https://scoop.sh/) package manager installed, run the following command from your preferred shell.
 ```
-scoop install python cmake git ninja perl
+scoop install python cmake perl
 ```
 #### Windows: Installation with Chocolatey Package Manager
 With [chocolatey](https://chocolatey.org/install) installed, run the following commands from your preferred shell.
@@ -137,29 +136,11 @@ git clone https://github.com/FreeRTOS/lab-iot-reference-stm32u5.git
 git -C lab-iot-reference-stm32u5 submodule update --init
 ```
 
-## Step 4: Setup you python Virtual Environment
-Setup your workspace python environment by following the instructions below. This will install all of the necessary python libraries in a self-contained python [virtualenv](https://virtualenv.pypa.io/en/latest/).
-
-Navigate to the root of the git repository:
-```
-cd /path/to/lab-iot-reference-stm32u5
-```
-
-Install the virtualenv package
-```
-pip3 install virtualenv
-```
-
-Source the setup script to enter the python virutal environment
-```
-source tools/env_setup.sh
-```
-
-## Step 5: Setup your AWS account with awscli
+## Step 4: Setup your AWS account with awscli
 
 Follow the instructions to [Create an IAM user](https://docs.aws.amazon.com/iot/latest/developerguide/setting-up.html).
 
-After running the env_setup.sh script, run the following command to set up the aws cli.
+Run the following command to set up the aws cli.
 ```
 aws configure
 ```
@@ -176,7 +157,7 @@ Default region name [us-west-2]:
 Default output format [json]:
 ```
 
-## Step 6: Install STM32CubeIDE
+## Step 5: Install STM32CubeIDE
 Download the latest version of STM32CubeIDE from the [STMicroelectronics website](https://www.st.com/en/development-tools/stm32cubeide.html).
 
 At the time of this writing, Version 1.9.0 was the latest release:
@@ -303,7 +284,7 @@ xattr -c /Applications/STM32CubeIDE.app
 
 6. Finally, open STM32CubeIDE from the Applications directory.
 
-## Step 7: Import Projects into STM32CubeIDE
+## Step 6: Import Projects into STM32CubeIDE
 1. Open STM32CubeIDE.
 2. When asked to open a workspace directory, select the location in which you cloned this git repository.
 
@@ -314,7 +295,7 @@ xattr -c /Applications/STM32CubeIDE.app
 6. Click the check box next to both the *b_u585i_iot02a_ntz* and *b_u585i_iot02a_tfm* projects and then click **Finish**.
 > Note: Ensure that *copy projects into workspace* is not selected
 
-## Step 8: Build Firmware image and Flash your development board
+## Step 7: Build Firmware image and Flash your development board
 After importing the two demo projects into STM32CubeIDE, decide which one you will build and deploy first and follow the instructions below to do so.
 
 ### Building
@@ -334,9 +315,9 @@ Review the README.md file for the [TrustZone Enabled](Projects/b_u585i_iot02a_tf
 
 To flash the b_u585i_iot02a_tfm project to your STM32U5 IoT Discovery Kit, select the *Flash_tfm_bl2_s_ns* configuration from the **Run Configurations** menu.
 
-## Step 9: Provision Your Board
+## Step 8: Provision Your Board
 
-### Option 9A: Provision automatically with provision.py
+### Option 8A: Provision automatically with provision.py
 
 The simplest way to provision your board is to run the tools/provision.py script.
 
@@ -390,7 +371,7 @@ optional arguments:
   --aws-access-key-secret AWS_ACCESS_KEY_SECRET
   ```
 
-### Option 9B: Provision manually via CLI
+### Option 8B: Provision manually via CLI
 Open the target board's serial port with your favorite serial terminal. Some common options are terraterm, putty, screen, minicom, and picocom. Additionally a serial terminal is included in the pyserial package installed in the workspace python environment.
 
 To use the pyserial utility, run the following command to interactively list available serial devices:
@@ -607,7 +588,7 @@ aws signer put-signing-profile --profile-name <your profile name> --signing-mate
 
 ## Create a code signed firmware update job
 
-1. Bump up the version of the new firmware image to be updated. From the demo project, open File Common/config/ota_config.h and set APP_VERSION_MAJOR to 1 higher than current version. Build the firmware image using STM32Cube IDE.
+1. Bump up the version of the new firmware image to be updated. From the demo project, open File `Src/ota_pal/ota_firmware_version.c` and set APP_VERSION_MAJOR to 1 higher than current version. Build the firmware image using STM32Cube IDE.
 
 2. Upload the new image to the s3 bucket created in the previous section.
 
@@ -633,7 +614,6 @@ aws s3api  list-object-versions --bucket <s3 bucket for image> --prefix <image b
      "targetSelection": "SNAPSHOT",
      "files": [{
          "fileName": "<image binary name>",
-         "fileType": 0,
          "fileVersion": "1",
          "fileLocation": {
              "s3Location": {
