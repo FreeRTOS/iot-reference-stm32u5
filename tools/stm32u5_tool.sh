@@ -227,8 +227,8 @@ case "$1" in
             exit 1
         }
 
-        echo "Removing SECWM and erasing the user flash"
-        prog_cli mode=UR -ob UNLOCK_1A=1 UNLOCK_1B=1 UNLOCK_2A=1 UNLOCK_2B=1 SECWM1_PSTRT=${FP} SECWM1_PEND=0 HDP1EN=0 HDP1_PEND=0 WRP1A_PSTRT=${FP} WRP1A_PEND=0 SECWM2_PSTRT=${FP} SECWM2_PEND=0 WRP2A_PSTRT=${FP} WRP2A_PEND=0 HDP2EN=0 HDP2_PEND=0 -e all || {
+        echo "Removing SECWM, SWAP_BANK, and erasing the user flash"
+        prog_cli mode=UR -ob UNLOCK_1A=1 UNLOCK_1B=1 UNLOCK_2A=1 UNLOCK_2B=1 SECWM1_PSTRT=${FP} SECWM1_PEND=0 HDP1EN=0 HDP1_PEND=0 WRP1A_PSTRT=${FP} WRP1A_PEND=0 SECWM2_PSTRT=${FP} SECWM2_PEND=0 WRP2A_PSTRT=${FP} WRP2A_PEND=0 HDP2EN=0 HDP2_PEND=0 SWAP_BANK=0 -e all || {
             echo "Error: Flash unlock operation failed."
             exit 1
         }
