@@ -52,7 +52,7 @@ int lfs_port_unlock( const struct lfs_config * c )
     return ( int ) ( xReturnVal == pdTRUE ? 0 : -1 );
 }
 
-/* The following function lfs_crc is dervied from lfs_util.c and
+/* The following function lfs_crc is derived from lfs_util.c and
  * is available under the following terms:
  * Copyright (c) 2017, Arm Limited. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause

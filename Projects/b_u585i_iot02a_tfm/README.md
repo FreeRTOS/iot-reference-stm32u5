@@ -101,7 +101,7 @@ The following table summarizes the flash layout used in this project:
 |------------|------|---------|---------------------------------|-------------|-------------|------------  |
 | 0x00000000 | 1    | 0, 7    | Scratch                         |    64 KB    |   0x10000   | N/A          |
 | 0x00010000 | 1    | 8, 8    | BL2 - NV Counters               |     8 KB    |   0x02000   |              |
-| 0x00012000 | 1    | 9, 9    | BL2 - NV Counters inital value  |     8 KB    |   0x02000   | _bl2.bin     |
+| 0x00012000 | 1    | 9, 9    | BL2 - NV Counters initial value |     8 KB    |   0x02000   | _bl2.bin     |
 | 0x00014000 | 1    | 10, 21  | BL2 - MCUBoot HDP Code          |    96 KB    |   0x18000   | _bl2.bin     |
 | 0x0002C000 | 1    | 22, 25  | BL2 - SPE Shared Code           |    28 KB    |   0x07000   | _bl2.bin     |
 | 0x00033000 | 1    | 25, 25  | OTP Write Protect               |     4 KB    |   0x01000   | N/A          |

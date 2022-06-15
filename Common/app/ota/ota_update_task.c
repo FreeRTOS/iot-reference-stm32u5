@@ -396,7 +396,7 @@ void vOTAUpdateTask( void * pvParam );
  * @brief Callback invoked for firmware image chunks received from MQTT broker.
  *
  * Function gets invoked for the firmware image blocks received on OTA data stream topic.
- * The function is registered with MQTT agent's subscription manger along with the
+ * The function is registered with MQTT agent's subscription manager along with the
  * topic filter for data stream. For each packet received, the
  * function fetches a free event buffer from the pool and queues the firmware image chunk for
  * OTA agent task processing.
@@ -411,7 +411,7 @@ static void prvProcessIncomingData( void * pxSubscriptionContext,
  * @brief Callback invoked for job control messages from MQTT broker.
  *
  * Callback gets invoked for any OTA job related control messages from the MQTT broker.
- * The function is registered with MQTT agent's subscription manger along with the topic filter for
+ * The function is registered with MQTT agent's subscription manager along with the topic filter for
  * job stream. The function fetches a free event buffer from the pool and queues the appropriate event type
  * based on the control message received.
  *
