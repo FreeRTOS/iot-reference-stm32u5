@@ -34,7 +34,7 @@
 typedef struct xConsoleIO
 {
     /**
-     * Function reads input bytes from the console into a finite length buffer upto the length
+     * Function reads input bytes from the console into a finite length buffer up to the length
      * requested by the second parameter. It returns the number of bytes read which can
      * be less than or equal to the requested value. If no input bytes are available,
      * function can either block or return immediately with 0 bytes read. If there is an error for the

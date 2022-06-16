@@ -24,7 +24,7 @@
 #
 
 # WORKSPACE_PATH, BUILD_PATH, and PROJECT_NAME must be provided by the caller.
-# This can be done either as an agrument to make or in the enviornment.
+# This can be done either as an argument to make or in the environment.
 # Other vars may be overridden as needed.
 
 ###############################################################################

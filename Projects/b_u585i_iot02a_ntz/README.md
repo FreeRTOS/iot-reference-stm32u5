@@ -44,10 +44,10 @@ stn32u5_tool.sh flash_ntz
 
 ## Performing Over-the-air (OTA) Firmware Update
 
-The project shows an IoT reference implementation of how to integrate FreeRTOS libraries on STM32U5 platform to perform OTA update with AWS IoT using the *non trustzone* hardware capablities.
+The project shows an IoT reference implementation of how to integrate FreeRTOS libraries on STM32U5 platform to perform OTA update with AWS IoT using the *non trustzone* hardware capabilities.
 
 The demo runs FreeRTOS OTA agent as one of the RTOS tasks in background, which waits for OTA updates from cloud.  
 
-The non-trustzone version of the demo leverages the dual-bank architecutre of the internal flash memory. The 2MB internal flash is split into two banks of 1MB each.
+The non-trustzone version of the demo leverages the dual-bank architecture of the internal flash memory. The 2MB internal flash is split into two banks of 1MB each.
 
 While the main firmware is running on one bank, an ota update is installed on the second bank.
