@@ -42,11 +42,6 @@ repos:
     -   id: flake8
         additional_dependencies: [flake8-bugbear]
 
--   repo: https://github.com/timothycrosley/isort
-    rev: a6222a8a125ec719724e628a5d3d0d5c60923281 # 5.8.0
-    hooks:
-    -   id: isort
-
 -   repo: https://github.com/pre-commit/mirrors-mypy
     rev: b84ce099a2fd3c5216b6ccf3fd176c3828b075fb # v0.812
     hooks:

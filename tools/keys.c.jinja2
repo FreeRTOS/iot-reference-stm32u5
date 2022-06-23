@@ -1,0 +1,78 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+/*
+ * Original code taken from mcuboot project at:
+ * https://github.com/mcu-tools/mcuboot
+ * Git SHA of the original version: ac55554059147fff718015be9f4bd3108123f50a
+ * Modifications are Copyright (c) 2019-2020 Arm Limited.
+ */
+
+#include <stddef.h>
+#include <bootutil/sign_key.h>
+#include "mcuboot_config/mcuboot_config.h"
+#include "tfm_plat_crypto_keys.h"
+
+#if MCUBOOT_SIGN_RSA_LEN != 3072
+    #error Incorrect RSA key length in MCUBOOT_SIGN_RSA_LEN
+#endif
+
+#ifdef MCUBOOT_HW_KEY
+    #error MCUBOOT_HW_KEY is not supported.
+#endif
+
+#ifndef MCUBOOT_SIGN_RSA
+    #error only RSA is supported.
+#endif
+
+#if MCUBOOT_IMAGE_NUMBER != 2
+    #error Only dual image signing is supported for this platform.
+#endif
+
+#define HAVE_KEYS
+
+const unsigned char rsa_pub_key_spe[] =
+{
+{%- for line in spe_key_pub %}
+    {{line}}
+{%- endfor -%}
+};
+
+const unsigned int rsa_pub_key_spe_len = {{spe_key_pub_len}};
+
+const unsigned char rsa_pub_key_nspe[] =
+{
+    {%- for line in nspe_key_pub %}
+    {{line}}
+    {%- endfor -%}
+};
+
+const unsigned int rsa_pub_key_nspe_len = {{nspe_key_pub_len}};
+
+const struct bootutil_key bootutil_keys[] = {
+    {
+        .key = rsa_pub_key_spe,
+        .len = &rsa_pub_key_spe_len,
+    },
+    {
+        .key = rsa_pub_key_nspe,
+        .len = &rsa_pub_key_nspe_len,
+    },
+};
+const int bootutil_key_cnt = MCUBOOT_IMAGE_NUMBER;
