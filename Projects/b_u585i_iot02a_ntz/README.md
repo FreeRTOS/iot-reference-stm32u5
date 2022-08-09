@@ -39,7 +39,7 @@ source tools/env_setup.sh
 cd Projects/b_u585i_iot02a_ntz
 
 # Run the flashing script.
-stn32u5_tool.sh flash_ntz
+stm32u5_tool.sh flash_ntz
 ```
 
 ## Performing Over-the-air (OTA) Firmware Update
