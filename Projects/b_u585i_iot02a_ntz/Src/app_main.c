@@ -43,8 +43,12 @@
 #include "fs/lfs_port.h"
 #include "stm32u5xx_ll_rng.h"
 
+#include "test_execution_config.h"
 
 #include "cli/cli.h"
+
+/* Definition for Qualification Test */
+#define DEMO_QUALIFICATION_TEST ( 1 )
 
 static lfs_t * pxLfsCtx = NULL;
 
@@ -178,6 +182,13 @@ extern void vEnvironmentSensorPublishTask( void * );
 extern void vShadowDeviceTask( void * );
 extern void vOTAUpdateTask( void * pvParam );
 extern void vDefenderAgentTask( void * );
+#if DEMO_QUALIFICATION_TEST
+    #if ( DEVICE_ADVISOR_TEST_ENABLED == 1 )
+        extern void vSubscribePublishTestTask( void * );
+    #endif /* if ( DEVICE_ADVISOR_TEST_ENABLED == 1 ) */
+
+	extern void run_qualification_main( void * );
+#endif /* DEMO_QUALIFICATION_TEST */
 
 extern void otaPal_EarlyInit( void );
 
@@ -222,6 +233,24 @@ void vInitTask( void * pvArgs )
     xResult = xTaskCreate( &net_main, "MxNet", 1024, NULL, 23, NULL );
     configASSERT( xResult == pdTRUE );
 
+#if DEMO_QUALIFICATION_TEST
+    #if ( DEVICE_ADVISOR_TEST_ENABLED == 1 )
+        xResult = xTaskCreate( vMQTTAgentTask, "MQTTAgent", 2048, NULL, 10, NULL );
+        configASSERT( xResult == pdTRUE );
+
+        xResult = xTaskCreate( vSubscribePublishTestTask, "PubSub", 6144, NULL, 10, NULL );
+        configASSERT( xResult == pdTRUE );
+    #elif ( OTA_E2E_TEST_ENABLED == 1 )
+        xResult = xTaskCreate( vMQTTAgentTask, "MQTTAgent", 2048, NULL, 10, NULL );
+        configASSERT( xResult == pdTRUE );
+
+        xResult = xTaskCreate( vOTAUpdateTask, "OTAUpdate", 4096, NULL, tskIDLE_PRIORITY + 1, NULL );
+        configASSERT( xResult == pdTRUE );
+    #else
+        xResult = xTaskCreate( run_qualification_main, "QualTest", 4096, NULL, 10, NULL );
+        configASSERT( xResult == pdTRUE );
+    #endif /* #if ( DEVICE_ADVISOR_TEST_ENABLED == 1 ) */
+#else
     xResult = xTaskCreate( vMQTTAgentTask, "MQTTAgent", 2048, NULL, 10, NULL );
     configASSERT( xResult == pdTRUE );
 
@@ -239,6 +268,7 @@ void vInitTask( void * pvArgs )
 
     xResult = xTaskCreate( vDefenderAgentTask, "AWSDefender", 2048, NULL, 5, NULL );
     configASSERT( xResult == pdTRUE );
+#endif /* DEMO_QUALIFICATION_TEST */
 
     while( 1 )
     {
