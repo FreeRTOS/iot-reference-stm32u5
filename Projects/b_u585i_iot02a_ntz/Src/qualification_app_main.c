@@ -444,3 +444,35 @@ void run_qualification_main( void * pvArgs )
 
     vTaskDelete( NULL );
 }
+/*-----------------------------------------------------------*/
+
+extern void vMQTTAgentTask( void * );
+extern void vOTAUpdateTask( void * );
+extern void vSubscribePublishTestTask( void * );
+
+int RunDeviceAdvisorDemo( void )
+{
+    BaseType_t xResult;
+
+    xResult = xTaskCreate( vMQTTAgentTask, "MQTTAgent", 2048, NULL, 10, NULL );
+    configASSERT( xResult == pdTRUE );
+
+    xResult = xTaskCreate( vSubscribePublishTestTask, "PubSub", 6144, NULL, 10, NULL );
+    configASSERT( xResult == pdTRUE );
+
+    return 0;
+}
+/*-----------------------------------------------------------*/
+
+int RunOtaE2eDemo( void )
+{
+    BaseType_t xResult;
+
+    xResult = xTaskCreate( vMQTTAgentTask, "MQTTAgent", 2048, NULL, 10, NULL );
+    configASSERT( xResult == pdTRUE );
+
+    xResult = xTaskCreate( vOTAUpdateTask, "OTAUpdate", 4096, NULL, tskIDLE_PRIORITY + 1, NULL );
+    configASSERT( xResult == pdTRUE );
+
+    return 0;
+}

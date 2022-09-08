@@ -348,12 +348,9 @@ void vSubscribePublishTestTask( void * pvParameters )
     MQTTQoS_t xQoS;
     TickType_t xTicksToDelay;
 
-    (void)pvParameters;
-
-    LogInfo( ( "Wait for MQTT Agent." ) );
+    ( void ) pvParameters;
 
     vSleepUntilMQTTAgentReady();
-    LogInfo( ( "MQTT Agent ready." ) );
 
     xMQTTAgentHandle = xGetMqttAgentHandle();
     configASSERT( xMQTTAgentHandle != NULL );

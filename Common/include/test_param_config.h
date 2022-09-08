@@ -38,6 +38,7 @@
  * #define FORCE_GENERATE_NEW_KEY_PAIR   0
  */
 
+
 /**
  * @brief Endpoint of the MQTT broker to connect to in mqtt test.
  *
@@ -53,11 +54,9 @@
 
 
 /**
- * @brief The MQTT client identifier used in MQTT test.  Each client identifier
- * must be unique; so edit as required to ensure that no two clients connecting to
- * the same broker use the same client identifier.
+ * @brief The IoT Thing name for the device for OTA test and MQTT test.
  *
- * #define MQTT_TEST_CLIENT_IDENTIFIER				"insert here."
+ * #define IOT_THING_NAME  "PLACE_HOLDER"
  */
 
 
@@ -96,6 +95,7 @@
  * #define ECHO_SERVER_ROOT_CA "PLACE_HOLDER"
  */
 
+
 /**
  * @brief Client certificate to connect to echo server.
  *
@@ -109,6 +109,7 @@
  * #define TRANSPORT_CLIENT_CERTIFICATE NULL
  */
 
+
 /**
  * @brief Client private key to connect to echo server.
  *
@@ -118,6 +119,7 @@
  *
  * #define TRANSPORT_CLIENT_PRIVATE_KEY  NULL
  */
+
 
 #define PKCS11_TEST_RSA_KEY_SUPPORT                      ( 0 )
 #define PKCS11_TEST_EC_KEY_SUPPORT                       ( 1 )
@@ -165,12 +167,25 @@
  */
 #define OTA_PAL_READ_CERTIFICATE_FROM_NVM_WITH_PKCS11    0
 
-#define IOT_THING_NAME                                   "PLACE_HOLDER"
-
+/**
+ * @brief Major version for OTA E2E test.
+ *
+ * #define OTA_APP_VERSION_MAJOR                            0
+ */
 #define OTA_APP_VERSION_MAJOR                            0
 
+/**
+ * @brief Major version for OTA E2E test.
+ *
+ * #define OTA_APP_VERSION_MINOR                            9
+ */
 #define OTA_APP_VERSION_MINOR                            9
 
+/**
+ * @brief Major version for OTA E2E test.
+ *
+ * #define OTA_APP_VERSION_BUILD                            1
+ */
 #define OTA_APP_VERSION_BUILD                            1
 
 #endif /* TEST_PARAM_CONFIG_H */

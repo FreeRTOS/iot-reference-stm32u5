@@ -26,7 +26,8 @@
  */
 
 #include "ota_appversion32.h"
-
+#include "test_param_config.h"
+#include "test_execution_config.h"
 
 
 /**
@@ -35,10 +36,19 @@
  * download image should be higher than the current version, otherwise the new image is
  * rejected in self test phase.1
  */
+#if ( TEST_AUTOMATION_INTEGRATION == 1 )
+    #if ( OTA_E2E_TEST_ENABLED == 1 )
+        #define APP_VERSION_MAJOR OTA_APP_VERSION_MAJOR
+        #define APP_VERSION_MINOR OTA_APP_VERSION_MINOR
+        #define APP_VERSION_BUILD OTA_APP_VERSION_BUILD
+    #endif /* OTA_E2E_TEST_ENABLED == 1 */
+#else
 
-#define APP_VERSION_MAJOR    1
-#define APP_VERSION_MINOR    0
-#define APP_VERSION_BUILD    0
+    #define APP_VERSION_MAJOR 0
+    #define APP_VERSION_MINOR 9
+    #define APP_VERSION_BUILD 1
+#endif /* TEST_AUTOMATION_INTEGRATION == 1 */
+
 
 
 /**
