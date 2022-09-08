@@ -82,9 +82,19 @@
 			<locationURI>WORKSPACE_LOC/Drivers/CommonIO</locationURI>
 		</link>
 		<link>
+			<name>Libraries/FreeRTOS-Libraries-Integration-Tests</name>
+			<type>2</type>
+			<location>C:/git/ActoryForked/iot-reference-stm32u5/Middleware/FreeRTOS/FreeRTOS-Libraries-Integration-Tests/src</location>
+		</link>
+		<link>
 			<name>Libraries/STM32U5_HAL</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>Libraries/Unity</name>
+			<type>2</type>
+			<location>C:/git/ActoryForked/iot-reference-stm32u5/Middleware/Unity</location>
 		</link>
 		<link>
 			<name>Libraries/backoffAlgorithm</name>
