@@ -109,6 +109,6 @@
 [submodule "Drivers/BSP/Components/mx25lm51245g"]
 	path = Drivers/BSP/Components/mx25lm51245g
 	url = https://github.com/STMicroelectronics/stm32-mx25lm51245g.git
-[submodule "Common/Unity"]
+[submodule "Middleware/Unity"]
 	path = Middleware/Unity
 	url = https://github.com/ThrowTheSwitch/Unity
