@@ -91,7 +91,8 @@ static size_t xReadEntryOrDefault( KVStoreKey_t xKey,
     }
     else if( xKey == CS_CORE_MQTT_PORT && MQTT_PORT_DFLT > 0 )
     {
-        ( void ) memcpy( pvBuffer, MQTT_PORT_DFLT, xBufferSize );
+        uint32_t port = MQTT_PORT_DFLT;
+        ( void ) memcpy( pvBuffer, &port, xBufferSize );
         xLength = xBufferSize;
     }
     else if( xKey == CS_WIFI_SSID && strlen( WIFI_SSID_DFLT ) > 0 )
@@ -253,13 +254,11 @@ size_t KVStore_getSize( KVStoreKey_t xKey )
     }
     else if( xKey == CS_WIFI_SSID && strlen( WIFI_SSID_DFLT ) > 0 )
     {
-        ( void ) memcpy( pvBuffer, WIFI_SSID_DFLT, xBufferSize );
-        xLength = strlen( WIFI_SSID_DFLT ) + 1;
+        xDataLen = strlen( WIFI_SSID_DFLT ) + 1;
     }
     else if( xKey == CS_WIFI_CREDENTIAL && strlen( WIFI_PASSWORD_DFLT ) > 0 )
     {
-        ( void ) memcpy( pvBuffer, WIFI_PASSWORD_DFLT, xBufferSize );
-        xLength = strlen( WIFI_PASSWORD_DFLT ) + 1;
+        xDataLen = strlen( WIFI_PASSWORD_DFLT ) + 1;
     }
 #endif /* if ( TEST_AUTOMATION_INTEGRATION == 1 ) */
 

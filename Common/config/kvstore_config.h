@@ -53,7 +53,11 @@ typedef enum KvStoreEnum
     #elif ( TRANSPORT_INTERFACE_TEST_ENABLED == 1 )
         #define MQTT_ENDPOINT_DFLT    ECHO_SERVER_ENDPOINT
         #define MQTT_PORT_DFLT        ECHO_SERVER_PORT
-    #endif /* ( DEVICE_ADVISOR_TEST_ENABLED == 1 ) */
+    #elif ( DEVICE_ADVISOR_TEST_ENABLED == 1 )
+        #define THING_NAME_DFLT       IOT_THING_NAME
+        #define MQTT_ENDPOINT_DFLT    MQTT_SERVER_ENDPOINT
+        #define MQTT_PORT_DFLT        MQTT_SERVER_PORT
+    #endif /* ( OTA_E2E_TEST_ENABLED == 1 ) || ( MQTT_TEST_ENABLED == 1 ) */
 #endif /* if ( TEST_AUTOMATION_INTEGRATION == 1 ) */
 
 #if !defined ( THING_NAME_DFLT )
