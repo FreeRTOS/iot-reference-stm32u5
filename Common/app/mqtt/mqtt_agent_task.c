@@ -587,7 +587,7 @@ static void prvResubscribeCommandCallback( MQTTAgentCommandContext_t * pxCommand
 static MQTTStatus_t prvHandleResubscribe( MQTTAgentContext_t * pxMqttAgentCtx,
                                           SubMgrCtx_t * pxCtx )
 {
-    MQTTStatus_t xStatus = MQTTBadParameter;
+    MQTTStatus_t xStatus = MQTTSuccess;
 
     configASSERT( pxCtx );
     configASSERT( pxCtx->xMutex );
