@@ -70,7 +70,7 @@ Integration test is run when any of the execution parameter is enabled in [test_
     - Set MQTT_SERVER_PORT and IOT_THING_NAME (Same as provisioned one) in [test_param_config.h](../../Common/config/test_param_config.h).
     - Build and run.
     - See device advisor test result on website.
-1. MQTT_TEST_ENABLED
+1. MQTT_TEST_ENABLED - MQTT test
     - Set MQTT_TEST_ENABLED to 1 in [test_execution_config.h](../../Common/config/test_execution_config.h).
     - Set the MQTT endpoint to MQTT_SERVER_ENDPOINT in [test_param_config.h](../../Common/config/test_param_config.h).
     - Set MQTT_SERVER_PORT and IOT_THING_NAME (Same as provisioned one) in [test_param_config.h](../../Common/config/test_param_config.h).
@@ -87,7 +87,7 @@ Integration test is run when any of the execution parameter is enabled in [test_
         <INF>    89259 [QualTest  ] -------ALL TESTS FINISHED------- (qualification_app_main.c:101)
         <INF>    90259 [QualTest  ] End qualification test. (qualification_app_main.c:446)
         ```
-1. TRANSPORT_INTERFACE_TEST_ENABLED
+1. TRANSPORT_INTERFACE_TEST_ENABLED - Transport layer test
     - Set TRANSPORT_INTERFACE_TEST_ENABLED to 1 [test_execution_config.h](../../Common/config/test_execution_config.h).
     - Follow [Run The Transport Interface Test](https://github.com/FreeRTOS/FreeRTOS-Libraries-Integration-Tests/tree/main/src/transport_interface#6-run-the-transport-interface-test) to start a echo server.
     - Set ECHO_SERVER_ENDPOINT / ECHO_SERVER_PORT / ECHO_SERVER_ROOT_CA / TRANSPORT_CLIENT_CERTIFICATE and TRANSPORT_CLIENT_PRIVATE_KEY in [test_param_config.h](../../Common/config/test_param_config.h).
@@ -104,7 +104,7 @@ Integration test is run when any of the execution parameter is enabled in [test_
         <INF>   585023 [QualTest  ] -------ALL TESTS FINISHED------- (qualification_app_main.c:102)
         <INF>   586023 [QualTest  ] End qualification test. (qualification_app_main.c:437)
         ```
-1. OTA_PAL_TEST_ENABLED
+1. OTA_PAL_TEST_ENABLED - OTA PAL test
     - Set OTA_PAL_TEST_ENABLED to 1 [test_execution_config.h](../../Common/config/test_execution_config.h).
     - Set OTA_PAL_FIRMWARE_FILE to "b_u585i_iot02a_ntz.bin" in [test_param_config.h](../../Common/config/test_param_config.h).
     - Build and run.
@@ -119,7 +119,7 @@ Integration test is run when any of the execution parameter is enabled in [test_
         <INF>    35881 [QualTest  ] -------ALL TESTS FINISHED------- (qualification_app_main.c:103)
         <INF>    36881 [QualTest  ] End qualification test. (qualification_app_main.c:438)
         ```
-1. CORE_PKCS11_TEST_ENABLED
+1. CORE_PKCS11_TEST_ENABLED - Core PKCS11 test
     - Set CORE_PKCS11_TEST_ENABLED to 1 [test_execution_config.h](../../Common/config/test_execution_config.h).
     - Build and run.
     - See test result on target output.
@@ -133,7 +133,7 @@ Integration test is run when any of the execution parameter is enabled in [test_
         <INF>    44139 [QualTest  ] -------ALL TESTS FINISHED------- (qualification_app_main.c:103)
         <INF>    45139 [QualTest  ] End qualification test. (qualification_app_main.c:438)
         ```
-1. OTA_E2E_TEST_ENABLED
+1. OTA_E2E_TEST_ENABLED - OTA E2E test
     - Disable all configurations in [test_execution_config.h](../../Common/config/test_execution_config.h).
     - Follow [FreeRTOS IDT 2.0](https://docs.aws.amazon.com/freertos/latest/userguide/lts-idt-freertos-qualification.html) to set-up tool.
     - Run IDT OTA E2E test cases
