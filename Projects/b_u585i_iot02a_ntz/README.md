@@ -51,3 +51,90 @@ The demo runs FreeRTOS OTA agent as one of the RTOS tasks in background, which w
 The non-trustzone version of the demo leverages the dual-bank architecture of the internal flash memory. The 2MB internal flash is split into two banks of 1MB each.
 
 While the main firmware is running on one bank, an ota update is installed on the second bank.
+
+## Performing Integration Test
+
+Integration test is run when any of the execution parameter is enabled in [test_execution_config.h](../../Common/config/test_execution_config.h).
+
+### Prerequisite
+
+- Run [OTA](#performing-over-the-air-ota-firmware-update) once manually.
+
+### Steps for each test case
+
+1. DEVICE_ADVISOR_TEST_ENABLED - device advisor test
+  - Set DEVICE_ADVISOR_TEST_ENABLED to 1 in [test_execution_config.h](../../Common/config/test_execution_config.h).
+  - Create a device advisor test on website. ( Iot Console -> Test -> Device Advisor )
+  - Create test suite.
+  - Run test suite and set the device advisor endpoint to MQTT_SERVER_ENDPOINT in [test_param_config.h](../../Common/config/test_param_config.h).
+  - Set MQTT_SERVER_PORT and IOT_THING_NAME (Same as provisioned one) in [test_param_config.h](../../Common/config/test_param_config.h).
+  - Build and run.
+  - See device advisor test result on website.
+1. MQTT_TEST_ENABLED
+  - Set MQTT_TEST_ENABLED to 1 in [test_execution_config.h](../../Common/config/test_execution_config.h).
+  - Set the MQTT endpoint to MQTT_SERVER_ENDPOINT in [test_param_config.h](../../Common/config/test_param_config.h).
+  - Set MQTT_SERVER_PORT and IOT_THING_NAME (Same as provisioned one) in [test_param_config.h](../../Common/config/test_param_config.h).
+  - Build and run.
+  - See test result on target output.
+  - Example output
+    ```
+    <INF>    14252 [QualTest  ] ---------STARTING TESTS--------- (qualification_app_main.c:101)
+    ...
+    <INF>    85259 [QualTest  ]  (qualification_app_main.c:101)
+    <INF>    86259 [QualTest  ] ----------------------- (qualification_app_main.c:101)
+    <INF>    87259 [QualTest  ] 7 Tests 0 Failures 0 Ignored  (qualification_app_main.c:101)
+    <INF>    88259 [QualTest  ] OK (qualification_app_main.c:101)
+    <INF>    89259 [QualTest  ] -------ALL TESTS FINISHED------- (qualification_app_main.c:101)
+    <INF>    90259 [QualTest  ] End qualification test. (qualification_app_main.c:446)
+    ```
+1. TRANSPORT_INTERFACE_TEST_ENABLED
+  - Set TRANSPORT_INTERFACE_TEST_ENABLED to 1 [test_execution_config.h](../../Common/config/test_execution_config.h).
+  - Follow [Run The Transport Interface Test](https://github.com/FreeRTOS/FreeRTOS-Libraries-Integration-Tests/tree/main/src/transport_interface#6-run-the-transport-interface-test) to start a echo server.
+  - Set ECHO_SERVER_ENDPOINT / ECHO_SERVER_PORT / ECHO_SERVER_ROOT_CA / TRANSPORT_CLIENT_CERTIFICATE and TRANSPORT_CLIENT_PRIVATE_KEY in [test_param_config.h](../../Common/config/test_param_config.h).
+  - Build and run.
+  - See test result on target output.
+  - Example output
+    ```
+    <INF>    15063 [QualTest  ] ---------STARTING TESTS--------- (qualification_app_main.c:102)
+    ...
+    <INF>   581023 [QualTest  ]  (qualification_app_main.c:102)
+    <INF>   582023 [QualTest  ] ----------------------- (qualification_app_main.c:102)
+    <INF>   583023 [QualTest  ] 14 Tests 0 Failures 0 Ignored  (qualification_app_main.c:102)
+    <INF>   584023 [QualTest  ] OK (qualification_app_main.c:102)
+    <INF>   585023 [QualTest  ] -------ALL TESTS FINISHED------- (qualification_app_main.c:102)
+    <INF>   586023 [QualTest  ] End qualification test. (qualification_app_main.c:437)
+    ```
+1. OTA_PAL_TEST_ENABLED
+  - Set OTA_PAL_TEST_ENABLED to 1 [test_execution_config.h](../../Common/config/test_execution_config.h).
+  - Set OTA_PAL_FIRMWARE_FILE to "b_u585i_iot02a_ntz.bin" in [test_param_config.h](../../Common/config/test_param_config.h).
+  - Build and run.
+  - See test result on target output.
+  - Example output
+    ```
+    <INF>    13698 [QualTest  ] ---------STARTING TESTS--------- (qualification_app_main.c:103)
+    ...
+    <INF>    32881 [QualTest  ] ----------------------- (qualification_app_main.c:103)
+    <INF>    33881 [QualTest  ] 14 Tests 0 Failures 0 Ignored  (qualification_app_main.c:103)
+    <INF>    34881 [QualTest  ] OK (qualification_app_main.c:103)
+    <INF>    35881 [QualTest  ] -------ALL TESTS FINISHED------- (qualification_app_main.c:103)
+    <INF>    36881 [QualTest  ] End qualification test. (qualification_app_main.c:438)
+    ```
+1. CORE_PKCS11_TEST_ENABLED
+  - Set CORE_PKCS11_TEST_ENABLED to 1 [test_execution_config.h](../../Common/config/test_execution_config.h).
+  - Build and run.
+  - See test result on target output.
+  - Example output
+    ```
+    <INF>    15410 [QualTest  ] ---------STARTING TESTS--------- (qualification_app_main.c:103)
+    ...
+    <INF>    41139 [QualTest  ] ----------------------- (qualification_app_main.c:103)
+    <INF>    42139 [QualTest  ] 17 Tests 0 Failures 0 Ignored  (qualification_app_main.c:103)
+    <INF>    43139 [QualTest  ] OK (qualification_app_main.c:103)
+    <INF>    44139 [QualTest  ] -------ALL TESTS FINISHED------- (qualification_app_main.c:103)
+    <INF>    45139 [QualTest  ] End qualification test. (qualification_app_main.c:438)
+    ```
+1. OTA_E2E_TEST_ENABLED
+  - Disable all configurations in [test_execution_config.h](../../Common/config/test_execution_config.h).
+  - Follow [FreeRTOS IDT 2.0](https://docs.aws.amazon.com/freertos/latest/userguide/lts-idt-freertos-qualification.html) to set-up tool.
+  - Run IDT OTA E2E test cases
+  - See test result on tool output.
