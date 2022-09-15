@@ -103,7 +103,7 @@ static_assert( ( ( uint64_t ) RETRY_BACKOFF_MULTIPLIER * ( uint64_t ) RETRY_MAX_
  *  absence of sending any other Control Packets, the Client MUST send a
  *  PINGREQ Packet.
  */
-#define KEEP_ALIVE_INTERVAL_S                 ( 1200U )
+#define KEEP_ALIVE_INTERVAL_S                 ( 60U )
 
 #define MQTT_AGENT_NOTIFY_IDX                 ( 3U )
 
