@@ -59,6 +59,7 @@ Integration test is run when any of the execution parameter is enabled in [test_
 ### Prerequisite
 
 - Run [OTA](#performing-over-the-air-ota-firmware-update) once manually.
+- Set [TEST_AUTOMATION_INTEGRATION](../../Common/config/ota_config.h) to 1.
 
 ### Steps for each test case
 
@@ -136,5 +137,5 @@ Integration test is run when any of the execution parameter is enabled in [test_
 1. OTA_E2E_TEST_ENABLED - OTA E2E test
     - Disable all configurations in [test_execution_config.h](../../Common/config/test_execution_config.h).
     - Follow [FreeRTOS IDT 2.0](https://docs.aws.amazon.com/freertos/latest/userguide/lts-idt-freertos-qualification.html) to set-up tool.
-    - Run IDT OTA E2E test cases
+    - Run IDT OTA E2E test cases.
     - See test result on tool output.
