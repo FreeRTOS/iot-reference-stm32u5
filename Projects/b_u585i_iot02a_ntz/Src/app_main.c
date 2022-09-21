@@ -189,7 +189,7 @@ extern void vShadowDeviceTask( void * );
 extern void vOTAUpdateTask( void * pvParam );
 extern void vDefenderAgentTask( void * );
 #if DEMO_QUALIFICATION_TEST
-	extern void run_qualification_main( void * );
+    extern void run_qualification_main( void * );
 #endif /* DEMO_QUALIFICATION_TEST */
 
 extern void otaPal_EarlyInit( void );
