@@ -48,43 +48,45 @@
  * rejected in self test phase.1
  */
 
-#define TEST_AUTOMATION_INTEGRATION             ( 0 )
+#define TEST_AUTOMATION_INTEGRATION    ( 0 )
 
-/* Note: If TEST_AUTOMATION_INTEGRATION == 1 (in ota_config.h), settings below will be forcely used 
+/* Note: If TEST_AUTOMATION_INTEGRATION == 1 (in ota_config.h), settings below will be forcely used
  * in runtime. Please set to 0 or "" to skip them if you want to use the value in flash. */
 #if ( TEST_AUTOMATION_INTEGRATION == 1 )
-    #if ( OTA_E2E_TEST_ENABLED == 1 )
-        #define otapalconfigCODE_SIGNING_CERTIFICATE    ""
-        #define keyCLIENT_CERTIFICATE_PEM               ""
-        #define keyCLIENT_PRIVATE_KEY_PEM               ""
-        #define keyCA_ROOT_CERT_PEM                     ""
-    #elif ( TRANSPORT_INTERFACE_TEST_ENABLED == 1 )
-        #define keyCLIENT_CERTIFICATE_PEM               TRANSPORT_CLIENT_CERTIFICATE
-        #define keyCLIENT_PRIVATE_KEY_PEM               TRANSPORT_CLIENT_PRIVATE_KEY
-        #define keyCA_ROOT_CERT_PEM                     ECHO_SERVER_ROOT_CA
-    #elif ( OTA_PAL_TEST_ENABLED == 1 )
-        #define otapalconfigCODE_SIGNING_CERTIFICATE    \
-            "-----BEGIN PUBLIC KEY-----\n"\
-            "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEyza/tGLVbVxhL41iYtC8D6tGEvAH\n"\
-            "u498gNtqDtPsKaoR3t5xQx+6zdWiCi32fgFT2vkeVAmX3pf/Gl8nIP48Zg==\n"\
-            "-----END PUBLIC KEY-----\n"
-    #endif /* ( DEVICE_ADVISOR_TEST_ENABLED == 1 ) */
+#if ( OTA_E2E_TEST_ENABLED == 1 )
+#define otapalconfigCODE_SIGNING_CERTIFICATE    ""
+#define keyCLIENT_CERTIFICATE_PEM               ""
+#define keyCLIENT_PRIVATE_KEY_PEM               ""
+#define keyCA_ROOT_CERT_PEM                     ""
+
+#elif ( TRANSPORT_INTERFACE_TEST_ENABLED == 1 )
+#define keyCLIENT_CERTIFICATE_PEM               TRANSPORT_CLIENT_CERTIFICATE
+#define keyCLIENT_PRIVATE_KEY_PEM               TRANSPORT_CLIENT_PRIVATE_KEY
+#define keyCA_ROOT_CERT_PEM                     ECHO_SERVER_ROOT_CA
+
+#elif ( OTA_PAL_TEST_ENABLED == 1 )
+#define otapalconfigCODE_SIGNING_CERTIFICATE                             \
+    "-----BEGIN PUBLIC KEY-----\n"                                       \
+    "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEyza/tGLVbVxhL41iYtC8D6tGEvAH\n" \
+    "u498gNtqDtPsKaoR3t5xQx+6zdWiCi32fgFT2vkeVAmX3pf/Gl8nIP48Zg==\n"     \
+    "-----END PUBLIC KEY-----\n"
+#endif /* ( DEVICE_ADVISOR_TEST_ENABLED == 1 ) */
 #endif /* if ( TEST_AUTOMATION_INTEGRATION == 1 ) */
 
-#if !defined ( otapalconfigCODE_SIGNING_CERTIFICATE )
-    #define otapalconfigCODE_SIGNING_CERTIFICATE       ""
+#if !defined( otapalconfigCODE_SIGNING_CERTIFICATE )
+#define otapalconfigCODE_SIGNING_CERTIFICATE    ""
 #endif /* !defined ( otapalconfigCODE_SIGNING_CERTIFICATE ) */
 
-#if !defined ( keyCLIENT_CERTIFICATE_PEM )
-    #define keyCLIENT_CERTIFICATE_PEM                  ""
+#if !defined( keyCLIENT_CERTIFICATE_PEM )
+#define keyCLIENT_CERTIFICATE_PEM    ""
 #endif /* !defined ( keyCLIENT_CERTIFICATE_PEM ) */
 
-#if !defined ( keyCLIENT_PRIVATE_KEY_PEM )
-    #define keyCLIENT_PRIVATE_KEY_PEM                  ""
+#if !defined( keyCLIENT_PRIVATE_KEY_PEM )
+#define keyCLIENT_PRIVATE_KEY_PEM    ""
 #endif /* !defined ( keyCLIENT_PRIVATE_KEY_PEM ) */
 
-#if !defined ( keyCA_ROOT_CERT_PEM )
-    #define keyCA_ROOT_CERT_PEM                        ""
+#if !defined( keyCA_ROOT_CERT_PEM )
+#define keyCA_ROOT_CERT_PEM    ""
 #endif /* !defined ( keyCA_ROOT_CERT_PEM ) */
 
 /**

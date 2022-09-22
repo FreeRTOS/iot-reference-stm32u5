@@ -60,7 +60,7 @@
  */
 
 
- /**
+/**
  * @brief Network buffer size specified in bytes. Must be large enough to hold the maximum
  * anticipated MQTT payload.
  *

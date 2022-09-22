@@ -43,45 +43,52 @@ typedef enum KvStoreEnum
 } KVStoreKey_t;
 
 /* -------------------------------- Values for common attributes -------------------------------- */
-/* Note: If TEST_AUTOMATION_INTEGRATION == 1 (in ota_config.h), settings below will be forcely used 
+
+/* Note: If TEST_AUTOMATION_INTEGRATION == 1 (in ota_config.h), settings below will be forcely used
  * in runtime. Please set to 0 or "" to skip them if you want to use the value in flash. */
 #if ( TEST_AUTOMATION_INTEGRATION == 1 )
-    #if ( OTA_E2E_TEST_ENABLED == 1 ) || ( MQTT_TEST_ENABLED == 1 )
-        #define THING_NAME_DFLT       IOT_THING_NAME
-        #define MQTT_ENDPOINT_DFLT    MQTT_SERVER_ENDPOINT
-        #define MQTT_PORT_DFLT        MQTT_SERVER_PORT
-    #elif ( TRANSPORT_INTERFACE_TEST_ENABLED == 1 )
-        #define MQTT_ENDPOINT_DFLT    ECHO_SERVER_ENDPOINT
-        #define MQTT_PORT_DFLT        ECHO_SERVER_PORT
-    #elif ( DEVICE_ADVISOR_TEST_ENABLED == 1 )
-        #define THING_NAME_DFLT       IOT_THING_NAME
-        #define MQTT_ENDPOINT_DFLT    MQTT_SERVER_ENDPOINT
-        #define MQTT_PORT_DFLT        MQTT_SERVER_PORT
-    #endif /* ( OTA_E2E_TEST_ENABLED == 1 ) || ( MQTT_TEST_ENABLED == 1 ) */
+#if ( OTA_E2E_TEST_ENABLED == 1 ) || ( MQTT_TEST_ENABLED == 1 )
+
+#define THING_NAME_DFLT       IOT_THING_NAME
+#define MQTT_ENDPOINT_DFLT    MQTT_SERVER_ENDPOINT
+#define MQTT_PORT_DFLT        MQTT_SERVER_PORT
+
+#elif ( TRANSPORT_INTERFACE_TEST_ENABLED == 1 )
+
+#define MQTT_ENDPOINT_DFLT    ECHO_SERVER_ENDPOINT
+#define MQTT_PORT_DFLT        ECHO_SERVER_PORT
+
+#elif ( DEVICE_ADVISOR_TEST_ENABLED == 1 )
+
+#define THING_NAME_DFLT       IOT_THING_NAME
+#define MQTT_ENDPOINT_DFLT    MQTT_SERVER_ENDPOINT
+#define MQTT_PORT_DFLT        MQTT_SERVER_PORT
+
+#endif /* ( OTA_E2E_TEST_ENABLED == 1 ) || ( MQTT_TEST_ENABLED == 1 ) */
 #endif /* if ( TEST_AUTOMATION_INTEGRATION == 1 ) */
 
-#if !defined ( THING_NAME_DFLT )
-    #define THING_NAME_DFLT       ""
+#if !defined( THING_NAME_DFLT )
+#define THING_NAME_DFLT    ""
 #endif /* !defined ( THING_NAME_DFLT ) */
 
-#if !defined ( MQTT_ENDPOINT_DFLT )
-    #define MQTT_ENDPOINT_DFLT    ""
+#if !defined( MQTT_ENDPOINT_DFLT )
+#define MQTT_ENDPOINT_DFLT    ""
 #endif /* !defined ( MQTT_ENDPOINT_DFLT ) */
 
-#if !defined ( MQTT_PORT_DFLT )
-    #define MQTT_PORT_DFLT        8883
+#if !defined( MQTT_PORT_DFLT )
+#define MQTT_PORT_DFLT    8883
 #endif /* !defined ( MQTT_PORT_DFLT ) */
 
-#if !defined ( WIFI_SSID_DFLT )
-    #define WIFI_SSID_DFLT        ""
+#if !defined( WIFI_SSID_DFLT )
+#define WIFI_SSID_DFLT    ""
 #endif /* !defined ( WIFI_SSID_DFLT ) */
 
-#if !defined ( WIFI_PASSWORD_DFLT )
-    #define WIFI_PASSWORD_DFLT    ""
+#if !defined( WIFI_PASSWORD_DFLT )
+#define WIFI_PASSWORD_DFLT    ""
 #endif /* !defined ( WIFI_PASSWORD_DFLT ) */
 
-#if !defined ( WIFI_SECURITY_DFLT )
-    #define WIFI_SECURITY_DFLT    ""
+#if !defined( WIFI_SECURITY_DFLT )
+#define WIFI_SECURITY_DFLT    ""
 #endif /* !defined ( WIFI_SECURITY_DFLT ) */
 /* -------------------------------- Values for common attributes -------------------------------- */
 

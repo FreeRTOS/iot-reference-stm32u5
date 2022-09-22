@@ -1605,17 +1605,17 @@ int32_t mbedtls_transport_recv( NetworkContext_t * pxNetworkContext,
 
     if( pxNetworkContext == NULL )
     {
-        LogWarn( ("mbedtls_transport_recv: pxNetworkContext is NULL") );
+        LogWarn( ( "mbedtls_transport_recv: pxNetworkContext is NULL" ) );
         tlsStatus = -1;
     }
     else if( pBuffer == NULL )
     {
-        LogWarn( ("mbedtls_transport_recv: pBuffer is NULL") );
+        LogWarn( ( "mbedtls_transport_recv: pBuffer is NULL" ) );
         tlsStatus = -1;
     }
     else if( uxBytesToRecv <= 0 )
     {
-        LogWarn( ("mbedtls_transport_recv: uxBytesToRecv(%d) <= 0", uxBytesToRecv) );
+        LogWarn( ( "mbedtls_transport_recv: uxBytesToRecv(%d) <= 0", uxBytesToRecv ) );
         tlsStatus = -1;
     }
     else
@@ -1623,8 +1623,8 @@ int32_t mbedtls_transport_recv( NetworkContext_t * pxNetworkContext,
         if( pxTLSCtx->xConnectionState == STATE_CONNECTED )
         {
             tlsStatus = ( int32_t ) mbedtls_ssl_read( &( pxTLSCtx->xSslCtx ),
-                                                    pBuffer,
-                                                    uxBytesToRecv );
+                                                      pBuffer,
+                                                      uxBytesToRecv );
         }
         else
         {
@@ -1636,12 +1636,12 @@ int32_t mbedtls_transport_recv( NetworkContext_t * pxNetworkContext,
             ( tlsStatus == MBEDTLS_ERR_SSL_WANT_WRITE ) )
         {
             /* Mark these set of errors as a timeout. The libraries may retry read
-            * on these errors. */
+             * on these errors. */
             tlsStatus = 0;
         }
         /* Close the Socket if needed. */
         else if( ( tlsStatus == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY ) ||
-                ( tlsStatus == MBEDTLS_ERR_NET_CONN_RESET ) )
+                 ( tlsStatus == MBEDTLS_ERR_NET_CONN_RESET ) )
         {
             tlsStatus = -1;
             pxTLSCtx->xConnectionState = STATE_CONFIGURED;
@@ -1660,8 +1660,8 @@ int32_t mbedtls_transport_recv( NetworkContext_t * pxNetworkContext,
         else if( tlsStatus < 0 )
         {
             LogError( "Failed to read data: Error: %s : %s.",
-                    mbedtlsHighLevelCodeOrDefault( tlsStatus ),
-                    mbedtlsLowLevelCodeOrDefault( tlsStatus ) );
+                      mbedtlsHighLevelCodeOrDefault( tlsStatus ),
+                      mbedtlsLowLevelCodeOrDefault( tlsStatus ) );
         }
         else
         {
@@ -1686,17 +1686,17 @@ int32_t mbedtls_transport_send( NetworkContext_t * pxNetworkContext,
 
     if( pxTLSCtx == NULL )
     {
-        LogWarn( ("mbedtls_transport_send: pxTLSCtx is NULL") );
+        LogWarn( ( "mbedtls_transport_send: pxTLSCtx is NULL" ) );
         tlsStatus = -1;
     }
     else if( pBuffer == NULL )
     {
-        LogWarn( ("mbedtls_transport_send: pBuffer is NULL") );
+        LogWarn( ( "mbedtls_transport_send: pBuffer is NULL" ) );
         tlsStatus = -1;
     }
     else if( uxBytesToSend <= 0 )
     {
-        LogWarn( ("mbedtls_transport_send: uxBytesToSend(%d) <= 0", uxBytesToSend) );
+        LogWarn( ( "mbedtls_transport_send: uxBytesToSend(%d) <= 0", uxBytesToSend ) );
         tlsStatus = -1;
     }
     else
@@ -1704,8 +1704,8 @@ int32_t mbedtls_transport_send( NetworkContext_t * pxNetworkContext,
         if( pxTLSCtx->xConnectionState == STATE_CONNECTED )
         {
             tlsStatus = ( int32_t ) mbedtls_ssl_write( &( pxTLSCtx->xSslCtx ),
-                                                    pBuffer,
-                                                    uxBytesToSend );
+                                                       pBuffer,
+                                                       uxBytesToSend );
         }
         else
         {
@@ -1717,12 +1717,12 @@ int32_t mbedtls_transport_send( NetworkContext_t * pxNetworkContext,
             ( tlsStatus == MBEDTLS_ERR_SSL_WANT_WRITE ) )
         {
             /* Mark these set of errors as a timeout. The libraries may retry send
-            * on these errors. */
+             * on these errors. */
             tlsStatus = 0;
         }
         /* Close the Socket if needed. */
         else if( ( tlsStatus == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY ) ||
-                ( tlsStatus == MBEDTLS_ERR_NET_CONN_RESET ) )
+                 ( tlsStatus == MBEDTLS_ERR_NET_CONN_RESET ) )
         {
             tlsStatus = -1;
             pxTLSCtx->xConnectionState = STATE_CONFIGURED;
@@ -1741,8 +1741,8 @@ int32_t mbedtls_transport_send( NetworkContext_t * pxNetworkContext,
         else if( tlsStatus < 0 )
         {
             LogError( "Failed to send data:  Error: %s : %s.",
-                    mbedtlsHighLevelCodeOrDefault( tlsStatus ),
-                    mbedtlsLowLevelCodeOrDefault( tlsStatus ) );
+                      mbedtlsHighLevelCodeOrDefault( tlsStatus ),
+                      mbedtlsLowLevelCodeOrDefault( tlsStatus ) );
         }
         else
         {

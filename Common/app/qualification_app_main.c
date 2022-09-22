@@ -42,8 +42,8 @@
 #include "task.h"
 #include "semphr.h"
 #include "mbedtls_transport.h"
-#include "stm32u5xx_hal.h" /* Use RNG to generate random number. */
-#include "sys_evt.h" /* For get network ready event. */
+#include "stm32u5xx_hal.h"   /* Use RNG to generate random number. */
+#include "sys_evt.h"         /* For get network ready event. */
 #include "mqtt_agent_task.h" /* For device advisor test. */
 #include "ota_config.h"
 
@@ -127,8 +127,8 @@ typedef struct NetworkCrendentials
 static NetworkCredentials_t xNetworkCredentials = { 0 };
 static NetworkCredentials_t xSecondNetworkCredentials = { 0 };
 static TransportInterface_t xTransport = { 0 };
-static NetworkContext_t *pxNetworkContext = NULL;
-static NetworkContext_t *pxSecondNetworkContext = NULL;
+static NetworkContext_t * pxNetworkContext = NULL;
+static NetworkContext_t * pxSecondNetworkContext = NULL;
 
 /**
  * @brief Global entry time into the application to use as a reference timestamp
@@ -147,7 +147,7 @@ static NetworkConnectStatus_t prvTransportNetworkConnect( void * pvNetworkContex
     xTlsStatus = mbedtls_transport_connect( pvNetworkContext,
                                             pxHostInfo->pHostName,
                                             ( uint16_t ) pxHostInfo->port,
-                                            mqttexampleTRANSPORT_SEND_RECV_TIMEOUT_MS, 
+                                            mqttexampleTRANSPORT_SEND_RECV_TIMEOUT_MS,
                                             mqttexampleTRANSPORT_SEND_RECV_TIMEOUT_MS );
 
     configASSERT( TLS_TRANSPORT_SUCCESS == xTlsStatus );
@@ -189,7 +189,7 @@ static void ThreadWrapper( void * pParam )
 extern UBaseType_t uxRand( void );
 int FRTest_GenerateRandInt()
 {
-    return (int) uxRand();
+    return ( int ) uxRand();
 }
 
 /*-----------------------------------------------------------*/
@@ -241,7 +241,7 @@ int FRTest_ThreadTimedJoin( FRTestThreadHandle_t threadHandle,
 
     if( xReturned != pdTRUE )
     {
-        LogWarn( ("Waiting thread exist failed after %u %d. Task abort.", timeoutMs, xReturned) );
+        LogWarn( ( "Waiting thread exist failed after %u %d. Task abort.", timeoutMs, xReturned ) );
 
         /* Return negative value to indicate error. */
         retValue = -1;
@@ -305,7 +305,7 @@ void SetupMqttTestParam( MqttTestParam_t * pTestParam )
 
     /* Initialization of timestamp for MQTT. */
     ulGlobalEntryTimeMs = MqttTestGetTimeMs();
-    
+
     /* Setup the transport interface. */
     xTransport.send = mbedtls_transport_send;
     xTransport.recv = mbedtls_transport_recv;
@@ -315,7 +315,7 @@ void SetupMqttTestParam( MqttTestParam_t * pTestParam )
 
     xNetworkCredentials.xPrivateKey = xPkiObjectFromLabel( TLS_KEY_PRV_LABEL );
     xNetworkCredentials.xClientCertificate = xPkiObjectFromLabel( TLS_CERT_LABEL );
-    xNetworkCredentials.pxRootCaChain[0] = xPkiObjectFromLabel( TLS_ROOT_CA_CERT_LABEL );
+    xNetworkCredentials.pxRootCaChain[ 0 ] = xPkiObjectFromLabel( TLS_ROOT_CA_CERT_LABEL );
 
     xTlsStatus = mbedtls_transport_configure( pxNetworkContext,
                                               NULL,
@@ -331,7 +331,7 @@ void SetupMqttTestParam( MqttTestParam_t * pTestParam )
 
     xSecondNetworkCredentials.xPrivateKey = xPkiObjectFromLabel( TLS_KEY_PRV_LABEL );
     xSecondNetworkCredentials.xClientCertificate = xPkiObjectFromLabel( TLS_CERT_LABEL );
-    xSecondNetworkCredentials.pxRootCaChain[0] = xPkiObjectFromLabel( TLS_ROOT_CA_CERT_LABEL );
+    xSecondNetworkCredentials.pxRootCaChain[ 0 ] = xPkiObjectFromLabel( TLS_ROOT_CA_CERT_LABEL );
 
     xTlsStatus = mbedtls_transport_configure( pxSecondNetworkContext,
                                               NULL,
@@ -362,7 +362,7 @@ void SetupTransportTestParam( TransportTestParam_t * pTestParam )
 
     /* Initialization of timestamp for MQTT. */
     ulGlobalEntryTimeMs = MqttTestGetTimeMs();
-    
+
     /* Setup the transport interface. */
     xTransport.send = mbedtls_transport_send;
     xTransport.recv = mbedtls_transport_recv;
@@ -372,7 +372,7 @@ void SetupTransportTestParam( TransportTestParam_t * pTestParam )
 
     xNetworkCredentials.xPrivateKey = xPkiObjectFromLabel( TLS_KEY_PRV_LABEL );
     xNetworkCredentials.xClientCertificate = xPkiObjectFromLabel( TLS_CERT_LABEL );
-    xNetworkCredentials.pxRootCaChain[0] = xPkiObjectFromLabel( TLS_ROOT_CA_CERT_LABEL );
+    xNetworkCredentials.pxRootCaChain[ 0 ] = xPkiObjectFromLabel( TLS_ROOT_CA_CERT_LABEL );
 
     xTlsStatus = mbedtls_transport_configure( pxNetworkContext,
                                               NULL,
@@ -388,7 +388,7 @@ void SetupTransportTestParam( TransportTestParam_t * pTestParam )
 
     xSecondNetworkCredentials.xPrivateKey = xPkiObjectFromLabel( TLS_KEY_PRV_LABEL );
     xSecondNetworkCredentials.xClientCertificate = xPkiObjectFromLabel( TLS_CERT_LABEL );
-    xSecondNetworkCredentials.pxRootCaChain[0] = xPkiObjectFromLabel( TLS_ROOT_CA_CERT_LABEL );
+    xSecondNetworkCredentials.pxRootCaChain[ 0 ] = xPkiObjectFromLabel( TLS_ROOT_CA_CERT_LABEL );
 
     xTlsStatus = mbedtls_transport_configure( pxSecondNetworkContext,
                                               NULL,
@@ -418,10 +418,10 @@ void SetupOtaPalTestParam( OtaPalTestParam_t * pTestParam )
 
 void run_qualification_main( void * pvArgs )
 {
-    (void) pvArgs;
+    ( void ) pvArgs;
 
-	LogInfo( "Start qualification test." );
-	LogInfo( "Waiting network connected event." );
+    LogInfo( "Start qualification test." );
+    LogInfo( "Waiting network connected event." );
 
     /* Block until the network interface is connected */
     ( void ) xEventGroupWaitBits( xSystemEvents,
@@ -430,11 +430,11 @@ void run_qualification_main( void * pvArgs )
                                   pdTRUE,
                                   portMAX_DELAY );
 
-	LogInfo( "Run qualification test." );
+    LogInfo( "Run qualification test." );
 
     RunQualificationTest();
 
-	LogInfo( "End qualification test." );
+    LogInfo( "End qualification test." );
 
     for( ; ; )
     {

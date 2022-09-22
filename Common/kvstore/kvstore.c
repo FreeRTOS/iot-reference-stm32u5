@@ -79,28 +79,28 @@ static size_t xReadEntryOrDefault( KVStoreKey_t xKey,
 
 /* TEST_AUTOMATION_INTEGRATION is set in ota_config.h, help us to set attributes easily. */
 #if ( TEST_AUTOMATION_INTEGRATION == 1 )
-    if( xKey == CS_CORE_THING_NAME && strlen( THING_NAME_DFLT ) > 0 )
+    if( ( xKey == CS_CORE_THING_NAME ) && ( strlen( THING_NAME_DFLT ) > 0 ) )
     {
         ( void ) memcpy( pvBuffer, THING_NAME_DFLT, xBufferSize );
         xLength = strlen( THING_NAME_DFLT );
     }
-    else if( xKey == CS_CORE_MQTT_ENDPOINT && strlen( MQTT_ENDPOINT_DFLT ) > 0 )
+    else if( ( xKey == CS_CORE_MQTT_ENDPOINT ) && ( strlen( MQTT_ENDPOINT_DFLT ) > 0 ) )
     {
         ( void ) memcpy( pvBuffer, MQTT_ENDPOINT_DFLT, xBufferSize );
         xLength = strlen( MQTT_ENDPOINT_DFLT );
     }
-    else if( xKey == CS_CORE_MQTT_PORT && MQTT_PORT_DFLT > 0 )
+    else if( ( xKey == CS_CORE_MQTT_PORT ) && ( MQTT_PORT_DFLT > 0 ) )
     {
         uint32_t port = MQTT_PORT_DFLT;
         ( void ) memcpy( pvBuffer, &port, xBufferSize );
         xLength = xBufferSize;
     }
-    else if( xKey == CS_WIFI_SSID && strlen( WIFI_SSID_DFLT ) > 0 )
+    else if( ( xKey == CS_WIFI_SSID ) && ( strlen( WIFI_SSID_DFLT ) > 0 ) )
     {
         ( void ) memcpy( pvBuffer, WIFI_SSID_DFLT, xBufferSize );
         xLength = strlen( WIFI_SSID_DFLT );
     }
-    else if( xKey == CS_WIFI_CREDENTIAL && strlen( WIFI_PASSWORD_DFLT ) > 0 )
+    else if( ( xKey == CS_WIFI_CREDENTIAL ) && ( strlen( WIFI_PASSWORD_DFLT ) > 0 ) )
     {
         ( void ) memcpy( pvBuffer, WIFI_PASSWORD_DFLT, xBufferSize );
         xLength = strlen( WIFI_PASSWORD_DFLT );
@@ -240,23 +240,23 @@ size_t KVStore_getSize( KVStoreKey_t xKey )
 
 /* TEST_AUTOMATION_INTEGRATION is set in ota_config.h, help us to set attributes easily. */
 #if ( TEST_AUTOMATION_INTEGRATION == 1 )
-    if( xKey == CS_CORE_THING_NAME && strlen( THING_NAME_DFLT ) > 0 )
+    if( ( xKey == CS_CORE_THING_NAME ) && ( strlen( THING_NAME_DFLT ) > 0 ) )
     {
         xDataLen = strlen( THING_NAME_DFLT ) + 1;
     }
-    else if( xKey == CS_CORE_MQTT_ENDPOINT && strlen( MQTT_ENDPOINT_DFLT ) > 0 )
+    else if( ( xKey == CS_CORE_MQTT_ENDPOINT ) && ( strlen( MQTT_ENDPOINT_DFLT ) > 0 ) )
     {
         xDataLen = strlen( MQTT_ENDPOINT_DFLT ) + 1;
     }
-    else if( xKey == CS_CORE_MQTT_PORT && MQTT_PORT_DFLT > 0 )
+    else if( ( xKey == CS_CORE_MQTT_PORT ) && ( MQTT_PORT_DFLT > 0 ) )
     {
         xDataLen = sizeof( uint32_t );
     }
-    else if( xKey == CS_WIFI_SSID && strlen( WIFI_SSID_DFLT ) > 0 )
+    else if( ( xKey == CS_WIFI_SSID ) && ( strlen( WIFI_SSID_DFLT ) > 0 ) )
     {
         xDataLen = strlen( WIFI_SSID_DFLT ) + 1;
     }
-    else if( xKey == CS_WIFI_CREDENTIAL && strlen( WIFI_PASSWORD_DFLT ) > 0 )
+    else if( ( xKey == CS_WIFI_CREDENTIAL ) && ( strlen( WIFI_PASSWORD_DFLT ) > 0 ) )
     {
         xDataLen = strlen( WIFI_PASSWORD_DFLT ) + 1;
     }

@@ -49,12 +49,13 @@
 
 /* Definition for Qualification Test */
 #if ( DEVICE_ADVISOR_TEST_ENABLED == 1 ) || ( MQTT_TEST_ENABLED == 1 ) || ( TRANSPORT_INTERFACE_TEST_ENABLED == 1 ) || \
-        ( OTA_PAL_TEST_ENABLED == 1 ) || ( OTA_E2E_TEST_ENABLED == 1 ) || ( CORE_PKCS11_TEST_ENABLED == 1 )
-    #define DEMO_QUALIFICATION_TEST ( 1 )
+    ( OTA_PAL_TEST_ENABLED == 1 ) || ( OTA_E2E_TEST_ENABLED == 1 ) || ( CORE_PKCS11_TEST_ENABLED == 1 )
+#define DEMO_QUALIFICATION_TEST    ( 1 )
+
 #else
-    #define DEMO_QUALIFICATION_TEST ( 0 )
+#define DEMO_QUALIFICATION_TEST    ( 0 )
 #endif /* ( DEVICE_ADVISOR_TEST_ENABLED == 1 ) || ( MQTT_TEST_ENABLED == 1 ) || ( TRANSPORT_INTERFACE_TEST_ENABLED == 1 ) || \
-          ( OTA_PAL_TEST_ENABLED == 1 ) || ( OTA_E2E_TEST_ENABLED == 1 ) || ( CORE_PKCS11_TEST_ENABLED == 1 ) */
+        * ( OTA_PAL_TEST_ENABLED == 1 ) || ( OTA_E2E_TEST_ENABLED == 1 ) || ( CORE_PKCS11_TEST_ENABLED == 1 ) */
 
 static lfs_t * pxLfsCtx = NULL;
 
@@ -189,7 +190,7 @@ extern void vShadowDeviceTask( void * );
 extern void vOTAUpdateTask( void * pvParam );
 extern void vDefenderAgentTask( void * );
 #if DEMO_QUALIFICATION_TEST
-    extern void run_qualification_main( void * );
+extern void run_qualification_main( void * );
 #endif /* DEMO_QUALIFICATION_TEST */
 
 extern void otaPal_EarlyInit( void );

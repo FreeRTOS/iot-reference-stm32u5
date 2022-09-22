@@ -253,7 +253,7 @@ static MQTTStatus_t prvSubscribeToTopic( MQTTQoS_t xQoS,
                                                xQoS,
                                                prvIncomingPublishCallback,
                                                NULL );
-    
+
         if( xMQTTStatus != MQTTSuccess )
         {
             LogError( ( "Failed to SUBSCRIBE to topic with error = %u.",
@@ -262,8 +262,8 @@ static MQTTStatus_t prvSubscribeToTopic( MQTTQoS_t xQoS,
         else
         {
             LogInfo( ( "Subscribed to topic %.*s.\n\n",
-                        strlen( pcTopicFilter ),
-                        pcTopicFilter ) );
+                       strlen( pcTopicFilter ),
+                       pcTopicFilter ) );
         }
     } while( xMQTTStatus != MQTTSuccess );
 
