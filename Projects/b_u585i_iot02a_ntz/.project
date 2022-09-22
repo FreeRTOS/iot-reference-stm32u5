@@ -84,7 +84,7 @@
 		<link>
 			<name>Libraries/FreeRTOS-Libraries-Integration-Tests</name>
 			<type>2</type>
-			<location>C:/git/ActoryForked/iot-reference-stm32u5/Middleware/FreeRTOS/FreeRTOS-Libraries-Integration-Tests/src</location>
+			<location>WORKSPACE_LOC/Middleware/FreeRTOS/FreeRTOS-Libraries-Integration-Tests/src</location>
 		</link>
 		<link>
 			<name>Libraries/LittleFS</name>
@@ -99,7 +99,7 @@
 		<link>
 			<name>Libraries/Unity</name>
 			<type>2</type>
-			<location>C:/git/ActoryForked/iot-reference-stm32u5/Middleware/Unity</location>
+			<location>WORKSPACE_LOC/Middleware/Unity</location>
 		</link>
 		<link>
 			<name>Libraries/backoffAlgorithm</name>
