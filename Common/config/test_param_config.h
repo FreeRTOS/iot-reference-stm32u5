@@ -54,9 +54,9 @@
 
 
 /**
- * @brief The IoT Thing name for the device for OTA test and MQTT test.
+ * @brief The client identifier for MQTT test.
  *
- * #define IOT_THING_NAME  "PLACE_HOLDER"
+ * #define MQTT_TEST_CLIENT_IDENTIFIER    "PLACE_HOLDER"
  */
 
 
@@ -166,6 +166,12 @@
  * @brief 1 if using PKCS #11 to access the code sign certificate from NVM.
  */
 #define OTA_PAL_READ_CERTIFICATE_FROM_NVM_WITH_PKCS11    0
+
+/**
+ * @brief The IoT Thing name for the device for OTA test.
+ *
+ * #define IOT_THING_NAME  "PLACE_HOLDER"
+ */
 
 /**
  * @brief Major version for OTA E2E test.
