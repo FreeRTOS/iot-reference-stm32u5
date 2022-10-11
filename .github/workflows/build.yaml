@@ -146,7 +146,7 @@ jobs:
         if: ${{ steps.cache-ide.outputs.cache-hit != 'true' }}
         run: |
           mkdir -p ~/cache
-          C:\msys64\usr\bin\wget.exe --no-verbose ${{ matrix.ide_pkg_url }}
+          curl -O ${{ matrix.ide_pkg_url }}
           7z x en.${{ matrix.ide_pkg_name }}.exe.zip
           mv ${{ matrix.ide_pkg_name }}.exe ~/cache/${{ matrix.ide_pkg_name }}.exe
       - name: Extract IDE
