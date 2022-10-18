@@ -1,0 +1,48 @@
+{
+  "sourcePath": "<path to project root, e.g. C:/Users/foobar/iot-reference-stm32u5",
+  "freeRTOSTestParamConfigPath": "{{testData.sourcePath}}/Common/config/test_param_config.h",
+  "freeRTOSTestExecutionConfigPath": "{{testData.sourcePath}}/Common/config/test_execution_config.h",
+  "freeRTOSVersion": "202210.00-LTS",
+  "buildTool": {
+    "name": "stm32u5-ntz-build",
+    "version": "1.0.0",
+    "command": [
+      "{{config.idtRootPath}}/configs/build_ntz.bat {{testData.sourcePath}}"
+    ]
+  },
+  "flashTool": {
+    "name": "stm32u5-ntz-flash",
+    "version": "1.0.0",
+    "command": [
+      "{{config.idtRootPath}}/configs/flash_ntz.bat {{testData.sourcePath}} {{config.idtRootPath}}/configs"
+    ]
+  },
+  "testStartDelayms": 5000,
+  "echoServerCertificateConfiguration": {
+    "certificateGenerationMethod": "Automatic"
+  },
+  "echoServerConfiguration": {
+    "keyGenerationMethod": "EC",
+    "serverPort": 9000
+  },
+  "otaConfiguration": {
+    "otaPALCertificatePath": "ota_signer_pub",
+    "otaE2EFirmwareFilePath":"{{testData.sourcePath}}/Projects/b_u585i_iot02a_ntz/Debug/b_u585i_iot02a_ntz.bin",
+    "deviceFirmwarePath":"NA",
+    "codeSigningConfiguration": {
+      "signingMethod": "AWS",
+      "signerHashingAlgorithm": "SHA256",
+      "signerSigningAlgorithm": "ECDSA",
+      "signerCertificate": "<ARN of certificate made in section \"Generate a Code Signing key\">",
+      "untrustedSignerCertificate": "<ARN of any untrusted certificate>",
+      "signerCertificateFileName": "ota_signer_pub",
+      "compileSignerCertificate": false,
+      "signerPlatform": "AmazonFreeRTOS-Default"
+    }
+  },
+  "pkcs11LabelConfiguration":{
+    "pkcs11LabelPreProvisionedECDevicePrivateKeyForTLS": "pkcs11configLABEL_DEVICE_PRIVATE_KEY_FOR_TLS",
+    "pkcs11LabelPreProvisionedECDevicePublicKeyForTLS": "pkcs11configLABEL_DEVICE_PUBLIC_KEY_FOR_TLS",
+    "pkcs11LabelPreProvisionedECDeviceCertificateForTLS": "pkcs11configLABEL_DEVICE_CERTIFICATE_FOR_TLS"
+  }
+}
