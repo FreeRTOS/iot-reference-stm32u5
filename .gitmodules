@@ -1,4 +1,4 @@
-[submodule "Middleware/FreeRTOS/FreeRTOS-Kernel"]
+[submodule "Middleware/FreeRTOS/kernel"]
 	path = Middleware/FreeRTOS/kernel
 	url = https://github.com/FreeRTOS/FreeRTOS-Kernel.git
 	fetchRecurseSubmodules = false
@@ -26,9 +26,9 @@
 	path = Middleware/FreeRTOS/corePKCS11
 	url = https://github.com/FreeRTOS/corePKCS11.git
 	fetchRecurseSubmodules = false
-[submodule "FreeRTOS-Libraries-Integration-Tests"]
+[submodule "Middleware/FreeRTOS/FreeRTOS-Libraries-Integration-Tests"]
 	path = Middleware/FreeRTOS/FreeRTOS-Libraries-Integration-Tests
-	url = https://github.com/ActoryOu/FreeRTOS-Libraries-Integration-Tests/
+	url = https://github.com/FreeRTOS/FreeRTOS-Libraries-Integration-Tests.git
 	fetchRecurseSubmodules = false
 [submodule "Middleware/AWS/DeviceDefender"]
 	path = Middleware/AWS/IoTDeviceDefender
@@ -110,4 +110,4 @@
 	url = https://github.com/STMicroelectronics/stm32-mx25lm51245g.git
 [submodule "Middleware/Unity"]
 	path = Middleware/Unity
-	url = https://github.com/ThrowTheSwitch/Unity
+	url = https://github.com/ThrowTheSwitch/Unity.git

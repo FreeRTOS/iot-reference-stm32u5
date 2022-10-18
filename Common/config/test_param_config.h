@@ -52,13 +52,11 @@
  * #define MQTT_SERVER_PORT       (8883)
  */
 
-
 /**
  * @brief The client identifier for MQTT test.
  *
  * #define MQTT_TEST_CLIENT_IDENTIFIER    "PLACE_HOLDER"
  */
-
 
 /**
  * @brief Network buffer size specified in bytes. Must be large enough to hold the maximum
@@ -66,7 +64,6 @@
  *
  * #define MQTT_TEST_NETWORK_BUFFER_SIZE			( 5000 )
  */
-
 
 /**
  * @brief Endpoint of the echo server to connect to in transport interface test.
@@ -80,7 +77,6 @@
  *
  * #define ECHO_SERVER_PORT       (9000)
  */
-
 
 /**
  * @brief Root certificate of the echo server.
@@ -129,6 +125,7 @@
 #define PKCS11_TEST_LABEL_DEVICE_PRIVATE_KEY_FOR_TLS     pkcs11configLABEL_DEVICE_PRIVATE_KEY_FOR_TLS
 #define PKCS11_TEST_LABEL_DEVICE_PUBLIC_KEY_FOR_TLS      pkcs11configLABEL_DEVICE_PUBLIC_KEY_FOR_TLS
 #define PKCS11_TEST_LABEL_DEVICE_CERTIFICATE_FOR_TLS     pkcs11configLABEL_DEVICE_CERTIFICATE_FOR_TLS
+#define PKCS11_TEST_JITP_CODEVERIFY_ROOT_CERT_SUPPORTED  pkcs11configJITP_CODEVERIFY_ROOT_CERT_SUPPORTED
 
 
 #define OTA_RSA_SHA1                                     1
@@ -193,5 +190,8 @@
  * #define OTA_APP_VERSION_BUILD                            1
  */
 #define OTA_APP_VERSION_BUILD                            1
+
+#define OUTGOING_PUBLISH_RECORD_COUNT ( 10 )
+#define INCOMING_PUBLISH_RECORD_COUNT ( 10 )
 
 #endif /* TEST_PARAM_CONFIG_H */

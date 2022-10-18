@@ -84,7 +84,7 @@
 		<link>
 			<name>Libraries/FreeRTOS-Libraries-Integration-Tests</name>
 			<type>2</type>
-			<location>WORKSPACE_LOC/Middleware/FreeRTOS/FreeRTOS-Libraries-Integration-Tests/src</location>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/FreeRTOS-Libraries-Integration-Tests/src</locationURI>
 		</link>
 		<link>
 			<name>Libraries/STM32U5_HAL</name>
@@ -94,7 +94,7 @@
 		<link>
 			<name>Libraries/Unity</name>
 			<type>2</type>
-			<location>WORKSPACE_LOC/Middleware/Unity</location>
+			<locationURI>WORKSPACE_LOC/Middleware/Unity</locationURI>
 		</link>
 		<link>
 			<name>Libraries/backoffAlgorithm</name>

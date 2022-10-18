@@ -57,6 +57,11 @@ static char pcTestResultBuffer[ TEST_RESULT_BUFFER_CAPACITY ];
 static int16_t xBufferSize = 0;
 
 /*----------------------- Log Helper -----------------------*/
+
+void TEST_SubmitResultBuffer();
+void TEST_SubmitResult( const char * pcResult );
+
+/*----------------------- Log Helper -----------------------*/
 void TEST_CacheResult( char cResult )
 {
     if( TEST_RESULT_BUFFER_CAPACITY - xBufferSize == 2 )
@@ -293,6 +298,12 @@ uint32_t MqttTestGetTimeMs( void )
     ulTimeMs = ( uint32_t ) ( ulTimeMs - ulGlobalEntryTimeMs );
 
     return ulTimeMs;
+}
+/*-----------------------------------------------------------*/
+
+uint32_t FRTest_GetTimeMs( void )
+{
+    return MqttTestGetTimeMs();
 }
 /*-----------------------------------------------------------*/
 

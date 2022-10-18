@@ -60,8 +60,8 @@
 #define keyCA_ROOT_CERT_PEM                     ""
 
 #elif ( TRANSPORT_INTERFACE_TEST_ENABLED == 1 )
-#define keyCLIENT_CERTIFICATE_PEM               TRANSPORT_CLIENT_CERTIFICATE
-#define keyCLIENT_PRIVATE_KEY_PEM               TRANSPORT_CLIENT_PRIVATE_KEY
+#define keyCLIENT_CERTIFICATE_PEM               "" /* Use the certificate stored in secure element. */
+#define keyCLIENT_PRIVATE_KEY_PEM               "" /* Use the key stored in secure element. */
 #define keyCA_ROOT_CERT_PEM                     ECHO_SERVER_ROOT_CA
 
 #elif ( OTA_PAL_TEST_ENABLED == 1 )
@@ -70,7 +70,7 @@
     "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEyza/tGLVbVxhL41iYtC8D6tGEvAH\n" \
     "u498gNtqDtPsKaoR3t5xQx+6zdWiCi32fgFT2vkeVAmX3pf/Gl8nIP48Zg==\n"     \
     "-----END PUBLIC KEY-----\n"
-#endif /* ( DEVICE_ADVISOR_TEST_ENABLED == 1 ) */
+#endif /* ( OTA_E2E_TEST_ENABLED == 1 ) */
 #endif /* if ( TEST_AUTOMATION_INTEGRATION == 1 ) */
 
 #if !defined( otapalconfigCODE_SIGNING_CERTIFICATE )

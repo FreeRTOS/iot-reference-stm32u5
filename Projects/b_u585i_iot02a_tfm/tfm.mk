@@ -61,9 +61,9 @@ NS_REGION_SIGNING_KEY ?= ${TFM_SRC_PATH}/bl2/ext/mcuboot/root-RSA-3072_1.pem
 ###############################################################################
 # Version number definition
 ###############################################################################
-APP_MAJOR_VERSION =  1
-APP_MINOR_VERSION =  0
-APP_BUILD_VERSION =  0
+APP_MAJOR_VERSION ?=  1
+APP_MINOR_VERSION ?=  0
+APP_BUILD_VERSION ?=  0
 
 SPE_VERSION ?= "1.5.0"
 NSPE_VERSION ?= "${APP_MAJOR_VERSION}.${APP_MINOR_VERSION}.${APP_BUILD_VERSION}"

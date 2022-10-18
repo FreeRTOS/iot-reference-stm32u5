@@ -196,7 +196,7 @@ source tools/env_setup.sh
 cd Projects/b_u585i_iot02a_tfm
 
 # Run the flashing script.
-stn32u5_tool.sh flash_tzen_all
+stm32u5_tool.sh flash_tzen_all
 ```
 
 ## Performing Over-the-air (OTA) Firmware Update
