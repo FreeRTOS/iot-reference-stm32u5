@@ -60,6 +60,7 @@
 #define ECP_PUB_DER_MAX_BYTES    ( 30 + 2 * MBEDTLS_ECP_MAX_BYTES )
 #define RSA_PUB_DER_MAX_BYTES    ( 38 + 2 * MBEDTLS_MPI_MAX_SIZE )
 
+psa_key_handle_t xOTACodeVerifyKeyHandle = ( psa_key_handle_t ) OTA_SIGNING_KEY_ID;
 
 /*-----------------------------------------------------------*/
 

@@ -42,7 +42,6 @@
 #include "task.h"
 #include "semphr.h"
 #include "mbedtls_transport.h"
-#include "stm32u5xx_hal.h"   /* Use RNG to generate random number. */
 #include "sys_evt.h"         /* For get network ready event. */
 #include "mqtt_agent_task.h" /* For device advisor test. */
 #include "ota_config.h"
@@ -115,12 +114,6 @@ void TEST_SubmitResult( const char * pcResult )
  * @brief Socket send and receive timeouts to use.  Specified in milliseconds.
  */
 #define mqttexampleTRANSPORT_SEND_RECV_TIMEOUT_MS    ( 750 )
-
-/**
- * @brief Used to convert times to/from ticks and milliseconds.
- */
-#define mqttexampleMILLISECONDS_PER_SECOND           ( 1000U )
-#define mqttexampleMILLISECONDS_PER_TICK             ( mqttexampleMILLISECONDS_PER_SECOND / configTICK_RATE_HZ )
 
 typedef struct NetworkCrendentials
 {
@@ -291,7 +284,7 @@ uint32_t MqttTestGetTimeMs( void )
     xTickCount = xTaskGetTickCount();
 
     /* Convert the ticks to milliseconds. */
-    ulTimeMs = ( uint32_t ) xTickCount * mqttexampleMILLISECONDS_PER_TICK;
+    ulTimeMs = ( uint32_t ) pdMS_TO_TICKS( xTickCount );
 
     /* Reduce ulGlobalEntryTimeMs from obtained time so as to always return the
      * elapsed time in the application. */
