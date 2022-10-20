@@ -125,7 +125,6 @@
 #define PKCS11_TEST_LABEL_DEVICE_PRIVATE_KEY_FOR_TLS     pkcs11configLABEL_DEVICE_PRIVATE_KEY_FOR_TLS
 #define PKCS11_TEST_LABEL_DEVICE_PUBLIC_KEY_FOR_TLS      pkcs11configLABEL_DEVICE_PUBLIC_KEY_FOR_TLS
 #define PKCS11_TEST_LABEL_DEVICE_CERTIFICATE_FOR_TLS     pkcs11configLABEL_DEVICE_CERTIFICATE_FOR_TLS
-#define PKCS11_TEST_JITP_CODEVERIFY_ROOT_CERT_SUPPORTED  pkcs11configJITP_CODEVERIFY_ROOT_CERT_SUPPORTED
 
 
 #define OTA_RSA_SHA1                                     1
@@ -175,23 +174,23 @@
  *
  * #define OTA_APP_VERSION_MAJOR                            0
  */
-#define OTA_APP_VERSION_MAJOR                            0
+#define OTA_APP_VERSION_MAJOR            0
 
 /**
  * @brief Major version for OTA E2E test.
  *
  * #define OTA_APP_VERSION_MINOR                            9
  */
-#define OTA_APP_VERSION_MINOR                            9
+#define OTA_APP_VERSION_MINOR            9
 
 /**
  * @brief Major version for OTA E2E test.
  *
  * #define OTA_APP_VERSION_BUILD                            1
  */
-#define OTA_APP_VERSION_BUILD                            1
+#define OTA_APP_VERSION_BUILD            1
 
-#define OUTGOING_PUBLISH_RECORD_COUNT ( 10 )
-#define INCOMING_PUBLISH_RECORD_COUNT ( 10 )
+#define OUTGOING_PUBLISH_RECORD_COUNT    ( 10 )
+#define INCOMING_PUBLISH_RECORD_COUNT    ( 10 )
 
 #endif /* TEST_PARAM_CONFIG_H */
