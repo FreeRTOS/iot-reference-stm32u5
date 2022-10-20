@@ -290,3 +290,26 @@ Integration test is run when any of the execution parameter is enabled in [test_
     - Follow [FreeRTOS IDT 2.0](https://docs.aws.amazon.com/freertos/latest/userguide/lts-idt-freertos-qualification.html) to set-up tool.
     - Run IDT OTA E2E test cases.
     - See test result on tool output.
+=======
+The project shows an IoT reference implementation of how to integrate FreeRTOS libraries on STM32U5 platform to perform OTA update with AWS IoT using the TF-M implementation of the PSA Firmware Update API.
+
+The demo runs FreeRTOS OTA agent as one of the RTOS tasks in background, which waits for OTA updates from cloud.
+
+### Specificities compared to the description available in the [Getting Started Guide](../../Getting_Started_Guide.md):
+
+- Multiple images
+
+An OTA job may update either the non-secure image partition, or the secure image partition.
+
+The image to update must be specified in the `files[].fileName` field of the `ota-update-job-config.json` file: `"non_secure image"`, or `"secure image"` for the OTA Agent to identify the image properly. Otherwise no image is downloaded.
+
+The `files[].fileLocation.s3Location.key` field should then be set to `b_u585i_iot02a_tfm_ns_ota.bin` or `b_u585i_iot02a_tfm_s_ota.bin`,
+respectively.
+
+- Image versions
+
+The image state is managed by the secure bootloader and by the firmware update secure service, so the user-side OTA PAL is not used (no `/ota_pal/ota_firmware_version.c` where to modify `APP_VERSION_MAJOR`).
+
+Instead, the fields `NSPE_VERSION` and `NSPE_SECURITY_COUNTER` (respectively `SPE_VERSION` and `SPE_SECURITY_COUNTER` for the *secure image*)
+must be updated in the` project_defs.mk` file so that the firmware update version could be retrieved from the image header, and validated.
+Otherwise the image self-test fails after install, the update is reverted, and the OTA job is reported as failed.

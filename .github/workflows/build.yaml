@@ -23,8 +23,8 @@ jobs:
         project: [b_u585i_iot02a_ntz, b_u585i_iot02a_tfm]
         include:
           - os: ubuntu-latest
-            ide_pkg_name: "st-stm32cubeide_1.9.0_12015_20220302_0855_amd64"
-            ide_pkg_url: "https://www.st.com/content/ccc/resource/technical/software/sw_development_suite/group0/6c/ed/b5/05/5d/2f/44/f3/stm32cubeide_lnx/files/st-stm32cubeide_1.9.0_12015_20220302_0855_amd64.sh.zip/jcr:content/translations/en.st-stm32cubeide_1.9.0_12015_20220302_0855_amd64.sh.zip"
+            ide_pkg_name: "st-stm32cubeide_1.10.1_12716_20220707_0928_amd64"
+            ide_pkg_url: "https://www.st.com/content/ccc/resource/technical/software/sw_development_suite/group0/e7/6e/03/0a/97/9f/49/2d/stm32cubeide_lnx/files/st-stm32cubeide_1.10.1_12716_20220707_0928_amd64.sh.zip/jcr:content/translations/en.st-stm32cubeide_1.10.1_12716_20220707_0928_amd64.sh.zip"
             apt_pkg_deps: "unzip wget cmake ninja-build python3 python3-pip python3-virtualenv rsync"
     env:
       IDE_PKG_NAME: ${{ matrix.ide_pkg_name }}
@@ -63,7 +63,7 @@ jobs:
       - name: Extract IDE
         run: |
           mkdir -p STM32CubeIDE
-          tar -xzf ~/cache/st-stm32cubeide_1.9.0_12015_20220302_0855_amd64.tar.gz --directory STM32CubeIDE
+          tar -xzf ~/cache/${IDE_PKG_NAME}.tar.gz --directory STM32CubeIDE
       - name: Import Project and Build with STM32CubeIDE
         shell: bash
         run: |
@@ -96,8 +96,8 @@ jobs:
         project: [b_u585i_iot02a_ntz, b_u585i_iot02a_tfm]
         include:
           - os: windows-latest
-            ide_pkg_name: "st-stm32cubeide_1.9.0_12015_20220302_0855_x86_64"
-            ide_pkg_url: "https://www.st.com/content/ccc/resource/technical/software/sw_development_suite/group0/1e/53/08/15/0f/e2/4c/a6/stm32cubeide_win/files/st-stm32cubeide_1.9.0_12015_20220302_0855_x86_64.exe.zip/jcr:content/translations/en.st-stm32cubeide_1.9.0_12015_20220302_0855_x86_64.exe.zip"
+            ide_pkg_name: "st-stm32cubeide_1.10.1_12716_20220707_0928_x86_64"
+            ide_pkg_url: "https://www.st.com/content/ccc/resource/technical/software/sw_development_suite/group0/f6/49/9f/f9/96/8a/47/84/stm32cubeide_win/files/st-stm32cubeide_1.10.1_12716_20220707_0928_x86_64.exe.zip/jcr:content/translations/en.st-stm32cubeide_1.10.1_12716_20220707_0928_x86_64.exe.zip"
             scoop_pkg_deps: "cmake wget git python 7zip ninja"
             pip_pkg_deps: "virtualenv"
     env:
@@ -146,7 +146,7 @@ jobs:
         if: ${{ steps.cache-ide.outputs.cache-hit != 'true' }}
         run: |
           mkdir -p ~/cache
-          wget --no-verbose ${{ matrix.ide_pkg_url }}
+          curl -O ${{ matrix.ide_pkg_url }}
           7z x en.${{ matrix.ide_pkg_name }}.exe.zip
           mv ${{ matrix.ide_pkg_name }}.exe ~/cache/${{ matrix.ide_pkg_name }}.exe
       - name: Extract IDE
