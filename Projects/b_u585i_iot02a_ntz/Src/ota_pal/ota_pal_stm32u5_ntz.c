@@ -1198,7 +1198,7 @@ OtaPalStatus_t otaPal_SetPlatformImageState( OtaFileContext_t * const pxFileCont
                         break;
 
                     default:
-                        uxOtaStatus = OTA_PAL_COMBINE_ERR( OtaPalSuccess, 0 );
+                        uxOtaStatus = OTA_PAL_COMBINE_ERR( OtaPalAbortFailed, 0 );
                         pxContext->xPalState = OTA_PAL_READY;
                         break;
                 }
