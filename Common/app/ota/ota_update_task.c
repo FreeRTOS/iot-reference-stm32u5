@@ -539,13 +539,16 @@ static void prvOTAAgentTask( void * pvParam )
 /*-----------------------------------------------------------*/
 
 #ifdef TFM_PSA_API
-static bool prvGetImageInfo( uint8_t ucSlot, uint32_t ulImageType, psa_image_info_t * pImageInfo )
+static bool prvGetImageInfo( uint8_t ucSlot,
+                             uint32_t ulImageType,
+                             psa_image_info_t * pImageInfo )
 {
     psa_status_t xPSAStatus;
     bool xStatus = false;
     psa_image_id_t ulImageID = FWU_CALCULATE_IMAGE_ID( ucSlot, ulImageType, 0 );
 
     xPSAStatus = psa_fwu_query( ulImageID, pImageInfo );
+
     if( xPSAStatus == PSA_SUCCESS )
     {
         xStatus = true;
@@ -563,6 +566,7 @@ static bool prvGetImageInfo( uint8_t ucSlot, uint32_t ulImageType, psa_image_inf
 /*-----------------------------------------------------------*/
 
 #ifdef TFM_PSA_API
+
 /**
  * @brief Checks versions if active version has higher version than stage version.
  *
@@ -572,7 +576,8 @@ static bool prvGetImageInfo( uint8_t ucSlot, uint32_t ulImageType, psa_image_inf
  * @return true if active version is higher than stage version. false otherwise.
  *
  */
-static bool prvCheckVersion( psa_image_info_t * pActiveVersion,  psa_image_info_t * pStageVersion )
+static bool prvCheckVersion( psa_image_info_t * pActiveVersion,
+                             psa_image_info_t * pStageVersion )
 {
     bool xStatus = false;
     AppVersion32_t xActiveFirmwareVersion = { 0 };
@@ -580,11 +585,11 @@ static bool prvCheckVersion( psa_image_info_t * pActiveVersion,  psa_image_info_
 
     xActiveFirmwareVersion.u.x.major = pActiveVersion->version.iv_major;
     xActiveFirmwareVersion.u.x.minor = pActiveVersion->version.iv_minor;
-    xActiveFirmwareVersion.u.x.build = (uint16_t)pActiveVersion->version.iv_revision;
+    xActiveFirmwareVersion.u.x.build = ( uint16_t ) pActiveVersion->version.iv_revision;
 
     xStageFirmwareVersion.u.x.major = pStageVersion->version.iv_major;
     xStageFirmwareVersion.u.x.minor = pStageVersion->version.iv_minor;
-    xStageFirmwareVersion.u.x.build = (uint16_t)pStageVersion->version.iv_revision;
+    xStageFirmwareVersion.u.x.build = ( uint16_t ) pStageVersion->version.iv_revision;
 
     if( xActiveFirmwareVersion.u.unsignedVersion32 > xStageFirmwareVersion.u.unsignedVersion32 )
     {
@@ -598,11 +603,12 @@ static bool prvCheckVersion( psa_image_info_t * pActiveVersion,  psa_image_info_
 /*-----------------------------------------------------------*/
 
 #ifdef TFM_PSA_API
+
 /**
  * @brief Checks versions of an image type for rollback protection.
  *
  * @param[in] ulImageType Image Type for which the version needs to be checked.
-
+ *
  * @return true if the version is higher than previous version. false otherwise.
  *
  */
@@ -622,27 +628,28 @@ static bool prvImageVersionCheck( uint32_t ulImageType )
         if( xStatus == true )
         {
             xStatus = prvCheckVersion( &xActiveImageInfo, &xStageImageInfo );
+
             if( xStatus == false )
             {
                 LogError( "PSA Image type %d version validation failed, old version: %u.%u.%u new version: %u.%u.%u",
-                        ulImageType,
-                        xStageImageInfo.version.iv_major,
-                        xStageImageInfo.version.iv_minor,
-                        xStageImageInfo.version.iv_revision,
-                        xActiveImageInfo.version.iv_major,
-                        xActiveImageInfo.version.iv_minor,
-                        xActiveImageInfo.version.iv_revision );
+                          ulImageType,
+                          xStageImageInfo.version.iv_major,
+                          xStageImageInfo.version.iv_minor,
+                          xStageImageInfo.version.iv_revision,
+                          xActiveImageInfo.version.iv_major,
+                          xActiveImageInfo.version.iv_minor,
+                          xActiveImageInfo.version.iv_revision );
             }
             else
             {
                 LogError( "PSA Image type %d version validation succeeded, old version: %u.%u.%u new version: %u.%u.%u",
-                        ulImageType,
-                        xStageImageInfo.version.iv_major,
-                        xStageImageInfo.version.iv_minor,
-                        xStageImageInfo.version.iv_revision,
-                        xActiveImageInfo.version.iv_major,
-                        xActiveImageInfo.version.iv_minor,
-                        xActiveImageInfo.version.iv_revision );
+                          ulImageType,
+                          xStageImageInfo.version.iv_major,
+                          xStageImageInfo.version.iv_minor,
+                          xStageImageInfo.version.iv_revision,
+                          xActiveImageInfo.version.iv_major,
+                          xActiveImageInfo.version.iv_minor,
+                          xActiveImageInfo.version.iv_revision );
             }
         }
     }
@@ -654,6 +661,7 @@ static bool prvImageVersionCheck( uint32_t ulImageType )
 /*-----------------------------------------------------------*/
 
 #ifdef TFM_PSA_API
+
 /**
  * @brief Get Secure and Non Secure Image versions.
  *
@@ -663,17 +671,19 @@ static bool prvImageVersionCheck( uint32_t ulImageType )
  * @return true if version was fetched successfully.
  *
  */
-static bool prvGetImageVersion( AppVersion32_t * pSecureVersion, AppVersion32_t * pNonSecureVersion )
+static bool prvGetImageVersion( AppVersion32_t * pSecureVersion,
+                                AppVersion32_t * pNonSecureVersion )
 {
     psa_image_info_t xImageInfo = { 0 };
     bool xStatus = false;
 
     xStatus = prvGetImageInfo( FWU_IMAGE_ID_SLOT_ACTIVE, FWU_IMAGE_TYPE_SECURE, &xImageInfo );
+
     if( xStatus == true )
     {
         pSecureVersion->u.x.major = xImageInfo.version.iv_major;
         pSecureVersion->u.x.minor = xImageInfo.version.iv_minor;
-        pSecureVersion->u.x.build = (uint16_t)xImageInfo.version.iv_revision;
+        pSecureVersion->u.x.build = ( uint16_t ) xImageInfo.version.iv_revision;
     }
 
     if( xStatus == true )
@@ -685,7 +695,7 @@ static bool prvGetImageVersion( AppVersion32_t * pSecureVersion, AppVersion32_t 
     {
         pNonSecureVersion->u.x.major = xImageInfo.version.iv_major;
         pNonSecureVersion->u.x.minor = xImageInfo.version.iv_minor;
-        pNonSecureVersion->u.x.build = (uint16_t)xImageInfo.version.iv_revision;
+        pNonSecureVersion->u.x.build = ( uint16_t ) xImageInfo.version.iv_revision;
     }
 
     return xStatus;

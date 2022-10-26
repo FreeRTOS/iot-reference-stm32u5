@@ -28,6 +28,7 @@
 import argparse
 import fileinput
 
+
 def process_args():
     parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS)
 
@@ -39,35 +40,36 @@ def process_args():
 
     return parser.parse_args()
 
+
 def main():
     args = process_args()
 
     print("Start to parse firmware version from test_param_config.h")
-    
+
     # Users can set the path of test_param_config.h
     if "paramPath" in args:
         paramFilePath = args.paramPath
     else:
         paramFilePath = "./Common/config/test_param_config.h"
-    
+
     # Users can set the path of tfm.mk
     if "projectDefsMkPath" in args:
         projectDefsMkFilePath = args.projectDefsMkPath
     else:
         projectDefsMkFilePath = "./Projects/b_u585i_iot02a_tfm/project_defs.mk"
-    
-    print( "paramFilePath: " + paramFilePath )
-    print( "projectDefsMkFilePath: " + projectDefsMkFilePath )
+
+    print("paramFilePath: " + paramFilePath)
+    print("projectDefsMkFilePath: " + projectDefsMkFilePath)
 
     # Using readlines()
-    paramFile = open(paramFilePath, 'r')
+    paramFile = open(paramFilePath, "r")
     Lines = paramFile.readlines()
-    
+
     # Read major/minor and build version from test_param_config.h
     for line in Lines:
         if "OTA_APP_VERSION_MAJOR" in line:
             line = line.strip()
-            if not line.startswith( '*' ) and not line.startswith( '/*' ):
+            if not line.startswith("*") and not line.startswith("/*"):
                 versionMajor = ""
                 for c in line:
                     if c.isdigit():
@@ -75,7 +77,7 @@ def main():
                 # print( "Useful major version line: " + line )
         elif "OTA_APP_VERSION_MINOR" in line:
             line = line.strip()
-            if not line.startswith( '*' ) and not line.startswith( '/*' ):
+            if not line.startswith("*") and not line.startswith("/*"):
                 versionMinor = ""
                 for c in line:
                     if c.isdigit():
@@ -83,22 +85,30 @@ def main():
                 # print( "Useful minor version line: " + line )
         elif "OTA_APP_VERSION_BUILD" in line:
             line = line.strip()
-            if not line.startswith( '*' ) and not line.startswith( '/*' ):
+            if not line.startswith("*") and not line.startswith("/*"):
                 versionBuild = ""
                 for c in line:
                     if c.isdigit():
                         versionBuild += c
                 # print( "Useful build version line: " + line )
-    
-    print( "Major version: " + versionMajor )
-    print( "Minor version: " + versionMinor )
-    print( "Build version: " + versionBuild )
+
+    print("Major version: " + versionMajor)
+    print("Minor version: " + versionMinor)
+    print("Build version: " + versionBuild)
 
     # Write the config to tfm.mk
-    for line in fileinput.input( projectDefsMkFilePath, inplace=True ):
+    for line in fileinput.input(projectDefsMkFilePath, inplace=True):
         line = line.strip('\n')
         if "NSPE_VERSION = " in line:
-            print( "NSPE_VERSION = \"" + versionMajor + "." + versionMinor + "." + versionBuild + "\"" )
+            print(
+                'NSPE_VERSION = "'
+                + versionMajor
+                + "."
+                + versionMinor
+                + "."
+                + versionBuild
+                + '"'
+            )
         else:
             print( line )
 
