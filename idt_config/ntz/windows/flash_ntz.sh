@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck source=idt_config/ntz/windows/flash_ntz.sh
 TOOLCHAIN_PATH=$2
 SOURCE_PATH=$1
 

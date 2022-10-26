@@ -98,7 +98,7 @@ def main():
 
     # Write the config to tfm.mk
     for line in fileinput.input(projectDefsMkFilePath, inplace=True):
-        line = line.strip('\n')
+        line = line.strip("\n")
         if "NSPE_VERSION = " in line:
             print(
                 'NSPE_VERSION = "'
@@ -110,7 +110,7 @@ def main():
                 + '"'
             )
         else:
-            print( line )
+            print(line)
 
 if __name__ == "__main__":
     main()
