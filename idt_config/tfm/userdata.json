@@ -4,17 +4,17 @@
   "freeRTOSTestExecutionConfigPath": "{{testData.sourcePath}}/Common/config/test_execution_config.h",
   "freeRTOSVersion": "202210.00-LTS",
   "buildTool": {
-    "name": "stm32u5-ntz-build",
+    "name": "stm32u5-tfm-build",
     "version": "1.0.0",
     "command": [
-      "{{config.idtRootPath}}/configs/build_ntz.bat {{testData.sourcePath}}"
+      "{{config.idtRootPath}}/configs/build_tfm.bat {{testData.sourcePath}}"
     ]
   },
   "flashTool": {
-    "name": "stm32u5-ntz-flash",
+    "name": "stm32u5-tfm-flash",
     "version": "1.0.0",
     "command": [
-      "{{config.idtRootPath}}/configs/flash_ntz.bat {{testData.sourcePath}} {{config.idtRootPath}}/configs"
+      "{{config.idtRootPath}}/configs/flash_tfm.bat {{testData.sourcePath}} {{config.idtRootPath}}/configs"
     ]
   },
   "testStartDelayms": 5000,
@@ -27,8 +27,8 @@
   },
   "otaConfiguration": {
     "otaPALCertificatePath": "ota_signer_pub",
-    "otaE2EFirmwarePath":"{{testData.sourcePath}}/Projects/b_u585i_iot02a_ntz/Debug/b_u585i_iot02a_ntz.bin",
-    "deviceFirmwarePath":"NA",
+    "otaE2EFirmwarePath":"{{testData.sourcePath}}/Projects/b_u585i_iot02a_tfm/Debug/b_u585i_iot02a_tfm_ns_ota.bin",
+    "deviceFirmwarePath":"non_secure image",
     "codeSigningConfiguration": {
       "signingMethod": "AWS",
       "signerHashingAlgorithm": "SHA256",

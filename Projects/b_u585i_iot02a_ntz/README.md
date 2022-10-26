@@ -80,15 +80,15 @@ Integration test is run when any of the execution parameter is enabled in [test_
 
 ### 6.2 Steps for each test case
 
-1. DEVICE_ADVISOR_TEST_ENABLED - device advisor test
+1. Device Advisor Test
     - Set DEVICE_ADVISOR_TEST_ENABLED to 1 in [test_execution_config.h](../../Common/config/test_execution_config.h).
-    - Create a device advisor test on website. ( Iot Console -> Test -> Device Advisor )
+    - Create a [device advisor test](https://docs.aws.amazon.com/iot/latest/developerguide/device-advisor.html) on website. ( Iot Console -> Test -> Device Advisor )
     - Create test suite.
     - Run test suite and set the device advisor endpoint to MQTT_SERVER_ENDPOINT in [test_param_config.h](../../Common/config/test_param_config.h).
     - Set MQTT_SERVER_PORT and IOT_THING_NAME (Same as provisioned one) in [test_param_config.h](../../Common/config/test_param_config.h).
     - Build and run.
     - See device advisor test result on website.
-1. MQTT_TEST_ENABLED - MQTT test
+1. MQTT Test
     - Set MQTT_TEST_ENABLED to 1 in [test_execution_config.h](../../Common/config/test_execution_config.h).
     - Set the MQTT endpoint to MQTT_SERVER_ENDPOINT in [test_param_config.h](../../Common/config/test_param_config.h).
     - Set MQTT_SERVER_PORT and IOT_THING_NAME (Same as provisioned one) in [test_param_config.h](../../Common/config/test_param_config.h).
@@ -105,7 +105,7 @@ Integration test is run when any of the execution parameter is enabled in [test_
         <INF>    89259 [QualTest  ] -------ALL TESTS FINISHED------- (qualification_app_main.c:101)
         <INF>    90259 [QualTest  ] End qualification test. (qualification_app_main.c:446)
         ```
-1. TRANSPORT_INTERFACE_TEST_ENABLED - Transport layer test
+1. Transport Interface Test
     - Set TRANSPORT_INTERFACE_TEST_ENABLED to 1 [test_execution_config.h](../../Common/config/test_execution_config.h).
     - Follow [Run The Transport Interface Test](https://github.com/FreeRTOS/FreeRTOS-Libraries-Integration-Tests/tree/main/src/transport_interface#6-run-the-transport-interface-test) to start a echo server.
     - Set ECHO_SERVER_ENDPOINT / ECHO_SERVER_PORT / ECHO_SERVER_ROOT_CA / TRANSPORT_CLIENT_CERTIFICATE and TRANSPORT_CLIENT_PRIVATE_KEY in [test_param_config.h](../../Common/config/test_param_config.h).
@@ -122,7 +122,7 @@ Integration test is run when any of the execution parameter is enabled in [test_
         <INF>   585023 [QualTest  ] -------ALL TESTS FINISHED------- (qualification_app_main.c:102)
         <INF>   586023 [QualTest  ] End qualification test. (qualification_app_main.c:437)
         ```
-1. OTA_PAL_TEST_ENABLED - OTA PAL test
+1. OTA PAL Test
     - Set OTA_PAL_TEST_ENABLED to 1 [test_execution_config.h](../../Common/config/test_execution_config.h).
     - Set OTA_PAL_FIRMWARE_FILE to "b_u585i_iot02a_ntz.bin" in [test_param_config.h](../../Common/config/test_param_config.h).
     - Build and run.
@@ -137,7 +137,7 @@ Integration test is run when any of the execution parameter is enabled in [test_
         <INF>    35881 [QualTest  ] -------ALL TESTS FINISHED------- (qualification_app_main.c:103)
         <INF>    36881 [QualTest  ] End qualification test. (qualification_app_main.c:438)
         ```
-1. CORE_PKCS11_TEST_ENABLED - Core PKCS11 test
+1. Core PKCS11 Test
     - Set CORE_PKCS11_TEST_ENABLED to 1 [test_execution_config.h](../../Common/config/test_execution_config.h).
     - Build and run.
     - See test result on target output.
@@ -151,15 +151,10 @@ Integration test is run when any of the execution parameter is enabled in [test_
         <INF>    44139 [QualTest  ] -------ALL TESTS FINISHED------- (qualification_app_main.c:103)
         <INF>    45139 [QualTest  ] End qualification test. (qualification_app_main.c:438)
         ```
-1. OTA_E2E_TEST_ENABLED - OTA E2E test
-    - Disable all configurations in [test_execution_config.h](../../Common/config/test_execution_config.h).
-    - Follow [FreeRTOS IDT 2.0](https://docs.aws.amazon.com/freertos/latest/userguide/lts-idt-freertos-qualification.html) to set-up tool.
-    - Run IDT OTA E2E test cases.
-    - See test result on tool output.
 
 ## 7 Run AWS IoT Device Tester
 
-The reference integration can be tested using [AWS IoT Device Tester for FreeRTOS (IDT)](https://aws.amazon.com/freertos/device-tester/). IDT is a downloadable tool that can be used to exercise a device integration with FreeRTOS to validate functionality and compatibility with Amazon IoT cloud. Passing the test suite provided by IDT is also required to qualify a device for the [Amazon Partner Device Catalogue](https://devices.amazonaws.com/).
+This repository can be tested using [AWS IoT Device Tester for FreeRTOS (IDT)](https://aws.amazon.com/freertos/device-tester/). IDT is a downloadable tool that can be used to exercise a device integration with FreeRTOS to validate functionality and compatibility with Amazon IoT cloud. Passing the test suite provided by IDT is also required to qualify a device for the [Amazon Partner Device Catalogue](https://devices.amazonaws.com/).
 
 IDT runs a suite of tests that include testing the device's transport interface layer implementation, PKCS11 functionality, and OTA capabilities. In IDT test cases, the IDT binary will make a copy of the source code, update the header files in the project, then compile the project and flash the resulting image to your board. Finally, IDT will read serial output from the board and communicate with the AWS IoT cloud to ensure that test cases are passing.
 
@@ -169,7 +164,7 @@ IDT runs a suite of tests that include testing the device's transport interface 
 
 ### 7.2 Download AWS IoT Device Tester
 
-The latest version of IDT can be downloaded from the [public documentation page](https://docs.aws.amazon.com/freertos/latest/userguide/dev-test-versions-afr.html). This reference implementation only supports test suites FRQ_2.2.0 or later.
+The latest version of IDT can be downloaded from the [public documentation page](https://docs.aws.amazon.com/freertos/latest/userguide/dev-test-versions-afr.html). This repository only supports test suites FRQ_2.2.0 or later.
 
 ### 7.3 Configure AWS IoT Device Tester
 
@@ -179,9 +174,9 @@ After downloading and unzipping IDT onto your file system, you should extract a 
 * The `results` directory holds logs that are generated every time you run IDT.
 * The `configs` directory holds configuration values that are needed to set up IDT
 
-Before we can run IDT, we have to update the files in `configs`. In this reference implementation, we have pre-defined configs available in the `idt_configs` directory. Copy these templates over into IDT, and the rest of this section will walk through the remaining values that need to be filled in.
+Before running IDT, the files in `configs` need to be updated. In this repository, we have pre-defined configs available in the `idt_config` directory. Copy these templates over into IDT, and the rest of this section will walk through the remaining values that need to be filled in.
 
-First, copy one of each file from `idt_configs/ntz` (based on host OS) in this reference repository to the `configs` directory inside the newly downloaded IDT project. This should provide you with the following files in `device_tester/configs` directory:
+First, copy one of each file from `idt_config` (based on host OS) in this reference repository to the `configs` directory inside the newly downloaded IDT project. This should provide you with the following files in `device_tester/configs` directory:
 
 ```
 configs/dummyPublicKeyAsciiHex.txt
@@ -199,7 +194,7 @@ Next, we need to update some configuration values in these files.
 
 * In `config.json`, update the `profile` and `awsRegion` fields
 * In `device.json`, update `serialPort` to the serial port of your board as from [PORT](./GettingStartedGuide.md#23-provision-the-esp32-c3-with-the-private-key-device-certificate-and-ca-certificate-in-development-mode). Update `publicKeyAsciiHexFilePath` to the absolute path to `dummyPublicKeyAsciiHex.txt`. Update `publicDeviceCertificateArn` to the ARN of the certificate uploaded when [Setup AWS IoT Core](./GettingStartedGuide.md#21-setup-aws-iot-core).
-* In `userdata.json`, update `sourcePath` to the absolute path to the root of this reference implementation repository.
+* In `userdata.json`, update `sourcePath` to the absolute path to the root of this repository.
 * In `userdata.json`, update `signerCertificate` with the ARN of the [Setup pre-requisites for OTA cloud resources
 .](./GettingStartedGuide.md#51-setup-pre-requisites-for-ota-cloud-resources)
 * Run all the steps to create a [second code signing certificate](./GettingStartedGuide.md#51-setup-pre-requisites-for-ota-cloud-resources) but do NOT provision the key onto your board. Copy the ARN for this certificate in `userdata.json` for the field `untrustedSignerCertificate`.
@@ -228,4 +223,4 @@ To run the entire qualification suite, run:
 
 For more information, `.\devicetester_win_x86-64.exe help` will show all available commands.
 
-When you run IDT, a `results/uuid` directory is generated that will contain all the logs and other information associated with your test run. This allows you to debug any failures.
+When IDT is run, it generates the `results/uuid` directory that contains the logs and other information associated with your test run, allowing failures to easily be debugged.
