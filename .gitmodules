@@ -77,7 +77,7 @@
 	url = https://github.com/nodejs/http-parser.git
 [submodule "Middleware/ARM/ota-pal-psa"]
 	path = Middleware/ARM/ota-pal-psa
-	url = https://github.com/ActoryOu/freertos-ota-pal-psa.git
+	url = https://github.com/Linaro/freertos-ota-pal-psa.git
 [submodule "Drivers/BSP/B-U585I-IOT02A"]
 	path = Drivers/BSP/B-U585I-IOT02A
 	url = https://github.com/STMicroelectronics/b-u585i-iot02a-bsp.git
