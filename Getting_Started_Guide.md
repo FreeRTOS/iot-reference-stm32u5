@@ -66,7 +66,7 @@ Download and install the latest version of each of the following packages:
 #### Windows: Installation with Scoop Package Manager
 With [scoop](https://scoop.sh/) package manager installed, run the following command from your preferred shell.
 ```
-scoop install python cmake perl
+scoop install python cmake perl git wget
 ```
 #### Windows: Installation with Chocolatey Package Manager
 With [chocolatey](https://chocolatey.org/install) installed, run the following commands from your preferred shell.
@@ -132,11 +132,13 @@ sudo ln -s /usr/local/Cellar/coreutils/9.0_1/bin/readlink /usr/local/bin/readlin
 ## Step 3: Clone the repository and submodules
 Using your favorite unix-like console application, run the following commands to clone and initialize the git repository and it's submodules:
 ```
-git clone https://github.com/FreeRTOS/lab-iot-reference-stm32u5.git
-git -C lab-iot-reference-stm32u5 submodule update --init
+git clone https://github.com/FreeRTOS/iot-reference-stm32u5.git
+git -C iot-reference-stm32u5 submodule update --init
 ```
 
 ## Step 4: Setup your AWS account with awscli
+
+Download awscli for your platfrom from the [official website](https://aws.amazon.com/cli/) or using your preferred package manager.
 
 Follow your organization's policy regarding configuring aws cli with temporary or long term IAM credentials. If not such policy exists, refer to the instructions on the [Set up your AWS account](https://docs.aws.amazon.com/iot/latest/developerguide/setting-up.html) for details on your options.
 
@@ -273,7 +275,7 @@ xattr -c /Applications/STM32CubeIDE.app
 
 ## Step 6: Import Projects into STM32CubeIDE
 1. Open STM32CubeIDE.
-2. When asked to open a workspace directory, select the location in which you cloned this git repository.
+2. When asked to open a workspace directory, select the location in which you cloned this git repository in step 3.
 
 > Note: If you are not asked to select a workspace when STM32CubeIDE start, you may access this dialog via the ***File -> Switch Workspace -> Other*** menu item.
 3. Select ***File -> Import***.
