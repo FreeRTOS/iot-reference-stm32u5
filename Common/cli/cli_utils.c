@@ -181,7 +181,7 @@ static inline const char * pceTaskStateToString( eTaskState xState )
 
 static uint32_t ulGetStackDepth( TaskHandle_t xTask )
 {
-    struct tskTaskControlBlock
+    struct tskTaskControlBlockRedef
     {
         volatile StackType_t * pxDontCare0;
 
@@ -198,7 +198,7 @@ static uint32_t ulGetStackDepth( TaskHandle_t xTask )
         StackType_t * pxEndOfStack;
 #endif
     };
-    struct tskTaskControlBlock * pxTCB = ( struct tskTaskControlBlock * ) xTask;
+    struct tskTaskControlBlockRedef * pxTCB = ( struct tskTaskControlBlockRedef * ) xTask;
 
     return( ( ( ( uintptr_t ) pxTCB->pxEndOfStack - ( uintptr_t ) pxTCB->pxStack ) / sizeof( StackType_t ) ) + 2 );
 }
