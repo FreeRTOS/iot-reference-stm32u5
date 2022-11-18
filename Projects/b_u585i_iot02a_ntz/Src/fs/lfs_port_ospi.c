@@ -151,6 +151,7 @@ const struct lfs_config * pxInitializeOSPIFlashFs( TickType_t xBlockTime )
     configASSERT( pxCfg != NULL );
 
     struct LfsPortCtx * pxCtx = ( struct LfsPortCtx * ) ( pvPortMalloc( sizeof( struct LfsPortCtx ) ) );
+
     configASSERT( pxCtx != NULL );
 
     pxCtx->xBlockTime = xBlockTime;
@@ -162,6 +163,7 @@ const struct lfs_config * pxInitializeOSPIFlashFs( TickType_t xBlockTime )
     vPopulateConfig( pxCfg, pxCtx );
 
     BaseType_t xSuccess = ospi_Init( &( pxCtx->xOSPIHandle ) );
+
     configASSERT( xSuccess == pdTRUE );
 
     ( void ) xSemaphoreGive( pxCtx->xMutex );

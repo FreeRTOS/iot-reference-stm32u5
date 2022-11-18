@@ -65,7 +65,7 @@
  * #define MQTT_TEST_NETWORK_BUFFER_SIZE			( 5000 )
  */
 
- /**
+/**
  * @brief Timeout for MQTT_ProcessLoop() function in milliseconds.
  * The timeout value is appropriately chosen for receiving an incoming
  * PUBLISH message and ack responses for QoS 1 and QoS 2 communications
@@ -158,7 +158,7 @@
 /**
  * @brief Some devices have a hard-coded name for the firmware image to boot.
  */
-#define OTA_PAL_FIRMWARE_FILE                            "b_u585i_iot02a_ntz.bin"
+#define OTA_PAL_FIRMWARE_FILE                            "non_secure image"
 
 /**
  * @brief Some boards OTA PAL layers will use the file names passed into it for the

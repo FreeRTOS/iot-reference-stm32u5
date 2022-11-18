@@ -68,6 +68,7 @@ static int lfs_port_read( const struct lfs_config * c,
     __HAL_FLASH_CLEAR_FLAG( FLASH_FLAG_ALL_ERRORS );
 
     uint32_t src_address = CONFIG_LFS_FLASH_BASE + block * c->block_size + off;
+
     ( void ) memcpy( buffer, ( void * ) src_address, size );
 
     HAL_FLASH_Lock();
@@ -129,6 +130,7 @@ static int lfs_port_erase( const struct lfs_config * c,
     HAL_FLASH_Unlock();
     __HAL_FLASH_CLEAR_FLAG( FLASH_FLAG_ALL_ERRORS );
     HAL_StatusTypeDef xHAL_Status = HAL_FLASHEx_Erase( &xErase_Config, &ulPageError );
+
     HAL_FLASH_Lock();
 
     return xHAL_Status == HAL_OK ? 0 : -1;
@@ -213,6 +215,7 @@ const struct lfs_config * pxInitializeInternalFlashFs( TickType_t xBlockTime )
     configASSERT( pxCfg != NULL );
 
     struct LfsPortCtx * pxCtx = ( struct LfsPortCtx * ) ( pvPortMalloc( sizeof( struct lfs_config ) ) );
+
     configASSERT( pxCtx != NULL );
 
     pxCtx->xBlockTime = xBlockTime;
