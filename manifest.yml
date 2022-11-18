@@ -1,10 +1,10 @@
 name : "FreeRTOS STM32U5 Reference Integration"
-version: "202210.00"
+version: "202210.01"
 description: |-
   "Reference IoT integration project using the STMicroelectronics STM32U585 and FreeRTOS LTS libraries"
 dependencies:
   - name: "FreeRTOS-Kernel"
-    version: "V10.5.0"
+    version: "V10.5.1"
     repository:
       type: "git"
       url: "https://github.com/FreeRTOS/FreeRTOS-Kernel.git"
@@ -22,7 +22,7 @@ dependencies:
       url: "https://github.com/FreeRTOS/coreHTTP.git"
       path: "Middleware/FreeRTOS/coreHTTP"
   - name: "coreMQTT"
-    version: "v2.1.0"
+    version: "v2.1.1"
     repository:
       type: "git"
       url: "https://github.com/FreeRTOS/coreMQTT.git"
@@ -130,7 +130,7 @@ dependencies:
       url: "https://github.com/nodejs/http-parser.git"
       path: "Middleware/http-parser"
   - name: "FreeRTOS-Libraries-Integration-Tests"
-    version: "202210.00"
+    version: "202210.01"
     repository:
       type: "git"
       url: "https://github.com/FreeRTOS/FreeRTOS-Libraries-Integration-Tests"

@@ -2,7 +2,7 @@
   "sourcePath": "<path to project root, e.g. C:/Users/foobar/iot-reference-stm32u5",
   "freeRTOSTestParamConfigPath": "{{testData.sourcePath}}/Common/config/test_param_config.h",
   "freeRTOSTestExecutionConfigPath": "{{testData.sourcePath}}/Common/config/test_execution_config.h",
-  "freeRTOSVersion": "202210.00-LTS",
+  "freeRTOSVersion": "202210.01-LTS",
   "buildTool": {
     "name": "stm32u5-ntz-build",
     "version": "1.0.0",
@@ -28,7 +28,7 @@
   "otaConfiguration": {
     "otaPALCertificatePath": "ota_signer_pub",
     "otaE2EFirmwarePath":"{{testData.sourcePath}}/Projects/b_u585i_iot02a_ntz/Debug/b_u585i_iot02a_ntz.bin",
-    "deviceFirmwarePath":"NA",
+    "deviceFirmwarePath":"b_u585i_iot02a_ntz.bin",
     "codeSigningConfiguration": {
       "signingMethod": "AWS",
       "signerHashingAlgorithm": "SHA256",

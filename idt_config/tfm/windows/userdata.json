@@ -2,7 +2,7 @@
   "sourcePath": "<path to project root, e.g. C:/Users/foobar/iot-reference-stm32u5",
   "freeRTOSTestParamConfigPath": "{{testData.sourcePath}}/Common/config/test_param_config.h",
   "freeRTOSTestExecutionConfigPath": "{{testData.sourcePath}}/Common/config/test_execution_config.h",
-  "freeRTOSVersion": "202210.00-LTS",
+  "freeRTOSVersion": "202210.01-LTS",
   "buildTool": {
     "name": "stm32u5-tfm-build",
     "version": "1.0.0",

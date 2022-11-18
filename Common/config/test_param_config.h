@@ -65,6 +65,15 @@
  * #define MQTT_TEST_NETWORK_BUFFER_SIZE			( 5000 )
  */
 
+ /**
+ * @brief Timeout for MQTT_ProcessLoop() function in milliseconds.
+ * The timeout value is appropriately chosen for receiving an incoming
+ * PUBLISH message and ack responses for QoS 1 and QoS 2 communications
+ * with the broker.
+ *
+ * #define MQTT_TEST_PROCESS_LOOP_TIMEOUT_MS  ( 700 )
+ */
+
 /**
  * @brief Endpoint of the echo server to connect to in transport interface test.
  *

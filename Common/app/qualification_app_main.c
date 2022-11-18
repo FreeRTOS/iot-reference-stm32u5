@@ -284,7 +284,7 @@ uint32_t MqttTestGetTimeMs( void )
     xTickCount = xTaskGetTickCount();
 
     /* Convert the ticks to milliseconds. */
-    ulTimeMs = ( uint32_t ) pdMS_TO_TICKS( xTickCount );
+    ulTimeMs = ( uint32_t ) ( xTickCount * 1000 / configTICK_RATE_HZ );
 
     /* Reduce ulGlobalEntryTimeMs from obtained time so as to always return the
      * elapsed time in the application. */
