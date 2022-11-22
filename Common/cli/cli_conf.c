@@ -223,13 +223,13 @@ static void vSubCommand_SetConfig( ConsoleIO_t * pxCIO,
                                    uint32_t ulArgc,
                                    char * ppcArgv[] )
 {
-    const char * pcKey = ppcArgv[ 2 ];
+    const char * pcKey = ppcArgv[ KEY_ARG_IDX ];
 
     const char * pcValue = "";
 
     if( ulArgc > VALUE_ARG_IDX )
     {
-        pcValue = ppcArgv[ 3 ];
+        pcValue = ppcArgv[ VALUE_ARG_IDX ];
     }
 
     BaseType_t xParseResult = pdFALSE;
@@ -397,8 +397,16 @@ static void vCommand_Configure( ConsoleIO_t * pxCIO,
         }
         else if( 0 == strcmp( "set", pcMode ) )
         {
-            vSubCommand_SetConfig( pxCIO, ulArgc, ppcArgv );
-            xSuccess = pdTRUE;
+            /* set cannot be used without arguments */
+            if( ulArgc > KEY_ARG_IDX )
+            {
+                vSubCommand_SetConfig( pxCIO, ulArgc, ppcArgv );
+                xSuccess = pdTRUE;
+            }
+            else
+            {
+                xSuccess = pdFALSE;
+            }
         }
         else if( 0 == strcmp( "commit", pcMode ) )
         {

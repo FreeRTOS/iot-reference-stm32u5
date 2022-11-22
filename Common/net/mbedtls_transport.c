@@ -1136,8 +1136,7 @@ static TlsTransportStatus_t xConnectSocket( TLSContext_t * pxTLSCtx,
             if( pxAddrIter->ai_family == AF_INET )
             {
                 char ipAddrBuff[ IP4ADDR_STRLEN_MAX ] = { 0 };
-                ( void ) inet_ntoa_r( pxAddrIter->ai_addr, ipAddrBuff, IP4ADDR_STRLEN_MAX );
-
+                ( void ) inet_ntoa_r( ( ( struct sockaddr_in * ) pxAddrIter->ai_addr )->sin_addr, ipAddrBuff, IP4ADDR_STRLEN_MAX );
                 LogInfo( "Trying address: %.*s, port: %uh for host: %s.",
                          IP4ADDR_STRLEN_MAX, ipAddrBuff, usPort, pcHostName );
             }
@@ -1146,6 +1145,7 @@ static TlsTransportStatus_t xConnectSocket( TLSContext_t * pxTLSCtx,
             if( pxAddrIter->ai_family == AF_INET6 )
             {
                 char ipAddrBuff[ IP6ADDR_STRLEN_MAX ] = { 0 };
+                ( void ) inet6_ntoa_r( ( ( struct sockaddr_in6 * ) pxAddrIter->ai_addr )->sin_addr, ipAddrBuff, IP6ADDR_STRLEN_MAX );
                 LogInfo( "Trying address: %.*s, port: %uh for host: %s.",
                          IP6ADDR_STRLEN_MAX, ipAddrBuff, usPort, pcHostName );
             }
@@ -1179,17 +1179,19 @@ static TlsTransportStatus_t xConnectSocket( TLSContext_t * pxTLSCtx,
                     if( pxAddrIter->ai_family == AF_INET )
                     {
                         char ipAddrBuff[ IP4ADDR_STRLEN_MAX ] = { 0 };
-                        ( void ) inet_ntoa_r( pxAddrIter->ai_addr, ipAddrBuff, IP4ADDR_STRLEN_MAX );
+
+                        ( void ) inet_ntoa_r( ( ( struct sockaddr_in * ) pxAddrIter->ai_addr )->sin_addr, ipAddrBuff, IP4ADDR_STRLEN_MAX );
 
                         LogInfo( "Connected socket: %ld to host: %s, address: %.*s, port: %uh.",
                                  pxTLSCtx->xSockHandle, pcHostName,
                                  IP4ADDR_STRLEN_MAX, ipAddrBuff, usPort );
                     }
-#endif
+#endif /* if LWIP_IPV4 == 1 */
 #if LWIP_IPV6 == 1
                     if( pxAddrIter->ai_family == AF_INET6 )
                     {
                         char ipAddrBuff[ IP6ADDR_STRLEN_MAX ] = { 0 };
+                        ( void ) inet6_ntoa_r( ( ( struct sockaddr_in6 * ) pxAddrIter->ai_addr )->sin_addr, ipAddrBuff, IP6ADDR_STRLEN_MAX );
                         LogInfo( "Connected socket: %ld to host: %s, address: %.*s, port: %uh.",
                                  pxTLSCtx->xSockHandle, pcHostName,
                                  IP6ADDR_STRLEN_MAX, ipAddrBuff, usPort );

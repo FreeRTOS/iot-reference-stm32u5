@@ -138,24 +138,11 @@ git -C lab-iot-reference-stm32u5 submodule update --init
 
 ## Step 4: Setup your AWS account with awscli
 
-Follow the instructions to [Create an IAM user](https://docs.aws.amazon.com/iot/latest/developerguide/setting-up.html).
+Follow your organization's policy regarding configuring aws cli with temporary or long term IAM credentials. If not such policy exists, refer to the instructions on the [Set up your AWS account](https://docs.aws.amazon.com/iot/latest/developerguide/setting-up.html) for details on your options.
 
-Run the following command to set up the aws cli.
-```
-aws configure
-```
-
-Fill in the AWS Access Key ID, AWS Secret Access Key, and Region based on the IAM user your created in the previous step.
-
-If you have already configured your AWS account, you may accept the existing default values listed in [brackets] by pressing the enter key.
-
-```
-$ aws configure
-AWS Access Key ID []: XXXXXXXXXXXXXXXXXXXX
-AWS Secret Access Key []: YYYYYYYYYYYYYYYYYYYY
-Default region name [us-west-2]:
-Default output format [json]:
-```
+Refer to the following guides for configuring awscli depending on how your AWS account is set up:
+* [Configuring the AWS CLI to use AWS IAM Identity Center](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sso.html)
+* [Quick configuration with aws configure](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html)
 
 ## Step 5: Install STM32CubeIDE
 Download the latest version of STM32CubeIDE from the [STMicroelectronics website](https://www.st.com/en/development-tools/stm32cubeide.html).
@@ -351,10 +338,31 @@ The *--verbose* option is particularly useful for debugging.
 
 The *--cert-issuer* option may be set to either *self* to generate a self-signed certificate on the device or *aws* to generate a Certificate Signing Request and issue the cert using the AWS IoT CreateCertificateFromCsr API.
 
+The *--aws* options may be used to provide AWS credentials to the script. By default, provision.py will source AWS credentials from the following sources in order:
+* Commandline Arguments
+* Environment Variables
+* The ~/.aws/config file, with the Profile Name specified or *default* if not specified.
+
+
+| Argument          | Cli Argument              | Env Variable              | Lifetime | Description |
+|-------------------|---------------------------|---------------------------|----------|-------------|
+| Profile Name      | --aws-profile             | AWS_PROFILE               |          | Profile name for the target account used in ~/.aws/config. Only needed  when authenticating via a configuration in ~/.aws/config. |
+| Region Name       | --aws-region              | AWS_DEFAULT_REGION        | Long | AWS Region to connect to |
+| Access Key ID     | --aws-access-key-id       | AWS_ACCESS_KEY_ID         | Short or Long | ID of a long term Access Key tied to a particular [IAM User](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html) or a short term Access Key tied to a particular [IAM Role](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html) |
+| Secret Access Key | --aws-secret-access-key   | AWS_SECRET_ACCESS_KEY     | Short or Long | The corresponding secret to the given Access Key ID |
+| Session Token     | --aws-session-token       | AWS_SESSION_TOKEN         | Short | Used with temporary access credentials for an [IAM Role](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html) issued by the AWS [Security Token Service](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp.html) |
+
+
 ```
-usage: provision.py [-h] [-i] [-v] [-d DEVICE] [--wifi-ssid WIFI_SSID] [--wifi-credential WIFI_CREDENTIAL] [--thing-name THING_NAME]
-                    [--cert-issuer {self,aws}] [--aws-profile AWS_PROFILE] [--aws-region AWS_REGION] [--aws-access-key-id AWS_ACCESS_KEY_ID]
-                    [--aws-access-key-secret AWS_ACCESS_KEY_SECRET]
+usage: provision.py [-h] [-i] [-v] [-d DEVICE] [--wifi-ssid WIFI_SSID]
+                    [--wifi-credential WIFI_CREDENTIAL]
+                    [--thing-name THING_NAME]
+                    [--cert-issuer {self,aws}]
+                    [--aws-profile AWS_PROFILE]
+                    [--aws-region AWS_REGION]
+                    [--aws-access-key-id AWS_ACCESS_KEY_ID]
+                    [--aws-secret-access-key AWS_SECRET_ACCESS_KEY]
+                    [--aws-session-token AWS_SESSION_TOKEN]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -368,7 +376,8 @@ optional arguments:
   --aws-profile AWS_PROFILE
   --aws-region AWS_REGION
   --aws-access-key-id AWS_ACCESS_KEY_ID
-  --aws-access-key-secret AWS_ACCESS_KEY_SECRET
+  --aws-secret-access-key AWS_SECRET_ACCESS_KEY
+  --aws-session-token AWS_SESSION_TOKEN
   ```
 
 ### Option 8B: Provision manually via CLI

@@ -334,28 +334,30 @@ class AwsHelper:
     arn = None
 
     def __init__(self, args):
-        profile = "default"
-        if "aws-profile" in args:
-            profile = args.aws_profile
 
-        region = None
-        if "aws-region" in args:
-            region = args.aws_region
+        # Convert Namespace to dict
+        args = vars(args)
 
-        access_key_id = None
-        if "aws-access-key-id" in args:
-            access_key_id = args.aws_access_key_id
+        aws_profile = args.get("aws_profile", "default")
+        aws_region_name = args.get("aws_region", None)
+        aws_access_key_id = args.get("aws_access_key_id", None)
+        aws_secret_access_key = args.get("aws_secret_access_key", None)
+        aws_session_token = args.get("aws_session_token", None)
 
-        secret_access_key = None
-        if "aws-access-key-secret" in args:
-            secret_access_key = args.aws_access_key_secret
+        if aws_region_name and aws_access_key_id and aws_secret_access_key:
+            self.session = boto3.session.Session(
+                region_name=aws_region_name,
+                aws_access_key_id=aws_access_key_id,
+                aws_secret_access_key=aws_secret_access_key,
+                aws_session_token=aws_session_token,
+            )
 
-        self.session = boto3.session.Session(
-            profile_name=profile,
-            region_name=region,
-            aws_access_key_id=access_key_id,
-            aws_secret_access_key=secret_access_key,
-        )
+        # If profile is specified, allow boto3 to determine other arguments from ~/.aws/config
+        elif aws_profile:
+            self.session = boto3.session.Session(
+                profile_name=aws_profile,
+            )
+
         self.check_credentials()
 
     def check_credentials(self):
@@ -851,10 +853,19 @@ def process_args():
     )
 
     # Use defaults from aws config, but allow user to override
-    parser.add_argument("--aws-profile", type=str, default="default")
-    parser.add_argument("--aws-region", type=str)
-    parser.add_argument("--aws-access-key-id", type=str)
-    parser.add_argument("--aws-access-key-secret", type=str)
+    parser.add_argument("--aws-profile", type=str, default=os.getenv("AWS_PROFILE"))
+    parser.add_argument(
+        "--aws-region", type=str, default=os.getenv("AWS_DEFAULT_REGION")
+    )
+    parser.add_argument(
+        "--aws-access-key-id", type=str, default=os.getenv("AWS_ACCESS_KEY_ID")
+    )
+    parser.add_argument(
+        "--aws-secret-access-key", type=str, default=os.getenv("AWS_SECRET_ACCESS_KEY")
+    )
+    parser.add_argument(
+        "--aws-session-token", type=str, default=os.getenv("AWS_SESSION_TOKEN")
+    )
 
     return parser.parse_args()
 
