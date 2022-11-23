@@ -60,6 +60,7 @@
 #define ECP_PUB_DER_MAX_BYTES    ( 30 + 2 * MBEDTLS_ECP_MAX_BYTES )
 #define RSA_PUB_DER_MAX_BYTES    ( 38 + 2 * MBEDTLS_MPI_MAX_SIZE )
 
+psa_key_handle_t xOTACodeVerifyKeyHandle = ( psa_key_handle_t ) OTA_SIGNING_KEY_ID;
 
 /*-----------------------------------------------------------*/
 
@@ -392,7 +393,14 @@ int32_t lWritePublicKeyToPSACrypto( psa_key_id_t xPubKeyId,
 
         psa_set_key_type( &xKeyAttributes, PSA_KEY_TYPE_ECC_PUBLIC_KEY( xKeyFamily ) );
 
-        psa_set_key_algorithm( &xKeyAttributes, PSA_ALG_ECDSA( PSA_ALG_ANY_HASH ) );
+        if( xPubKeyId == OTA_SIGNING_KEY_ID )
+        {
+            psa_set_key_algorithm( &xKeyAttributes, PSA_ALG_ECDSA( PSA_ALG_SHA_256 ) );
+        }
+        else
+        {
+            psa_set_key_algorithm( &xKeyAttributes, PSA_ALG_ECDSA( PSA_ALG_ANY_HASH ) );
+        }
 
         psa_set_key_id( &xKeyAttributes, xPubKeyId );
 

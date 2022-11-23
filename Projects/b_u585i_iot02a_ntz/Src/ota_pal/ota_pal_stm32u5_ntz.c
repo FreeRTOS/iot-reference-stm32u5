@@ -962,7 +962,11 @@ OtaPalStatus_t otaPal_CloseFile( OtaFileContext_t * const pxFileContext )
 
 OtaPalStatus_t otaPal_Abort( OtaFileContext_t * const pxFileContext )
 {
-    return otaPal_SetPlatformImageState( pxFileContext, OtaImageStateAborted );
+    OtaPalStatus_t palStatus = otaPal_SetPlatformImageState( pxFileContext, OtaImageStateAborted );
+
+    pxFileContext->pFile = NULL;
+
+    return palStatus;
 }
 
 OtaPalStatus_t otaPal_ActivateNewImage( OtaFileContext_t * const pxFileContext )
@@ -1194,6 +1198,8 @@ OtaPalStatus_t otaPal_SetPlatformImageState( OtaFileContext_t * const pxFileCont
                         break;
 
                     default:
+                        uxOtaStatus = OTA_PAL_COMBINE_ERR( OtaPalAbortFailed, 0 );
+                        pxContext->xPalState = OTA_PAL_READY;
                         break;
                 }
 

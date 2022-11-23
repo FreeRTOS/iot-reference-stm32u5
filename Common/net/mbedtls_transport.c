@@ -1605,59 +1605,73 @@ int32_t mbedtls_transport_recv( NetworkContext_t * pxNetworkContext,
     int32_t tlsStatus = 0;
     TLSContext_t * pxTLSCtx = ( TLSContext_t * ) pxNetworkContext;
 
-    configASSERT( pxNetworkContext != NULL );
-    configASSERT( pBuffer != NULL );
-    configASSERT( uxBytesToRecv > 0 );
-
-    if( pxTLSCtx->xConnectionState == STATE_CONNECTED )
+    if( pxNetworkContext == NULL )
     {
-        tlsStatus = ( int32_t ) mbedtls_ssl_read( &( pxTLSCtx->xSslCtx ),
-                                                  pBuffer,
-                                                  uxBytesToRecv );
-    }
-    else
-    {
-        tlsStatus = 0;
-    }
-
-    if( ( tlsStatus == MBEDTLS_ERR_SSL_TIMEOUT ) ||
-        ( tlsStatus == MBEDTLS_ERR_SSL_WANT_READ ) ||
-        ( tlsStatus == MBEDTLS_ERR_SSL_WANT_WRITE ) )
-    {
-        /* Mark these set of errors as a timeout. The libraries may retry read
-         * on these errors. */
-        tlsStatus = 0;
-    }
-    /* Close the Socket if needed. */
-    else if( ( tlsStatus == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY ) ||
-             ( tlsStatus == MBEDTLS_ERR_NET_CONN_RESET ) )
-    {
+        LogWarn( ( "mbedtls_transport_recv: pxNetworkContext is NULL" ) );
         tlsStatus = -1;
-        pxTLSCtx->xConnectionState = STATE_CONFIGURED;
-
-        if( pxTLSCtx->xSockHandle >= 0 )
-        {
-            if( pxTLSCtx->pxNotifyThreadCtx )
-            {
-                vStopSocketNotifyTask( pxTLSCtx->pxNotifyThreadCtx );
-            }
-
-            sock_close( pxTLSCtx->xSockHandle );
-            pxTLSCtx->xSockHandle = -1;
-        }
     }
-    else if( tlsStatus < 0 )
+    else if( pBuffer == NULL )
     {
-        LogError( "Failed to read data: Error: %s : %s.",
-                  mbedtlsHighLevelCodeOrDefault( tlsStatus ),
-                  mbedtlsLowLevelCodeOrDefault( tlsStatus ) );
+        LogWarn( ( "mbedtls_transport_recv: pBuffer is NULL" ) );
+        tlsStatus = -1;
+    }
+    else if( uxBytesToRecv <= 0 )
+    {
+        LogWarn( ( "mbedtls_transport_recv: uxBytesToRecv(%d) <= 0", uxBytesToRecv ) );
+        tlsStatus = -1;
     }
     else
     {
-        if( pxTLSCtx->pxNotifyThreadCtx &&
-            pxTLSCtx->pxNotifyThreadCtx->xTaskHandle )
+        if( pxTLSCtx->xConnectionState == STATE_CONNECTED )
         {
-            ( void ) xTaskNotify( pxTLSCtx->pxNotifyThreadCtx->xTaskHandle, 0x0, eSetValueWithOverwrite );
+            tlsStatus = ( int32_t ) mbedtls_ssl_read( &( pxTLSCtx->xSslCtx ),
+                                                      pBuffer,
+                                                      uxBytesToRecv );
+        }
+        else
+        {
+            tlsStatus = 0;
+        }
+
+        if( ( tlsStatus == MBEDTLS_ERR_SSL_TIMEOUT ) ||
+            ( tlsStatus == MBEDTLS_ERR_SSL_WANT_READ ) ||
+            ( tlsStatus == MBEDTLS_ERR_SSL_WANT_WRITE ) )
+        {
+            /* Mark these set of errors as a timeout. The libraries may retry read
+             * on these errors. */
+            tlsStatus = 0;
+        }
+        /* Close the Socket if needed. */
+        else if( ( tlsStatus == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY ) ||
+                 ( tlsStatus == MBEDTLS_ERR_NET_CONN_RESET ) )
+        {
+            tlsStatus = -1;
+            pxTLSCtx->xConnectionState = STATE_CONFIGURED;
+
+            if( pxTLSCtx->xSockHandle >= 0 )
+            {
+                if( pxTLSCtx->pxNotifyThreadCtx )
+                {
+                    vStopSocketNotifyTask( pxTLSCtx->pxNotifyThreadCtx );
+                }
+
+                sock_close( pxTLSCtx->xSockHandle );
+                pxTLSCtx->xSockHandle = -1;
+            }
+        }
+        else if( tlsStatus < 0 )
+        {
+            LogError( "Failed to read data: Error: %s : %s.",
+                      mbedtlsHighLevelCodeOrDefault( tlsStatus ),
+                      mbedtlsLowLevelCodeOrDefault( tlsStatus ) );
+        }
+        else
+        {
+            if( pxTLSCtx->pxNotifyThreadCtx &&
+                pxTLSCtx->pxNotifyThreadCtx->xTaskHandle )
+            {
+                ( void ) xTaskNotify( pxTLSCtx->pxNotifyThreadCtx->xTaskHandle, 0x0, eSetValueWithOverwrite );
+            }
         }
     }
 
@@ -1672,56 +1686,70 @@ int32_t mbedtls_transport_send( NetworkContext_t * pxNetworkContext,
     TLSContext_t * pxTLSCtx = ( TLSContext_t * ) pxNetworkContext;
     int32_t tlsStatus = 0;
 
-    configASSERT( pxTLSCtx != NULL );
-    configASSERT( pBuffer != NULL );
-    configASSERT( uxBytesToSend > 0 );
-
-    if( pxTLSCtx->xConnectionState == STATE_CONNECTED )
+    if( pxTLSCtx == NULL )
     {
-        tlsStatus = ( int32_t ) mbedtls_ssl_write( &( pxTLSCtx->xSslCtx ),
-                                                   pBuffer,
-                                                   uxBytesToSend );
-    }
-    else
-    {
-        tlsStatus = 0;
-    }
-
-    if( ( tlsStatus == MBEDTLS_ERR_SSL_TIMEOUT ) ||
-        ( tlsStatus == MBEDTLS_ERR_SSL_WANT_READ ) ||
-        ( tlsStatus == MBEDTLS_ERR_SSL_WANT_WRITE ) )
-    {
-        /* Mark these set of errors as a timeout. The libraries may retry send
-         * on these errors. */
-        tlsStatus = 0;
-    }
-    /* Close the Socket if needed. */
-    else if( ( tlsStatus == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY ) ||
-             ( tlsStatus == MBEDTLS_ERR_NET_CONN_RESET ) )
-    {
+        LogWarn( ( "mbedtls_transport_send: pxTLSCtx is NULL" ) );
         tlsStatus = -1;
-        pxTLSCtx->xConnectionState = STATE_CONFIGURED;
-
-        if( pxTLSCtx->xSockHandle >= 0 )
-        {
-            if( pxTLSCtx->pxNotifyThreadCtx )
-            {
-                vStopSocketNotifyTask( pxTLSCtx->pxNotifyThreadCtx );
-            }
-
-            sock_close( pxTLSCtx->xSockHandle );
-            pxTLSCtx->xSockHandle = -1;
-        }
     }
-    else if( tlsStatus < 0 )
+    else if( pBuffer == NULL )
     {
-        LogError( "Failed to send data:  Error: %s : %s.",
-                  mbedtlsHighLevelCodeOrDefault( tlsStatus ),
-                  mbedtlsLowLevelCodeOrDefault( tlsStatus ) );
+        LogWarn( ( "mbedtls_transport_send: pBuffer is NULL" ) );
+        tlsStatus = -1;
+    }
+    else if( uxBytesToSend <= 0 )
+    {
+        LogWarn( ( "mbedtls_transport_send: uxBytesToSend(%d) <= 0", uxBytesToSend ) );
+        tlsStatus = -1;
     }
     else
     {
-        /* Empty else marker. */
+        if( pxTLSCtx->xConnectionState == STATE_CONNECTED )
+        {
+            tlsStatus = ( int32_t ) mbedtls_ssl_write( &( pxTLSCtx->xSslCtx ),
+                                                       pBuffer,
+                                                       uxBytesToSend );
+        }
+        else
+        {
+            tlsStatus = 0;
+        }
+
+        if( ( tlsStatus == MBEDTLS_ERR_SSL_TIMEOUT ) ||
+            ( tlsStatus == MBEDTLS_ERR_SSL_WANT_READ ) ||
+            ( tlsStatus == MBEDTLS_ERR_SSL_WANT_WRITE ) )
+        {
+            /* Mark these set of errors as a timeout. The libraries may retry send
+             * on these errors. */
+            tlsStatus = 0;
+        }
+        /* Close the Socket if needed. */
+        else if( ( tlsStatus == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY ) ||
+                 ( tlsStatus == MBEDTLS_ERR_NET_CONN_RESET ) )
+        {
+            tlsStatus = -1;
+            pxTLSCtx->xConnectionState = STATE_CONFIGURED;
+
+            if( pxTLSCtx->xSockHandle >= 0 )
+            {
+                if( pxTLSCtx->pxNotifyThreadCtx )
+                {
+                    vStopSocketNotifyTask( pxTLSCtx->pxNotifyThreadCtx );
+                }
+
+                sock_close( pxTLSCtx->xSockHandle );
+                pxTLSCtx->xSockHandle = -1;
+            }
+        }
+        else if( tlsStatus < 0 )
+        {
+            LogError( "Failed to send data:  Error: %s : %s.",
+                      mbedtlsHighLevelCodeOrDefault( tlsStatus ),
+                      mbedtlsLowLevelCodeOrDefault( tlsStatus ) );
+        }
+        else
+        {
+            /* Empty else marker. */
+        }
     }
 
     return tlsStatus;

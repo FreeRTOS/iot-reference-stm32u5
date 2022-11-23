@@ -1,4 +1,4 @@
-[submodule "Middleware/FreeRTOS/FreeRTOS-Kernel"]
+[submodule "Middleware/FreeRTOS/kernel"]
 	path = Middleware/FreeRTOS/kernel
 	url = https://github.com/FreeRTOS/FreeRTOS-Kernel.git
 	fetchRecurseSubmodules = false
@@ -25,6 +25,10 @@
 [submodule "Middleware/FreeRTOS/corePKCS11"]
 	path = Middleware/FreeRTOS/corePKCS11
 	url = https://github.com/FreeRTOS/corePKCS11.git
+	fetchRecurseSubmodules = false
+[submodule "Middleware/FreeRTOS/FreeRTOS-Libraries-Integration-Tests"]
+	path = Middleware/FreeRTOS/FreeRTOS-Libraries-Integration-Tests
+	url = https://github.com/FreeRTOS/FreeRTOS-Libraries-Integration-Tests.git
 	fetchRecurseSubmodules = false
 [submodule "Middleware/AWS/DeviceDefender"]
 	path = Middleware/AWS/IoTDeviceDefender
@@ -65,7 +69,6 @@
 [submodule "Middleware/tinycbor"]
 	path = Middleware/tinycbor
 	url = https://github.com/intel/tinycbor.git
-
 [submodule "Drivers/STM32U5xx_HAL"]
 	path = Drivers/STM32U5xx_HAL
 	url = https://github.com/STMicroelectronics/stm32u5xx_hal_driver.git
@@ -74,7 +77,7 @@
 	url = https://github.com/nodejs/http-parser.git
 [submodule "Middleware/ARM/ota-pal-psa"]
 	path = Middleware/ARM/ota-pal-psa
-	url = https://github.com/ravibhagavandas/freertos-ota-pal-psa.git
+	url = https://github.com/Linaro/freertos-ota-pal-psa.git
 [submodule "Drivers/BSP/B-U585I-IOT02A"]
 	path = Drivers/BSP/B-U585I-IOT02A
 	url = https://github.com/STMicroelectronics/b-u585i-iot02a-bsp.git
@@ -105,3 +108,6 @@
 [submodule "Drivers/BSP/Components/mx25lm51245g"]
 	path = Drivers/BSP/Components/mx25lm51245g
 	url = https://github.com/STMicroelectronics/stm32-mx25lm51245g.git
+[submodule "Middleware/Unity"]
+	path = Middleware/Unity
+	url = https://github.com/ThrowTheSwitch/Unity.git
