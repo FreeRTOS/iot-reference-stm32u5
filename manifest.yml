@@ -106,10 +106,10 @@ dependencies:
       url: "https://github.com/littlefs-project/littlefs.git"
       path: "Middleware/ARM/littlefs"
   - name: "ota-pal-psa"
-    version: "20fcfd1"
+    version: "fa68b13"
     repository:
       type: "git"
-      url: "https://github.com/ravibhagavandas/freertos-ota-pal-psa.git"
+      url: "https://github.com/Linaro/freertos-ota-pal-psa.git"
       path: "Middleware/ARM/ota-pal-psa"
   - name: "stm32u5_hal"
     version: "v1.1.0"
