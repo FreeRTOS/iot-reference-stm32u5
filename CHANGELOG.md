@@ -20,12 +20,12 @@
 - [#76](https://github.com/FreeRTOS/iot-reference-stm32u5/pull/76) fix: mbedtls_transport now prints a valid IP
 - [#75](https://github.com/FreeRTOS/iot-reference-stm32u5/pull/75) provision.py: Fix aws account credential detection from args
 - [#74](https://github.com/FreeRTOS/iot-reference-stm32u5/pull/74) Fix CI build
-- [#56](https://github.com/FreeRTOS/iot-reference-stm32u5/pull/56), [#60](https://github.com/FreeRTOS/iot-reference-stm32u5/pull/60) STM32 BSP submodules
+- [#56](https://github.com/FreeRTOS/iot-reference-stm32u5/pull/56) and [#60](https://github.com/FreeRTOS/iot-reference-stm32u5/pull/60) STM32 BSP submodules
 - [#59](https://github.com/FreeRTOS/iot-reference-stm32u5/pull/59) env_setup.sh: Install virtualenv package if not already installed
 - [#58](https://github.com/FreeRTOS/iot-reference-stm32u5/pull/58) Fix tfm.mk include of project_defs.mk
 - [#57](https://github.com/FreeRTOS/iot-reference-stm32u5/pull/57) Fix various build related bugs
 - [#55](https://github.com/FreeRTOS/iot-reference-stm32u5/pull/55) Update example config and flash script after further testing
-- [#63](https://github.com/FreeRTOS/iot-reference-stm32u5/pull/63), [#64](https://github.com/FreeRTOS/iot-reference-stm32u5/pull/64), [#65](https://github.com/FreeRTOS/iot-reference-stm32u5/pull/65), [#66](https://github.com/FreeRTOS/iot-reference-stm32u5/pull/66), [#67](https://github.com/FreeRTOS/iot-reference-stm32u5/pull/67), [#68](https://github.com/FreeRTOS/iot-reference-stm32u5/pull/68), [#70](https://github.com/FreeRTOS/iot-reference-stm32u5/pull/70) and [#80](https://github.com/FreeRTOS/iot-reference-stm32u5/pull/80) Documentation update
+- [#63](https://github.com/FreeRTOS/iot-reference-stm32u5/pull/63), [#64](https://github.com/FreeRTOS/iot-reference-stm32u5/pull/64), [#65](https://github.com/FreeRTOS/iot-reference-stm32u5/pull/65), [#66](https://github.com/FreeRTOS/iot-reference-stm32u5/pull/66), [#67](https://github.com/FreeRTOS/iot-reference-stm32u5/pull/67), [#68](https://github.com/FreeRTOS/iot-reference-stm32u5/pull/68), [#70](https://github.com/FreeRTOS/iot-reference-stm32u5/pull/70) and [#80](https://github.com/FreeRTOS/iot-reference-stm32u5/pull/80) Documentation updates
 
 ## v202205.00 ( May 2022 )
 
