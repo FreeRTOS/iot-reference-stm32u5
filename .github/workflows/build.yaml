@@ -23,8 +23,8 @@ jobs:
         project: [b_u585i_iot02a_ntz, b_u585i_iot02a_tfm]
         include:
           - os: ubuntu-latest
-            ide_pkg_name: "st-stm32cubeide_1.10.1_12716_20220707_0928_amd64"
-            ide_pkg_url: "https://www.st.com/content/ccc/resource/technical/software/sw_development_suite/group0/e7/6e/03/0a/97/9f/49/2d/stm32cubeide_lnx/files/st-stm32cubeide_1.10.1_12716_20220707_0928_amd64.sh.zip/jcr:content/translations/en.st-stm32cubeide_1.10.1_12716_20220707_0928_amd64.sh.zip"
+            ide_pkg_name: "st-stm32cubeide_1.11.0_13638_20221122_1308_amd64"
+            ide_pkg_url: "https://www.st.com/content/ccc/resource/technical/software/sw_development_suite/group0/0c/78/32/f9/97/af/49/e3/stm32cubeide_lnx/files/st-stm32cubeide_1.11.0_13638_20221122_1308_amd64.sh.zip/jcr:content/translations/en.st-stm32cubeide_1.11.0_13638_20221122_1308_amd64.sh.zip"
             apt_pkg_deps: "unzip wget cmake ninja-build python3 python3-pip python3-virtualenv rsync"
     env:
       IDE_PKG_NAME: ${{ matrix.ide_pkg_name }}
