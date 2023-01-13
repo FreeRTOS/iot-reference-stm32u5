@@ -523,7 +523,7 @@ aws iot attach-policy \
 
 # Observe MQTT messages on the AWS IoT Core Console.
 
-Log in to [AWS console](https://console.aws.amazon.com) with the IAM User created earlier in this guide.
+Log in to the [AWS console](https://console.aws.amazon.com) with the IAM User created earlier in this guide.
 
 Navigate to the **IoT Core** service using the search box at the top of the page.
 
