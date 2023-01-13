@@ -2,36 +2,39 @@
 
 ## Step 1: Setup your development board
 
-![b_u585_iot02a](https://user-images.githubusercontent.com/1633960/164777317-d9f922cf-8019-4b29-8145-c92b0c4a5b85.png)
+![b_u585_iot02a](/images/MB1551c-layout.png)
 
-1. Verify that the 5V_USB_STL and JP3 jumpers are bridged and the remaining jumpers are not bridged.
-2. Check that the BOOT0 switch is in the position closest to the STLINK USB connector.
-3. Connect a USB micro-B cable between the USB_STLK connector and your computer.
+1.	Verify that the 5V_USB_STL jumper on JP4 is bridged
+2.	Verify that the JP3 jumper is bridged
+3.	Remaining jumpers should not be bridged.
+4.	Verify that the SW1_BOOT0 switch is in the ‘0’ position (slide to the right as shown by the blue arrow).
+5.	Connect a USB micro-B cable between the USB_STLK connector and your computer.
 
 The USB STLK port is located to the right of the MXCHIP WiFi module in the figure. It is used for power supply, programming, debugging, and interacting with the application via UART over USB.
 
 ### Update the WiFi module Firmware
 Depending on the board revision in use, you may need to update the wifi firmware for your board. For more information, visit the [EMW3080](https://www.st.com/en/development-tools/x-wifi-emw3080b.html) page on the ST Microelectronics website.
 
-1. Download the [EMW3080 update tool](https://www.st.com/content/ccc/resource/technical/software/firmware/group1/48/a2/e8/27/7f/ae/4b/26/x-wifi-emw3080b/files/x-wifi-emw3080b.zip/jcr:content/translations/en.x-wifi-emw3080b.zip) from the STMicroelectronics website.
-2. Unzip the archive.
-3. Flip the SW1_BOOT0 switch to the **1** / left position.
-4. Press the RST button to reset the STM32U5 MCU.
-5. Drag and drop the *EMW3080updateV2.1.11RevC.bin* binary from the archive that was unzipped in step 2 to the **DIS_U585AI** usb mass storage device.
-6. Wait for the mass storage device to disconnect and then reconnect.
-7. Return SW1_BOOT0 to the **0** / right position.
-8. Switch the SW2 BOOT switch to the **0** position.
-9. Press the RST button again.
-10. Connect a serial terminal program to the STlink USB->UART port.
-> Note: You may need to remap line endings for it to display correctly.
->
-> Input: LF -> CRLF
->
-> Output CR -> CRLF
->
-> For picocom, the correct mapping arguments are: ```--imap lfcrlf --omap crcrlf```
-11. Press the blue "USER" button and wait for the firmware update to complete.
-12. Switch the SW2 BOOT switch back to the **1** position.
+1.	Download the EMW3080 update tool from the STMicroelectronics website.
+1.	Unzip the archive.
+1.	Set the BOOT switch of SW2 to 0.
+1.	Connect the board to the host computer using the CN8 debug connector. 
+1.	Connect a serial terminal program to the STlink USB->UART port.  This helps you monitor what is going on.  
+>Note: You may need to remap line endings for it to display correctly.
+
+>Input: LF -> CRLF
+
+>Output CR -> CRLF
+
+>For picocom, the correct mapping arguments are: ```--imap lfcrlf --omap crcrlf```
+1.	Drag and drop the EMW3080updateVxxxxxx.bin binary from the archive that was unzipped in step 2 to the DIS_U585AI usb mass storage device.
+1.	Wait for the mass storage device to disconnect and then reconnect.
+1.	Press the reset (black) button to put the EMW3080 in flash mode
+1.	Press the user (blue) button to start flashing, and see the firmware update utility main menu on the serial console
+1.	Wait until the end of the flash procedure. The green LED flashes quickly while flashing, slowly when the flash procedure is over and successful. A red LED means failure.
+1.	Switch the SW2 BOOT switch back to the NC position.
+
+1. Press the RST button again.
 
 [ide_url_windows]: https://www.st.com/content/ccc/resource/technical/software/sw_development_suite/group0/1e/53/08/15/0f/e2/4c/a6/stm32cubeide_win/files/st-stm32cubeide_1.9.0_12015_20220302_0855_x86_64.exe.zip/jcr:content/translations/en.st-stm32cubeide_1.9.0_12015_20220302_0855_x86_64.exe.zip
 
@@ -130,15 +133,16 @@ sudo ln -s /usr/local/Cellar/coreutils/9.0_1/bin/readlink /usr/local/bin/readlin
 ```
 
 ## Step 3: Clone the repository and submodules
-Using your favorite unix-like console application, run the following commands to clone and initialize the git repository and it's submodules:
+Using your favorite unix-like console application, run the following commands to clone and initialize the git repository and its submodules:
 ```
+cd <CODE-BASE-DIRECTORY>
 git clone https://github.com/FreeRTOS/iot-reference-stm32u5.git
 git -C iot-reference-stm32u5 submodule update --init
 ```
 
 ## Step 4: Setup your AWS account with awscli
 
-Download awscli for your platfrom from the [official website](https://aws.amazon.com/cli/) or using your preferred package manager.
+Download awscli for your platform from the [AWS website](https://aws.amazon.com/cli/) or using your preferred package manager.
 
 Follow your organization's policy regarding configuring aws cli with temporary or long term IAM credentials. If not such policy exists, refer to the instructions on the [Set up your AWS account](https://docs.aws.amazon.com/iot/latest/developerguide/setting-up.html) for details on your options.
 
@@ -275,14 +279,18 @@ xattr -c /Applications/STM32CubeIDE.app
 
 ## Step 6: Import Projects into STM32CubeIDE
 1. Open STM32CubeIDE.
-2. When asked to open a workspace directory, select the location in which you cloned this git repository in step 3.
+NOTE -  when asked to open a workspace directory, you **must** select the location in which you cloned this git repository <CODE-BASE-DIRECTORY> as the workspace directory.
+If you are not asked to select a workspace when STM32CubeIDE starts, you may access this dialog via the File -> Switch Workspace -> Other menu item.
 
-> Note: If you are not asked to select a workspace when STM32CubeIDE start, you may access this dialog via the ***File -> Switch Workspace -> Other*** menu item.
+1. Click **Launch**
+2. Close the **Information Center** tab if needed
+
 3. Select ***File -> Import***.
 4. Select ***General -> Existing Projects Into Workspace*** in the ***Select an Import Wizard*** dialog and click **Next >**.
-5. Click **Browse** next to the *Select root directory* box and navigate to the root of this repository.
+5. Click **Browse** next to the *Select root directory* box and navigate to the root of this repository <CODE-BASE-DIRECTORY>.
 6. Click the check box next to both the *b_u585i_iot02a_ntz* and *b_u585i_iot02a_tfm* projects and then click **Finish**.
 > Note: Ensure that *copy projects into workspace* is not selected
+7. Click **Finish** to import the projects.
 
 ## Step 7: Build Firmware image and Flash your development board
 After importing the two demo projects into STM32CubeIDE, decide which one you will build and deploy first and follow the instructions below to do so.
@@ -297,7 +305,13 @@ Next, Right-click on the project in the **Project Explorer** pane and select **B
 ### Non-TrustZone Project
 Review the README.md file for the [Non TrustZone](Projects/b_u585i_iot02a_ntz) project for more information on the setup and limitations of this demo project.
 
-To flash the b_u585i_iot02a_ntz project to your STM32U5 IoT Discovery Kit, select the *Flash_ntz* configuration from the **Run Configurations** menu.
+To flash the b_u585i_iot02a_ntz project to your STM32U5 IoT Discovery Kit:
+
+1. Choose Run -> Run Configurations
+1. Choose C/C++ Application
+1. Select the Flash_ntz configuration
+1. Click on the Run button
+
 
 ### TrustZone / TF-M Enabled Project
 Review the README.md file for the [TrustZone Enabled](Projects/b_u585i_iot02a_tfm) project for more information on the setup and limitations of this demo project.
@@ -509,9 +523,9 @@ aws iot attach-policy \
 
 # Observe MQTT messages on the AWS IoT Core Console.
 
-Log in to [aws.amazon.com](aws.amazon.com) with the IAM User created earlier in this guide.
+Log in to [aws.amazon.com](console.aws.amazon.com) with the IAM User created earlier in this guide.
 
-Navigate to the **Iot Core** service using the search box at the top of the page.
+Navigate to the **IoT Core** service using the search box at the top of the page.
 
 Using the menu on the left side of the screen, select **Test**->**MQTT test client**
 
@@ -529,7 +543,7 @@ You will soon see sensor data streaming from your test device.
 
 ## Generate a Code Signing key
 
-Devices uses digital signatures to verify the authenticity of the firmware updates sent over the air. Images are signed by an authorized source who creats the image, and device can verify the signature of the image, using the corresponding public key of the source. Steps below shows how to setup and provision the code signing credentials so as to enable cloud to digitally sign the image and the device to verify the image signature before boot.
+Devices uses digital signatures to verify the authenticity of the firmware updates sent over the air. Images are signed by an authorized source who creates the image, and device can verify the signature of the image, using the corresponding public key of the source. The steps below show how to setup and provision the code signing credentials so as to enable an image to be signed in the cloud and the device to verify the image signature before boot.
 
 1. In your working directory, use the following text to create a file named *cert_config.txt*. Replace *test_signer@amazon.com* with your email address:
 
@@ -587,9 +601,9 @@ aws acm import-certificate --certificate fileb://ecdsasigner.crt --private-key f
 aws signer put-signing-profile --profile-name <your profile name> --signing-material certificateArn=<certificate arn created in step 4> --platform AmazonFreeRTOS-Default --signing-parameters certname=ota_signer_pub
 ```
 
-## Setup OTA S3 bucket, Service role and policies in AWS
+## Setup Amazon S3 bucket for OTA, Service role and policies in AWS
 
-1. S3 bucket is used to store the new firmware image to be updated. To create a new S3 bucket follow these steps here: https://docs.aws.amazon.com/freertos/latest/userguide/dg-ota-bucket.html
+1. Amazon S3 bucket is used to store the new firmware image to be updated. To create a new S3 bucket follow the steps here: https://docs.aws.amazon.com/freertos/latest/userguide/dg-ota-bucket.html
 
 2. Create a service role which grants permission for OTA service to access the firmware image: https://docs.aws.amazon.com/freertos/latest/userguide/create-service-role.html
 
@@ -708,7 +722,7 @@ Note down the job ID to check the status of the job later.
 <INF>    69643 [OTAAgent] Received entire update and validated the signature. (ota.c:2654)
 ```
 
-3. New image boots up and performs a self test, here it checks the version is higher than previous. If so it sets the new image as valid.
+3. The New image boots up and performs a self test, where it checks the version is higher than the current version. If yes, it sets the new image as valid.
 
 ```
 <INF>    15487 [OTAAgent] In self test mode. (ota.c:2102)
