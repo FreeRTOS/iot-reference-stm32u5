@@ -613,9 +613,9 @@ aws signer put-signing-profile --profile-name <your profile name> --signing-mate
 
 ## Create a code signed firmware update job
 
-1. Bump up the version of the new firmware image to be updated. From the demo project, open File `Src/ota_pal/ota_firmware_version.c` and set APP_VERSION_MINOR (or APP_VERSION_MAJOR) to 1 higher than the current version. Build the firmware image using STM32Cube IDE.
-
-2. Upload the new image to the s3 bucket created in the previous section.
+1. Bump up the version of the new firmware image to be updated. From the demo project, open File `Src/ota_pal/ota_firmware_version.c` and set APP_VERSION_MINOR (or APP_VERSION_MAJOR) to 1 higher than the current version. 
+1. Build the firmware image using STM32Cube IDE.
+1. Upload the new image to the s3 bucket created in the previous section.
 
 ```
 aws s3 cp <image binary path> s3://<s3 bucket for image>/
