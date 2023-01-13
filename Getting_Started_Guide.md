@@ -280,15 +280,15 @@ xattr -c /Applications/STM32CubeIDE.app
 
 ## Step 6: Import Projects into STM32CubeIDE
 1. Open STM32CubeIDE.
-> NOTE -  when asked to open a workspace directory, you **must** select the location in which you cloned this git repository <CODE-BASE-DIRECTORY> as the workspace directory.
+> NOTE -  when asked to open a workspace directory, you **must** select the location in which you cloned this git repository (CODE-BASE-DIRECTORY) as the workspace directory.
 >
-> If you are not asked to select a workspace when STM32CubeIDE starts, you may access this dialog via the File -> Switch Workspace -> Other menu item.
+> If you are not asked to select a workspace when STM32CubeIDE starts, you may access this dialog via the ***File -> Switch Workspace -> Other*** menu item.
 
 1. Click **Launch**
 2. Close the **Information Center** tab if needed
 
 3. Select ***File -> Import***.
-4. Select ***General -> Existing Projects Into Workspace*** in the ***Select an Import Wizard*** dialog and click **Next >**.
+4. Select ***General -> Existing Projects Into Workspace*** in the ***Select an Import Wizard*** dialog and click ***Next >***.
 5. Click **Browse** next to the *Select root directory* box and navigate to the root of this repository <CODE-BASE-DIRECTORY>.
 6. Click the check box next to both the *b_u585i_iot02a_ntz* and *b_u585i_iot02a_tfm* projects and then click **Finish**.
 > Ensure that *copy projects into workspace* is not selected
