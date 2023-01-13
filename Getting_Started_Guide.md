@@ -21,11 +21,8 @@ Depending on the board revision in use, you may need to update the wifi firmware
 1.	Connect the board to the host computer using the CN8 debug connector. 
 1.	Connect a serial terminal program to the STlink USB->UART port.  This helps you monitor what is going on.  
 >Note: You may need to remap line endings for it to display correctly.
-
 >Input: LF -> CRLF
-
 >Output CR -> CRLF
-
 >For picocom, the correct mapping arguments are: ```--imap lfcrlf --omap crcrlf```
 1.	Drag and drop the EMW3080updateVxxxxxx.bin binary from the archive that was unzipped in step 2 to the DIS_U585AI usb mass storage device.
 1.	Wait for the mass storage device to disconnect and then reconnect.
@@ -153,7 +150,8 @@ Refer to the following guides for configuring awscli depending on how your AWS a
 ## Step 5: Install STM32CubeIDE
 Download the latest version of STM32CubeIDE from the [STMicroelectronics website](https://www.st.com/en/development-tools/stm32cubeide.html).
 
-At the time of this writing, Version 1.9.0 was the latest release:
+Note that the projects in this repository have been verified with versions 1.8.0 and 1.9.0 of STM32CubeIDE.
+
 - [Windows][ide_url_windows]
 - [Mac OS][ide_url_mac]
 - [Debian Package bundle][ide_url_deb]
@@ -162,7 +160,6 @@ At the time of this writing, Version 1.9.0 was the latest release:
 
 Abridged installation instructions are included below. Please refer to the [STM32CubeIDE Installation guide](https://www.st.com/resource/en/user_manual/um2563-stm32cubeide-installation-guide-stmicroelectronics.pdf) and the included instructions for your platform if additional help is needed.
 
-The projects in this repository have been verified with versions 1.8.0 and 1.9.0 of STM32CubeIDE.
 
 ### Windows Normal Install
 1. Download the [STM32CubeIDE windows zip archive][ide_url_windows].
@@ -279,8 +276,8 @@ xattr -c /Applications/STM32CubeIDE.app
 
 ## Step 6: Import Projects into STM32CubeIDE
 1. Open STM32CubeIDE.
-NOTE -  when asked to open a workspace directory, you **must** select the location in which you cloned this git repository <CODE-BASE-DIRECTORY> as the workspace directory.
-If you are not asked to select a workspace when STM32CubeIDE starts, you may access this dialog via the File -> Switch Workspace -> Other menu item.
+> NOTE -  when asked to open a workspace directory, you **must** select the location in which you cloned this git repository <CODE-BASE-DIRECTORY> as the workspace directory.
+> If you are not asked to select a workspace when STM32CubeIDE starts, you may access this dialog via the File -> Switch Workspace -> Other menu item.
 
 1. Click **Launch**
 2. Close the **Information Center** tab if needed
@@ -296,9 +293,7 @@ If you are not asked to select a workspace when STM32CubeIDE starts, you may acc
 After importing the two demo projects into STM32CubeIDE, decide which one you will build and deploy first and follow the instructions below to do so.
 
 ### Building
-In the **Project Explorer** pane of STM32CubeIDE, Double click on the project to open it.
-
-Next, Right-click on the project in the **Project Explorer** pane and select **Build Project**
+In the **Project Explorer** pane of STM32CubeIDE, Right click on the project select **Build Project**
 
 > Note: You may also build the current project using the **Project**->**Build Project** menu item.
 
@@ -523,7 +518,7 @@ aws iot attach-policy \
 
 # Observe MQTT messages on the AWS IoT Core Console.
 
-Log in to [aws.amazon.com](console.aws.amazon.com) with the IAM User created earlier in this guide.
+Log in to [AWS console](https://console.aws.amazon.com) with the IAM User created earlier in this guide.
 
 Navigate to the **IoT Core** service using the search box at the top of the page.
 
@@ -543,7 +538,7 @@ You will soon see sensor data streaming from your test device.
 
 ## Generate a Code Signing key
 
-Devices uses digital signatures to verify the authenticity of the firmware updates sent over the air. Images are signed by an authorized source who creates the image, and device can verify the signature of the image, using the corresponding public key of the source. The steps below show how to setup and provision the code signing credentials so as to enable an image to be signed in the cloud and the device to verify the image signature before boot.
+Devices use digital signatures to verify the authenticity of the firmware updates sent over the air. Images are signed by an authorized source who creates the image, and a device can verify the signature of the image, using the corresponding public key of the signer. The steps below show how to setup and provision the code signing credentials so as to enable an image to be signed in the cloud and the device to verify the image signature before boot.
 
 1. In your working directory, use the following text to create a file named *cert_config.txt*. Replace *test_signer@amazon.com* with your email address:
 
@@ -714,7 +709,7 @@ Note down the job ID to check the status of the job later.
 <INF>    15450 [OTAAgent] Current State=[Creating
 
 ```
-2. Once the full image has been downloaded, the OTA library verifies the image signature and activates the new image in the unused flash bank.
+2. Once the full image has been downloaded, the OTA library verifies the image signature and activates the new image in the alternate flash bank.
 
 ```
 <INF>    67405 [OTAAgent] Received final block of the update. (ota.c:2633)
