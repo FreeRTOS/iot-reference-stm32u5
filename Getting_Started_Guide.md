@@ -4,7 +4,7 @@
 
 ![b_u585_iot02a](/images/MB1551c-layout.png)
 
-1.	Verify that the 5V_USB_STL jumper on JP4 is bridged
+1.	Verify that the 5V_USB_STLK jumper on JP4 is bridged
 2.	Verify that the JP3 jumper is bridged
 3.	Remaining jumpers should not be bridged.
 4.	Verify that the SW1_BOOT0 switch is in the ‘0’ position (slide to the right as shown by the blue arrow).
@@ -15,22 +15,24 @@ The USB STLK port is located to the right of the MXCHIP WiFi module in the figur
 ### Update the WiFi module Firmware
 Depending on the board revision in use, you may need to update the wifi firmware for your board. For more information, visit the [EMW3080](https://www.st.com/en/development-tools/x-wifi-emw3080b.html) page on the ST Microelectronics website.
 
-1.	Download the EMW3080 update tool from the STMicroelectronics website.
+1.	Download the [EMW3080 update tool](https://www.st.com/content/ccc/resource/technical/software/firmware/group1/48/a2/e8/27/7f/ae/4b/26/x-wifi-emw3080b/files/x-wifi-emw3080b.zip/jcr:content/translations/en.x-wifi-emw3080b.zip) from the STMicroelectronics website.
 1.	Unzip the archive.
 1.	Set the BOOT switch of SW2 to 0.
 1.	Connect the board to the host computer using the CN8 debug connector. 
 1.	Connect a serial terminal program to the STlink USB->UART port.  This helps you monitor what is going on.  
 >Note: You may need to remap line endings for it to display correctly.
+>
 >Input: LF -> CRLF
+>
 >Output CR -> CRLF
+>
 >For picocom, the correct mapping arguments are: ```--imap lfcrlf --omap crcrlf```
 1.	Drag and drop the EMW3080updateVxxxxxx.bin binary from the archive that was unzipped in step 2 to the DIS_U585AI usb mass storage device.
 1.	Wait for the mass storage device to disconnect and then reconnect.
 1.	Press the reset (black) button to put the EMW3080 in flash mode
 1.	Press the user (blue) button to start flashing, and see the firmware update utility main menu on the serial console
-1.	Wait until the end of the flash procedure. The green LED flashes quickly while flashing, slowly when the flash procedure is over and successful. A red LED means failure.
+1.	Wait until the end of the flash procedure. The green LED flashes quickly during the flash procedure, and slowly when the flash procedure is over and successful. A red LED means failure.
 1.	Switch the SW2 BOOT switch back to the NC position.
-
 1. Press the RST button again.
 
 [ide_url_windows]: https://www.st.com/content/ccc/resource/technical/software/sw_development_suite/group0/1e/53/08/15/0f/e2/4c/a6/stm32cubeide_win/files/st-stm32cubeide_1.9.0_12015_20220302_0855_x86_64.exe.zip/jcr:content/translations/en.st-stm32cubeide_1.9.0_12015_20220302_0855_x86_64.exe.zip
@@ -169,10 +171,12 @@ Abridged installation instructions are included below. Please refer to the [STM3
 ### Ubuntu Linux, Debian Linux, etc (deb package)
 Open a terminal window and follow the steps below to install STM32CubeIDE on a Debian based Linux machine.
 
-Download the STM32CubeIDE Linux generic installer package
-```
-wget <URL HERE>
-```
+1. Navigate to the [STM32CubeIDE page](https://www.st.com/en/development-tools/stm32cubeide.html)
+2. Click on **Get Software**
+3. In the table that is displayed, choose the row corresponding to STM32CubeIDE Generic Linux Installer
+4. From the Select version dropdown, click on the download icon next to **1.9.0** to download it.
+5. The installation guide is available [online](https://www.st.com/resource/en/user_manual/um2563-stm32cubeide-installation-guide-stmicroelectronics.pdf)
+6. The quick start guide is available [online](https://www.st.com/resource/en/user_manual/um2553-stm32cubeide-quick-start-guide-stmicroelectronics.pdf)
 
 Extract the package
 ```
@@ -277,6 +281,7 @@ xattr -c /Applications/STM32CubeIDE.app
 ## Step 6: Import Projects into STM32CubeIDE
 1. Open STM32CubeIDE.
 > NOTE -  when asked to open a workspace directory, you **must** select the location in which you cloned this git repository <CODE-BASE-DIRECTORY> as the workspace directory.
+>
 > If you are not asked to select a workspace when STM32CubeIDE starts, you may access this dialog via the File -> Switch Workspace -> Other menu item.
 
 1. Click **Launch**
@@ -286,14 +291,14 @@ xattr -c /Applications/STM32CubeIDE.app
 4. Select ***General -> Existing Projects Into Workspace*** in the ***Select an Import Wizard*** dialog and click **Next >**.
 5. Click **Browse** next to the *Select root directory* box and navigate to the root of this repository <CODE-BASE-DIRECTORY>.
 6. Click the check box next to both the *b_u585i_iot02a_ntz* and *b_u585i_iot02a_tfm* projects and then click **Finish**.
-> Note: Ensure that *copy projects into workspace* is not selected
+> Ensure that *copy projects into workspace* is not selected
 7. Click **Finish** to import the projects.
 
 ## Step 7: Build Firmware image and Flash your development board
 After importing the two demo projects into STM32CubeIDE, decide which one you will build and deploy first and follow the instructions below to do so.
 
 ### Building
-In the **Project Explorer** pane of STM32CubeIDE, Right click on the project select **Build Project**
+In the **Project Explorer** pane of STM32CubeIDE, Right click on the project and select **Build Project**
 
 > Note: You may also build the current project using the **Project**->**Build Project** menu item.
 
@@ -529,7 +534,7 @@ Set the topic filter to *#* and click the *Subscribe* button.
 <img width="500" alt="23" src="https://user-images.githubusercontent.com/44592967/153659120-264158f3-3cc1-4062-9094-c6c5d469d130.PNG">
 
 You will soon see sensor data streaming from your test device.
-> Note: You may need to reset the board using the black *RST* button.
+> Note: You may first need to reset the board using the black *RST* button.
 
 <img width="271" alt="24" src="https://user-images.githubusercontent.com/44592967/153659267-9de9ac07-bd3b-4899-a7ce-044aa3ba678a.PNG">
 
@@ -608,7 +613,7 @@ aws signer put-signing-profile --profile-name <your profile name> --signing-mate
 
 ## Create a code signed firmware update job
 
-1. Bump up the version of the new firmware image to be updated. From the demo project, open File `Src/ota_pal/ota_firmware_version.c` and set APP_VERSION_MAJOR to 1 higher than current version. Build the firmware image using STM32Cube IDE.
+1. Bump up the version of the new firmware image to be updated. From the demo project, open File `Src/ota_pal/ota_firmware_version.c` and set APP_VERSION_MINOR (or APP_VERSION_MAJOR) to 1 higher than the current version. Build the firmware image using STM32Cube IDE.
 
 2. Upload the new image to the s3 bucket created in the previous section.
 
