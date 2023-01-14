@@ -2,7 +2,7 @@
 
 ## Step 1: Setup your development board
 
-![b_u585_iot02a](/images/MB1551c-layout.png)
+![Board layout](/images/b_u585i_iot02a-layout.png)
 
 1.	Verify that the 5V_USB_STLK jumper on JP4 is bridged
 2.	Verify that the JP3 jumper is bridged
