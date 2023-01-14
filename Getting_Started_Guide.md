@@ -8,9 +8,9 @@
 2.	Verify that the JP3 jumper is bridged
 3.	Remaining jumpers should not be bridged.
 4.	Verify that the SW1_BOOT0 switch is in the ‘0’ position (slide to the right as shown by the blue arrow).
-5.	Connect a USB micro-B cable between the USB_STLK connector and your computer.
+5.	Connect a USB micro-B cable between the USB_STLK (CN8) connector and your computer.
 
-The USB STLK port is located to the right of the MXCHIP WiFi module in the figure. It is used for power supply, programming, debugging, and interacting with the application via UART over USB.
+The USB_STLK port is located to the right of the MXCHIP WiFi module in the figure. It is used for power supply, programming, debugging, and interacting with the application via UART over USB.
 
 ### Update the WiFi module Firmware
 Depending on the board revision in use, you may need to update the wifi firmware for your board. For more information, visit the [EMW3080](https://www.st.com/en/development-tools/x-wifi-emw3080b.html) page on the ST Microelectronics website.
@@ -18,8 +18,7 @@ Depending on the board revision in use, you may need to update the wifi firmware
 1.	Download the [EMW3080 update tool](https://www.st.com/content/ccc/resource/technical/software/firmware/group1/48/a2/e8/27/7f/ae/4b/26/x-wifi-emw3080b/files/x-wifi-emw3080b.zip/jcr:content/translations/en.x-wifi-emw3080b.zip) from the STMicroelectronics website.
 1.	Unzip the archive.
 1.	Set the BOOT switch of SW2 to 0.
-1.	Connect the board to the host computer using the CN8 debug connector. 
-1.	Connect a serial terminal program to the STlink USB->UART port.  This helps you monitor what is going on.  
+1.	Connect a serial terminal program to the port connected to the STlink USB->UART. Some common options are terraterm, putty, screen, minicom, and picocom.  The settings are Speed 115200, No parity, 8 bit data, 1 parity bit.
 >Note: You may need to remap line endings for it to display correctly.
 >
 >Input: LF -> CRLF
@@ -288,9 +287,9 @@ xattr -c /Applications/STM32CubeIDE.app
 2. Close the **Information Center** tab if needed
 
 3. Select ***File -> Import***.
-4. Select ***General -> Existing Projects Into Workspace*** in the ***Select an Import Wizard*** dialog and click ***Next >***.
+4. In the Import dialog box, under ***Select an Import Wizard***, select ***General -> Existing Projects Into Workspace*** and click *** Next >***
 5. Click **Browse** next to the *Select root directory* box and navigate to the root of this repository <CODE-BASE-DIRECTORY>.
-6. Click the check box next to both the *b_u585i_iot02a_ntz* and *b_u585i_iot02a_tfm* projects and then click **Finish**.
+6. Click the check box next to both the *b_u585i_iot02a_ntz* and *b_u585i_iot02a_tfm* projects 
 > Ensure that *copy projects into workspace* is not selected
 7. Click **Finish** to import the projects.
 
@@ -614,8 +613,8 @@ aws signer put-signing-profile --profile-name <your profile name> --signing-mate
 ## Create a code signed firmware update job
 
 1. Bump up the version of the new firmware image to be updated. From the demo project, open File `Src/ota_pal/ota_firmware_version.c` and set APP_VERSION_MINOR (or APP_VERSION_MAJOR) to 1 higher than the current version. 
-1. Build the firmware image using STM32Cube IDE.
-1. Upload the new image to the s3 bucket created in the previous section.
+1. Build the firmware image using STM32Cube IDE as detailed in section 7.
+1. Upload the new image to the S3 bucket created in the previous section.
 
 ```
 aws s3 cp <image binary path> s3://<s3 bucket for image>/
