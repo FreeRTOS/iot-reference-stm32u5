@@ -2,7 +2,7 @@
 
 ## Step 1: Setup your development board
 
-![Board layout](/images/b_u585i_iot02a-layout.png)
+![Board layout](https://user-images.githubusercontent.com/1633960/164777317-d9f922cf-8019-4b29-8145-c92b0c4a5b85.png)
 
 1.	Verify that the 5V_USB_STLK jumper on JP4 is bridged
 2.	Verify that the JP3 jumper is bridged
@@ -289,7 +289,7 @@ xattr -c /Applications/STM32CubeIDE.app
 3. Select ***File -> Import***.
 4. In the Import dialog box, under ***Select an Import Wizard***, select ***General -> Existing Projects Into Workspace*** and click *** Next >***
 5. Click **Browse** next to the *Select root directory* box and navigate to the root of this repository <CODE-BASE-DIRECTORY>.
-6. Click the check box next to both the *b_u585i_iot02a_ntz* and *b_u585i_iot02a_tfm* projects 
+6. Click the check box next to both the *b_u585i_iot02a_ntz* and *b_u585i_iot02a_tfm* projects
 > Ensure that *copy projects into workspace* is not selected
 7. Click **Finish** to import the projects.
 
@@ -612,7 +612,7 @@ aws signer put-signing-profile --profile-name <your profile name> --signing-mate
 
 ## Create a code signed firmware update job
 
-1. Bump up the version of the new firmware image to be updated. From the demo project, open File `Src/ota_pal/ota_firmware_version.c` and set APP_VERSION_MINOR (or APP_VERSION_MAJOR) to 1 higher than the current version. 
+1. Bump up the version of the new firmware image to be updated. From the demo project, open File `Src/ota_pal/ota_firmware_version.c` and set APP_VERSION_MINOR (or APP_VERSION_MAJOR) to 1 higher than the current version.
 1. Build the firmware image using STM32Cube IDE as detailed in section 7.
 1. Upload the new image to the S3 bucket created in the previous section.
 
