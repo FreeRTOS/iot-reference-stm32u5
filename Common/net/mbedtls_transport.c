@@ -471,6 +471,7 @@ NetworkContext_t * mbedtls_transport_allocate( void )
     }
     else
     {
+        memset( pxTLSCtx, 0, sizeof( TLSContext_t ) );
         pxTLSCtx->xConnectionState = STATE_ALLOCATED;
         pxTLSCtx->xSockHandle = -1;
         mbedtls_ssl_config_init( &( pxTLSCtx->xSslConfig ) );
