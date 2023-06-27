@@ -441,6 +441,17 @@ int32_t lWritePublicKeyToPSACrypto( psa_key_id_t xPubKeyId,
         xStatus = PSA_ERROR_NOT_SUPPORTED;
     }
 
+    if( xStatus == PSA_SUCCESS )
+    {
+        xStatus = psa_destroy_key( xPubKeyId );
+    }
+
+    /* Mask invalid handle error since key may not exist */
+    if( xStatus == PSA_ERROR_INVALID_HANDLE )
+    {
+        xStatus = PSA_SUCCESS;
+    }
+
     /* Export key to PSA */
     if( xStatus == PSA_SUCCESS )
     {
