@@ -23,9 +23,10 @@ jobs:
         project: [b_u585i_iot02a_ntz, b_u585i_iot02a_tfm]
         include:
           - os: ubuntu-latest
-            ide_pkg_name: "st-stm32cubeide_1.11.0_13638_20221122_1308_amd64"
-            ide_pkg_url: "https://www.st.com/content/ccc/resource/technical/software/sw_development_suite/group0/0c/78/32/f9/97/af/49/e3/stm32cubeide_lnx/files/st-stm32cubeide_1.11.0_13638_20221122_1308_amd64.sh.zip/jcr:content/translations/en.st-stm32cubeide_1.11.0_13638_20221122_1308_amd64.sh.zip"
+            ide_pkg_name: "st-stm32cubeide_1.12.1_16088_20230420_1057_amd64"
+            ide_pkg_url: "https://www.st.com/content/ccc/resource/technical/software/sw_development_suite/group0/30/a8/7a/1c/24/19/42/c0/stm32cubeide-lnx/files/st-stm32cubeide_1.12.1_16088_20230420_1057_amd64.sh.zip/jcr:content/translations/en.st-stm32cubeide_1.12.1_16088_20230420_1057_amd64.sh.zip"
             apt_pkg_deps: "unzip wget cmake ninja-build python3 python3-pip python3-virtualenv rsync"
+            user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
     env:
       IDE_PKG_NAME: ${{ matrix.ide_pkg_name }}
       PROJECT_PATH: ${{ github.workspace }}/Projects/${{ matrix.project }}
@@ -55,7 +56,7 @@ jobs:
         if: ${{ steps.cache.outputs.cache-hit != 'true' }}
         run: |
           mkdir -p ~/cache
-          wget --no-verbose ${{ matrix.ide_pkg_url }}
+          wget "${{ matrix.ide_pkg_url }}" -U "${{ matrix.user_agent }}"
           unzip en.${IDE_PKG_NAME}.sh.zip
           chmod +x ${IDE_PKG_NAME}.sh
           ./${IDE_PKG_NAME}.sh --tar -xf ./${IDE_PKG_NAME}.tar.gz
@@ -96,10 +97,11 @@ jobs:
         project: [b_u585i_iot02a_ntz, b_u585i_iot02a_tfm]
         include:
           - os: windows-latest
-            ide_pkg_name: "st-stm32cubeide_1.10.1_12716_20220707_0928_x86_64"
-            ide_pkg_url: "https://www.st.com/content/ccc/resource/technical/software/sw_development_suite/group0/f6/49/9f/f9/96/8a/47/84/stm32cubeide_win/files/st-stm32cubeide_1.10.1_12716_20220707_0928_x86_64.exe.zip/jcr:content/translations/en.st-stm32cubeide_1.10.1_12716_20220707_0928_x86_64.exe.zip"
+            ide_pkg_name: "st-stm32cubeide_1.12.1_16088_20230420_1057_x86_64"
+            ide_pkg_url: "https://www.st.com/content/ccc/resource/technical/software/sw_development_suite/group0/e8/14/a7/4e/fe/8a/4e/a0/stm32cubeide-win/files/st-stm32cubeide_1.12.1_16088_20230420_1057_x86_64.exe.zip/jcr:content/translations/en.st-stm32cubeide_1.12.1_16088_20230420_1057_x86_64.exe.zip"
             scoop_pkg_deps: "cmake wget git python 7zip ninja"
             pip_pkg_deps: "virtualenv"
+            user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
     env:
       IDE_PKG_NAME: ${{ matrix.ide_pkg_name }}
     steps:
@@ -145,8 +147,9 @@ jobs:
         shell: bash
         if: ${{ steps.cache-ide.outputs.cache-hit != 'true' }}
         run: |
+          export PATH="$(realpath ~/scoop)/shims:${PATH}"
           mkdir -p ~/cache
-          curl -O ${{ matrix.ide_pkg_url }}
+          wget "${{ matrix.ide_pkg_url }}" -U "${{ matrix.user_agent }}"
           7z x en.${{ matrix.ide_pkg_name }}.exe.zip
           mv ${{ matrix.ide_pkg_name }}.exe ~/cache/${{ matrix.ide_pkg_name }}.exe
       - name: Extract IDE
