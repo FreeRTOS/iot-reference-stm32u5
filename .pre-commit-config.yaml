@@ -10,7 +10,7 @@ exclude: |
 
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: 38b88246ccc552bffaaf54259d064beeee434539 # v4.0.1
+    rev: f71fa2c1f9cf5cb705f73dffe4b21f7c61470ba9 # v4.4.0
     hooks:
     -   id: trailing-whitespace
         args: [--markdown-linebreak-ext=md]
@@ -32,31 +32,30 @@ repos:
         args : [--fix=lf]
 
 -   repo: https://github.com/ambv/black
-    rev: ae2c0758c9e61a385df9700dc9c231bf54887041 # 22.3.0
+    rev: bf7a16254ec96b084a6caf3d435ec18f0f245cc7 # 23.3.0
     hooks:
     - id: black
 
 -   repo: https://github.com/PyCQA/flake8
-    rev: c6e0d27593a45342ffa96a18bba708a5aab32fdf # 3.9.2
+    rev: b9a7794c4f425ef8419081e6993f99419cc667ea # 6.0.0
     hooks:
     -   id: flake8
         additional_dependencies: [flake8-bugbear]
 
 -   repo: https://github.com/timothycrosley/isort
-    rev: a6222a8a125ec719724e628a5d3d0d5c60923281 # 5.8.0
+    rev: e44834b7b294701f596c9118d6c370f86671a50d # 5.12.0
     hooks:
     -   id: isort
 
 -   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: b84ce099a2fd3c5216b6ccf3fd176c3828b075fb # v0.812
+    rev: 6e63c9e9c65e1df04465cdcda0f2490e89291f58 # v1.4.1
     hooks:
     -   id: mypy
+        additional_dependencies: [types-requests]
+        args: [--ignore-missing-imports]
 
 -   repo: https://github.com/jumanjihouse/pre-commit-hooks
-    rev: 7cc5848088fd8412905ab79feea6c8edc3ac76c6 # 2.1.5
+    rev: 38980559e3a605691d6579f96222c30778e5a69e # 3.0.0
     hooks:
     -   id: forbid-binary
-    # -   id: git-dirty
-    # -   id: markdownlint
-    # -   id: protect-first-parent
     -   id: shellcheck
