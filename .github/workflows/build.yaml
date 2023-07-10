@@ -14,6 +14,9 @@ on:
       - dev
       - main
   workflow_dispatch:
+  # Run every Monday and Thursday at 04:30
+  schedule:
+    - cron: '30 4 * * 1,4'
 
 jobs:
   ubuntu:
