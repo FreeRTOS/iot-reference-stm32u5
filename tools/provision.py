@@ -334,7 +334,6 @@ class AwsHelper:
     arn = None
 
     def __init__(self, args):
-
         # Convert Namespace to dict
         args = vars(args)
 
