@@ -1026,7 +1026,10 @@ TlsTransportStatus_t mbedtls_transport_configure( NetworkContext_t * pxNetworkCo
 
         xStatus = xConfigureCAChain( pxTLSCtx, pxRootCaCerts, uxNumRootCA );
 
-        mbedtls_ssl_conf_ca_chain( pxSslConfig, &( pxTLSCtx->xRootCaChain ), NULL );
+        if( xStatus == TLS_TRANSPORT_SUCCESS )
+        {
+            mbedtls_ssl_conf_ca_chain( pxSslConfig, &( pxTLSCtx->xRootCaChain ), NULL );
+        }
     }
 
     /* Initialize SSL context */
