@@ -233,6 +233,8 @@ PkiStatus_t xPkiReadCertificate( mbedtls_x509_crt * pxMbedtlsCertCtx,
                int lError = lReadCertificateFromPSACrypto( pxMbedtlsCertCtx,
                                                            pxCertificate->xPsaCryptoId );
 
+               _Static_assert( sizeof( psa_key_id_t ) == sizeof( uint32_t ) );
+
                MBEDTLS_LOG_IF_ERROR( lError, "Failed to read certificate(s) from PSA Crypto uid: 0x%08X,",
                                      pxCertificate->xPsaCryptoId );
 
@@ -245,8 +247,11 @@ PkiStatus_t xPkiReadCertificate( mbedtls_x509_crt * pxMbedtlsCertCtx,
                int lError = lReadCertificateFromPsaIts( pxMbedtlsCertCtx,
                                                         pxCertificate->xPsaStorageId );
 
-               MBEDTLS_LOG_IF_ERROR( lError, "Failed to read certificate(s) from PSA ITS uid: 0x%016ULLX,",
-                                     pxCertificate->xPsaStorageId );
+               _Static_assert( sizeof( psa_storage_uid_t ) == sizeof( uint64_t ) );
+
+               MBEDTLS_LOG_IF_ERROR( lError, "Failed to read certificate(s) from PSA ITS uid: 0x%08X%08X,",
+                                     ( unsigned long ) ( pxCertificate->xPsaStorageId >> 32 ),
+                                     ( unsigned long ) ( pxCertificate->xPsaStorageId ) );
 
                xStatus = xPrvMbedtlsErrToPkiStatus( lError );
            }
@@ -257,8 +262,11 @@ PkiStatus_t xPkiReadCertificate( mbedtls_x509_crt * pxMbedtlsCertCtx,
                int lError = lReadCertificateFromPsaPS( pxMbedtlsCertCtx,
                                                        pxCertificate->xPsaStorageId );
 
-               MBEDTLS_LOG_IF_ERROR( lError, "Failed to read certificate(s) from PSA PS uid: 0x%016ULLX,",
-                                     pxCertificate->xPsaStorageId );
+               _Static_assert( sizeof( psa_storage_uid_t ) == sizeof( uint64_t ) );
+
+               MBEDTLS_LOG_IF_ERROR( lError, "Failed to read certificate(s) from PSA PS uid: 0x%08X%08X,",
+                                     ( unsigned long ) ( pxCertificate->xPsaStorageId >> 32 ),
+                                     ( unsigned long ) ( pxCertificate->xPsaStorageId ) );
 
                xStatus = xPrvMbedtlsErrToPkiStatus( lError );
            }
