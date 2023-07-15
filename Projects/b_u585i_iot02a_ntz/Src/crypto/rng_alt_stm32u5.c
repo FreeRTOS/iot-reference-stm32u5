@@ -58,7 +58,7 @@ static void vRngInit( void )
     {
         xRngMutex = xSemaphoreCreateMutex();
         NVIC_SetVector( RNG_IRQn, ( uint32_t ) &vRngIrqHandler );
-        NVIC_SetPriority( RNG_IRQn, 1 );
+        NVIC_SetPriority( RNG_IRQn, configLIBRARY_LOWEST_INTERRUPT_PRIORITY );
         NVIC_EnableIRQ( RNG_IRQn );
     }
 
