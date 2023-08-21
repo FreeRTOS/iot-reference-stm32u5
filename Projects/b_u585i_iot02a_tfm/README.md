@@ -16,6 +16,7 @@ In addition, the secure region MPU is used to provide isolation between differen
 &nbsp;&nbsp;&nbsp;&nbsp;[3.2 Flash Memory Layout](#32-flash-memory-layout)<br>
 &nbsp;&nbsp;&nbsp;&nbsp;[3.3 Flash Option Byte Configuration](#33-flash-option-byte-configuration)<br>
 [4 Building the Firmware Images](#4-building-the-firmware-images)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;[4.1 Non-Secure Image Memory Usage](#41-non-secure-image-memory-usage)<br>
 [5 Customizing the Firmware Metadata for mcuboot](#5-customizing-the-firmware-metadata-for-mcuboot)<br>
 &nbsp;&nbsp;&nbsp;&nbsp;[5.1 Using custom firmware region Signing Keys](#51-using-custom-firmware-region-signing-keys)<br>
 &nbsp;&nbsp;&nbsp;&nbsp;[5.2 Setting the version number and Anti-Rollback counter for each image](#52-setting-the-version-number-and-anti-rollback-counter-for-each-image)<br>
@@ -147,6 +148,14 @@ Refer to the ST RM0456 document for a more exhaustive description of each option
 
 ## 4 Building the Firmware Images
 After importing the b_u585i_iot02a_tfm project into STM32CubeIDE, Build the project by highlighting it in the *Project Explorer* pane and then clicking **Project -> Build Project** from the menu at the top of STM32CubeIDE.
+
+### 4.1 Non-Secure Image Memory Usage
+
+| Memory Usage  | Used          |
+| ------------- | ------------- |
+| Flash         | 611.44 KB     |
+| RAM           | 2 KB          |
+| RAM2          | 513.09 KB     |
 
 ## 5 Customizing the Firmware Metadata for mcuboot
 ### 5.1 Using custom firmware region Signing Keys

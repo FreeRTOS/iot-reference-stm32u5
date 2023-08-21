@@ -7,6 +7,7 @@ The following Readme.md contains instructions on getting the non-trustzone (b_u5
 &nbsp;&nbsp;&nbsp;&nbsp;[1.3 FreeRTOS OTA Platform Abstraction Layer implementation](#13-freertos-ota-platform-abstraction-layer-implementation)<br>
 [2 Importing the projects into STM32CubeIDE](#2-importing-the-projects-into-stm32cubeide)<br>
 [3 Building and Flashing the Firmware Image](#3-building-and-flashing-the-firmware-image)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;[3.1 Memory Usage](#31-memory-usage)<br>
 [4 Flashing the Image from the commandline](#4-flashing-the-image-from-the-commandline)<br>
 [5 Performing Over-the-air (OTA) Firmware Update](#5-performing-over-the-air-ota-firmware-update)<br>
 [6 Performing Integration Test](#6-performing-integration-test)<br>
@@ -44,6 +45,13 @@ Follow the instructions in the repository [README.md](../../README.md) to import
 After importing the b_u585i_iot02a_ntz project into STM32CubeIDE, Build the project by highlighting it in the *Project Exporer* pane and then clicking **Project -> Build Project** from the menu at the top of STM32CubeIDE.
 
 To write the newly built image to flash, select the Run As button, then select the `Flash_ntz` target.
+
+### 3.1 Memory Usage
+
+| Memory Usage  | Used          |
+| ------------- | ------------- |
+| RAM           | 519.71 KB     |
+| Flash         | 565.89 KB     |
 
 ## 4 Flashing the Image from the commandline
 
