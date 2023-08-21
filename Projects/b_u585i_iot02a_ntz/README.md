@@ -48,10 +48,10 @@ To write the newly built image to flash, select the Run As button, then select t
 
 ### 3.1 Memory Usage
 
-| Memory Usage  | Used          |
-| ------------- | ------------- |
-| RAM           | 519.71 KB     |
-| Flash         | 565.89 KB     |
+| Memory Usage  | Size          | Free          | Used          | Usage         |
+| ------------- | ------------- | ------------- | ------------- | ------------- |
+| RAM           | 519.71 KB     | 248.29 KB     | 519.71 KB     | 67.67 %       |
+| Flash         | 2 MB          | 1.45 MB       | 565.89 KB     | 27.63 %       |
 
 ## 4 Flashing the Image from the commandline
 

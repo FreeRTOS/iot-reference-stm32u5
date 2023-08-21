@@ -151,11 +151,11 @@ After importing the b_u585i_iot02a_tfm project into STM32CubeIDE, Build the proj
 
 ### 4.1 Non-Secure Image Memory Usage
 
-| Memory Usage  | Used          |
-| ------------- | ------------- |
-| Flash         | 611.44 KB     |
-| RAM           | 2 KB          |
-| RAM2          | 513.09 KB     |
+| Memory Usage  | Size          | Free          | Used          | Usage         |
+| ------------- | ------------- | ------------- | ------------- | ------------- |
+| Flash         | 631 KB        | 19.56 KB      | 611.44 KB     | 96.90 %       |
+| RAM           | 128 KB        | 126 KB        | 2 KB          | 1.57 %        |
+| RAM2          | 528 KB        | 14.91 KB      | 513.09 KB     | 97.18 %       |
 
 ## 5 Customizing the Firmware Metadata for mcuboot
 ### 5.1 Using custom firmware region Signing Keys
