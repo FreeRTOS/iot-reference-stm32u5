@@ -135,3 +135,9 @@ dependencies:
       type: "git"
       url: "https://github.com/FreeRTOS/FreeRTOS-Libraries-Integration-Tests"
       path: "Middleware/FreeRTOS/FreeRTOS-Libraries-Integration-Tests"
+  - name : "B-U585I-IOT02A"
+    version: "v1.0.1"
+    repository:
+      type: "git"
+      url: "https://github.com/STMicroelectronics/b-u585i-iot02a-bsp.git"
+      path: "Drivers/BSP/B-U585I-IOT02A"
