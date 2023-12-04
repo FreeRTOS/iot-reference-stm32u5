@@ -75,7 +75,7 @@
 /**
  * @brief Size of statically allocated buffers for holding payloads.
  */
-#define configPAYLOAD_BUFFER_LENGTH                   ( 100 )
+#define configPAYLOAD_BUFFER_LENGTH                  ( 100 )
 
 /**
  * @brief Format of topic used to publish outgoing messages.

@@ -42,7 +42,7 @@ typedef struct mbedtls_threading_mutex
 } mbedtls_threading_mutex_t;
 
 #if defined( MBEDTLS_THREADING_ALT )
-int mbedtls_platform_threading_init( void );
+    int mbedtls_platform_threading_init( void );
 #endif
 
 #endif /* ifndef MBEDTLS_FREERTOS_PORT_H_ */

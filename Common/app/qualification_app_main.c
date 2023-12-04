@@ -301,122 +301,122 @@ uint32_t FRTest_GetTimeMs( void )
 /*-----------------------------------------------------------*/
 
 #if ( MQTT_TEST_ENABLED == 1 )
-void SetupMqttTestParam( MqttTestParam_t * pTestParam )
-{
-    TlsTransportStatus_t xTlsStatus = TLS_TRANSPORT_SUCCESS;
+    void SetupMqttTestParam( MqttTestParam_t * pTestParam )
+    {
+        TlsTransportStatus_t xTlsStatus = TLS_TRANSPORT_SUCCESS;
 
-    configASSERT( pTestParam != NULL );
+        configASSERT( pTestParam != NULL );
 
-    /* Initialization of timestamp for MQTT. */
-    ulGlobalEntryTimeMs = MqttTestGetTimeMs();
+        /* Initialization of timestamp for MQTT. */
+        ulGlobalEntryTimeMs = MqttTestGetTimeMs();
 
-    /* Setup the transport interface. */
-    xTransport.send = mbedtls_transport_send;
-    xTransport.recv = mbedtls_transport_recv;
+        /* Setup the transport interface. */
+        xTransport.send = mbedtls_transport_send;
+        xTransport.recv = mbedtls_transport_recv;
 
-    pxNetworkContext = mbedtls_transport_allocate();
-    configASSERT( pxNetworkContext != NULL );
+        pxNetworkContext = mbedtls_transport_allocate();
+        configASSERT( pxNetworkContext != NULL );
 
-    xNetworkCredentials.xPrivateKey = xPkiObjectFromLabel( TLS_KEY_PRV_LABEL );
-    xNetworkCredentials.xClientCertificate = xPkiObjectFromLabel( TLS_CERT_LABEL );
-    xNetworkCredentials.pxRootCaChain[ 0 ] = xPkiObjectFromLabel( TLS_ROOT_CA_CERT_LABEL );
+        xNetworkCredentials.xPrivateKey = xPkiObjectFromLabel( TLS_KEY_PRV_LABEL );
+        xNetworkCredentials.xClientCertificate = xPkiObjectFromLabel( TLS_CERT_LABEL );
+        xNetworkCredentials.pxRootCaChain[ 0 ] = xPkiObjectFromLabel( TLS_ROOT_CA_CERT_LABEL );
 
-    xTlsStatus = mbedtls_transport_configure( pxNetworkContext,
-                                              NULL,
-                                              &xNetworkCredentials.xPrivateKey,
-                                              &xNetworkCredentials.xClientCertificate,
-                                              xNetworkCredentials.pxRootCaChain,
-                                              1 );
+        xTlsStatus = mbedtls_transport_configure( pxNetworkContext,
+                                                  NULL,
+                                                  &xNetworkCredentials.xPrivateKey,
+                                                  &xNetworkCredentials.xClientCertificate,
+                                                  xNetworkCredentials.pxRootCaChain,
+                                                  1 );
 
-    configASSERT( xTlsStatus == TLS_TRANSPORT_SUCCESS );
+        configASSERT( xTlsStatus == TLS_TRANSPORT_SUCCESS );
 
-    pxSecondNetworkContext = mbedtls_transport_allocate();
-    configASSERT( pxSecondNetworkContext != NULL );
+        pxSecondNetworkContext = mbedtls_transport_allocate();
+        configASSERT( pxSecondNetworkContext != NULL );
 
-    xSecondNetworkCredentials.xPrivateKey = xPkiObjectFromLabel( TLS_KEY_PRV_LABEL );
-    xSecondNetworkCredentials.xClientCertificate = xPkiObjectFromLabel( TLS_CERT_LABEL );
-    xSecondNetworkCredentials.pxRootCaChain[ 0 ] = xPkiObjectFromLabel( TLS_ROOT_CA_CERT_LABEL );
+        xSecondNetworkCredentials.xPrivateKey = xPkiObjectFromLabel( TLS_KEY_PRV_LABEL );
+        xSecondNetworkCredentials.xClientCertificate = xPkiObjectFromLabel( TLS_CERT_LABEL );
+        xSecondNetworkCredentials.pxRootCaChain[ 0 ] = xPkiObjectFromLabel( TLS_ROOT_CA_CERT_LABEL );
 
-    xTlsStatus = mbedtls_transport_configure( pxSecondNetworkContext,
-                                              NULL,
-                                              &xSecondNetworkCredentials.xPrivateKey,
-                                              &xSecondNetworkCredentials.xClientCertificate,
-                                              xSecondNetworkCredentials.pxRootCaChain,
-                                              1 );
+        xTlsStatus = mbedtls_transport_configure( pxSecondNetworkContext,
+                                                  NULL,
+                                                  &xSecondNetworkCredentials.xPrivateKey,
+                                                  &xSecondNetworkCredentials.xClientCertificate,
+                                                  xSecondNetworkCredentials.pxRootCaChain,
+                                                  1 );
 
-    configASSERT( xTlsStatus == TLS_TRANSPORT_SUCCESS );
+        configASSERT( xTlsStatus == TLS_TRANSPORT_SUCCESS );
 
-    pTestParam->pTransport = &xTransport;
-    pTestParam->pNetworkContext = pxNetworkContext;
-    pTestParam->pSecondNetworkContext = pxSecondNetworkContext;
-    pTestParam->pNetworkConnect = prvTransportNetworkConnect;
-    pTestParam->pNetworkDisconnect = prvTransportNetworkDisconnect;
-    pTestParam->pNetworkCredentials = &xNetworkCredentials;
-    pTestParam->pGetTimeMs = MqttTestGetTimeMs;
-}
+        pTestParam->pTransport = &xTransport;
+        pTestParam->pNetworkContext = pxNetworkContext;
+        pTestParam->pSecondNetworkContext = pxSecondNetworkContext;
+        pTestParam->pNetworkConnect = prvTransportNetworkConnect;
+        pTestParam->pNetworkDisconnect = prvTransportNetworkDisconnect;
+        pTestParam->pNetworkCredentials = &xNetworkCredentials;
+        pTestParam->pGetTimeMs = MqttTestGetTimeMs;
+    }
 #endif /* TRANSPORT_INTERFACE_TEST_ENABLED == 1 */
 /*-----------------------------------------------------------*/
 
 #if ( TRANSPORT_INTERFACE_TEST_ENABLED == 1 )
-void SetupTransportTestParam( TransportTestParam_t * pTestParam )
-{
-    TlsTransportStatus_t xTlsStatus = TLS_TRANSPORT_SUCCESS;
+    void SetupTransportTestParam( TransportTestParam_t * pTestParam )
+    {
+        TlsTransportStatus_t xTlsStatus = TLS_TRANSPORT_SUCCESS;
 
-    configASSERT( pTestParam != NULL );
+        configASSERT( pTestParam != NULL );
 
-    /* Initialization of timestamp for MQTT. */
-    ulGlobalEntryTimeMs = MqttTestGetTimeMs();
+        /* Initialization of timestamp for MQTT. */
+        ulGlobalEntryTimeMs = MqttTestGetTimeMs();
 
-    /* Setup the transport interface. */
-    xTransport.send = mbedtls_transport_send;
-    xTransport.recv = mbedtls_transport_recv;
+        /* Setup the transport interface. */
+        xTransport.send = mbedtls_transport_send;
+        xTransport.recv = mbedtls_transport_recv;
 
-    pxNetworkContext = mbedtls_transport_allocate();
-    configASSERT( pxNetworkContext != NULL );
+        pxNetworkContext = mbedtls_transport_allocate();
+        configASSERT( pxNetworkContext != NULL );
 
-    xNetworkCredentials.xPrivateKey = xPkiObjectFromLabel( TLS_KEY_PRV_LABEL );
-    xNetworkCredentials.xClientCertificate = xPkiObjectFromLabel( TLS_CERT_LABEL );
-    xNetworkCredentials.pxRootCaChain[ 0 ] = xPkiObjectFromLabel( TLS_ROOT_CA_CERT_LABEL );
+        xNetworkCredentials.xPrivateKey = xPkiObjectFromLabel( TLS_KEY_PRV_LABEL );
+        xNetworkCredentials.xClientCertificate = xPkiObjectFromLabel( TLS_CERT_LABEL );
+        xNetworkCredentials.pxRootCaChain[ 0 ] = xPkiObjectFromLabel( TLS_ROOT_CA_CERT_LABEL );
 
-    xTlsStatus = mbedtls_transport_configure( pxNetworkContext,
-                                              NULL,
-                                              &xNetworkCredentials.xPrivateKey,
-                                              &xNetworkCredentials.xClientCertificate,
-                                              xNetworkCredentials.pxRootCaChain,
-                                              1 );
+        xTlsStatus = mbedtls_transport_configure( pxNetworkContext,
+                                                  NULL,
+                                                  &xNetworkCredentials.xPrivateKey,
+                                                  &xNetworkCredentials.xClientCertificate,
+                                                  xNetworkCredentials.pxRootCaChain,
+                                                  1 );
 
-    configASSERT( xTlsStatus == TLS_TRANSPORT_SUCCESS );
+        configASSERT( xTlsStatus == TLS_TRANSPORT_SUCCESS );
 
-    pxSecondNetworkContext = mbedtls_transport_allocate();
-    configASSERT( pxSecondNetworkContext != NULL );
+        pxSecondNetworkContext = mbedtls_transport_allocate();
+        configASSERT( pxSecondNetworkContext != NULL );
 
-    xSecondNetworkCredentials.xPrivateKey = xPkiObjectFromLabel( TLS_KEY_PRV_LABEL );
-    xSecondNetworkCredentials.xClientCertificate = xPkiObjectFromLabel( TLS_CERT_LABEL );
-    xSecondNetworkCredentials.pxRootCaChain[ 0 ] = xPkiObjectFromLabel( TLS_ROOT_CA_CERT_LABEL );
+        xSecondNetworkCredentials.xPrivateKey = xPkiObjectFromLabel( TLS_KEY_PRV_LABEL );
+        xSecondNetworkCredentials.xClientCertificate = xPkiObjectFromLabel( TLS_CERT_LABEL );
+        xSecondNetworkCredentials.pxRootCaChain[ 0 ] = xPkiObjectFromLabel( TLS_ROOT_CA_CERT_LABEL );
 
-    xTlsStatus = mbedtls_transport_configure( pxSecondNetworkContext,
-                                              NULL,
-                                              &xSecondNetworkCredentials.xPrivateKey,
-                                              &xSecondNetworkCredentials.xClientCertificate,
-                                              xSecondNetworkCredentials.pxRootCaChain,
-                                              1 );
+        xTlsStatus = mbedtls_transport_configure( pxSecondNetworkContext,
+                                                  NULL,
+                                                  &xSecondNetworkCredentials.xPrivateKey,
+                                                  &xSecondNetworkCredentials.xClientCertificate,
+                                                  xSecondNetworkCredentials.pxRootCaChain,
+                                                  1 );
 
-    configASSERT( xTlsStatus == TLS_TRANSPORT_SUCCESS );
+        configASSERT( xTlsStatus == TLS_TRANSPORT_SUCCESS );
 
-    pTestParam->pTransport = &xTransport;
-    pTestParam->pNetworkContext = pxNetworkContext;
-    pTestParam->pSecondNetworkContext = pxSecondNetworkContext;
-    pTestParam->pNetworkConnect = prvTransportNetworkConnect;
-    pTestParam->pNetworkDisconnect = prvTransportNetworkDisconnect;
-    pTestParam->pNetworkCredentials = &xNetworkCredentials;
-}
+        pTestParam->pTransport = &xTransport;
+        pTestParam->pNetworkContext = pxNetworkContext;
+        pTestParam->pSecondNetworkContext = pxSecondNetworkContext;
+        pTestParam->pNetworkConnect = prvTransportNetworkConnect;
+        pTestParam->pNetworkDisconnect = prvTransportNetworkDisconnect;
+        pTestParam->pNetworkCredentials = &xNetworkCredentials;
+    }
 #endif /* if ( TRANSPORT_INTERFACE_TEST_ENABLED == 1 ) */
 
 #if ( OTA_PAL_TEST_ENABLED == 1 )
-void SetupOtaPalTestParam( OtaPalTestParam_t * pTestParam )
-{
-    pTestParam->pageSize = 1 << otaconfigLOG2_FILE_BLOCK_SIZE;
-}
+    void SetupOtaPalTestParam( OtaPalTestParam_t * pTestParam )
+    {
+        pTestParam->pageSize = 1 << otaconfigLOG2_FILE_BLOCK_SIZE;
+    }
 #endif /* if ( OTA_PAL_TEST_ENABLED == 1 ) */
 /*-----------------------------------------------------------*/
 

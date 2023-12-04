@@ -39,14 +39,14 @@
  * @brief Maximum number of concurrent subscriptions.
  */
 #ifndef MQTT_AGENT_MAX_SUBSCRIPTIONS
-#define MQTT_AGENT_MAX_SUBSCRIPTIONS    10U
+    #define MQTT_AGENT_MAX_SUBSCRIPTIONS    10U
 #endif /* MQTT_AGENT_MAX_SUBSCRIPTIONS */
 
 /**
  * @brief Maximum number of callbacks that may be registered.
  */
 #ifndef MQTT_AGENT_MAX_CALLBACKS
-#define MQTT_AGENT_MAX_CALLBACKS    10U
+    #define MQTT_AGENT_MAX_CALLBACKS    10U
 #endif /* MQTT_AGENT_MAX_CALLBACKS */
 
 /**

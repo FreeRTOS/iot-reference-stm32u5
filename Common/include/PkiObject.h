@@ -26,13 +26,13 @@
 #include "tls_transport_config.h"
 
 #if defined( MBEDTLS_TRANSPORT_PSA )
-#include "psa/crypto.h"
-#include "psa/protected_storage.h"
-#include "psa/internal_trusted_storage.h"
+    #include "psa/crypto.h"
+    #include "psa/protected_storage.h"
+    #include "psa/internal_trusted_storage.h"
 #endif /* MBEDTLS_TRANSPORT_PSA */
 
 #if defined( MBEDTLS_TRANSPORT_PKCS11 )
-#include "core_pkcs11.h"
+    #include "core_pkcs11.h"
 #endif
 
 #include "mbedtls/x509_crt.h"
@@ -58,14 +58,14 @@ typedef enum PkiObjectForm
     OBJ_FORM_NONE,
     OBJ_FORM_PEM,
     OBJ_FORM_DER,
-#ifdef MBEDTLS_TRANSPORT_PKCS11
-    OBJ_FORM_PKCS11_LABEL,
-#endif
-#ifdef MBEDTLS_TRANSPORT_PSA
-    OBJ_FORM_PSA_CRYPTO,
-    OBJ_FORM_PSA_ITS,
-    OBJ_FORM_PSA_PS,
-#endif
+    #ifdef MBEDTLS_TRANSPORT_PKCS11
+        OBJ_FORM_PKCS11_LABEL,
+    #endif
+    #ifdef MBEDTLS_TRANSPORT_PSA
+        OBJ_FORM_PSA_CRYPTO,
+        OBJ_FORM_PSA_ITS,
+        OBJ_FORM_PSA_PS,
+    #endif
 } PkiObjectForm_t;
 
 typedef struct PkiObject
@@ -76,25 +76,25 @@ typedef struct PkiObject
     {
         const unsigned char * pucBuffer;
         const char * pcPkcs11Label;
-#ifdef MBEDTLS_TRANSPORT_PSA
-        psa_key_id_t xPsaCryptoId;
-        psa_storage_uid_t xPsaStorageId;
-#endif /* MBEDTLS_TRANSPORT_PSA */
+        #ifdef MBEDTLS_TRANSPORT_PSA
+            psa_key_id_t xPsaCryptoId;
+            psa_storage_uid_t xPsaStorageId;
+        #endif /* MBEDTLS_TRANSPORT_PSA */
     };
 } PkiObject_t;
 
 /* Convenience initializers */
-#define PKI_OBJ_PEM( buffer, len )    { .xForm = OBJ_FORM_PEM, .uxLen = len, .pucBuffer = buffer }
-#define PKI_OBJ_DER( buffer, len )    { .xForm = OBJ_FORM_DER, .uxLen = len, .pucBuffer = buffer }
+#define PKI_OBJ_PEM( buffer, len )     { .xForm = OBJ_FORM_PEM, .uxLen = len, .pucBuffer = buffer }
+#define PKI_OBJ_DER( buffer, len )     { .xForm = OBJ_FORM_DER, .uxLen = len, .pucBuffer = buffer }
 
 #if defined( MBEDTLS_TRANSPORT_PKCS11 )
-#define PKI_OBJ_PKCS11( label )       { .xForm = OBJ_FORM_PKCS11_LABEL, .uxLen = strlen( label ), .pcPkcs11Label = label }
+    #define PKI_OBJ_PKCS11( label )    { .xForm = OBJ_FORM_PKCS11_LABEL, .uxLen = strlen( label ), .pcPkcs11Label = label }
 #endif /* MBEDTLS_TRANSPORT_PKCS11 */
 
 #if defined( MBEDTLS_TRANSPORT_PSA )
-#define PKI_OBJ_PSA_CRYPTO( key_id )     { .xForm = OBJ_FORM_PSA_CRYPTO, .xPsaCryptoId = key_id }
-#define PKI_OBJ_PSA_ITS( storage_id )    { .xForm = OBJ_FORM_PSA_ITS, .xPsaStorageId = storage_id }
-#define PKI_OBJ_PSA_PS( storage_id )     { .xForm = OBJ_FORM_PSA_PS, .xPsaStorageId = storage_id }
+    #define PKI_OBJ_PSA_CRYPTO( key_id )     { .xForm = OBJ_FORM_PSA_CRYPTO, .xPsaCryptoId = key_id }
+    #define PKI_OBJ_PSA_ITS( storage_id )    { .xForm = OBJ_FORM_PSA_ITS, .xPsaStorageId = storage_id }
+    #define PKI_OBJ_PSA_PS( storage_id )     { .xForm = OBJ_FORM_PSA_PS, .xPsaStorageId = storage_id }
 #endif /* MBEDTLS_TRANSPORT_PSA */
 
 PkiObject_t xPkiObjectFromLabel( const char * pcLabel );
@@ -145,43 +145,43 @@ PkiStatus_t xPkiGenerateECKeypair( const char * pcPrvKeyLabel,
                                    size_t * puxPubKeyDerLen );
 
 #ifdef MBEDTLS_TRANSPORT_PKCS11
-PkiStatus_t xPkcs11GenerateKeyPairEC( char * pcPrivateKeyLabel,
-                                      char * pcPublicKeyLabel,
-                                      unsigned char ** ppucPublicKeyDer,
-                                      size_t * puxPublicKeyDerLen );
+    PkiStatus_t xPkcs11GenerateKeyPairEC( char * pcPrivateKeyLabel,
+                                          char * pcPublicKeyLabel,
+                                          unsigned char ** ppucPublicKeyDer,
+                                          size_t * puxPublicKeyDerLen );
 
-PkiStatus_t xPkcs11InitMbedtlsPkContext( const char * pcLabel,
-                                         mbedtls_pk_context * pxPkCtx,
-                                         CK_SESSION_HANDLE_PTR pxSessionHandle );
+    PkiStatus_t xPkcs11InitMbedtlsPkContext( const char * pcLabel,
+                                             mbedtls_pk_context * pxPkCtx,
+                                             CK_SESSION_HANDLE_PTR pxSessionHandle );
 
-PkiStatus_t xPkcs11ReadCertificate( mbedtls_x509_crt * pxCertificateContext,
-                                    const char * pcCertLabel );
+    PkiStatus_t xPkcs11ReadCertificate( mbedtls_x509_crt * pxCertificateContext,
+                                        const char * pcCertLabel );
 
-PkiStatus_t xPkcs11WriteCertificate( const char * pcLabel,
-                                     const mbedtls_x509_crt * pxCertificateContext );
+    PkiStatus_t xPkcs11WriteCertificate( const char * pcLabel,
+                                         const mbedtls_x509_crt * pxCertificateContext );
 
-BaseType_t xPkcs11ExportPublicKey( char * pcPubKeyLabel,
-                                   unsigned char ** ppucPublicKeyDer,
-                                   size_t * puxPubKeyDerLen );
+    BaseType_t xPkcs11ExportPublicKey( char * pcPubKeyLabel,
+                                       unsigned char ** ppucPublicKeyDer,
+                                       size_t * puxPubKeyDerLen );
 
-PkiStatus_t xPkcs11ReadPublicKey( unsigned char ** ppucPublicKeyDer,
-                                  size_t * puxPubKeyLen,
-                                  const char * pcPubKeyLabel );
+    PkiStatus_t xPkcs11ReadPublicKey( unsigned char ** ppucPublicKeyDer,
+                                      size_t * puxPubKeyLen,
+                                      const char * pcPubKeyLabel );
 
-PkiStatus_t xPkcs11WritePubKey( const char * pcLabel,
-                                const mbedtls_pk_context * pxPubKeyContext );
+    PkiStatus_t xPkcs11WritePubKey( const char * pcLabel,
+                                    const mbedtls_pk_context * pxPubKeyContext );
 
 #endif /* MBEDTLS_TRANSPORT_PKCS11 */
 
 #ifdef MBEDTLS_TRANSPORT_PSA
 
-int32_t lPsa_initMbedtlsPkContext( mbedtls_pk_context * pxMbedtlsPkCtx,
-                                   psa_key_id_t xKeyId );
+    int32_t lPsa_initMbedtlsPkContext( mbedtls_pk_context * pxMbedtlsPkCtx,
+                                       psa_key_id_t xKeyId );
 
-int32_t lGenerateKeyPairECPsaCrypto( psa_key_id_t xPrvKeyId,
-                                     psa_key_id_t xPubKeyId,
-                                     unsigned char ** ppucPubKeyDer,
-                                     size_t * puxPubKeyDerLen );
+    int32_t lGenerateKeyPairECPsaCrypto( psa_key_id_t xPrvKeyId,
+                                         psa_key_id_t xPubKeyId,
+                                         unsigned char ** ppucPubKeyDer,
+                                         size_t * puxPubKeyDerLen );
 #endif /* MBEDTLS_TRANSPORT_PSA */
 
 #endif /* _PKI_OBJECT_H_ */

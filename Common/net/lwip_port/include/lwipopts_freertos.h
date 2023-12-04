@@ -262,8 +262,8 @@
 /**
  * @brief System error variable, errno.
  */
-extern int FreeRTOS_errno;
-#define errno    FreeRTOS_errno
+    extern int FreeRTOS_errno;
+    #define errno    FreeRTOS_errno
 #endif
 
 #endif /* __LWIPOPTS_FREERTOS_H__ */

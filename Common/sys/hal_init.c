@@ -40,7 +40,7 @@ DCACHE_HandleTypeDef * pxHndlDCache = NULL;
 DMA_HandleTypeDef * pxHndlGpdmaCh4 = NULL;
 DMA_HandleTypeDef * pxHndlGpdmaCh5 = NULL;
 #ifndef TFM_PSA_API
-RNG_HandleTypeDef * pxHndlRng = NULL;
+    RNG_HandleTypeDef * pxHndlRng = NULL;
 #endif /* ! defined( TFM_PSA_API ) */
 TIM_HandleTypeDef * pxHndlTim5 = NULL;
 IWDG_HandleTypeDef * pxHwndIwdg = NULL;
@@ -59,7 +59,7 @@ static void hw_tim5_init( void );
 static void hw_watchdog_init( void );
 
 #ifndef TFM_PSA_API
-static void hw_rng_init( void );
+    static void hw_rng_init( void );
 #endif /* ! defined( TFM_PSA_API ) */
 
 void hw_init( void )
@@ -79,9 +79,9 @@ void hw_init( void )
     /* Configure the system clock */
     SystemClock_Config();
 
-#ifndef TFM_PSA_API
-    hw_cache_init();
-#endif
+    #ifndef TFM_PSA_API
+        hw_cache_init();
+    #endif
 
     /* Initialize uart for logging before cli is up and running */
     vInitLoggingEarly();
@@ -93,9 +93,9 @@ void hw_init( void )
 /*    hw_rtc_init(); */
     hw_spi_init();
 
-#ifndef TFM_PSA_API
-    hw_rng_init();
-#endif
+    #ifndef TFM_PSA_API
+        hw_rng_init();
+    #endif
 
     if( BSP_I2C2_Init() != BSP_ERROR_NONE )
     {
@@ -578,45 +578,45 @@ static void hw_spi_init( void )
 }
 
 #ifndef TFM_PSA_API
-static void hw_rng_init( void )
-{
-    HAL_StatusTypeDef xResult = HAL_OK;
-    RCC_PeriphCLKInitTypeDef PeriphClkInit = { 0 };
-    static RNG_HandleTypeDef xRngHandle =
+    static void hw_rng_init( void )
     {
-        .Instance                 = RNG,
-        .Init.ClockErrorDetection = RNG_CED_ENABLE,
-        .Lock                     = HAL_UNLOCKED,
-        .State                    = HAL_RNG_STATE_RESET,
-        .RandomNumber             = 0
-    };
-    uint32_t ulDummyValue = 0;
+        HAL_StatusTypeDef xResult = HAL_OK;
+        RCC_PeriphCLKInitTypeDef PeriphClkInit = { 0 };
+        static RNG_HandleTypeDef xRngHandle =
+        {
+            .Instance                 = RNG,
+            .Init.ClockErrorDetection = RNG_CED_ENABLE,
+            .Lock                     = HAL_UNLOCKED,
+            .State                    = HAL_RNG_STATE_RESET,
+            .RandomNumber             = 0
+        };
+        uint32_t ulDummyValue = 0;
 
-    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RNG;
-    PeriphClkInit.RngClockSelection = RCC_RNGCLKSOURCE_HSI48;
+        PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RNG;
+        PeriphClkInit.RngClockSelection = RCC_RNGCLKSOURCE_HSI48;
 
-    xResult = HAL_RCCEx_PeriphCLKConfig( &PeriphClkInit );
-    configASSERT( xResult == HAL_OK );
-
-    /* Peripheral clock enable */
-    __HAL_RCC_RNG_CLK_ENABLE();
-
-    if( xResult == HAL_OK )
-    {
-        xResult = HAL_RNG_Init( &xRngHandle );
+        xResult = HAL_RCCEx_PeriphCLKConfig( &PeriphClkInit );
         configASSERT( xResult == HAL_OK );
+
+        /* Peripheral clock enable */
+        __HAL_RCC_RNG_CLK_ENABLE();
+
+        if( xResult == HAL_OK )
+        {
+            xResult = HAL_RNG_Init( &xRngHandle );
+            configASSERT( xResult == HAL_OK );
+        }
+
+        /* Ignore first random value returned */
+        ( void ) HAL_RNG_GenerateRandomNumber( &xRngHandle, &ulDummyValue );
+
+        ( void ) ulDummyValue;
+
+        if( xResult == HAL_OK )
+        {
+            pxHndlRng = &xRngHandle;
+        }
     }
-
-    /* Ignore first random value returned */
-    ( void ) HAL_RNG_GenerateRandomNumber( &xRngHandle, &ulDummyValue );
-
-    ( void ) ulDummyValue;
-
-    if( xResult == HAL_OK )
-    {
-        pxHndlRng = &xRngHandle;
-    }
-}
 #endif /* !defined( TFM_PSA_API ) */
 
 static void hw_tim5_init( void )

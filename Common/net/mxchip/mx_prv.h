@@ -41,7 +41,7 @@ extern "C"
 #define LWIP_STACK
 
 #ifdef LWIP_STACK
-#include "mx_lwip.h"
+    #include "mx_lwip.h"
 #endif
 
 #define DATA_WAITING_IDX                 3

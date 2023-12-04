@@ -82,8 +82,8 @@
 #include "kvstore.h"
 
 #ifdef TFM_PSA_API
-#include "tfm_fwu_defs.h"
-#include "psa/update.h"
+    #include "tfm_fwu_defs.h"
+    #include "psa/update.h"
 #endif
 
 
@@ -539,28 +539,28 @@ static void prvOTAAgentTask( void * pvParam )
 /*-----------------------------------------------------------*/
 
 #ifdef TFM_PSA_API
-static bool prvGetImageInfo( uint8_t ucSlot,
-                             uint32_t ulImageType,
-                             psa_image_info_t * pImageInfo )
-{
-    psa_status_t xPSAStatus;
-    bool xStatus = false;
-    psa_image_id_t ulImageID = FWU_CALCULATE_IMAGE_ID( ucSlot, ulImageType, 0 );
-
-    xPSAStatus = psa_fwu_query( ulImageID, pImageInfo );
-
-    if( xPSAStatus == PSA_SUCCESS )
+    static bool prvGetImageInfo( uint8_t ucSlot,
+                                 uint32_t ulImageType,
+                                 psa_image_info_t * pImageInfo )
     {
-        xStatus = true;
-    }
-    else
-    {
-        LogError( "Failed to query image info for slot %u", ucSlot );
-        xStatus = false;
-    }
+        psa_status_t xPSAStatus;
+        bool xStatus = false;
+        psa_image_id_t ulImageID = FWU_CALCULATE_IMAGE_ID( ucSlot, ulImageType, 0 );
 
-    return xStatus;
-}
+        xPSAStatus = psa_fwu_query( ulImageID, pImageInfo );
+
+        if( xPSAStatus == PSA_SUCCESS )
+        {
+            xStatus = true;
+        }
+        else
+        {
+            LogError( "Failed to query image info for slot %u", ucSlot );
+            xStatus = false;
+        }
+
+        return xStatus;
+    }
 #endif /* ifdef TFM_PSA_API */
 
 /*-----------------------------------------------------------*/
@@ -576,28 +576,28 @@ static bool prvGetImageInfo( uint8_t ucSlot,
  * @return true if active version is higher than stage version. false otherwise.
  *
  */
-static bool prvCheckVersion( psa_image_info_t * pActiveVersion,
-                             psa_image_info_t * pStageVersion )
-{
-    bool xStatus = false;
-    AppVersion32_t xActiveFirmwareVersion = { 0 };
-    AppVersion32_t xStageFirmwareVersion = { 0 };
-
-    xActiveFirmwareVersion.u.x.major = pActiveVersion->version.iv_major;
-    xActiveFirmwareVersion.u.x.minor = pActiveVersion->version.iv_minor;
-    xActiveFirmwareVersion.u.x.build = ( uint16_t ) pActiveVersion->version.iv_revision;
-
-    xStageFirmwareVersion.u.x.major = pStageVersion->version.iv_major;
-    xStageFirmwareVersion.u.x.minor = pStageVersion->version.iv_minor;
-    xStageFirmwareVersion.u.x.build = ( uint16_t ) pStageVersion->version.iv_revision;
-
-    if( xActiveFirmwareVersion.u.unsignedVersion32 > xStageFirmwareVersion.u.unsignedVersion32 )
+    static bool prvCheckVersion( psa_image_info_t * pActiveVersion,
+                                 psa_image_info_t * pStageVersion )
     {
-        xStatus = true;
-    }
+        bool xStatus = false;
+        AppVersion32_t xActiveFirmwareVersion = { 0 };
+        AppVersion32_t xStageFirmwareVersion = { 0 };
 
-    return xStatus;
-}
+        xActiveFirmwareVersion.u.x.major = pActiveVersion->version.iv_major;
+        xActiveFirmwareVersion.u.x.minor = pActiveVersion->version.iv_minor;
+        xActiveFirmwareVersion.u.x.build = ( uint16_t ) pActiveVersion->version.iv_revision;
+
+        xStageFirmwareVersion.u.x.major = pStageVersion->version.iv_major;
+        xStageFirmwareVersion.u.x.minor = pStageVersion->version.iv_minor;
+        xStageFirmwareVersion.u.x.build = ( uint16_t ) pStageVersion->version.iv_revision;
+
+        if( xActiveFirmwareVersion.u.unsignedVersion32 > xStageFirmwareVersion.u.unsignedVersion32 )
+        {
+            xStatus = true;
+        }
+
+        return xStatus;
+    }
 #endif /* ifdef TFM_PSA_API */
 
 /*-----------------------------------------------------------*/
@@ -612,50 +612,50 @@ static bool prvCheckVersion( psa_image_info_t * pActiveVersion,
  * @return true if the version is higher than previous version. false otherwise.
  *
  */
-static bool prvImageVersionCheck( uint32_t ulImageType )
-{
-    psa_image_info_t xActiveImageInfo = { 0 };
-    psa_image_info_t xStageImageInfo = { 0 };
-
-    bool xStatus = false;
-
-    xStatus = prvGetImageInfo( FWU_IMAGE_ID_SLOT_ACTIVE, ulImageType, &xActiveImageInfo );
-
-    if( ( xStatus == true ) && ( xActiveImageInfo.state == PSA_IMAGE_PENDING_INSTALL ) )
+    static bool prvImageVersionCheck( uint32_t ulImageType )
     {
-        xStatus = prvGetImageInfo( FWU_IMAGE_ID_SLOT_STAGE, ulImageType, &xStageImageInfo );
+        psa_image_info_t xActiveImageInfo = { 0 };
+        psa_image_info_t xStageImageInfo = { 0 };
 
-        if( xStatus == true )
+        bool xStatus = false;
+
+        xStatus = prvGetImageInfo( FWU_IMAGE_ID_SLOT_ACTIVE, ulImageType, &xActiveImageInfo );
+
+        if( ( xStatus == true ) && ( xActiveImageInfo.state == PSA_IMAGE_PENDING_INSTALL ) )
         {
-            xStatus = prvCheckVersion( &xActiveImageInfo, &xStageImageInfo );
+            xStatus = prvGetImageInfo( FWU_IMAGE_ID_SLOT_STAGE, ulImageType, &xStageImageInfo );
 
-            if( xStatus == false )
+            if( xStatus == true )
             {
-                LogError( "PSA Image type %d version validation failed, old version: %u.%u.%u new version: %u.%u.%u",
-                          ulImageType,
-                          xStageImageInfo.version.iv_major,
-                          xStageImageInfo.version.iv_minor,
-                          xStageImageInfo.version.iv_revision,
-                          xActiveImageInfo.version.iv_major,
-                          xActiveImageInfo.version.iv_minor,
-                          xActiveImageInfo.version.iv_revision );
-            }
-            else
-            {
-                LogError( "PSA Image type %d version validation succeeded, old version: %u.%u.%u new version: %u.%u.%u",
-                          ulImageType,
-                          xStageImageInfo.version.iv_major,
-                          xStageImageInfo.version.iv_minor,
-                          xStageImageInfo.version.iv_revision,
-                          xActiveImageInfo.version.iv_major,
-                          xActiveImageInfo.version.iv_minor,
-                          xActiveImageInfo.version.iv_revision );
+                xStatus = prvCheckVersion( &xActiveImageInfo, &xStageImageInfo );
+
+                if( xStatus == false )
+                {
+                    LogError( "PSA Image type %d version validation failed, old version: %u.%u.%u new version: %u.%u.%u",
+                              ulImageType,
+                              xStageImageInfo.version.iv_major,
+                              xStageImageInfo.version.iv_minor,
+                              xStageImageInfo.version.iv_revision,
+                              xActiveImageInfo.version.iv_major,
+                              xActiveImageInfo.version.iv_minor,
+                              xActiveImageInfo.version.iv_revision );
+                }
+                else
+                {
+                    LogError( "PSA Image type %d version validation succeeded, old version: %u.%u.%u new version: %u.%u.%u",
+                              ulImageType,
+                              xStageImageInfo.version.iv_major,
+                              xStageImageInfo.version.iv_minor,
+                              xStageImageInfo.version.iv_revision,
+                              xActiveImageInfo.version.iv_major,
+                              xActiveImageInfo.version.iv_minor,
+                              xActiveImageInfo.version.iv_revision );
+                }
             }
         }
-    }
 
-    return xStatus;
-}
+        return xStatus;
+    }
 #endif /* ifdef TFM_PSA_API */
 
 /*-----------------------------------------------------------*/
@@ -671,35 +671,35 @@ static bool prvImageVersionCheck( uint32_t ulImageType )
  * @return true if version was fetched successfully.
  *
  */
-static bool prvGetImageVersion( AppVersion32_t * pSecureVersion,
-                                AppVersion32_t * pNonSecureVersion )
-{
-    psa_image_info_t xImageInfo = { 0 };
-    bool xStatus = false;
-
-    xStatus = prvGetImageInfo( FWU_IMAGE_ID_SLOT_ACTIVE, FWU_IMAGE_TYPE_SECURE, &xImageInfo );
-
-    if( xStatus == true )
+    static bool prvGetImageVersion( AppVersion32_t * pSecureVersion,
+                                    AppVersion32_t * pNonSecureVersion )
     {
-        pSecureVersion->u.x.major = xImageInfo.version.iv_major;
-        pSecureVersion->u.x.minor = xImageInfo.version.iv_minor;
-        pSecureVersion->u.x.build = ( uint16_t ) xImageInfo.version.iv_revision;
-    }
+        psa_image_info_t xImageInfo = { 0 };
+        bool xStatus = false;
 
-    if( xStatus == true )
-    {
-        xStatus = prvGetImageInfo( FWU_IMAGE_ID_SLOT_ACTIVE, FWU_IMAGE_TYPE_NONSECURE, &xImageInfo );
-    }
+        xStatus = prvGetImageInfo( FWU_IMAGE_ID_SLOT_ACTIVE, FWU_IMAGE_TYPE_SECURE, &xImageInfo );
 
-    if( xStatus == true )
-    {
-        pNonSecureVersion->u.x.major = xImageInfo.version.iv_major;
-        pNonSecureVersion->u.x.minor = xImageInfo.version.iv_minor;
-        pNonSecureVersion->u.x.build = ( uint16_t ) xImageInfo.version.iv_revision;
-    }
+        if( xStatus == true )
+        {
+            pSecureVersion->u.x.major = xImageInfo.version.iv_major;
+            pSecureVersion->u.x.minor = xImageInfo.version.iv_minor;
+            pSecureVersion->u.x.build = ( uint16_t ) xImageInfo.version.iv_revision;
+        }
 
-    return xStatus;
-}
+        if( xStatus == true )
+        {
+            xStatus = prvGetImageInfo( FWU_IMAGE_ID_SLOT_ACTIVE, FWU_IMAGE_TYPE_NONSECURE, &xImageInfo );
+        }
+
+        if( xStatus == true )
+        {
+            pNonSecureVersion->u.x.major = xImageInfo.version.iv_major;
+            pNonSecureVersion->u.x.minor = xImageInfo.version.iv_minor;
+            pNonSecureVersion->u.x.build = ( uint16_t ) xImageInfo.version.iv_revision;
+        }
+
+        return xStatus;
+    }
 #endif /* ifdef TFM_PSA_API */
 
 /*-----------------------------------------------------------*/
@@ -766,7 +766,7 @@ static void otaAppCallback( OtaJobEvent_t event,
 
             LogInfo( ( "Received OtaJobEventStartTest callback from OTA Agent." ) );
 
-#ifdef TFM_PSA_API
+            #ifdef TFM_PSA_API
             {
                 /*
                  * Do version check validation here, given that OTA Agent library does not handle
@@ -795,11 +795,11 @@ static void otaAppCallback( OtaJobEvent_t event,
                     }
                 }
             }
-#else /* ifdef TFM_PSA_API */
+            #else /* ifdef TFM_PSA_API */
             {
                 err = OTA_SetImageState( OtaImageStateAccepted );
             }
-#endif /* ifdef TFM_PSA_API */
+            #endif /* ifdef TFM_PSA_API */
 
             if( err == OtaErrNone )
             {
@@ -1320,7 +1320,7 @@ void vOTAUpdateTask( void * pvParam )
     /* Set OTA buffers for use by OTA agent. */
     prvSetOTAAppBuffer( &otaAppBuffer );
 
-#ifndef TFM_PSA_API
+    #ifndef TFM_PSA_API
     {
         /*
          * Application defined firmware version is only used in Non-Trustzone.
@@ -1331,7 +1331,7 @@ void vOTAUpdateTask( void * pvParam )
                    appFirmwareVersion.u.x.minor,
                    appFirmwareVersion.u.x.build ) );
     }
-#else
+    #else
     {
         AppVersion32_t xSecureVersion = { 0 }, xNSVersion = { 0 };
         prvGetImageVersion( &xSecureVersion, &xNSVersion );
@@ -1343,7 +1343,7 @@ void vOTAUpdateTask( void * pvParam )
                    xNSVersion.u.x.minor,
                    xNSVersion.u.x.build ) );
     }
-#endif /* ifndef TFM_PSA_API */
+    #endif /* ifndef TFM_PSA_API */
 
 
     /****************************** Init OTA Library. ******************************/

@@ -44,7 +44,7 @@
 /*-----------------------------------------------------------*/
 /* todo take into account maximum cli line length */
 #if ( CLI_UART_TX_STREAM_LEN < dlMAX_LOG_LINE_LENGTH )
-#error "CLI_UART_TX_STREAM_LEN must be >= dlMAX_LOG_LINE_LENGTH"
+    #error "CLI_UART_TX_STREAM_LEN must be >= dlMAX_LOG_LINE_LENGTH"
 #endif
 
 volatile StreamBufferHandle_t xLogMBuf = NULL;
@@ -87,21 +87,21 @@ static void vSendLogMessageEarly( const char * buffer,
 {
     configASSERT( xTaskGetSchedulerState() != taskSCHEDULER_RUNNING );
 
-#ifdef LOGGING_OUTPUT_ITM
-    uint32_t i = 0;
+    #ifdef LOGGING_OUTPUT_ITM
+        uint32_t i = 0;
 
-    for( unsigned int i = 0; i < len; i++ )
-    {
-        ( void ) ITM_SendChar( lineOutBuf[ i ] );
-    }
-#endif
+        for( unsigned int i = 0; i < len; i++ )
+        {
+            ( void ) ITM_SendChar( lineOutBuf[ i ] );
+        }
+    #endif
 
 
-#ifdef LOGGING_OUTPUT_UART
-    /* blocking write to UART */
-    ( void ) HAL_UART_Transmit( pxEarlyUart, ( uint8_t * ) buffer, count, 100000 );
-    ( void ) HAL_UART_Transmit( pxEarlyUart, ( uint8_t * ) "\r\n", 2, 100000 );
-#endif
+    #ifdef LOGGING_OUTPUT_UART
+        /* blocking write to UART */
+        ( void ) HAL_UART_Transmit( pxEarlyUart, ( uint8_t * ) buffer, count, 100000 );
+        ( void ) HAL_UART_Transmit( pxEarlyUart, ( uint8_t * ) "\r\n", 2, 100000 );
+    #endif
 }
 
 void vInitLoggingEarly( void )

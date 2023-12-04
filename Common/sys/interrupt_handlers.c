@@ -46,8 +46,8 @@ __attribute__( ( optimize( "O0" ) ) ) void prvGetRegistersFromStack( uint32_t * 
      * away as the variables never actually get used.  If the debugger won't show the
      * values of the variables, make them global my moving their declaration outside
      * of this function. */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
     volatile uint32_t r0;
     volatile uint32_t r1;
     volatile uint32_t r2;
@@ -67,7 +67,7 @@ __attribute__( ( optimize( "O0" ) ) ) void prvGetRegistersFromStack( uint32_t * 
     lr = pulFaultStackAddress[ 5 ];
     pc = pulFaultStackAddress[ 6 ];
     psr = pulFaultStackAddress[ 7 ];
-#pragma GCC diagnostic pop
+    #pragma GCC diagnostic pop
 
     /* When the following line is hit, the variables contain the register values. */
     for( ; ; )

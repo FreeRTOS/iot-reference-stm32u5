@@ -35,7 +35,7 @@
 #include "logging_levels.h"
 
 #ifndef LOG_LEVEL
-#define LOG_LEVEL    LOG_ERROR
+    #define LOG_LEVEL    LOG_ERROR
 #endif
 
 #include "logging.h"
@@ -44,7 +44,7 @@
 #include <string.h>
 #include <stdlib.h> /* abort */
 #if ( !defined( __CC_ARM ) ) && ( !defined( __ICCARM__ ) ) && ( !defined( __ARMCC_VERSION ) )
-#include <sys/time.h>
+    #include <sys/time.h>
 #endif
 
 #include <stdint.h>
@@ -52,7 +52,7 @@
 #include "FreeRTOS.h"
 
 #ifndef BYTE_ORDER
-#define BYTE_ORDER                LITTLE_ENDIAN
+    #define BYTE_ORDER            LITTLE_ENDIAN
 #endif
 
 #define LWIP_PLATFORM_BYTESWAP    0
@@ -60,11 +60,11 @@
 /** @todo fix some warnings: don't use #pragma if compiling with cygwin gcc */
 /*#ifndef __GNUC__ */
 #if ( !defined( __ICCARM__ ) ) && ( !defined( __GNUC__ ) ) && ( !defined( __CC_ARM ) )
-#include <limits.h>
-#pragma warning (disable: 4244) /* disable conversion warning (implicit integer promotion!) */
-#pragma warning (disable: 4127) /* conditional expression is constant */
-#pragma warning (disable: 4996) /* 'strncpy' was declared deprecated */
-#pragma warning (disable: 4103) /* structure packing changed by including file */
+    #include <limits.h>
+    #pragma warning (disable: 4244) /* disable conversion warning (implicit integer promotion!) */
+    #pragma warning (disable: 4127) /* conditional expression is constant */
+    #pragma warning (disable: 4996) /* 'strncpy' was declared deprecated */
+    #pragma warning (disable: 4103) /* structure packing changed by including file */
 #endif
 
 /* User errno from newlibc */

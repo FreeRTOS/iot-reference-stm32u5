@@ -54,8 +54,8 @@ typedef struct sys_mbox sys_mbox_t;
 
 #define sys_mbox_valid( x )          ( ( ( ( x ) == NULL ) || ( ( x )->xMbox == NULL ) ) ? pdFALSE : pdTRUE )
 #define sys_mbox_set_invalid( x )    do { if( ( x ) != NULL ) { ( x )->xMbox = NULL; ( x )->xTask = NULL; } } while( 0 )
-#define sys_sem_valid( x )           ( ( ( *x ) == NULL ) ? pdFALSE : pdTRUE )
-#define sys_sem_set_invalid( x )     ( ( *x ) = NULL )
+#define sys_sem_valid( x )           ( ( ( * x ) == NULL ) ? pdFALSE : pdTRUE )
+#define sys_sem_set_invalid( x )     ( ( * x ) = NULL )
 
 
 #define sys_assert( pcMessage )                                 \
@@ -72,10 +72,10 @@ typedef struct sys_mbox sys_mbox_t;
 
 
 #if LWIP_NETCONN_SEM_PER_THREAD
-sys_sem_t * sys_arch_netconn_sem_get( void );
-#define LWIP_NETCONN_THREAD_SEM_GET()    sys_arch_netconn_sem_get()
-#define LWIP_NETCONN_THREAD_SEM_ALLOC()
-#define LWIP_NETCONN_THREAD_SEM_FREE()
+    sys_sem_t * sys_arch_netconn_sem_get( void );
+    #define LWIP_NETCONN_THREAD_SEM_GET()    sys_arch_netconn_sem_get()
+    #define LWIP_NETCONN_THREAD_SEM_ALLOC()
+    #define LWIP_NETCONN_THREAD_SEM_FREE()
 #endif /* LWIP_NETCONN_SEM_PER_THREAD */
 
 #endif /* __ARCH_SYS_ARCH_H__ */

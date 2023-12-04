@@ -64,43 +64,43 @@ static ControlPlaneCtx_t xControlPlaneCtx;
 /*
  * @brief Converts from a MxEvent_t to a C string.
  */
-static const char * pcMxStatusToString( MxStatus_t xStatus )
-{
-    const char * pcReturn = "Unknown";
-
-    switch( xStatus )
+    static const char * pcMxStatusToString( MxStatus_t xStatus )
     {
-        case MX_STATUS_NONE:
-            pcReturn = "None";
-            break;
+        const char * pcReturn = "Unknown";
 
-        case MX_STATUS_STA_DOWN:
-            pcReturn = "Station Down";
-            break;
+        switch( xStatus )
+        {
+            case MX_STATUS_NONE:
+                pcReturn = "None";
+                break;
 
-        case MX_STATUS_STA_UP:
-            pcReturn = "Station Up";
-            break;
+            case MX_STATUS_STA_DOWN:
+                pcReturn = "Station Down";
+                break;
 
-        case MX_STATUS_STA_GOT_IP:
-            pcReturn = "Station Got IP";
-            break;
+            case MX_STATUS_STA_UP:
+                pcReturn = "Station Up";
+                break;
 
-        case MX_STATUS_AP_DOWN:
-            pcReturn = "AP Down";
-            break;
+            case MX_STATUS_STA_GOT_IP:
+                pcReturn = "Station Got IP";
+                break;
 
-        case MX_STATUS_AP_UP:
-            pcReturn = "AP Up";
-            break;
+            case MX_STATUS_AP_DOWN:
+                pcReturn = "AP Down";
+                break;
 
-        default:
-            /* default to "Unknown" string */
-            break;
+            case MX_STATUS_AP_UP:
+                pcReturn = "AP Up";
+                break;
+
+            default:
+                /* default to "Unknown" string */
+                break;
+        }
+
+        return pcReturn;
     }
-
-    return pcReturn;
-}
 #endif /* if LOG_LEVEL == LOG_DEBUG */
 
 /* Wait for all bits in ulTargetBits */

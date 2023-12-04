@@ -46,15 +46,15 @@
 #include "lwipopts.h"
 
 #if !defined( LWIP_TCPIP_CORE_LOCKING ) || ( LWIP_TCPIP_CORE_LOCKING == 0 )
-#error "Network metrics are only supported in core locking mode. Please define LWIP_TCPIP_CORE_LOCKING to 1 in lwipopts.h."
+    #error "Network metrics are only supported in core locking mode. Please define LWIP_TCPIP_CORE_LOCKING to 1 in lwipopts.h."
 #endif
 
 #if MIB2_STATS == 0
-#error "MIB2_STATS must be enabled."
+    #error "MIB2_STATS must be enabled."
 #endif
 
 #if LWIP_BYTES_IN_OUT_UNSUPPORTED != 0
-#error "LWIP_BYTES_IN_OUT_UNSUPPORTED must be set to 0."
+    #error "LWIP_BYTES_IN_OUT_UNSUPPORTED must be set to 0."
 #endif
 
 #define UINT16_STR_LEN         5
@@ -122,11 +122,11 @@ CborError xGetNetworkStats( CborEncoder * pxEncoder )
 
         LOCK_TCPIP_CORE();
 
-#if LWIP_SINGLE_NETIF
-        pxNetif = netif_default;
-#else
-        NETIF_FOREACH( pxNetif )
-#endif /* LWIP_SINGLE_NETIF */
+        #if LWIP_SINGLE_NETIF
+            pxNetif = netif_default;
+        #else
+            NETIF_FOREACH( pxNetif )
+        #endif /* LWIP_SINGLE_NETIF */
         {
             xBytesIn += pxNetif->mib2_counters.ifinoctets;
             xBytesOut += pxNetif->mib2_counters.ifoutoctets;
