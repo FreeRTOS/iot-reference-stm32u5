@@ -129,6 +129,12 @@ dependencies:
       type: "git"
       url: "https://github.com/nodejs/http-parser.git"
       path: "Middleware/http-parser"
+  - name: "Unity"
+    version: "3852926"
+    repository:
+      type: "git"
+      url: "https://github.com/ThrowTheSwitch/Unity.git"
+      path: "Middleware/Unity"
   - name: "FreeRTOS-Libraries-Integration-Tests"
     version: "202210.01"
     repository:
