@@ -353,19 +353,19 @@ static void prvUnsubscribeFromDefenderTopics( DefenderAgentCtx_t * pxCtx )
 static void prvPrintHex( const uint8_t * pcPayload,
                          size_t xPayloadLen )
 {
-#if ( LOG_LEVEL >= LOG_DEBUG )
-    for( uint32_t i = 0; i < xPayloadLen; i += 16 )
-    {
-        LogDebug( "\t%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
-                  pcPayload[ i + 0 ], pcPayload[ i + 1 ], pcPayload[ i + 2 ], pcPayload[ i + 3 ],
-                  pcPayload[ i + 4 ], pcPayload[ i + 5 ], pcPayload[ i + 6 ], pcPayload[ i + 7 ],
-                  pcPayload[ i + 8 ], pcPayload[ i + 9 ], pcPayload[ i + 10 ], pcPayload[ i + 11 ],
-                  pcPayload[ i + 12 ], pcPayload[ i + 13 ], pcPayload[ i + 14 ], pcPayload[ i + 15 ] );
-    }
-#else /* LOG_LEVEL >= LOG_DEBUG */
-    ( void ) pcPayload;
-    ( void ) xPayloadLen;
-#endif /* LOG_LEVEL < LOG_DEBUG */
+    #if ( LOG_LEVEL >= LOG_DEBUG )
+        for( uint32_t i = 0; i < xPayloadLen; i += 16 )
+        {
+            LogDebug( "\t%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
+                      pcPayload[ i + 0 ], pcPayload[ i + 1 ], pcPayload[ i + 2 ], pcPayload[ i + 3 ],
+                      pcPayload[ i + 4 ], pcPayload[ i + 5 ], pcPayload[ i + 6 ], pcPayload[ i + 7 ],
+                      pcPayload[ i + 8 ], pcPayload[ i + 9 ], pcPayload[ i + 10 ], pcPayload[ i + 11 ],
+                      pcPayload[ i + 12 ], pcPayload[ i + 13 ], pcPayload[ i + 14 ], pcPayload[ i + 15 ] );
+        }
+    #else /* LOG_LEVEL >= LOG_DEBUG */
+        ( void ) pcPayload;
+        ( void ) xPayloadLen;
+    #endif /* LOG_LEVEL < LOG_DEBUG */
 }
 
 /*-----------------------------------------------------------*/

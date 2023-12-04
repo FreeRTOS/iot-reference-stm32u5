@@ -43,10 +43,10 @@
 
 #ifdef MBEDTLS_TRANSPORT_PKCS11
 /* PKCS11 */
-#include "pkcs11.h"
-#include "core_pkcs11_config.h"
-#include "core_pkcs11.h"
-#include "core_pki_utils.h"
+    #include "pkcs11.h"
+    #include "core_pkcs11_config.h"
+    #include "core_pkcs11.h"
+    #include "core_pki_utils.h"
 #endif /* MBEDTLS_TRANSPORT_PKCS11 */
 
 /* Mbedtls */
@@ -284,9 +284,9 @@ static void vSubCommand_GenerateCsr( ConsoleIO_t * pxCIO,
 
     mbedtls_entropy_free( &xEntropyCtx );
 
-#ifdef MBEDTLS_TRANSPORT_PKCS11
-    lError = lPKCS11PkMbedtlsCloseSessionAndFree( &xPkCtx );
-#endif /* MBEDTLS_TRANSPORT_PKCS11 */
+    #ifdef MBEDTLS_TRANSPORT_PKCS11
+        lError = lPKCS11PkMbedtlsCloseSessionAndFree( &xPkCtx );
+    #endif /* MBEDTLS_TRANSPORT_PKCS11 */
 }
 
 static void vSubCommand_GenerateCertificate( ConsoleIO_t * pxCIO,
@@ -497,9 +497,9 @@ static void vSubCommand_GenerateCertificate( ConsoleIO_t * pxCIO,
 
     mbedtls_entropy_free( &xEntropyCtx );
 
-#ifdef MBEDTLS_TRANSPORT_PKCS11
-    lError = lPKCS11PkMbedtlsCloseSessionAndFree( &xPkCtx );
-#endif /* MBEDTLS_TRANSPORT_PKCS11 */
+    #ifdef MBEDTLS_TRANSPORT_PKCS11
+        lError = lPKCS11PkMbedtlsCloseSessionAndFree( &xPkCtx );
+    #endif /* MBEDTLS_TRANSPORT_PKCS11 */
 }
 
 

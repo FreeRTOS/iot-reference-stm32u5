@@ -34,9 +34,9 @@
 
 /* mbed TLS includes. */
 #if defined( MBEDTLS_CONFIG_FILE )
-#include MBEDTLS_CONFIG_FILE
+    #include MBEDTLS_CONFIG_FILE
 #else
-#include "mbedtls/config.h"
+    #include "mbedtls/config.h"
 #endif
 #include "mbedtls/entropy.h"
 
@@ -103,15 +103,15 @@ void mbedtls_platform_free( void * ptr )
  *
  * @param[in, out] pMutex mbedtls mutex handle.
  */
-static void mbedtls_platform_mutex_init( mbedtls_threading_mutex_t * pMutex )
-{
-    configASSERT( pMutex != NULL );
+    static void mbedtls_platform_mutex_init( mbedtls_threading_mutex_t * pMutex )
+    {
+        configASSERT( pMutex != NULL );
 
-    /* Create a statically-allocated FreeRTOS mutex. This should never fail as
-     * storage is provided. */
-    pMutex->mutexHandle = xSemaphoreCreateMutexStatic( &( pMutex->mutexStorage ) );
-    configASSERT( pMutex->mutexHandle != NULL );
-}
+        /* Create a statically-allocated FreeRTOS mutex. This should never fail as
+         * storage is provided. */
+        pMutex->mutexHandle = xSemaphoreCreateMutexStatic( &( pMutex->mutexStorage ) );
+        configASSERT( pMutex->mutexHandle != NULL );
+    }
 
 /*-----------------------------------------------------------*/
 
@@ -123,11 +123,11 @@ static void mbedtls_platform_mutex_init( mbedtls_threading_mutex_t * pMutex )
  * @note This function is an empty stub as nothing needs to be done to free
  * a statically allocated FreeRTOS mutex.
  */
-static void mbedtls_platform_mutex_free( mbedtls_threading_mutex_t * pMutex )
-{
-    /* Nothing needs to be done to free a statically-allocated FreeRTOS mutex. */
-    vSemaphoreDelete( pMutex->mutexHandle );
-}
+    static void mbedtls_platform_mutex_free( mbedtls_threading_mutex_t * pMutex )
+    {
+        /* Nothing needs to be done to free a statically-allocated FreeRTOS mutex. */
+        vSemaphoreDelete( pMutex->mutexHandle );
+    }
 
 /*-----------------------------------------------------------*/
 
@@ -138,21 +138,21 @@ static void mbedtls_platform_mutex_free( mbedtls_threading_mutex_t * pMutex )
  *
  * @return 0 (success) is always returned as any other failure is asserted.
  */
-static int mbedtls_platform_mutex_lock( mbedtls_threading_mutex_t * pMutex )
-{
-    BaseType_t mutexStatus = 0;
+    static int mbedtls_platform_mutex_lock( mbedtls_threading_mutex_t * pMutex )
+    {
+        BaseType_t mutexStatus = 0;
 
-    configASSERT( pMutex != NULL );
+        configASSERT( pMutex != NULL );
 
-    /* mutexStatus is not used if asserts are disabled. */
-    ( void ) mutexStatus;
+        /* mutexStatus is not used if asserts are disabled. */
+        ( void ) mutexStatus;
 
-    /* This function should never fail if the mutex is initialized. */
-    mutexStatus = xSemaphoreTake( pMutex->mutexHandle, portMAX_DELAY );
-    configASSERT( mutexStatus == pdTRUE );
+        /* This function should never fail if the mutex is initialized. */
+        mutexStatus = xSemaphoreTake( pMutex->mutexHandle, portMAX_DELAY );
+        configASSERT( mutexStatus == pdTRUE );
 
-    return 0;
-}
+        return 0;
+    }
 
 /*-----------------------------------------------------------*/
 
@@ -163,41 +163,41 @@ static int mbedtls_platform_mutex_lock( mbedtls_threading_mutex_t * pMutex )
  *
  * @return 0 is always returned as any other failure is asserted.
  */
-static int mbedtls_platform_mutex_unlock( mbedtls_threading_mutex_t * pMutex )
-{
-    BaseType_t mutexStatus = 0;
+    static int mbedtls_platform_mutex_unlock( mbedtls_threading_mutex_t * pMutex )
+    {
+        BaseType_t mutexStatus = 0;
 
-    configASSERT( pMutex != NULL );
-    configASSERT( pMutex->mutexHandle != NULL );
-    /* mutexStatus is not used if asserts are disabled. */
-    ( void ) mutexStatus;
+        configASSERT( pMutex != NULL );
+        configASSERT( pMutex->mutexHandle != NULL );
+        /* mutexStatus is not used if asserts are disabled. */
+        ( void ) mutexStatus;
 
-    /* This function should never fail if the mutex is initialized. */
-    mutexStatus = xSemaphoreGive( pMutex->mutexHandle );
-    configASSERT( mutexStatus == pdTRUE );
+        /* This function should never fail if the mutex is initialized. */
+        mutexStatus = xSemaphoreGive( pMutex->mutexHandle );
+        configASSERT( mutexStatus == pdTRUE );
 
-    return 0;
-}
+        return 0;
+    }
 
 /*-----------------------------------------------------------*/
 
-#if defined( MBEDTLS_THREADING_ALT )
-int mbedtls_platform_threading_init( void )
-{
-    mbedtls_threading_set_alt( mbedtls_platform_mutex_init,
-                               mbedtls_platform_mutex_free,
-                               mbedtls_platform_mutex_lock,
-                               mbedtls_platform_mutex_unlock );
-}
+    #if defined( MBEDTLS_THREADING_ALT )
+        int mbedtls_platform_threading_init( void )
+        {
+            mbedtls_threading_set_alt( mbedtls_platform_mutex_init,
+                                       mbedtls_platform_mutex_free,
+                                       mbedtls_platform_mutex_lock,
+                                       mbedtls_platform_mutex_unlock );
+        }
 
-#else /* !MBEDTLS_THREADING_ALT */
+    #else /* !MBEDTLS_THREADING_ALT */
 
-void (* mbedtls_mutex_init)( mbedtls_threading_mutex_t * ) = mbedtls_platform_mutex_init;
-void (* mbedtls_mutex_free)( mbedtls_threading_mutex_t * ) = mbedtls_platform_mutex_free;
-int (* mbedtls_mutex_lock)( mbedtls_threading_mutex_t * ) = mbedtls_platform_mutex_lock;
-int (* mbedtls_mutex_unlock)( mbedtls_threading_mutex_t * ) = mbedtls_platform_mutex_unlock;
+        void (* mbedtls_mutex_init)( mbedtls_threading_mutex_t * ) = mbedtls_platform_mutex_init;
+        void (* mbedtls_mutex_free)( mbedtls_threading_mutex_t * ) = mbedtls_platform_mutex_free;
+        int (* mbedtls_mutex_lock)( mbedtls_threading_mutex_t * ) = mbedtls_platform_mutex_lock;
+        int (* mbedtls_mutex_unlock)( mbedtls_threading_mutex_t * ) = mbedtls_platform_mutex_unlock;
 
-#endif /* !MBEDTLS_THREADING_ALT */
+    #endif /* !MBEDTLS_THREADING_ALT */
 
 #endif /* MBEDTLS_THREADING_C */
 /*-----------------------------------------------------------*/

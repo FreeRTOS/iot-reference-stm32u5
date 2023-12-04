@@ -86,7 +86,7 @@
 #define RETRY_MAX_BACKOFF_DELAY     ( 5U * 60U )
 
 /**
- * @brief Multiplier to apply to the bacoff delay to convert arbitrary units to milliseconds.
+ * @brief Multiplier to apply to the backoff delay to convert arbitrary units to milliseconds.
  */
 #define RETRY_BACKOFF_MULTIPLIER    ( 100U )
 

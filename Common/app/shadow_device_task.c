@@ -34,7 +34,7 @@
  * following operations:
  * 1. Assemble strings for the MQTT topics of device shadow, by using macros defined by the Device Shadow library.
  * 2. Subscribe to those MQTT topics using the MQTT Agent.
- * 3. Register callbacks for incoming shadow topic publishes with the subsciption_manager.
+ * 3. Register callbacks for incoming shadow topic publishes with the subscription_manager.
  * 3. Publish to report the current state of powerOn.
  * 5. Check if powerOn has been changed and send an update if so.
  * 6. If a publish to update reported state was sent, wait until either prvIncomingPublishUpdateAcceptedCallback

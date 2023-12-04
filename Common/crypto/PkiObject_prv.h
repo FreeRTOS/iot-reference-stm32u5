@@ -28,8 +28,8 @@
 
 
 #ifdef MBEDTLS_TRANSPORT_PKCS11
-#include "pkcs11.h"
-PkiStatus_t xPrvCkRvToPkiStatus( CK_RV xError );
+    #include "pkcs11.h"
+    PkiStatus_t xPrvCkRvToPkiStatus( CK_RV xError );
 #endif
 
 PkiStatus_t xPrvMbedtlsErrToPkiStatus( int lError );

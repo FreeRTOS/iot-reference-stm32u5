@@ -95,7 +95,7 @@ DEFAULT_IRQ_HANDLER( EXTI14_IRQHandler )
 DEFAULT_IRQ_HANDLER( EXTI15_IRQHandler )
 DEFAULT_IRQ_HANDLER( IWDG_IRQHandler )
 #ifdef STM32U585xx
-DEFAULT_IRQ_HANDLER( SAES_IRQHandler )
+    DEFAULT_IRQ_HANDLER( SAES_IRQHandler )
 #endif
 DEFAULT_IRQ_HANDLER( GPDMA1_Channel0_IRQHandler )
 DEFAULT_IRQ_HANDLER( GPDMA1_Channel1_IRQHandler )
@@ -164,13 +164,13 @@ DEFAULT_IRQ_HANDLER( SAI1_IRQHandler )
 DEFAULT_IRQ_HANDLER( SAI2_IRQHandler )
 DEFAULT_IRQ_HANDLER( TSC_IRQHandler )
 #ifdef STM32U585xx
-DEFAULT_IRQ_HANDLER( AES_IRQHandler )
+    DEFAULT_IRQ_HANDLER( AES_IRQHandler )
 #endif
 DEFAULT_IRQ_HANDLER( RNG_IRQHandler )
 DEFAULT_IRQ_HANDLER( FPU_IRQHandler )
 DEFAULT_IRQ_HANDLER( HASH_IRQHandler )
 #ifdef STM32U585xx
-DEFAULT_IRQ_HANDLER( PKA_IRQHandler )
+    DEFAULT_IRQ_HANDLER( PKA_IRQHandler )
 #endif
 DEFAULT_IRQ_HANDLER( LPTIM3_IRQHandler )
 DEFAULT_IRQ_HANDLER( SPI3_IRQHandler )
@@ -183,8 +183,8 @@ DEFAULT_IRQ_HANDLER( MDF1_FLT3_IRQHandler )
 DEFAULT_IRQ_HANDLER( UCPD1_IRQHandler )
 DEFAULT_IRQ_HANDLER( ICACHE_IRQHandler )
 #ifdef STM32U585xx
-DEFAULT_IRQ_HANDLER( OTFDEC1_IRQHandler )
-DEFAULT_IRQ_HANDLER( OTFDEC2_IRQHandler )
+    DEFAULT_IRQ_HANDLER( OTFDEC1_IRQHandler )
+    DEFAULT_IRQ_HANDLER( OTFDEC2_IRQHandler )
 #endif
 DEFAULT_IRQ_HANDLER( LPTIM4_IRQHandler )
 DEFAULT_IRQ_HANDLER( DCACHE1_IRQHandler )
@@ -207,8 +207,8 @@ DEFAULT_IRQ_HANDLER( FMAC_IRQHandler )
  *----------------------------------------------------------------------------*/
 
 #if defined( __GNUC__ )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wpedantic"
 #endif
 
 extern const pFunc __VECTOR_TABLE[];
@@ -258,11 +258,11 @@ const pFunc __VECTOR_TABLE[] __VECTOR_TABLE_ATTRIBUTE =
     EXTI14_IRQHandler,           /*  25: EXTI Line14 */
     EXTI15_IRQHandler,           /*  26: EXTI Line15 */
     IWDG_IRQHandler,             /*  27: IWDG global interrupt */
-#ifdef STM32U585xx
-    SAES_IRQHandler,             /*  28:Secure AES global interrupt */
-#else
-    0,                           /*  28: Reserved */
-#endif
+    #ifdef STM32U585xx
+        SAES_IRQHandler,         /*  28:Secure AES global interrupt */
+    #else
+        0,                       /*  28: Reserved */
+    #endif
     GPDMA1_Channel0_IRQHandler,  /*  29: GPDMA1 Channel 0 global interrupt */
     GPDMA1_Channel1_IRQHandler,  /*  30: GPDMA1 Channel 1 global interrupt */
     GPDMA1_Channel2_IRQHandler,  /*  31: GPDMA1 Channel 2 global interrupt */
@@ -327,19 +327,19 @@ const pFunc __VECTOR_TABLE[] __VECTOR_TABLE_ATTRIBUTE =
     SAI1_IRQHandler,             /*  90: Serial Audio Interface 1 global interrupt */
     SAI2_IRQHandler,             /*  91: Serial Audio Interface 2 global interrupt */
     TSC_IRQHandler,              /*  92: Touch Sense Controller global interrupt */
-#ifdef STM32U585xx
-    AES_IRQHandler,              /*  93: AES global interrupt */
-#else
-    0,                           /*  93: Reserved */
-#endif
+    #ifdef STM32U585xx
+        AES_IRQHandler,          /*  93: AES global interrupt */
+    #else
+        0,                       /*  93: Reserved */
+    #endif
     RNG_IRQHandler,              /*  94: RNG global interrupt */
     FPU_IRQHandler,              /*  95: FPU */
     HASH_IRQHandler,             /*  96: HASH global interrupt */
-#ifdef STM32U585xx
-    PKA_IRQHandler,              /*  97: PKA global interrupt */
-#else
-    0,                           /*  97: Reserved */
-#endif
+    #ifdef STM32U585xx
+        PKA_IRQHandler,          /*  97: PKA global interrupt */
+    #else
+        0,                       /*  97: Reserved */
+    #endif
     LPTIM3_IRQHandler,           /*  98: LP TIM3 */
     SPI3_IRQHandler,             /*  99: SPI3 */
     I2C4_ER_IRQHandler,          /* 100: I2C4 error */
@@ -350,13 +350,13 @@ const pFunc __VECTOR_TABLE[] __VECTOR_TABLE_ATTRIBUTE =
     MDF1_FLT3_IRQHandler,        /* 105: MDF1 Filter 3 global interrupt */
     UCPD1_IRQHandler,            /* 106: UCPD1 global interrupt */
     ICACHE_IRQHandler,           /* 107: Instruction cache global interrupt*/
-#ifdef STM32U585xx
-    OTFDEC1_IRQHandler,          /* 108: OTFDEC1 global interrupt */
-    OTFDEC2_IRQHandler,          /* 108: OTFDEC2 global interrupt */
-#else
-    0,                           /* 108: Reserved */
-    0,                           /* 109: Reserved */
-#endif
+    #ifdef STM32U585xx
+        OTFDEC1_IRQHandler,      /* 108: OTFDEC1 global interrupt */
+        OTFDEC2_IRQHandler,      /* 108: OTFDEC2 global interrupt */
+    #else
+        0,                       /* 108: Reserved */
+        0,                       /* 109: Reserved */
+    #endif
     LPTIM4_IRQHandler,           /* 110: LPTIM4 global interrupt */
     DCACHE1_IRQHandler,          /* 111: Data cache global interrupt */
     ADF1_IRQHandler,             /* 112: ADF interrupt */
@@ -374,7 +374,7 @@ const pFunc __VECTOR_TABLE[] __VECTOR_TABLE_ATTRIBUTE =
     FMAC_IRQHandler,             /* 124: FMAC global interrupt  */
 };
 #if defined( __GNUC__ )
-#pragma GCC diagnostic pop
+    #pragma GCC diagnostic pop
 #endif
 
 /*----------------------------------------------------------------------------
@@ -382,27 +382,27 @@ const pFunc __VECTOR_TABLE[] __VECTOR_TABLE_ATTRIBUTE =
  *----------------------------------------------------------------------------*/
 void Reset_Handler( void )
 {
-#if defined( __ARM_FEATURE_CMSE ) && ( __ARM_FEATURE_CMSE == 3U )
-    __IO uint32_t tmp;
-#endif
-#if defined( __ARM_FEATURE_CMSE ) && ( __ARM_FEATURE_CMSE == 3U )
-    /* disable IRQ is removed */
-    /*__disable_irq();*/
-    /* Tamp IRQ prio is set to highest , and IRQ is enabled */
-    NVIC_SetPriority( TAMP_IRQn, 0 );
-    NVIC_EnableIRQ( TAMP_IRQn );
-#endif
+    #if defined( __ARM_FEATURE_CMSE ) && ( __ARM_FEATURE_CMSE == 3U )
+        __IO uint32_t tmp;
+    #endif
+    #if defined( __ARM_FEATURE_CMSE ) && ( __ARM_FEATURE_CMSE == 3U )
+        /* disable IRQ is removed */
+        /*__disable_irq();*/
+        /* Tamp IRQ prio is set to highest , and IRQ is enabled */
+        NVIC_SetPriority( TAMP_IRQn, 0 );
+        NVIC_EnableIRQ( TAMP_IRQn );
+    #endif
     __set_MSPLIM( ( uint32_t ) ( &__STACK_LIMIT ) );
-#if defined( __ARM_FEATURE_CMSE ) && ( __ARM_FEATURE_CMSE == 3U )
-    SCB->VTOR = ( uint32_t ) &__VECTOR_TABLE[ 0 ];
-    /* Lock Secure Vector Table */
-    /* Enable SYSCFG interface clock */
-    RCC->APB3ENR |= RCC_APB3ENR_SYSCFGEN;
-    /* Delay after an RCC peripheral clock enabling */
-    tmp = RCC->APB3ENR;
-    ( void ) tmp;
-    SYSCFG->CSLCKR |= SYSCFG_CSLCKR_LOCKSVTAIRCR;
-#endif
+    #if defined( __ARM_FEATURE_CMSE ) && ( __ARM_FEATURE_CMSE == 3U )
+        SCB->VTOR = ( uint32_t ) &__VECTOR_TABLE[ 0 ];
+        /* Lock Secure Vector Table */
+        /* Enable SYSCFG interface clock */
+        RCC->APB3ENR |= RCC_APB3ENR_SYSCFGEN;
+        /* Delay after an RCC peripheral clock enabling */
+        tmp = RCC->APB3ENR;
+        ( void ) tmp;
+        SYSCFG->CSLCKR |= SYSCFG_CSLCKR_LOCKSVTAIRCR;
+    #endif
     SystemInit();      /* CMSIS System Initialization */
     __PROGRAM_START(); /* Enter PreMain (C library entry point) */
 }

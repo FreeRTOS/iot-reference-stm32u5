@@ -185,18 +185,18 @@ static uint32_t ulGetStackDepth( TaskHandle_t xTask )
     {
         volatile StackType_t * pxDontCare0;
 
-#if ( portUSING_MPU_WRAPPERS == 1 )
-        xMPU_SETTINGS xDontCare1;
-#endif
+        #if ( portUSING_MPU_WRAPPERS == 1 )
+            xMPU_SETTINGS xDontCare1;
+        #endif
         ListItem_t xDontCare2;
         ListItem_t xDontCare3;
         UBaseType_t uxDontCare4;
         StackType_t * pxStack;
         char pcDontCare5[ configMAX_TASK_NAME_LEN ];
 
-#if ( ( portSTACK_GROWTH > 0 ) || ( configRECORD_STACK_HIGH_ADDRESS == 1 ) )
-        StackType_t * pxEndOfStack;
-#endif
+        #if ( ( portSTACK_GROWTH > 0 ) || ( configRECORD_STACK_HIGH_ADDRESS == 1 ) )
+            StackType_t * pxEndOfStack;
+        #endif
     };
     struct tskTaskControlBlockRedef * pxTCB = ( struct tskTaskControlBlockRedef * ) xTask;
 
