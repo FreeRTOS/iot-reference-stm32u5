@@ -29,3 +29,4 @@ ignorePaths:
   - 'docs'
   - 'ThirdParty'
   - 'History.txt'
+  - 'requirements.txt'

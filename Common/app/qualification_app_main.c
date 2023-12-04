@@ -115,7 +115,7 @@ void TEST_SubmitResult( const char * pcResult )
  */
 #define mqttexampleTRANSPORT_SEND_RECV_TIMEOUT_MS    ( 750 )
 
-typedef struct NetworkCrendentials
+typedef struct NetworkCredentials
 {
     PkiObject_t xPrivateKey;
     PkiObject_t xClientCertificate;

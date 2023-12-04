@@ -41,7 +41,7 @@ Follow the instructions in the repository [README.md](../../README.md) to import
 
 ## 3 Building and Flashing the Firmware Image
 
-After importing the b_u585i_iot02a_ntz project into STM32CubeIDE, Build the project by highlighting it in the *Project Exporer* pane and then clicking **Project -> Build Project** from the menu at the top of STM32CubeIDE.
+After importing the b_u585i_iot02a_ntz project into STM32CubeIDE, Build the project by highlighting it in the *Project Explorer* pane and then clicking **Project -> Build Project** from the menu at the top of STM32CubeIDE.
 
 To write the newly built image to flash, select the Run As button, then select the `Flash_ntz` target.
 

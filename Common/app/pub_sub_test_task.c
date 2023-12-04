@@ -75,7 +75,7 @@
 /**
  * @brief Size of statically allocated buffers for holding payloads.
  */
-#define confgPAYLOAD_BUFFER_LENGTH                   ( 100 )
+#define configPAYLOAD_BUFFER_LENGTH                   ( 100 )
 
 /**
  * @brief Format of topic used to publish outgoing messages.
@@ -215,21 +215,21 @@ static void prvPublishCommandCallback( MQTTAgentCommandContext_t * pxCommandCont
 static void prvIncomingPublishCallback( void * pvIncomingPublishCallbackContext,
                                         MQTTPublishInfo_t * pxPublishInfo )
 {
-    static char cTerminatedString[ confgPAYLOAD_BUFFER_LENGTH ];
+    static char cTerminatedString[ configPAYLOAD_BUFFER_LENGTH ];
 
     ( void ) pvIncomingPublishCallbackContext;
 
     /* Create a message that contains the incoming MQTT payload to the logger,
      * terminating the string first. */
-    if( pxPublishInfo->payloadLength < confgPAYLOAD_BUFFER_LENGTH )
+    if( pxPublishInfo->payloadLength < configPAYLOAD_BUFFER_LENGTH )
     {
         memcpy( ( void * ) cTerminatedString, pxPublishInfo->pPayload, pxPublishInfo->payloadLength );
         cTerminatedString[ pxPublishInfo->payloadLength ] = 0x00;
     }
     else
     {
-        memcpy( ( void * ) cTerminatedString, pxPublishInfo->pPayload, confgPAYLOAD_BUFFER_LENGTH );
-        cTerminatedString[ confgPAYLOAD_BUFFER_LENGTH - 1 ] = 0x00;
+        memcpy( ( void * ) cTerminatedString, pxPublishInfo->pPayload, configPAYLOAD_BUFFER_LENGTH );
+        cTerminatedString[ configPAYLOAD_BUFFER_LENGTH - 1 ] = 0x00;
     }
 
     LogInfo( ( "Received incoming publish message %s", cTerminatedString ) );
@@ -340,7 +340,7 @@ static MQTTStatus_t prvPublishToTopic( MQTTQoS_t xQoS,
 
 void vSubscribePublishTestTask( void * pvParameters )
 {
-    char cPayloadBuf[ confgPAYLOAD_BUFFER_LENGTH ];
+    char cPayloadBuf[ configPAYLOAD_BUFFER_LENGTH ];
     size_t xPayloadLength;
     uint32_t ulPublishCount = 0U, ulSuccessCount = 0U, ulFailCount = 0U;
     BaseType_t xStatus = pdPASS;
@@ -384,12 +384,12 @@ void vSubscribePublishTestTask( void * pvParameters )
             /* Create a payload to send with the publish message.  This contains
              * the task name and an incrementing number. */
             xPayloadLength = snprintf( cPayloadBuf,
-                                       confgPAYLOAD_BUFFER_LENGTH,
+                                       configPAYLOAD_BUFFER_LENGTH,
                                        "Test message %lu",
                                        ( ulPublishCount + 1 ) );
 
             /* Assert if the buffer length is large enough to hold the message. */
-            configASSERT( xPayloadLength <= confgPAYLOAD_BUFFER_LENGTH );
+            configASSERT( xPayloadLength <= configPAYLOAD_BUFFER_LENGTH );
 
             LogInfo( ( "Sending publish message to topic: %s with qos: %d, message : %*s",
                        configPUBLISH_TOPIC_FORMAT,
