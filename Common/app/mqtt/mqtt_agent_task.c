@@ -587,7 +587,7 @@ static void prvResubscribeCommandCallback( MQTTAgentCommandContext_t * pxCommand
 static MQTTStatus_t prvHandleResubscribe( MQTTAgentContext_t * pxMqttAgentCtx,
                                           SubMgrCtx_t * pxCtx )
 {
-    MQTTStatus_t xStatus = MQTTSuccess;
+    MQTTStatus_t xStatus;
 
     configASSERT( pxCtx );
     configASSERT( pxCtx->xMutex );
@@ -597,7 +597,7 @@ static MQTTStatus_t prvHandleResubscribe( MQTTAgentContext_t * pxMqttAgentCtx,
                                  pxCtx->pxCallbacks,
                                  &( pxCtx->uxSubscriptionCount ) );
 
-    if( ( xStatus == MQTTSuccess ) && ( pxCtx->uxSubscriptionCount > 0U ) )
+    if( pxCtx->uxSubscriptionCount > 0U )
     {
         MQTTAgentCommandInfo_t xCommandParams =
         {
@@ -1154,11 +1154,25 @@ void vMQTTAgentTask( void * pvParameters )
                 xMQTTStatus = MQTTAgent_ResumeSession( &( pxCtx->xAgentContext ), xSessionPresent );
 
                 /* Re-subscribe to all the previously subscribed topics if there is no existing session. */
-                if( ( xMQTTStatus == MQTTSuccess ) &&
-                    ( xSessionPresent == false ) )
+                if( xMQTTStatus == MQTTSuccess )
                 {
-                    xMQTTStatus = prvHandleResubscribe( &( pxCtx->xAgentContext ),
-                                                        &( pxCtx->xSubMgrCtx ) );
+                    if( xSessionPresent == false )
+                    {
+                        xMQTTStatus = prvHandleResubscribe( &( pxCtx->xAgentContext ),
+                                                            &( pxCtx->xSubMgrCtx ) );
+                    }
+                    else
+                    {
+                        /* No need to resubscribe as a session is present and the broker is aware of
+                         * the previous subscriptions. */
+                        if( MUTEX_IS_OWNED( pxCtx->xSubMgrCtx.xMutex ) )
+                        {
+                            /* Give the mutex as there is no subscribe command pending. */
+                            ( void ) xUnlockSubCtx( &( pxCtx->xSubMgrCtx ) );
+                        }
+
+                        LogInfo( "Session already present (no re-subscription)." );
+                    }
                 }
             }
             else if( xMQTTStatus == MQTTSuccess )
