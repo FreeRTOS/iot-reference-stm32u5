@@ -22,6 +22,8 @@ jobs:
       - uses: actions/checkout@v3
       - name: Check Formatting of Files
         uses: FreeRTOS/CI-CD-Github-Actions/formatting@main
+        with:
+          exclude-dirs: Drivers
 
   spell-check:
       runs-on: ubuntu-latest
