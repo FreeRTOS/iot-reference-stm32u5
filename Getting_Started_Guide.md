@@ -323,7 +323,7 @@ To flash the b_u585i_iot02a_tfm project to your STM32U5 IoT Discovery Kit, selec
 
 The simplest way to provision your board is to run the tools/provision.py script.
 
-After sourcing the tools/env_setup.sh script, run the folloing command:
+After sourcing the tools/env_setup.sh script, run the following command:
 > Note: When running interactive python scripts in GitBash on Microsoft Windows, you must add "winpty " to the beginning of the command you wish to run.
 ```
 % python tools/provision.py --interactive
@@ -629,7 +629,7 @@ aws signer put-signing-profile --profile-name <your profile name> --signing-mate
 
 2. Create a service role which grants permission for OTA service to access the firmware image: https://docs.aws.amazon.com/freertos/latest/userguide/create-service-role.html
 
-3. Create an OTA update policy using the documentatio here: https://docs.aws.amazon.com/freertos/latest/userguide/create-ota-user-policy.html
+3. Create an OTA update policy using the documentation here: https://docs.aws.amazon.com/freertos/latest/userguide/create-ota-user-policy.html
 
 4. Add a policy for AWS IoT to access the code signing profile: https://docs.aws.amazon.com/freertos/latest/userguide/code-sign-policy.html
 
@@ -650,7 +650,7 @@ Get the latest s3 file version of the binary image by executing the command belo
 aws s3api  list-object-versions --bucket <s3 bucket for image> --prefix <image binary name>
 ```
 
-3. Create a new OTA Update job configuration json file (Example: ota-update-job-config.json) in your filesystem as below. Substitue the parameters with the output obtained from steps above.
+3. Create a new OTA Update job configuration json file (Example: ota-update-job-config.json) in your filesystem as below. Substitute the parameters with the output obtained from steps above.
 
 ```
 {

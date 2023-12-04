@@ -42,7 +42,7 @@ void NMI_Handler( void )
 
 __attribute__( ( optimize( "O0" ) ) ) void prvGetRegistersFromStack( uint32_t * pulFaultStackAddress )
 {
-    /* These are volatile to try and prevent the compiler/linker optimising them
+    /* These are volatile to try and prevent the compiler/linker optimizing them
      * away as the variables never actually get used.  If the debugger won't show the
      * values of the variables, make them global my moving their declaration outside
      * of this function. */

@@ -1,5 +1,5 @@
 /* Functions have been copied from :
- * mbedts/include/psa_util.h
+ * mbedtls/include/psa_util.h
  * mbedtls/library/pk_wrap.c
  */
 

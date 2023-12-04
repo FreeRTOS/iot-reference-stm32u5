@@ -103,7 +103,7 @@
  * per active UDP "connection". */
 #define MEMP_NUM_UDP_PCB           8
 
-/* MEMP_NUM_TCP_PCB: the number of simulatenously active TCP
+/* MEMP_NUM_TCP_PCB: the number of simultaneously active TCP
  * connections. */
 #define MEMP_NUM_TCP_PCB           32
 
@@ -115,7 +115,7 @@
  * segments. */
 #define MEMP_NUM_TCP_SEG           255
 
-/* MEMP_NUM_ARP_QUEUE: the number of simulateously queued outgoing
+/* MEMP_NUM_ARP_QUEUE: the number of simultaneously queued outgoing
  * packets (pbufs) that are waiting for an ARP request (to resolve
  * their destination address) to finish. (requires the ARP_QUEUEING option) */
 #define MEMP_NUM_ARP_QUEUE         8

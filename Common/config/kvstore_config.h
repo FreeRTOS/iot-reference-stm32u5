@@ -44,7 +44,7 @@ typedef enum KvStoreEnum
 
 /* -------------------------------- Values for common attributes -------------------------------- */
 
-/* Note: If TEST_AUTOMATION_INTEGRATION == 1 (in ota_config.h), settings below will be forcely used
+/* Note: If TEST_AUTOMATION_INTEGRATION == 1 (in ota_config.h), settings below will be forcedly used
  * in runtime. Please set to 0 or "" to skip them if you want to use the value in flash. */
 #if ( TEST_AUTOMATION_INTEGRATION == 1 )
     #if ( OTA_E2E_TEST_ENABLED == 1 )

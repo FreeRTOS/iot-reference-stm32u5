@@ -25,6 +25,7 @@ dictionaries:
 
 # Paths and files to ignore
 ignorePaths:
+  - 'Drivers'
   - 'dependency'
   - 'docs'
   - 'ThirdParty'
