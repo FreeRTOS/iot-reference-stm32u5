@@ -54,7 +54,7 @@ extern uint32_t SystemCoreClock;
 
 #include CMSIS_device_header
 
-/*-------------------- STM32L5 specific defines -------------------*/
+/*-------------------- STM32U5 specific defines -------------------*/
 #define configENABLE_TRUSTZONE                     0
 #define configRUN_FREERTOS_SECURE_ONLY             0
 #define configENABLE_FPU                           1
@@ -140,16 +140,16 @@ extern uint32_t SystemCoreClock;
 #define USE_FreeRTOS_HEAP_4
 
 /* Cortex-M specific definitions. */
-/* __BVIC_PRIO_BITS will be specified when CMSIS is being used. */
+/* __NVIC_PRIO_BITS will be specified when CMSIS is being used. */
 #ifdef __NVIC_PRIO_BITS
 #define configPRIO_BITS    __NVIC_PRIO_BITS
 #else
-#define configPRIO_BITS    3
+#define configPRIO_BITS    4
 #endif
 
 /* The lowest interrupt priority that can be used in a call to a "set priority"
  * function. */
-#define configLIBRARY_LOWEST_INTERRUPT_PRIORITY         7
+#define configLIBRARY_LOWEST_INTERRUPT_PRIORITY         ( ( 1UL << configPRIO_BITS ) - 1 )
 
 /* The highest interrupt priority that can be used by any interrupt service
  * routine that makes calls to interrupt safe FreeRTOS API functions.  DO NOT CALL
@@ -193,7 +193,5 @@ extern uint32_t SystemCoreClock;
 #include "hw_defs.h"
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()
 #define portGET_RUN_TIME_COUNTER_VALUE()    ( timer_get_count( pxHndlTim5 ) )
-
-
 
 #endif /* FREERTOS_CONFIG_H */
