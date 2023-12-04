@@ -895,10 +895,10 @@ BaseType_t ospi_WriteAddr( OSPI_HandleTypeDef * pxOSPI,
     }
     else
     {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
         xHalStatus = HAL_OSPI_Transmit_IT( pxOSPI, pxBuffer );
-#pragma GCC diagnostic pop
+        #pragma GCC diagnostic pop
     }
 
     if( xHalStatus != HAL_OK )

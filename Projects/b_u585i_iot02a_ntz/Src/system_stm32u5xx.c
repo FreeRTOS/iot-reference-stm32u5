@@ -120,15 +120,15 @@
  */
 
 #if !defined( HSE_VALUE )
-#define HSE_VALUE    16000000U   /*!< Value of the External oscillator in Hz */
+    #define HSE_VALUE    16000000U/*!< Value of the External oscillator in Hz */
 #endif /* HSE_VALUE */
 
 #if !defined( MSI_VALUE )
-#define MSI_VALUE    4000000U    /*!< Value of the Internal oscillator in Hz*/
+    #define MSI_VALUE    4000000U/*!< Value of the Internal oscillator in Hz*/
 #endif /* MSI_VALUE */
 
 #if !defined( HSI_VALUE )
-#define HSI_VALUE    16000000U   /*!< Value of the Internal oscillator in Hz*/
+    #define HSI_VALUE    16000000U/*!< Value of the Internal oscillator in Hz*/
 #endif /* HSI_VALUE */
 
 /************************* Miscellaneous Configuration ************************/
@@ -199,9 +199,9 @@ const uint32_t MSIRangeTable[ 16 ] =
 void SystemInit( void )
 {
     /* FPU settings ------------------------------------------------------------*/
-#if ( __FPU_PRESENT == 1 ) && ( __FPU_USED == 1 )
-    SCB->CPACR |= ( ( 3UL << 20U ) | ( 3UL << 22U ) ); /* set CP10 and CP11 Full Access */
-#endif
+    #if ( __FPU_PRESENT == 1 ) && ( __FPU_USED == 1 )
+        SCB->CPACR |= ( ( 3UL << 20U ) | ( 3UL << 22U ) ); /* set CP10 and CP11 Full Access */
+    #endif
 
     /* Reset the RCC clock configuration to the default reset state ------------*/
     /* Set MSION bit */
@@ -225,11 +225,11 @@ void SystemInit( void )
     RCC->CIER = 0U;
 
     /* Configure the Vector Table location add offset address ------------------*/
-#ifdef VECT_TAB_SRAM
-    SCB->VTOR = SRAM1_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal SRAM */
-#else
-    SCB->VTOR = FLASH_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal FLASH */
-#endif
+    #ifdef VECT_TAB_SRAM
+        SCB->VTOR = SRAM1_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal SRAM */
+    #else
+        SCB->VTOR = FLASH_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal FLASH */
+    #endif
 }
 
 /**

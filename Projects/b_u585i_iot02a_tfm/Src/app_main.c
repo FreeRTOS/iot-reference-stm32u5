@@ -48,10 +48,10 @@
 /* Definition for Qualification Test */
 #if ( DEVICE_ADVISOR_TEST_ENABLED == 1 ) || ( MQTT_TEST_ENABLED == 1 ) || ( TRANSPORT_INTERFACE_TEST_ENABLED == 1 ) || \
     ( OTA_PAL_TEST_ENABLED == 1 ) || ( OTA_E2E_TEST_ENABLED == 1 ) || ( CORE_PKCS11_TEST_ENABLED == 1 )
-#define DEMO_QUALIFICATION_TEST    ( 1 )
+    #define DEMO_QUALIFICATION_TEST    ( 1 )
 
 #else
-#define DEMO_QUALIFICATION_TEST    ( 0 )
+    #define DEMO_QUALIFICATION_TEST    ( 0 )
 #endif /* ( DEVICE_ADVISOR_TEST_ENABLED == 1 ) || ( MQTT_TEST_ENABLED == 1 ) || ( TRANSPORT_INTERFACE_TEST_ENABLED == 1 ) || \
         * ( OTA_PAL_TEST_ENABLED == 1 ) || ( OTA_E2E_TEST_ENABLED == 1 ) || ( CORE_PKCS11_TEST_ENABLED == 1 ) */
 
@@ -115,7 +115,7 @@ extern void vShadowDeviceTask( void * );
 extern void vOTAUpdateTask( void * pvParam );
 extern void vDefenderAgentTask( void * );
 #if DEMO_QUALIFICATION_TEST
-extern void run_qualification_main( void * );
+    extern void run_qualification_main( void * );
 #endif /* DEMO_QUALIFICATION_TEST */
 
 void vInitTask( void * pvArgs )
@@ -137,28 +137,28 @@ void vInitTask( void * pvArgs )
     xResult = xTaskCreate( &net_main, "MxNet", 1024, NULL, 23, NULL );
     configASSERT( xResult == pdTRUE );
 
-#if DEMO_QUALIFICATION_TEST
-    xResult = xTaskCreate( run_qualification_main, "QualTest", 4096, NULL, 10, NULL );
-    configASSERT( xResult == pdTRUE );
-#else
-    xResult = xTaskCreate( vMQTTAgentTask, "MQTTAgent", 2048, NULL, tskIDLE_PRIORITY + 3, NULL );
-    configASSERT( xResult == pdTRUE );
+    #if DEMO_QUALIFICATION_TEST
+        xResult = xTaskCreate( run_qualification_main, "QualTest", 4096, NULL, 10, NULL );
+        configASSERT( xResult == pdTRUE );
+    #else
+        xResult = xTaskCreate( vMQTTAgentTask, "MQTTAgent", 2048, NULL, tskIDLE_PRIORITY + 3, NULL );
+        configASSERT( xResult == pdTRUE );
 
-    xResult = xTaskCreate( vOTAUpdateTask, "OTAUpdate", 2048, NULL, tskIDLE_PRIORITY + 3, NULL );
-    configASSERT( xResult == pdTRUE );
+        xResult = xTaskCreate( vOTAUpdateTask, "OTAUpdate", 2048, NULL, tskIDLE_PRIORITY + 3, NULL );
+        configASSERT( xResult == pdTRUE );
 
-    xResult = xTaskCreate( vEnvironmentSensorPublishTask, "EnvSense", 1024, NULL, tskIDLE_PRIORITY + 2, NULL );
-    configASSERT( xResult == pdTRUE );
+        xResult = xTaskCreate( vEnvironmentSensorPublishTask, "EnvSense", 1024, NULL, tskIDLE_PRIORITY + 2, NULL );
+        configASSERT( xResult == pdTRUE );
 
-    xResult = xTaskCreate( vMotionSensorsPublish, "MotionS", 1024, NULL, tskIDLE_PRIORITY + 2, NULL );
-    configASSERT( xResult == pdTRUE );
+        xResult = xTaskCreate( vMotionSensorsPublish, "MotionS", 1024, NULL, tskIDLE_PRIORITY + 2, NULL );
+        configASSERT( xResult == pdTRUE );
 
-    xResult = xTaskCreate( vShadowDeviceTask, "ShadowDevice", 1024, NULL, tskIDLE_PRIORITY + 1, NULL );
-    configASSERT( xResult == pdTRUE );
+        xResult = xTaskCreate( vShadowDeviceTask, "ShadowDevice", 1024, NULL, tskIDLE_PRIORITY + 1, NULL );
+        configASSERT( xResult == pdTRUE );
 
-    xResult = xTaskCreate( vDefenderAgentTask, "AWSDefender", 2048, NULL, tskIDLE_PRIORITY + 1, NULL );
-    configASSERT( xResult == pdTRUE );
-#endif /* DEMO_QUALIFICATION_TEST */
+        xResult = xTaskCreate( vDefenderAgentTask, "AWSDefender", 2048, NULL, tskIDLE_PRIORITY + 1, NULL );
+        configASSERT( xResult == pdTRUE );
+    #endif /* DEMO_QUALIFICATION_TEST */
 
     while( 1 )
     {
@@ -303,14 +303,14 @@ void vApplicationStackOverflowHook( TaskHandle_t xTask,
 /*-----------------------------------------------------------*/
 
 #if configUSE_IDLE_HOOK == 1
-void vApplicationIdleHook( void )
-{
-    /* Check / pet the watchdog */
-    if( pxHwndIwdg != NULL )
+    void vApplicationIdleHook( void )
     {
-        HAL_IWDG_Refresh( pxHwndIwdg );
+        /* Check / pet the watchdog */
+        if( pxHwndIwdg != NULL )
+        {
+            HAL_IWDG_Refresh( pxHwndIwdg );
+        }
     }
-}
 #endif /* configUSE_IDLE_HOOK == 1 */
 
 /*-----------------------------------------------------------*/

@@ -89,24 +89,24 @@ static void vPopulateConfig( struct lfs_config * pxCfg,
     pxCfg->erase = lfs_port_erase;
     pxCfg->sync = lfs_port_sync;
 
-#ifdef LFS_THREADSAFE
-    pxCfg->lock = &lfs_port_lock;
-    pxCfg->unlock = &lfs_port_unlock;
-#endif
+    #ifdef LFS_THREADSAFE
+        pxCfg->lock = &lfs_port_lock;
+        pxCfg->unlock = &lfs_port_unlock;
+    #endif
     /* controls wear leveling */
     pxCfg->block_cycles = 500;
     pxCfg->cache_size = 4096;
     pxCfg->lookahead_size = 256;
 
-#ifdef LFS_NO_MALLOC
-    pxCfg->read_buffer = ucReadBuffer;
-    pxCfg->prog_buffer = ucProgBuffer;
-    pxCfg->lookahead_buffer = ucLookAheadBuffer;
-#else
-    pxCfg->read_buffer = NULL;
-    pxCfg->prog_buffer = NULL;
-    pxCfg->lookahead_buffer = NULL;
-#endif
+    #ifdef LFS_NO_MALLOC
+        pxCfg->read_buffer = ucReadBuffer;
+        pxCfg->prog_buffer = ucProgBuffer;
+        pxCfg->lookahead_buffer = ucLookAheadBuffer;
+    #else
+        pxCfg->read_buffer = NULL;
+        pxCfg->prog_buffer = NULL;
+        pxCfg->lookahead_buffer = NULL;
+    #endif
 
     /* Accept default maximums for now */
     pxCfg->name_max = 0;
@@ -116,7 +116,7 @@ static void vPopulateConfig( struct lfs_config * pxCfg,
 }
 
 #ifndef LFS_THREADSAFE
-#warning "Building littlefs with LFS_THREADSAFE is strongly suggested."
+    #warning "Building littlefs with LFS_THREADSAFE is strongly suggested."
 #endif
 
 #ifdef LFS_NO_MALLOC
@@ -125,51 +125,51 @@ static void vPopulateConfig( struct lfs_config * pxCfg,
  * Initializes littlefs on the internal storage of the STM32U5 without heap allocation.
  * @param xBlockTime Amount of time to wait for the flash interface lock
  */
-const struct lfs_config * pxInitializeOSPIFlashFsStatic( TickType_t xBlockTime )
-{
-    xLfsCfg.context = ( void * ) &xLfsCtx;
+    const struct lfs_config * pxInitializeOSPIFlashFsStatic( TickType_t xBlockTime )
+    {
+        xLfsCfg.context = ( void * ) &xLfsCtx;
 
-    xLfsCtx.xMutex = xSemaphoreCreateMutexStatic( &( &xMutexStatic ) );
-    ( void ) xSemaphoreGive( xLfsCtx.xMutex );
-    xLfsCtx.xBlockTime = xBlockTime;
+        xLfsCtx.xMutex = xSemaphoreCreateMutexStatic( &( &xMutexStatic ) );
+        ( void ) xSemaphoreGive( xLfsCtx.xMutex );
+        xLfsCtx.xBlockTime = xBlockTime;
 
-    configASSERT( xLfsCtx.xMutex != NULL );
+        configASSERT( xLfsCtx.xMutex != NULL );
 
-    vPopulateConfig( &xLfsCfg, &xLfsCtx );
-}
+        vPopulateConfig( &xLfsCfg, &xLfsCtx );
+    }
 #else /* ifdef LFS_NO_MALLOC */
 
 /*
  * Initializes littlefs on the internal storage of the STM32U5.
  * @param xBlockTime Amount of time to wait for the flash interface lock
  */
-const struct lfs_config * pxInitializeOSPIFlashFs( TickType_t xBlockTime )
-{
-    /* Allocate space for lfs_config struct */
-    struct lfs_config * pxCfg = ( struct lfs_config * ) pvPortMalloc( sizeof( struct lfs_config ) );
+    const struct lfs_config * pxInitializeOSPIFlashFs( TickType_t xBlockTime )
+    {
+        /* Allocate space for lfs_config struct */
+        struct lfs_config * pxCfg = ( struct lfs_config * ) pvPortMalloc( sizeof( struct lfs_config ) );
 
-    configASSERT( pxCfg != NULL );
+        configASSERT( pxCfg != NULL );
 
-    struct LfsPortCtx * pxCtx = ( struct LfsPortCtx * ) ( pvPortMalloc( sizeof( struct LfsPortCtx ) ) );
+        struct LfsPortCtx * pxCtx = ( struct LfsPortCtx * ) ( pvPortMalloc( sizeof( struct LfsPortCtx ) ) );
 
-    configASSERT( pxCtx != NULL );
+        configASSERT( pxCtx != NULL );
 
-    pxCtx->xBlockTime = xBlockTime;
-    pxCtx->xMutex = xSemaphoreCreateMutex();
+        pxCtx->xBlockTime = xBlockTime;
+        pxCtx->xMutex = xSemaphoreCreateMutex();
 
-    configASSERT( pxCtx->xMutex != NULL );
+        configASSERT( pxCtx->xMutex != NULL );
 
 
-    vPopulateConfig( pxCfg, pxCtx );
+        vPopulateConfig( pxCfg, pxCtx );
 
-    BaseType_t xSuccess = ospi_Init( &( pxCtx->xOSPIHandle ) );
+        BaseType_t xSuccess = ospi_Init( &( pxCtx->xOSPIHandle ) );
 
-    configASSERT( xSuccess == pdTRUE );
+        configASSERT( xSuccess == pdTRUE );
 
-    ( void ) xSemaphoreGive( pxCtx->xMutex );
+        ( void ) xSemaphoreGive( pxCtx->xMutex );
 
-    return pxCfg;
-}
+        return pxCfg;
+    }
 
 #endif /* LFS_NO_MALLOC */
 

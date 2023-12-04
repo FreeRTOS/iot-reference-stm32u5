@@ -45,11 +45,11 @@ int32_t ns_interface_lock_init( void )
 {
     int32_t lReturn = -1;
 
-#if ( configSUPPORT_STATIC_ALLOCATION == 1 && configSUPPORT_DYNAMIC_ALLOCATION == 0 )
-    xNsIntfMutex = xSemaphoreCreateMutexStatic( &xNsIntfMutexBuffer );
-#else
-    xNsIntfMutex = xSemaphoreCreateMutex();
-#endif
+    #if ( configSUPPORT_STATIC_ALLOCATION == 1 && configSUPPORT_DYNAMIC_ALLOCATION == 0 )
+        xNsIntfMutex = xSemaphoreCreateMutexStatic( &xNsIntfMutexBuffer );
+    #else
+        xNsIntfMutex = xSemaphoreCreateMutex();
+    #endif
 
     if( xNsIntfMutex != NULL )
     {
