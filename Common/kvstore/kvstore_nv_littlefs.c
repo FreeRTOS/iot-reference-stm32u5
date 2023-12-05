@@ -31,153 +31,153 @@
 #include "semphr.h"
 
 #ifdef KV_STORE_NVIMPL_LITTLEFS
-#include "lfs.h"
-#include "fs/lfs_port.h"
+    #include "lfs.h"
+    #include "fs/lfs_port.h"
 
-#define KVSTORE_PREFIX        "/cfg/"
-#define KVSTORE_MAX_FNANME    ( sizeof( KVSTORE_PREFIX ) + KVSTORE_KEY_MAX_LEN )
+    #define KVSTORE_PREFIX        "/cfg/"
+    #define KVSTORE_MAX_FNANME    ( sizeof( KVSTORE_PREFIX ) + KVSTORE_KEY_MAX_LEN )
 
-typedef struct
-{
-    KVStoreValueType_t type;
-    size_t length; /* Length of value portion (excludes type and length fields */
-} KVStoreTLVHeader_t;
-
-static inline void vLfsSSizeToErr( lfs_ssize_t * pxReturnValue,
-                                   size_t xExpectedLength )
-{
-    if( *pxReturnValue == xExpectedLength )
+    typedef struct
     {
-        *pxReturnValue = LFS_ERR_OK;
-    }
-    else if( *pxReturnValue >= 0 )
-    {
-        *pxReturnValue = LFS_ERR_CORRUPT;
-    }
-    else
-    {
-        /* Pass through the error code otherwise */
-    }
-}
+        KVStoreValueType_t type;
+        size_t length; /* Length of value portion (excludes type and length fields */
+    } KVStoreTLVHeader_t;
 
-static inline BaseType_t xValidateFile( lfs_t * pLfsCtx,
-                                        const char * pcFileName )
-{
-    BaseType_t xSuccess = pdFALSE;
-    struct lfs_info xFileInfo = { 0 };
-
-    if( ( lfs_stat( pLfsCtx, pcFileName, &xFileInfo ) == LFS_ERR_OK ) &&
-        ( ( xFileInfo.type & LFS_TYPE_REG ) == LFS_TYPE_REG ) &&
-        ( xFileInfo.size >= sizeof( KVStoreTLVHeader_t ) ) )
+    static inline void vLfsSSizeToErr( lfs_ssize_t * pxReturnValue,
+                                       size_t xExpectedLength )
     {
-        xSuccess = pdTRUE;
+        if( *pxReturnValue == xExpectedLength )
+        {
+            *pxReturnValue = LFS_ERR_OK;
+        }
+        else if( *pxReturnValue >= 0 )
+        {
+            *pxReturnValue = LFS_ERR_CORRUPT;
+        }
+        else
+        {
+            /* Pass through the error code otherwise */
+        }
     }
 
-    return xSuccess;
-}
+    static inline BaseType_t xValidateFile( lfs_t * pLfsCtx,
+                                            const char * pcFileName )
+    {
+        BaseType_t xSuccess = pdFALSE;
+        struct lfs_info xFileInfo = { 0 };
+
+        if( ( lfs_stat( pLfsCtx, pcFileName, &xFileInfo ) == LFS_ERR_OK ) &&
+            ( ( xFileInfo.type & LFS_TYPE_REG ) == LFS_TYPE_REG ) &&
+            ( xFileInfo.size >= sizeof( KVStoreTLVHeader_t ) ) )
+        {
+            xSuccess = pdTRUE;
+        }
+
+        return xSuccess;
+    }
 
 /*
  * @brief Get the length of a value stored in the KVStore implementation
  * @param[in] xKey Key to lookup
  * @return length of the value stored in the KVStore or 0 if not found.
  */
-size_t xprvGetValueLengthFromImpl( KVStoreKey_t xKey )
-{
-    char pcFileName[ KVSTORE_MAX_FNANME ] = { 0 };
-    lfs_t * pLfsCtx = pxGetDefaultFsCtx();
-    struct lfs_info xFileInfo = { 0 };
-    size_t xLength = 0;
-
-    ( void ) strncpy( pcFileName, KVSTORE_PREFIX, KVSTORE_MAX_FNANME );
-    ( void ) strncat( pcFileName, kvStoreKeyMap[ xKey ], KVSTORE_MAX_FNANME );
-
-    if( lfs_stat( pLfsCtx, pcFileName, &xFileInfo ) == LFS_ERR_OK )
+    size_t xprvGetValueLengthFromImpl( KVStoreKey_t xKey )
     {
-        xLength = ( xFileInfo.size - sizeof( KVStoreTLVHeader_t ) );
+        char pcFileName[ KVSTORE_MAX_FNANME ] = { 0 };
+        lfs_t * pLfsCtx = pxGetDefaultFsCtx();
+        struct lfs_info xFileInfo = { 0 };
+        size_t xLength = 0;
+
+        ( void ) strncpy( pcFileName, KVSTORE_PREFIX, KVSTORE_MAX_FNANME );
+        ( void ) strncat( pcFileName, kvStoreKeyMap[ xKey ], KVSTORE_MAX_FNANME );
+
+        if( lfs_stat( pLfsCtx, pcFileName, &xFileInfo ) == LFS_ERR_OK )
+        {
+            xLength = ( xFileInfo.size - sizeof( KVStoreTLVHeader_t ) );
+        }
+
+        return xLength;
     }
 
-    return xLength;
-}
-
-BaseType_t xprvReadValueFromImpl( KVStoreKey_t xKey,
-                                  KVStoreValueType_t * pxType,
-                                  size_t * pxLength,
-                                  void * pvBuffer,
-                                  size_t xBufferSize )
-{
-    char pcFileName[ KVSTORE_MAX_FNANME ] = { 0 };
-
-    lfs_t * pLfsCtx = pxGetDefaultFsCtx();
-    lfs_ssize_t lReturn = LFS_ERR_CORRUPT;
-    BaseType_t xFileOpenFlag = pdFALSE;
-
-    ( void ) strncpy( pcFileName, KVSTORE_PREFIX, KVSTORE_MAX_FNANME );
-    ( void ) strncat( pcFileName, kvStoreKeyMap[ xKey ], KVSTORE_MAX_FNANME );
-
-    if( xValidateFile( pLfsCtx, pcFileName ) == pdTRUE )
+    BaseType_t xprvReadValueFromImpl( KVStoreKey_t xKey,
+                                      KVStoreValueType_t * pxType,
+                                      size_t * pxLength,
+                                      void * pvBuffer,
+                                      size_t xBufferSize )
     {
-        lfs_file_t xFile = { 0 };
-        KVStoreTLVHeader_t xTlvHeader = { 0 };
+        char pcFileName[ KVSTORE_MAX_FNANME ] = { 0 };
 
-        /* Open the file */
-        lReturn = lfs_file_open( pLfsCtx, &xFile, pcFileName, LFS_O_RDONLY );
+        lfs_t * pLfsCtx = pxGetDefaultFsCtx();
+        lfs_ssize_t lReturn = LFS_ERR_CORRUPT;
+        BaseType_t xFileOpenFlag = pdFALSE;
 
-        /* Read the header */
-        if( lReturn == LFS_ERR_OK )
+        ( void ) strncpy( pcFileName, KVSTORE_PREFIX, KVSTORE_MAX_FNANME );
+        ( void ) strncat( pcFileName, kvStoreKeyMap[ xKey ], KVSTORE_MAX_FNANME );
+
+        if( xValidateFile( pLfsCtx, pcFileName ) == pdTRUE )
         {
-            xFileOpenFlag = pdTRUE;
-            lReturn = lfs_file_read( pLfsCtx, &xFile,
-                                     &xTlvHeader, sizeof( KVStoreTLVHeader_t ) );
+            lfs_file_t xFile = { 0 };
+            KVStoreTLVHeader_t xTlvHeader = { 0 };
 
-            vLfsSSizeToErr( &lReturn, sizeof( KVStoreTLVHeader_t ) );
-        }
+            /* Open the file */
+            lReturn = lfs_file_open( pLfsCtx, &xFile, pcFileName, LFS_O_RDONLY );
 
-        configASSERT( ( xTlvHeader.length ) < KVSTORE_VAL_MAX_LEN );
-
-        /* copy data to provided buffer */
-        if( lReturn >= LFS_ERR_OK )
-        {
-            lReturn = lfs_file_read( pLfsCtx, &xFile,
-                                     pvBuffer,
-                                     xTlvHeader.length );
-            vLfsSSizeToErr( &lReturn, xTlvHeader.length );
-        }
-
-        if( lReturn == LFS_ERR_OK )
-        {
-            if( pxType != NULL )
+            /* Read the header */
+            if( lReturn == LFS_ERR_OK )
             {
-                if( lReturn == LFS_ERR_OK )
+                xFileOpenFlag = pdTRUE;
+                lReturn = lfs_file_read( pLfsCtx, &xFile,
+                                         &xTlvHeader, sizeof( KVStoreTLVHeader_t ) );
+
+                vLfsSSizeToErr( &lReturn, sizeof( KVStoreTLVHeader_t ) );
+            }
+
+            configASSERT( ( xTlvHeader.length ) < KVSTORE_VAL_MAX_LEN );
+
+            /* copy data to provided buffer */
+            if( lReturn >= LFS_ERR_OK )
+            {
+                lReturn = lfs_file_read( pLfsCtx, &xFile,
+                                         pvBuffer,
+                                         xTlvHeader.length );
+                vLfsSSizeToErr( &lReturn, xTlvHeader.length );
+            }
+
+            if( lReturn == LFS_ERR_OK )
+            {
+                if( pxType != NULL )
                 {
-                    *pxType = xTlvHeader.type;
+                    if( lReturn == LFS_ERR_OK )
+                    {
+                        *pxType = xTlvHeader.type;
+                    }
+                    else
+                    {
+                        *pxType = KV_TYPE_NONE;
+                    }
                 }
-                else
+
+                if( pxLength != NULL )
                 {
-                    *pxType = KV_TYPE_NONE;
+                    if( lReturn == LFS_ERR_OK )
+                    {
+                        *pxLength = xTlvHeader.length;
+                    }
+                    else
+                    {
+                        *pxLength = 0;
+                    }
                 }
             }
 
-            if( pxLength != NULL )
+            if( xFileOpenFlag == pdTRUE )
             {
-                if( lReturn == LFS_ERR_OK )
-                {
-                    *pxLength = xTlvHeader.length;
-                }
-                else
-                {
-                    *pxLength = 0;
-                }
+                ( void ) lfs_file_close( pLfsCtx, &xFile );
             }
         }
 
-        if( xFileOpenFlag == pdTRUE )
-        {
-            ( void ) lfs_file_close( pLfsCtx, &xFile );
-        }
+        return( lReturn == LFS_ERR_OK );
     }
-
-    return( lReturn == LFS_ERR_OK );
-}
 
 /*
  * @brief Write a value for a given key to non-volatile storage.
@@ -187,82 +187,82 @@ BaseType_t xprvReadValueFromImpl( KVStoreKey_t xKey,
  * @param[in] pxData Pointer to a buffer containing the value to be stored.
  * The caller must free any heap allocated buffers passed into this function.
  */
-BaseType_t xprvWriteValueToImpl( KVStoreKey_t xKey,
-                                 KVStoreValueType_t xType,
-                                 size_t xLength,
-                                 const void * pvData )
-{
-    char pcFileName[ KVSTORE_MAX_FNANME ] = { 0 };
-
-    lfs_t * pLfsCtx = pxGetDefaultFsCtx();
-
-    lfs_ssize_t lReturn = LFS_ERR_INVAL;
-
-    lfs_file_t xFile = { 0 };
-
-    BaseType_t xFileOpenFlag = pdFALSE;
-
-    if( pvData != NULL )
+    BaseType_t xprvWriteValueToImpl( KVStoreKey_t xKey,
+                                     KVStoreValueType_t xType,
+                                     size_t xLength,
+                                     const void * pvData )
     {
-        /* Construct file name */
-        ( void ) strncpy( pcFileName, KVSTORE_PREFIX, KVSTORE_MAX_FNANME );
-        ( void ) strncat( pcFileName, kvStoreKeyMap[ xKey ], KVSTORE_MAX_FNANME );
+        char pcFileName[ KVSTORE_MAX_FNANME ] = { 0 };
 
-        /* Open the file */
-        lReturn = lfs_file_open( pLfsCtx, &xFile, pcFileName, LFS_O_WRONLY | LFS_O_TRUNC | LFS_O_CREAT );
+        lfs_t * pLfsCtx = pxGetDefaultFsCtx();
 
-        if( lReturn != LFS_ERR_OK )
+        lfs_ssize_t lReturn = LFS_ERR_INVAL;
+
+        lfs_file_t xFile = { 0 };
+
+        BaseType_t xFileOpenFlag = pdFALSE;
+
+        if( pvData != NULL )
         {
-            LogError( "Error while opening file: %s.", pcFileName );
-        }
-        else /* Write the header if opened successfully */
-        {
-            xFileOpenFlag = pdTRUE;
-            KVStoreTLVHeader_t xTlvHeader =
-            {
-                .type   = xType,
-                .length = xLength
-            };
+            /* Construct file name */
+            ( void ) strncpy( pcFileName, KVSTORE_PREFIX, KVSTORE_MAX_FNANME );
+            ( void ) strncat( pcFileName, kvStoreKeyMap[ xKey ], KVSTORE_MAX_FNANME );
 
-            lReturn = lfs_file_write( pLfsCtx, &xFile, &xTlvHeader, sizeof( KVStoreTLVHeader_t ) );
-            vLfsSSizeToErr( &lReturn, sizeof( KVStoreTLVHeader_t ) );
-        }
+            /* Open the file */
+            lReturn = lfs_file_open( pLfsCtx, &xFile, pcFileName, LFS_O_WRONLY | LFS_O_TRUNC | LFS_O_CREAT );
 
-        if( lReturn != LFS_ERR_OK )
-        {
-            LogError( "Error while writing KVStoreTLVHeader_t of length %ld bytes to file: %s.",
-                      sizeof( KVStoreTLVHeader_t ), pcFileName );
-        }
-        else /* Write the data */
-        {
-            lReturn = lfs_file_write( pLfsCtx, &xFile, pvData, xLength );
-            vLfsSSizeToErr( &lReturn, xLength );
-        }
-
-        if( lReturn != LFS_ERR_OK )
-        {
-            LogError( "Error while writing data of length %ld bytes to file: %s.",
-                      xLength, pcFileName );
-        }
-
-        if( xFileOpenFlag == pdTRUE )
-        {
-            ( void ) lfs_file_sync( pLfsCtx, &xFile );
-            ( void ) lfs_file_close( pLfsCtx, &xFile );
-
-            /* Delete partially written file if writing was not successful */
             if( lReturn != LFS_ERR_OK )
             {
-                ( void ) lfs_remove( pLfsCtx, pcFileName );
+                LogError( "Error while opening file: %s.", pcFileName );
+            }
+            else /* Write the header if opened successfully */
+            {
+                xFileOpenFlag = pdTRUE;
+                KVStoreTLVHeader_t xTlvHeader =
+                {
+                    .type   = xType,
+                    .length = xLength
+                };
+
+                lReturn = lfs_file_write( pLfsCtx, &xFile, &xTlvHeader, sizeof( KVStoreTLVHeader_t ) );
+                vLfsSSizeToErr( &lReturn, sizeof( KVStoreTLVHeader_t ) );
+            }
+
+            if( lReturn != LFS_ERR_OK )
+            {
+                LogError( "Error while writing KVStoreTLVHeader_t of length %ld bytes to file: %s.",
+                          sizeof( KVStoreTLVHeader_t ), pcFileName );
+            }
+            else /* Write the data */
+            {
+                lReturn = lfs_file_write( pLfsCtx, &xFile, pvData, xLength );
+                vLfsSSizeToErr( &lReturn, xLength );
+            }
+
+            if( lReturn != LFS_ERR_OK )
+            {
+                LogError( "Error while writing data of length %ld bytes to file: %s.",
+                          xLength, pcFileName );
+            }
+
+            if( xFileOpenFlag == pdTRUE )
+            {
+                ( void ) lfs_file_sync( pLfsCtx, &xFile );
+                ( void ) lfs_file_close( pLfsCtx, &xFile );
+
+                /* Delete partially written file if writing was not successful */
+                if( lReturn != LFS_ERR_OK )
+                {
+                    ( void ) lfs_remove( pLfsCtx, pcFileName );
+                }
             }
         }
+
+        return( lReturn == LFS_ERR_OK );
     }
 
-    return( lReturn == LFS_ERR_OK );
-}
-
-void vprvNvImplInit( void )
-{
-    /*TODO: Wait for filesystem initialization */
-}
+    void vprvNvImplInit( void )
+    {
+        /*TODO: Wait for filesystem initialization */
+    }
 #endif /* KV_STORE_NVIMPL_LITTLEFS */

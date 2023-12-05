@@ -32,7 +32,7 @@
  * if the code-contains a high-level code; otherwise, using a default string.
  */
 #ifndef mbedtlsHighLevelCodeOrDefault
-#define mbedtlsHighLevelCodeOrDefault( mbedTlsCode )       \
+    #define mbedtlsHighLevelCodeOrDefault( mbedTlsCode )   \
     ( mbedtls_high_level_strerr( mbedTlsCode ) != NULL ) ? \
     mbedtls_high_level_strerr( mbedTlsCode ) : ( const char * ) "<No-High-Level-Code>"
 #endif /* mbedtlsHighLevelCodeOrDefault */
@@ -42,7 +42,7 @@
  * if the code-contains a level-level code; otherwise, using a default string.
  */
 #ifndef mbedtlsLowLevelCodeOrDefault
-#define mbedtlsLowLevelCodeOrDefault( mbedTlsCode )       \
+    #define mbedtlsLowLevelCodeOrDefault( mbedTlsCode )   \
     ( mbedtls_low_level_strerr( mbedTlsCode ) != NULL ) ? \
     mbedtls_low_level_strerr( mbedTlsCode ) : ( const char * ) "<No-Low-Level-Code>"
 #endif /* mbedtlsLowLevelCodeOrDefault */

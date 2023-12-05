@@ -1,4 +1,4 @@
-/* Functions have been copied from mbedts/include/psa_util.h */
+/* Functions have been copied from mbedtls/include/psa_util.h */
 
 /*
  *  Copyright The Mbed TLS Contributors

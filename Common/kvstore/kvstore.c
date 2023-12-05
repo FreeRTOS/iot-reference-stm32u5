@@ -32,11 +32,11 @@
 static SemaphoreHandle_t xKvMutex = NULL;
 
 #if KV_STORE_CACHE_ENABLE
-#define READ_ENTRY     xprvCopyValueFromCache
-#define WRITE_ENTRY    xprvWriteCacheEntry
+    #define READ_ENTRY     xprvCopyValueFromCache
+    #define WRITE_ENTRY    xprvWriteCacheEntry
 #else
-#define READ_ENTRY     xprvReadValueFromImplStatic
-#define WRITE_ENTRY    xprvWriteValueToImpl
+    #define READ_ENTRY     xprvReadValueFromImplStatic
+    #define WRITE_ENTRY    xprvWriteValueToImpl
 #endif
 
 const char * const kvStoreKeyMap[ CS_NUM_KEYS ] = KV_STORE_STRINGS;
@@ -78,34 +78,34 @@ static size_t xReadEntryOrDefault( KVStoreKey_t xKey,
     }
 
 /* TEST_AUTOMATION_INTEGRATION is set in ota_config.h, help us to set attributes easily. */
-#if ( TEST_AUTOMATION_INTEGRATION == 1 )
-    if( ( xKey == CS_CORE_THING_NAME ) && ( strlen( THING_NAME_DFLT ) > 0 ) )
-    {
-        ( void ) memcpy( pvBuffer, THING_NAME_DFLT, xBufferSize );
-        xLength = strlen( THING_NAME_DFLT );
-    }
-    else if( ( xKey == CS_CORE_MQTT_ENDPOINT ) && ( strlen( MQTT_ENDPOINT_DFLT ) > 0 ) )
-    {
-        ( void ) memcpy( pvBuffer, MQTT_ENDPOINT_DFLT, xBufferSize );
-        xLength = strlen( MQTT_ENDPOINT_DFLT );
-    }
-    else if( ( xKey == CS_CORE_MQTT_PORT ) && ( MQTT_PORT_DFLT > 0 ) )
-    {
-        uint32_t port = MQTT_PORT_DFLT;
-        ( void ) memcpy( pvBuffer, &port, xBufferSize );
-        xLength = xBufferSize;
-    }
-    else if( ( xKey == CS_WIFI_SSID ) && ( strlen( WIFI_SSID_DFLT ) > 0 ) )
-    {
-        ( void ) memcpy( pvBuffer, WIFI_SSID_DFLT, xBufferSize );
-        xLength = strlen( WIFI_SSID_DFLT );
-    }
-    else if( ( xKey == CS_WIFI_CREDENTIAL ) && ( strlen( WIFI_PASSWORD_DFLT ) > 0 ) )
-    {
-        ( void ) memcpy( pvBuffer, WIFI_PASSWORD_DFLT, xBufferSize );
-        xLength = strlen( WIFI_PASSWORD_DFLT );
-    }
-#endif /* if ( TEST_AUTOMATION_INTEGRATION == 1 ) */
+    #if ( TEST_AUTOMATION_INTEGRATION == 1 )
+        if( ( xKey == CS_CORE_THING_NAME ) && ( strlen( THING_NAME_DFLT ) > 0 ) )
+        {
+            ( void ) memcpy( pvBuffer, THING_NAME_DFLT, xBufferSize );
+            xLength = strlen( THING_NAME_DFLT );
+        }
+        else if( ( xKey == CS_CORE_MQTT_ENDPOINT ) && ( strlen( MQTT_ENDPOINT_DFLT ) > 0 ) )
+        {
+            ( void ) memcpy( pvBuffer, MQTT_ENDPOINT_DFLT, xBufferSize );
+            xLength = strlen( MQTT_ENDPOINT_DFLT );
+        }
+        else if( ( xKey == CS_CORE_MQTT_PORT ) && ( MQTT_PORT_DFLT > 0 ) )
+        {
+            uint32_t port = MQTT_PORT_DFLT;
+            ( void ) memcpy( pvBuffer, &port, xBufferSize );
+            xLength = xBufferSize;
+        }
+        else if( ( xKey == CS_WIFI_SSID ) && ( strlen( WIFI_SSID_DFLT ) > 0 ) )
+        {
+            ( void ) memcpy( pvBuffer, WIFI_SSID_DFLT, xBufferSize );
+            xLength = strlen( WIFI_SSID_DFLT );
+        }
+        else if( ( xKey == CS_WIFI_CREDENTIAL ) && ( strlen( WIFI_PASSWORD_DFLT ) > 0 ) )
+        {
+            ( void ) memcpy( pvBuffer, WIFI_PASSWORD_DFLT, xBufferSize );
+            xLength = strlen( WIFI_PASSWORD_DFLT );
+        }
+    #endif /* if ( TEST_AUTOMATION_INTEGRATION == 1 ) */
 
     return xLength;
 }
@@ -123,13 +123,13 @@ void KVStore_init( void )
 
     ( void ) xSemaphoreTake( xKvMutex, portMAX_DELAY );
 
-#if KV_STORE_CACHE_ENABLE
-    vprvCacheInit();
-#endif
+    #if KV_STORE_CACHE_ENABLE
+        vprvCacheInit();
+    #endif
 
-#if KV_STORE_NVIMPL_ENABLE
-    vprvNvImplInit();
-#endif
+    #if KV_STORE_NVIMPL_ENABLE
+        vprvNvImplInit();
+    #endif
 
     ( void ) xSemaphoreGive( xKvMutex );
 }
@@ -224,12 +224,12 @@ size_t KVStore_getSize( KVStoreKey_t xKey )
     if( xKey < CS_NUM_KEYS )
     {
         /* First check cache if available */
-#if KV_STORE_CACHE_ENABLE
-        xDataLen = prvGetCacheEntryLength( xKey );
-#else
-        /* otherwise read directly from NV */
-        xDataLen = xprvGetValueLengthFromImpl( xKey );
-#endif
+        #if KV_STORE_CACHE_ENABLE
+            xDataLen = prvGetCacheEntryLength( xKey );
+        #else
+            /* otherwise read directly from NV */
+            xDataLen = xprvGetValueLengthFromImpl( xKey );
+        #endif
 
         if( xDataLen == 0 )
         {
@@ -239,28 +239,28 @@ size_t KVStore_getSize( KVStoreKey_t xKey )
     }
 
 /* TEST_AUTOMATION_INTEGRATION is set in ota_config.h, help us to set attributes easily. */
-#if ( TEST_AUTOMATION_INTEGRATION == 1 )
-    if( ( xKey == CS_CORE_THING_NAME ) && ( strlen( THING_NAME_DFLT ) > 0 ) )
-    {
-        xDataLen = strlen( THING_NAME_DFLT ) + 1;
-    }
-    else if( ( xKey == CS_CORE_MQTT_ENDPOINT ) && ( strlen( MQTT_ENDPOINT_DFLT ) > 0 ) )
-    {
-        xDataLen = strlen( MQTT_ENDPOINT_DFLT ) + 1;
-    }
-    else if( ( xKey == CS_CORE_MQTT_PORT ) && ( MQTT_PORT_DFLT > 0 ) )
-    {
-        xDataLen = sizeof( uint32_t );
-    }
-    else if( ( xKey == CS_WIFI_SSID ) && ( strlen( WIFI_SSID_DFLT ) > 0 ) )
-    {
-        xDataLen = strlen( WIFI_SSID_DFLT ) + 1;
-    }
-    else if( ( xKey == CS_WIFI_CREDENTIAL ) && ( strlen( WIFI_PASSWORD_DFLT ) > 0 ) )
-    {
-        xDataLen = strlen( WIFI_PASSWORD_DFLT ) + 1;
-    }
-#endif /* if ( TEST_AUTOMATION_INTEGRATION == 1 ) */
+    #if ( TEST_AUTOMATION_INTEGRATION == 1 )
+        if( ( xKey == CS_CORE_THING_NAME ) && ( strlen( THING_NAME_DFLT ) > 0 ) )
+        {
+            xDataLen = strlen( THING_NAME_DFLT ) + 1;
+        }
+        else if( ( xKey == CS_CORE_MQTT_ENDPOINT ) && ( strlen( MQTT_ENDPOINT_DFLT ) > 0 ) )
+        {
+            xDataLen = strlen( MQTT_ENDPOINT_DFLT ) + 1;
+        }
+        else if( ( xKey == CS_CORE_MQTT_PORT ) && ( MQTT_PORT_DFLT > 0 ) )
+        {
+            xDataLen = sizeof( uint32_t );
+        }
+        else if( ( xKey == CS_WIFI_SSID ) && ( strlen( WIFI_SSID_DFLT ) > 0 ) )
+        {
+            xDataLen = strlen( WIFI_SSID_DFLT ) + 1;
+        }
+        else if( ( xKey == CS_WIFI_CREDENTIAL ) && ( strlen( WIFI_PASSWORD_DFLT ) > 0 ) )
+        {
+            xDataLen = strlen( WIFI_PASSWORD_DFLT ) + 1;
+        }
+    #endif /* if ( TEST_AUTOMATION_INTEGRATION == 1 ) */
 
     return xDataLen;
 }

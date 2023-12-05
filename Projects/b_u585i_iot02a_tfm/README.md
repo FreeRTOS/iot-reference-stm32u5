@@ -119,7 +119,7 @@ The FLASH_PRIVBB1Rx and FLASH_PRIVBB2Rx registers control the privilege level re
 
 Similarly, the FLASH_SECBB1Rx and FLASH_SECBB2Rx registers control the Security state of the processor required to access a given page of flash.
 
-Both Security Block Based protection and Privlege level Block Based protection must be configured at runtime.
+Both Security Block Based protection and Privilege level Block Based protection must be configured at runtime.
 
 ### 3.2 Flash Memory Layout
 The following table summarizes the flash layout used in this project:

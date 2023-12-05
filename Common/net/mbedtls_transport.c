@@ -57,8 +57,8 @@
 #define MBEDTLS_DEBUG_THRESHOLD    1
 
 #ifdef MBEDTLS_TRANSPORT_PKCS11
-#include "core_pkcs11_config.h"
-#include "core_pkcs11.h"
+    #include "core_pkcs11_config.h"
+    #include "core_pkcs11.h"
 #endif
 
 typedef struct
@@ -92,16 +92,16 @@ typedef struct TLSContext
     /* Private Key */
     mbedtls_pk_context xPkCtx;
 
-#ifdef MBEDTLS_TRANSPORT_PKCS11
-    CK_SESSION_HANDLE xP11SessionHandle;
-#endif /* MBEDTLS_TRANSPORT_PKCS11 */
+    #ifdef MBEDTLS_TRANSPORT_PKCS11
+        CK_SESSION_HANDLE xP11SessionHandle;
+    #endif /* MBEDTLS_TRANSPORT_PKCS11 */
 
     /* Entropy Ctx */
     mbedtls_entropy_context xEntropyCtx;
 
-#ifdef TRANSPORT_USE_CTR_DRBG
-    mbedtls_ctr_drbg_context xCtrDrbgCtx;
-#endif /* TRANSPORT_USE_CTR_DRBG */
+    #ifdef TRANSPORT_USE_CTR_DRBG
+        mbedtls_ctr_drbg_context xCtrDrbgCtx;
+    #endif /* TRANSPORT_USE_CTR_DRBG */
 } TLSContext_t;
 
 
@@ -126,11 +126,11 @@ static void vFreeNotifyThreadCtx( NotifyThreadCtx_t * pxNotifyThreadCtx );
 
 #ifdef MBEDTLS_DEBUG_C
 /* Used to print mbedTLS log output. */
-static void vTLSDebugPrint( void * ctx,
-                            int level,
-                            const char * file,
-                            int line,
-                            const char * str );
+    static void vTLSDebugPrint( void * ctx,
+                                int level,
+                                const char * file,
+                                int line,
+                                const char * str );
 #endif
 
 /*-----------------------------------------------------------*/
@@ -230,25 +230,25 @@ static int32_t lMbedtlsErrToTransportError( int32_t lError )
 
 /*-----------------------------------------------------------*/
 #ifndef MBEDTLS_X509_REMOVE_INFO
-#ifdef X509_CRT_ERROR_INFO
-#undef X509_CRT_ERROR_INFO
-#endif /* X509_CRT_ERROR_INFO */
-#define X509_CRT_ERROR_INFO( err, err_str, info ) \
-    case err:                                     \
+    #ifdef X509_CRT_ERROR_INFO
+        #undef X509_CRT_ERROR_INFO
+    #endif /* X509_CRT_ERROR_INFO */
+    #define X509_CRT_ERROR_INFO( err, err_str, info ) \
+    case err:                                         \
         pcVerifyInfo = info; break;
-static const char * pcGetVerifyInfoString( unsigned int flag )
-{
-    const char * pcVerifyInfo = "Unknown Failure reason.";
-
-    switch( flag )
+    static const char * pcGetVerifyInfoString( unsigned int flag )
     {
-        MBEDTLS_X509_CRT_ERROR_INFO_LIST
-        default:
-            break;
-    }
+        const char * pcVerifyInfo = "Unknown Failure reason.";
 
-    return pcVerifyInfo;
-}
+        switch( flag )
+        {
+            MBEDTLS_X509_CRT_ERROR_INFO_LIST
+            default:
+                break;
+        }
+
+        return pcVerifyInfo;
+    }
 #endif /* MBEDTLS_X509_REMOVE_INFO */
 
 /*-----------------------------------------------------------*/
@@ -256,15 +256,15 @@ static const char * pcGetVerifyInfoString( unsigned int flag )
 
 static void vLogCertificateVerifyResult( unsigned int flags )
 {
-#ifndef MBEDTLS_X509_REMOVE_INFO
-    for( unsigned int mask = 1; mask != ( 1U << 31 ); mask = mask << 1 )
-    {
-        if( ( flags & mask ) > 0 )
+    #ifndef MBEDTLS_X509_REMOVE_INFO
+        for( unsigned int mask = 1; mask != ( 1U << 31 ); mask = mask << 1 )
         {
-            LogError( "Certificate Verification Failure: %s", pcGetVerifyInfoString( flags & mask ) );
+            if( ( flags & mask ) > 0 )
+            {
+                LogError( "Certificate Verification Failure: %s", pcGetVerifyInfoString( flags & mask ) );
+            }
         }
-    }
-#endif /* !MBEDTLS_X509_REMOVE_INFO */
+    #endif /* !MBEDTLS_X509_REMOVE_INFO */
 }
 
 /*-----------------------------------------------------------*/
@@ -380,9 +380,9 @@ static int mbedtls_ssl_send( void * pvCtx,
 
                 switch( lError )
                 {
-#if EAGAIN != EWOULDBLOCK
-                    case EAGAIN:
-#endif
+                    #if EAGAIN != EWOULDBLOCK
+                        case EAGAIN:
+                    #endif
                     case EINTR:
                     case EWOULDBLOCK:
                         break;
@@ -435,9 +435,9 @@ static int mbedtls_ssl_recv( void * pvCtx,
         /* force use of newlibc errno */
         switch( *__errno() )
         {
-#if EAGAIN != EWOULDBLOCK
-            case EAGAIN:
-#endif
+            #if EAGAIN != EWOULDBLOCK
+                case EAGAIN:
+            #endif
             case EINTR:
             case EWOULDBLOCK:
                 lError = MBEDTLS_ERR_SSL_WANT_READ;
@@ -481,19 +481,19 @@ NetworkContext_t * mbedtls_transport_allocate( void )
         mbedtls_x509_crt_init( &( pxTLSCtx->xRootCaChain ) );
         mbedtls_pk_init( &( pxTLSCtx->xPkCtx ) );
 
-#ifdef MBEDTLS_TRANSPORT_PKCS11
-        pxTLSCtx->xP11SessionHandle = CK_INVALID_HANDLE;
-#endif /* MBEDTLS_TRANSPORT_PKCS11 */
+        #ifdef MBEDTLS_TRANSPORT_PKCS11
+            pxTLSCtx->xP11SessionHandle = CK_INVALID_HANDLE;
+        #endif /* MBEDTLS_TRANSPORT_PKCS11 */
 
         mbedtls_entropy_init( &( pxTLSCtx->xEntropyCtx ) );
 
-#ifdef TRANSPORT_USE_CTR_DRBG
-        mbedtls_ctr_drbg_init( &( pxTLSCtx->xCtrDrbgCtx ) );
-#endif /* TRANSPORT_USE_CTR_DRBG */
+        #ifdef TRANSPORT_USE_CTR_DRBG
+            mbedtls_ctr_drbg_init( &( pxTLSCtx->xCtrDrbgCtx ) );
+        #endif /* TRANSPORT_USE_CTR_DRBG */
 
-#ifdef MBEDTLS_THREADING_ALT
-        mbedtls_platform_threading_init();
-#endif /* MBEDTLS_THREADING_ALT */
+        #ifdef MBEDTLS_THREADING_ALT
+            mbedtls_platform_threading_init();
+        #endif /* MBEDTLS_THREADING_ALT */
     }
 
     return ( NetworkContext_t * ) pxTLSCtx;
@@ -520,23 +520,23 @@ void mbedtls_transport_free( NetworkContext_t * pxNetworkContext )
         mbedtls_x509_crt_free( &( pxTLSCtx->xClientCert ) );
         mbedtls_pk_free( &( pxTLSCtx->xPkCtx ) );
 
-#ifdef MBEDTLS_TRANSPORT_PKCS11
-        if( pxTLSCtx->xP11SessionHandle != CK_INVALID_HANDLE )
-        {
-            CK_FUNCTION_LIST_PTR pxFunctionList = NULL;
-
-            if( ( C_GetFunctionList( &pxFunctionList ) == CKR_OK ) &&
-                ( pxFunctionList->C_CloseSession != NULL ) )
+        #ifdef MBEDTLS_TRANSPORT_PKCS11
+            if( pxTLSCtx->xP11SessionHandle != CK_INVALID_HANDLE )
             {
-                pxFunctionList->C_CloseSession( pxTLSCtx->xP11SessionHandle );
-            }
-        }
-#endif /* MBEDTLS_TRANSPORT_PKCS11 */
+                CK_FUNCTION_LIST_PTR pxFunctionList = NULL;
 
-#ifdef TRANSPORT_USE_CTR_DRBG
-        mbedtls_entropy_free( &( pxTLSCtx->xEntropyCtx ) );
-        mbedtls_ctr_drbg_free( &( pxTLSCtx->xCtrDrbgCtx ) );
-#endif /* TRANSPORT_USE_CTR_DRBG */
+                if( ( C_GetFunctionList( &pxFunctionList ) == CKR_OK ) &&
+                    ( pxFunctionList->C_CloseSession != NULL ) )
+                {
+                    pxFunctionList->C_CloseSession( pxTLSCtx->xP11SessionHandle );
+                }
+            }
+        #endif /* MBEDTLS_TRANSPORT_PKCS11 */
+
+        #ifdef TRANSPORT_USE_CTR_DRBG
+            mbedtls_entropy_free( &( pxTLSCtx->xEntropyCtx ) );
+            mbedtls_ctr_drbg_free( &( pxTLSCtx->xCtrDrbgCtx ) );
+        #endif /* TRANSPORT_USE_CTR_DRBG */
 
         vPortFree( ( void * ) pxTLSCtx );
     }
@@ -575,30 +575,30 @@ static int lValidateCertByProfile( TLSContext_t * pxTLSCtx,
         }
 
         /* Validate public key of cert */
-#if defined( MBEDTLS_RSA_C )
-        if( ( mbedtls_pk_get_type( pxPkCtx ) == MBEDTLS_PK_RSA ) ||
-            ( mbedtls_pk_get_type( pxPkCtx ) == MBEDTLS_PK_RSASSA_PSS ) )
-        {
-            if( mbedtls_pk_get_bitlen( pxPkCtx ) < pxCertProfile->rsa_min_bitlen )
+        #if defined( MBEDTLS_RSA_C )
+            if( ( mbedtls_pk_get_type( pxPkCtx ) == MBEDTLS_PK_RSA ) ||
+                ( mbedtls_pk_get_type( pxPkCtx ) == MBEDTLS_PK_RSASSA_PSS ) )
             {
-                lFlags |= MBEDTLS_X509_BADCERT_BAD_KEY;
+                if( mbedtls_pk_get_bitlen( pxPkCtx ) < pxCertProfile->rsa_min_bitlen )
+                {
+                    lFlags |= MBEDTLS_X509_BADCERT_BAD_KEY;
+                }
             }
-        }
-#endif /* MBEDTLS_RSA_C */
+        #endif /* MBEDTLS_RSA_C */
 
-#if defined( MBEDTLS_ECP_C )
-        if( ( mbedtls_pk_get_type( pxPkCtx ) == MBEDTLS_PK_ECDSA ) ||
-            ( mbedtls_pk_get_type( pxPkCtx ) == MBEDTLS_PK_ECKEY ) ||
-            ( mbedtls_pk_get_type( pxPkCtx ) == MBEDTLS_PK_ECKEY_DH ) )
-        {
-            mbedtls_ecp_group_id xECGroupId = mbedtls_pk_ec( *pxPkCtx )->MBEDTLS_PRIVATE( grp ).id;
-
-            if( ( pxCertProfile->allowed_curves & MBEDTLS_X509_ID_FLAG( xECGroupId ) ) == 0 )
+        #if defined( MBEDTLS_ECP_C )
+            if( ( mbedtls_pk_get_type( pxPkCtx ) == MBEDTLS_PK_ECDSA ) ||
+                ( mbedtls_pk_get_type( pxPkCtx ) == MBEDTLS_PK_ECKEY ) ||
+                ( mbedtls_pk_get_type( pxPkCtx ) == MBEDTLS_PK_ECKEY_DH ) )
             {
-                lFlags |= MBEDTLS_X509_BADCERT_BAD_KEY;
+                mbedtls_ecp_group_id xECGroupId = mbedtls_pk_ec( *pxPkCtx )->MBEDTLS_PRIVATE( grp ).id;
+
+                if( ( pxCertProfile->allowed_curves & MBEDTLS_X509_ID_FLAG( xECGroupId ) ) == 0 )
+                {
+                    lFlags |= MBEDTLS_X509_BADCERT_BAD_KEY;
+                }
             }
-        }
-#endif /* MBEDTLS_ECP_C */
+        #endif /* MBEDTLS_ECP_C */
     }
 
     return lFlags;
@@ -773,12 +773,12 @@ static TlsTransportStatus_t xConfigureCAChain( TLSContext_t * pxTLSCtx,
 
             if( lError != 0 )
             {
-#if !defined( MBEDTLS_X509_REMOVE_INFO )
-                LogError( "Failed to validate the CA Certificate at index: %ld. Reason: %s", uxIdx,
-                          pcGetVerifyInfoString( lError ) );
-#else /* !defined( MBEDTLS_X509_REMOVE_INFO ) */
-                LogError( "Failed to validate the CA Certificate at index: %ld.", uxIdx );
-#endif
+                #if !defined( MBEDTLS_X509_REMOVE_INFO )
+                    LogError( "Failed to validate the CA Certificate at index: %ld. Reason: %s", uxIdx,
+                              pcGetVerifyInfoString( lError ) );
+                #else /* !defined( MBEDTLS_X509_REMOVE_INFO ) */
+                    LogError( "Failed to validate the CA Certificate at index: %ld.", uxIdx );
+                #endif
             }
         }
 
@@ -875,39 +875,39 @@ TlsTransportStatus_t mbedtls_transport_configure( NetworkContext_t * pxNetworkCo
     /* Setup new contexts */
     if( pxTLSCtx->xConnectionState == STATE_ALLOCATED )
     {
-#ifdef MBEDTLS_TRANSPORT_PKCS11
-        if( xStatus == TLS_TRANSPORT_SUCCESS )
-        {
-            if( xInitializePkcs11Session( &( pxTLSCtx->xP11SessionHandle ) ) != CKR_OK )
+        #ifdef MBEDTLS_TRANSPORT_PKCS11
+            if( xStatus == TLS_TRANSPORT_SUCCESS )
             {
-                LogError( "Failed to initialize PKCS11 session." );
+                if( xInitializePkcs11Session( &( pxTLSCtx->xP11SessionHandle ) ) != CKR_OK )
+                {
+                    LogError( "Failed to initialize PKCS11 session." );
 
-                xStatus = TLS_TRANSPORT_INTERNAL_ERROR;
+                    xStatus = TLS_TRANSPORT_INTERNAL_ERROR;
+                }
             }
-        }
-#endif /* MBEDTLS_TRANSPORT_PKCS11 */
+        #endif /* MBEDTLS_TRANSPORT_PKCS11 */
 
-#ifdef MBEDTLS_TRANSPORT_PSA
-        if( xStatus == TLS_TRANSPORT_SUCCESS )
-        {
-            if( psa_crypto_init() != PSA_SUCCESS )
+        #ifdef MBEDTLS_TRANSPORT_PSA
+            if( xStatus == TLS_TRANSPORT_SUCCESS )
             {
-                LogError( "Failed to initialize PSA crypto interface." );
+                if( psa_crypto_init() != PSA_SUCCESS )
+                {
+                    LogError( "Failed to initialize PSA crypto interface." );
 
-                xStatus = TLS_TRANSPORT_INTERNAL_ERROR;
+                    xStatus = TLS_TRANSPORT_INTERNAL_ERROR;
+                }
             }
-        }
-#endif /* MBEDTLS_TRANSPORT_PSA */
+        #endif /* MBEDTLS_TRANSPORT_PSA */
     }
 
     configASSERT( pxTLSCtx->xConnectionState != STATE_CONNECTED );
 
     if( xStatus == TLS_TRANSPORT_SUCCESS )
     {
-#ifdef MBEDTLS_DEBUG_C
-        mbedtls_ssl_conf_dbg( pxSslConfig, vTLSDebugPrint, NULL );
-        mbedtls_debug_set_threshold( MBEDTLS_DEBUG_THRESHOLD );
-#endif /* MBEDTLS_DEBUG_C */
+        #ifdef MBEDTLS_DEBUG_C
+            mbedtls_ssl_conf_dbg( pxSslConfig, vTLSDebugPrint, NULL );
+            mbedtls_debug_set_threshold( MBEDTLS_DEBUG_THRESHOLD );
+        #endif /* MBEDTLS_DEBUG_C */
 
         if( pxTLSCtx->xConnectionState == STATE_CONFIGURED )
         {
@@ -931,36 +931,36 @@ TlsTransportStatus_t mbedtls_transport_configure( NetworkContext_t * pxNetworkCo
     {
         int lRslt = 0;
 
-#ifdef TRANSPORT_USE_CTR_DRBG
-        /* Seed the local RNG. */
-        lRslt = mbedtls_ctr_drbg_seed( &( pxTLSCtx->xCtrDrbgCtx ),
-                                       mbedtls_entropy_func,
-                                       &( pxTLSCtx->xEntropyCtx ),
-                                       NULL,
-                                       0 );
+        #ifdef TRANSPORT_USE_CTR_DRBG
+            /* Seed the local RNG. */
+            lRslt = mbedtls_ctr_drbg_seed( &( pxTLSCtx->xCtrDrbgCtx ),
+                                           mbedtls_entropy_func,
+                                           &( pxTLSCtx->xEntropyCtx ),
+                                           NULL,
+                                           0 );
 
-        if( lRslt < 0 )
-        {
-            LogError( "Failed to seed PRNG: Error: %s : %s.",
-                      mbedtlsHighLevelCodeOrDefault( lRslt ),
-                      mbedtlsLowLevelCodeOrDefault( lRslt ) );
-            xStatus = TLS_TRANSPORT_INTERNAL_ERROR;
-        }
-        else
-        {
+            if( lRslt < 0 )
+            {
+                LogError( "Failed to seed PRNG: Error: %s : %s.",
+                          mbedtlsHighLevelCodeOrDefault( lRslt ),
+                          mbedtlsLowLevelCodeOrDefault( lRslt ) );
+                xStatus = TLS_TRANSPORT_INTERNAL_ERROR;
+            }
+            else
+            {
+                mbedtls_ssl_conf_rng( &( pxTLSCtx->xSslConfig ),
+                                      mbedtls_ctr_drbg_random,
+                                      &( pxTLSCtx->xCtrDrbgCtx ) );
+            }
+        #elif defined( MBEDTLS_TRANSPORT_PSA )
             mbedtls_ssl_conf_rng( &( pxTLSCtx->xSslConfig ),
-                                  mbedtls_ctr_drbg_random,
-                                  &( pxTLSCtx->xCtrDrbgCtx ) );
-        }
-#elif defined( MBEDTLS_TRANSPORT_PSA )
-        mbedtls_ssl_conf_rng( &( pxTLSCtx->xSslConfig ),
-                              lPSARandomCallback,
-                              NULL );
-#else /* ifdef TRANSPORT_USE_CTR_DRBG */
-        mbedtls_ssl_conf_rng( &( pxTLSCtx->xSslConfig ),
-                              mbedtls_entropy_func,
-                              &( pxTLSCtx->xEntropyCtx ) );
-#endif /* ifdef TRANSPORT_USE_CTR_DRBG */
+                                  lPSARandomCallback,
+                                  NULL );
+        #else /* ifdef TRANSPORT_USE_CTR_DRBG */
+            mbedtls_ssl_conf_rng( &( pxTLSCtx->xSslConfig ),
+                                  mbedtls_entropy_func,
+                                  &( pxTLSCtx->xEntropyCtx ) );
+        #endif /* ifdef TRANSPORT_USE_CTR_DRBG */
 
 
         xStatus = ( lError == 0 ) ? TLS_TRANSPORT_SUCCESS : TLS_TRANSPORT_INTERNAL_ERROR;
@@ -1000,20 +1000,20 @@ TlsTransportStatus_t mbedtls_transport_configure( NetworkContext_t * pxNetworkCo
     }
 
     /* Set Maximum Fragment Length if enabled. */
-#ifdef MBEDTLS_SSL_MAX_FRAGMENT_LENGTH
-    if( xStatus == TLS_TRANSPORT_SUCCESS )
-    {
-        /* Enable the max fragment extension. 4096 bytes is currently the largest fragment size permitted.
-         * See RFC 8449 https://tools.ietf.org/html/rfc8449 for more information.
-         *
-         * Smaller values can be found in "mbedtls/include/ssl.h".
-         */
-        lError = mbedtls_ssl_conf_max_frag_len( pxSslConfig, MBEDTLS_SSL_MAX_FRAG_LEN_4096 );
+    #ifdef MBEDTLS_SSL_MAX_FRAGMENT_LENGTH
+        if( xStatus == TLS_TRANSPORT_SUCCESS )
+        {
+            /* Enable the max fragment extension. 4096 bytes is currently the largest fragment size permitted.
+             * See RFC 8449 https://tools.ietf.org/html/rfc8449 for more information.
+             *
+             * Smaller values can be found in "mbedtls/include/ssl.h".
+             */
+            lError = mbedtls_ssl_conf_max_frag_len( pxSslConfig, MBEDTLS_SSL_MAX_FRAG_LEN_4096 );
 
-        MBEDTLS_MSG_IF_ERROR( lError, "Failed to configure maximum fragment length extension, " );
-        xStatus = lMbedtlsErrToTransportError( lError );
-    }
-#endif /* MBEDTLS_SSL_MAX_FRAGMENT_LENGTH */
+            MBEDTLS_MSG_IF_ERROR( lError, "Failed to configure maximum fragment length extension, " );
+            xStatus = lMbedtlsErrToTransportError( lError );
+        }
+    #endif /* MBEDTLS_SSL_MAX_FRAGMENT_LENGTH */
 
     /* Load CA certificate chain. */
     if( xStatus == TLS_TRANSPORT_SUCCESS )
@@ -1121,39 +1121,39 @@ static TlsTransportStatus_t xConnectSocket( TLSContext_t * pxTLSCtx,
             /* Set port number */
             switch( pxAddrIter->ai_family )
             {
-#if LWIP_IPV4 == 1
-                case AF_INET:
-                    ( ( struct sockaddr_in * ) pxAddrIter->ai_addr )->sin_port = htons( usPort );
-                    break;
-#endif
-#if LWIP_IPV6 == 1
-                case AF_INET6:
-                    ( ( struct sockaddr_in6 * ) pxAddrIter->ai_addr )->sin6_port = htons( usPort );
-                    break;
-#endif
+                #if LWIP_IPV4 == 1
+                    case AF_INET:
+                        ( ( struct sockaddr_in * ) pxAddrIter->ai_addr )->sin_port = htons( usPort );
+                        break;
+                #endif
+                #if LWIP_IPV6 == 1
+                    case AF_INET6:
+                        ( ( struct sockaddr_in6 * ) pxAddrIter->ai_addr )->sin6_port = htons( usPort );
+                        break;
+                #endif
                 default:
                     continue;
                     break;
             }
 
-#if LWIP_IPV4 == 1
-            if( pxAddrIter->ai_family == AF_INET )
-            {
-                char ipAddrBuff[ IP4ADDR_STRLEN_MAX ] = { 0 };
-                ( void ) inet_ntoa_r( ( ( struct sockaddr_in * ) pxAddrIter->ai_addr )->sin_addr, ipAddrBuff, IP4ADDR_STRLEN_MAX );
-                LogInfo( "Trying address: %.*s, port: %uh for host: %s.",
-                         IP4ADDR_STRLEN_MAX, ipAddrBuff, usPort, pcHostName );
-            }
-#endif
-#if LWIP_IPV6 == 1
-            if( pxAddrIter->ai_family == AF_INET6 )
-            {
-                char ipAddrBuff[ IP6ADDR_STRLEN_MAX ] = { 0 };
-                ( void ) inet6_ntoa_r( ( ( struct sockaddr_in6 * ) pxAddrIter->ai_addr )->sin_addr, ipAddrBuff, IP6ADDR_STRLEN_MAX );
-                LogInfo( "Trying address: %.*s, port: %uh for host: %s.",
-                         IP6ADDR_STRLEN_MAX, ipAddrBuff, usPort, pcHostName );
-            }
-#endif
+            #if LWIP_IPV4 == 1
+                if( pxAddrIter->ai_family == AF_INET )
+                {
+                    char ipAddrBuff[ IP4ADDR_STRLEN_MAX ] = { 0 };
+                    ( void ) inet_ntoa_r( ( ( struct sockaddr_in * ) pxAddrIter->ai_addr )->sin_addr, ipAddrBuff, IP4ADDR_STRLEN_MAX );
+                    LogInfo( "Trying address: %.*s, port: %uh for host: %s.",
+                             IP4ADDR_STRLEN_MAX, ipAddrBuff, usPort, pcHostName );
+                }
+            #endif
+            #if LWIP_IPV6 == 1
+                if( pxAddrIter->ai_family == AF_INET6 )
+                {
+                    char ipAddrBuff[ IP6ADDR_STRLEN_MAX ] = { 0 };
+                    ( void ) inet6_ntoa_r( ( ( struct sockaddr_in6 * ) pxAddrIter->ai_addr )->sin_addr, ipAddrBuff, IP6ADDR_STRLEN_MAX );
+                    LogInfo( "Trying address: %.*s, port: %uh for host: %s.",
+                             IP6ADDR_STRLEN_MAX, ipAddrBuff, usPort, pcHostName );
+                }
+            #endif
 
             /* Allocate socket */
             pxTLSCtx->xSockHandle = sock_socket( pxAddrIter->ai_family,
@@ -1179,28 +1179,28 @@ static TlsTransportStatus_t xConnectSocket( TLSContext_t * pxTLSCtx,
                 }
                 else
                 {
-#if LWIP_IPV4 == 1
-                    if( pxAddrIter->ai_family == AF_INET )
-                    {
-                        char ipAddrBuff[ IP4ADDR_STRLEN_MAX ] = { 0 };
+                    #if LWIP_IPV4 == 1
+                        if( pxAddrIter->ai_family == AF_INET )
+                        {
+                            char ipAddrBuff[ IP4ADDR_STRLEN_MAX ] = { 0 };
 
-                        ( void ) inet_ntoa_r( ( ( struct sockaddr_in * ) pxAddrIter->ai_addr )->sin_addr, ipAddrBuff, IP4ADDR_STRLEN_MAX );
+                            ( void ) inet_ntoa_r( ( ( struct sockaddr_in * ) pxAddrIter->ai_addr )->sin_addr, ipAddrBuff, IP4ADDR_STRLEN_MAX );
 
-                        LogInfo( "Connected socket: %ld to host: %s, address: %.*s, port: %uh.",
-                                 pxTLSCtx->xSockHandle, pcHostName,
-                                 IP4ADDR_STRLEN_MAX, ipAddrBuff, usPort );
-                    }
-#endif /* if LWIP_IPV4 == 1 */
-#if LWIP_IPV6 == 1
-                    if( pxAddrIter->ai_family == AF_INET6 )
-                    {
-                        char ipAddrBuff[ IP6ADDR_STRLEN_MAX ] = { 0 };
-                        ( void ) inet6_ntoa_r( ( ( struct sockaddr_in6 * ) pxAddrIter->ai_addr )->sin_addr, ipAddrBuff, IP6ADDR_STRLEN_MAX );
-                        LogInfo( "Connected socket: %ld to host: %s, address: %.*s, port: %uh.",
-                                 pxTLSCtx->xSockHandle, pcHostName,
-                                 IP6ADDR_STRLEN_MAX, ipAddrBuff, usPort );
-                    }
-#endif
+                            LogInfo( "Connected socket: %ld to host: %s, address: %.*s, port: %uh.",
+                                     pxTLSCtx->xSockHandle, pcHostName,
+                                     IP4ADDR_STRLEN_MAX, ipAddrBuff, usPort );
+                        }
+                    #endif /* if LWIP_IPV4 == 1 */
+                    #if LWIP_IPV6 == 1
+                        if( pxAddrIter->ai_family == AF_INET6 )
+                        {
+                            char ipAddrBuff[ IP6ADDR_STRLEN_MAX ] = { 0 };
+                            ( void ) inet6_ntoa_r( ( ( struct sockaddr_in6 * ) pxAddrIter->ai_addr )->sin_addr, ipAddrBuff, IP6ADDR_STRLEN_MAX );
+                            LogInfo( "Connected socket: %ld to host: %s, address: %.*s, port: %uh.",
+                                     pxTLSCtx->xSockHandle, pcHostName,
+                                     IP6ADDR_STRLEN_MAX, ipAddrBuff, usPort );
+                        }
+                    #endif
                 }
             }
 
@@ -1762,67 +1762,67 @@ int32_t mbedtls_transport_send( NetworkContext_t * pxNetworkContext,
 /*-----------------------------------------------------------*/
 
 #ifdef MBEDTLS_DEBUG_C
-static inline const char * pcMbedtlsLevelToFrLevel( int lLevel )
-{
-    const char * pcFrLogLevel;
-
-    switch( lLevel )
+    static inline const char * pcMbedtlsLevelToFrLevel( int lLevel )
     {
-        case 1:
-            pcFrLogLevel = "ERR";
-            break;
+        const char * pcFrLogLevel;
 
-        case 2:
-        case 3:
-            pcFrLogLevel = "INF";
-            break;
-
-        case 4:
-        default:
-            pcFrLogLevel = "DBG";
-            break;
-    }
-
-    return pcFrLogLevel;
-}
-
-/*-------------------------------------------------------*/
-
-static inline const char * pcPathToBasename( const char * pcFileName )
-{
-    const char * pcIter = pcFileName;
-    const char * pcBasename = pcFileName;
-
-    /* Extract basename from file name */
-    while( *pcIter != '\0' )
-    {
-        if( ( *pcIter == '/' ) || ( *pcIter == '\\' ) )
+        switch( lLevel )
         {
-            pcBasename = pcIter + 1;
+            case 1:
+                pcFrLogLevel = "ERR";
+                break;
+
+            case 2:
+            case 3:
+                pcFrLogLevel = "INF";
+                break;
+
+            case 4:
+            default:
+                pcFrLogLevel = "DBG";
+                break;
         }
 
-        pcIter++;
+        return pcFrLogLevel;
     }
-
-    return pcBasename;
-}
 
 /*-------------------------------------------------------*/
 
-static void vTLSDebugPrint( void * ctx,
-                            int lLevel,
-                            const char * pcFileName,
-                            int lLineNumber,
-                            const char * pcErrStr )
-{
-    const char * pcLogLevel;
-    const char * pcFileBaseName;
+    static inline const char * pcPathToBasename( const char * pcFileName )
+    {
+        const char * pcIter = pcFileName;
+        const char * pcBasename = pcFileName;
 
-    ( void ) ctx;
+        /* Extract basename from file name */
+        while( *pcIter != '\0' )
+        {
+            if( ( *pcIter == '/' ) || ( *pcIter == '\\' ) )
+            {
+                pcBasename = pcIter + 1;
+            }
 
-    pcLogLevel = pcMbedtlsLevelToFrLevel( lLevel );
-    pcFileBaseName = pcPathToBasename( pcFileName );
+            pcIter++;
+        }
 
-    vLoggingPrintf( pcLogLevel, pcFileBaseName, lLineNumber, pcErrStr );
-}
+        return pcBasename;
+    }
+
+/*-------------------------------------------------------*/
+
+    static void vTLSDebugPrint( void * ctx,
+                                int lLevel,
+                                const char * pcFileName,
+                                int lLineNumber,
+                                const char * pcErrStr )
+    {
+        const char * pcLogLevel;
+        const char * pcFileBaseName;
+
+        ( void ) ctx;
+
+        pcLogLevel = pcMbedtlsLevelToFrLevel( lLevel );
+        pcFileBaseName = pcPathToBasename( pcFileName );
+
+        vLoggingPrintf( pcLogLevel, pcFileBaseName, lLineNumber, pcErrStr );
+    }
 #endif /* ifdef MBEDTLS_DEBUG_C */
