@@ -42,10 +42,6 @@
 	path = Middleware/AWS/IoTJobs
 	url = https://github.com/aws/Jobs-for-AWS-IoT-embedded-sdk.git
 	fetchRecurseSubmodules = false
-[submodule "Middleware/AWS/OTA"]
-	path = Middleware/AWS/OTA
-	url = https://github.com/aws/ota-for-aws-iot-embedded-sdk.git
-	fetchRecurseSubmodules = false
 [submodule "Middleware/ARM/mbedtls"]
 	path = Middleware/ARM/mbedtls
 	url = https://github.com/Mbed-TLS/mbedtls.git
@@ -111,3 +107,6 @@
 [submodule "Middleware/Unity"]
 	path = Middleware/Unity
 	url = https://github.com/ThrowTheSwitch/Unity.git
+[submodule "Middleware/AWS/IoTMQTTStream"]
+	path = Middleware/AWS/IoTMQTTStream
+	url = https://github.com/aws/aws-iot-core-mqtt-file-streams-embedded-c/
