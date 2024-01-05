@@ -60,6 +60,9 @@ ctest
 Customisation
 DCMI
 DCMOCK
+decihours
+Decihours
+DECIHOURS
 demultiplexing
 dgst
 DHQC
@@ -252,6 +255,9 @@ Netif
 NETIF
 netifapi
 NISTP
+nondet
+Nondet
+NONDET
 Npvsjj
 nspe
 NSPRIV
@@ -377,6 +383,9 @@ UNACKED
 undefs
 UNEXTRACTABLE
 unhashed
+unpadded
+Unpadded
+UNPADDED
 UNSAVEABLE
 UNSUB
 UNSUBACK
@@ -385,6 +394,8 @@ Usart
 USART1
 USBPD
 utest
+vect
+Vect
 VECT
 veener
 vprv
