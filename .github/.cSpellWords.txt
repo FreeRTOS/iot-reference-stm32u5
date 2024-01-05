@@ -33,6 +33,7 @@ CFGR
 choco
 Chth
 CIER
+CLKSOURCE
 cmac
 CMAC
 cmock
@@ -96,6 +97,7 @@ fracn
 FRACN
 FRACR
 FRCK
+FREERUNCLK
 frombe
 fromisr
 fromle
@@ -145,6 +147,7 @@ HWCONTROL
 Hwnd
 ICPM
 ICSCR
+IFDOWN
 ifinoctets
 ifoutoctets
 IFUP
@@ -181,6 +184,9 @@ LPUART
 LPWORD
 LPWRRSTF
 LTDC
+lwiperf
+lwipopts
+LWIPOPTS
 LYNKS
 mbar
 mbed
@@ -334,6 +340,7 @@ reent
 Reent
 RELAYX
 REXTI
+RNGCLKSOURCE
 RRCC
 RSAES
 RSASSA
@@ -368,6 +375,16 @@ STLEXH
 STLK
 stringz
 SYSCFGEN
+sysclk
+Sysclk
+SysClk
+SYSClk
+SYSCLK
+SYSCLKSOURCE
+sysclock
+Sysclock
+SysClock
+SYSCLOCK
 sysdm
 TCEM
 TKIP
@@ -386,6 +403,9 @@ unhashed
 unpadded
 Unpadded
 UNPADDED
+unprotect
+Unprotect
+Unprotected
 UNSAVEABLE
 UNSUB
 UNSUBACK
