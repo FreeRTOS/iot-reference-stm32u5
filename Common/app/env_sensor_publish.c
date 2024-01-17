@@ -28,7 +28,7 @@
 #include "logging_levels.h"
 /* define LOG_LEVEL here if you want to modify the logging level from the default */
 
-#define LOG_LEVEL    LOG_ERROR
+#define LOG_LEVEL    LOG_DEBUG
 
 #include "logging.h"
 
@@ -272,7 +272,10 @@ void vEnvironmentSensorPublishTask( void * pvParameters )
         xExitFlag = pdTRUE;
     }
 
+    LogInfo("Waiting for agent to get ready.");
     vSleepUntilMQTTAgentReady();
+
+    LogInfo("mqtt agent Ready. Starting EnvSense pub.");
 
     xAgentHandle = xGetMqttAgentHandle();
 
@@ -317,11 +320,6 @@ void vEnvironmentSensorPublishTask( void * pvParameters )
             else
             {
                 LogError( "Printf call failed." );
-            }
-
-            if( xResult == pdTRUE )
-            {
-                LogDebug( payloadBuf );
             }
         }
 

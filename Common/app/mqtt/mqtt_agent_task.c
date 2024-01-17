@@ -53,10 +53,16 @@
 #include "core_mqtt_agent.h"
 #include "core_mqtt_agent_message_interface.h"
 
+#include "ota_demo.h"
+#include "jobs.h"
+#include "job_parser.h"
+#include "mqtt_wrapper.h"
+#include "MQTTFileDownloader.h"
+
 /* MQTT Agent ports. */
 #include "freertos_command_pool.h"
 
-/* Exponential backoff retry include. */
+/* Exponential back off retry include. */
 #include "backoff_algorithm.h"
 
 /* Subscription manager header include. */
@@ -89,6 +95,9 @@
  * @brief Multiplier to apply to the backoff delay to convert arbitrary units to milliseconds.
  */
 #define RETRY_BACKOFF_MULTIPLIER    ( 100U )
+
+
+#define MAX_THING_NAME_SIZE     128U
 
 static_assert( RETRY_BACKOFF_BASE < UINT16_MAX );
 static_assert( RETRY_MAX_BACKOFF_DELAY < UINT16_MAX );
@@ -665,6 +674,7 @@ static inline bool prvMatchCbCtx( SubCallbackElement_t * pxCbCtx,
 
 /*-----------------------------------------------------------*/
 
+
 static void prvIncomingPublishCallback( MQTTAgentContext_t * pMqttAgentContext,
                                         uint16_t packetId,
                                         MQTTPublishInfo_t * pxPublishInfo )
@@ -716,8 +726,39 @@ static void prvIncomingPublishCallback( MQTTAgentContext_t * pMqttAgentContext,
 
     if( !xPublishHandled )
     {
-        LogWarn( "Incoming publish with topic=\"%.*s\" does not match any callback functions.",
-                 pxPublishInfo->topicNameLength, pxPublishInfo->pTopicName );
+    	xPublishHandled = otaDemo_handleIncomingMQTTMessage(pxPublishInfo->pTopicName,
+                                          pxPublishInfo->topicNameLength,
+                                          pxPublishInfo->pPayload,
+                                          pxPublishInfo->payloadLength );
+//    	char thingName[ MAX_THING_NAME_SIZE + 1 ] = { 0 };
+//		size_t thingNameLength = 0U;
+//		mqttWrapper_getThingName( thingName, &thingNameLength );
+//    	/*
+//		 * AWS IoT Jobs library:
+//		 * Checks if a message comes from the start-next/accepted reserved topic.
+//		 */
+//    	xPublishHandled = Jobs_IsStartNextAccepted( pxPublishInfo->pTopicName,
+//                                                    pxPublishInfo->topicNameLength, thingName, thingNameLength );
+
+		if( xPublishHandled )
+		{
+//			OtaJobEventData_t * pxJobEvent = pvPortMalloc( sizeof( OtaJobEventData_t ) );
+//			OtaEventMsg_t xEventMsg = {
+//					.dataEvent = NULL,
+//					.eventId = OtaAgentEventJobAccepted,
+//					.jobEvent = pxJobEvent
+//			};
+//
+//			pxJobEvent->jobDataLength = pxPublishInfo->payloadLength;
+//			memcpy( pxJobEvent->jobData, pxPublishInfo->pPayload, pxPublishInfo->payloadLength );
+//
+//			OtaSendEvent_FreeRTOS( &xEventMsg );
+		}
+		else
+		{
+			LogWarn( "Incoming publish with topic=\"%.*s\" does not match any callback functions.",
+					pxPublishInfo->topicNameLength, pxPublishInfo->pTopicName );
+		}
     }
 }
 
@@ -871,6 +912,8 @@ static MQTTStatus_t prvConfigureAgentTaskCtx( MQTTAgentTaskCtx_t * pxCtx,
 
         pxCtx->xConnectInfo.pClientIdentifier = KVStore_getStringHeap( CS_CORE_THING_NAME, &uxTempSize );
 
+        mqttWrapper_setThingName( pxCtx->xConnectInfo.pClientIdentifier, strlen(pxCtx->xConnectInfo.pClientIdentifier) );
+
         if( ( pxCtx->xConnectInfo.pClientIdentifier != NULL ) &&
             ( uxTempSize > 0 ) &&
             ( uxTempSize <= UINT16_MAX ) )
@@ -1013,6 +1056,7 @@ void vMQTTAgentTask( void * pvParameters )
 
     if( xMQTTStatus == MQTTSuccess )
     {
+    	LogInfo("allocating mem for mqtt agent");
         pxCtx = pvPortMalloc( sizeof( MQTTAgentTaskCtx_t ) );
 
         if( pxCtx != NULL )
@@ -1030,6 +1074,7 @@ void vMQTTAgentTask( void * pvParameters )
 
     if( xMQTTStatus == MQTTSuccess )
     {
+    	LogInfo("InIt agent mem pool.");
         Agent_InitializePool();
     }
 
@@ -1050,8 +1095,10 @@ void vMQTTAgentTask( void * pvParameters )
         }
         else
         {
+        	LogInfo("mqtt agent done.");
             ( void ) xEventGroupSetBits( xSystemEvents, EVT_MASK_MQTT_INIT );
             xDefaultInstanceHandle = &( pxCtx->xAgentContext );
+            mqttWrapper_setCoreMqttContext( &( pxCtx->xAgentContext.mqttContext ) );
         }
     }
 
@@ -1354,11 +1401,12 @@ static inline MQTTStatus_t prvSendSubRequest( MQTTAgentContext_t * pxAgentCtx,
                                               TickType_t xTimeout )
 {
     MQTTStatus_t xStatus;
+    MQTTSubscribeInfo_t xSubInfo;
 
     MQTTAgentSubscribeArgs_t xSubscribeArgs =
     {
         .numSubscriptions = 1,
-        .pSubscribeInfo   = pxSubInfo,
+        .pSubscribeInfo   = &xSubInfo,
     };
 
     MQTTAgentCommandInfo_t xCommandInfo =
@@ -1372,11 +1420,20 @@ static inline MQTTStatus_t prvSendSubRequest( MQTTAgentContext_t * pxAgentCtx,
     configASSERT( pxSubInfo );
     configASSERT( pxSubAckStatus );
 
+    memcpy( &xSubInfo, pxSubInfo, sizeof( MQTTSubscribeInfo_t ) );
+
     ( void ) xTaskNotifyStateClearIndexed( NULL, MQTT_AGENT_NOTIFY_IDX );
+
+    LogInfo("1. &xSubscribeArgs = %8x; pSubscribeInfo=%8x",&xSubscribeArgs, xSubscribeArgs.pSubscribeInfo);
 
     xStatus = MQTTAgent_Subscribe( pxAgentCtx, &xSubscribeArgs, &xCommandInfo );
 
-    LogInfo( "MQTT Subscribe, filter=\"%.*s\"", pxSubInfo->topicFilterLength, pxSubInfo->pTopicFilter );
+    vTaskDelay(2000);
+
+    LogInfo("2. &xSubscribeArgs = %8x; pSubscribeInfo=%8x",&xSubscribeArgs, xSubscribeArgs.pSubscribeInfo);
+
+    LogInfo( "MQTT Subscribe, QoS=%d, filter=\"%.*s\"", pxSubInfo->qos, pxSubInfo->topicFilterLength, pxSubInfo->pTopicFilter );
+
 
     if( xStatus == MQTTSuccess )
     {
@@ -1550,7 +1607,7 @@ MQTTStatus_t MqttAgent_SubscribeSync( MQTTAgentHandle_t xHandle,
 
             pxCtx->uxCallbackCount++;
 
-            LogInfo( "Callback registered with filter=\"%.*s\".", xTopicFilterLen, pcTopicFilter );
+            LogInfo( "Callback [%8x] registered with filter=\"%.*s\".", &(pxCtx->pxSubscriptions[ uxTargetSubIdx ]), xTopicFilterLen, pcTopicFilter );
         }
 
         ( void ) xUnlockSubCtx( pxCtx );

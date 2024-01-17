@@ -665,9 +665,9 @@ static void hw_watchdog_init( void )
         .Init.EWI       = 0
     };
 
-    xResult = HAL_IWDG_Init( &xIwdgHandle );
-
-    configASSERT( xResult == HAL_OK );
+//    xResult = HAL_IWDG_Init( &xIwdgHandle );
+//
+//    configASSERT( xResult == HAL_OK );
 
     if( xResult == HAL_OK )
     {

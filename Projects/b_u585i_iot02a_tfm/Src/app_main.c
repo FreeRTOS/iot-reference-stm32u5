@@ -112,7 +112,7 @@ extern void vMQTTAgentTask( void * );
 extern void vMotionSensorsPublish( void * );
 extern void vEnvironmentSensorPublishTask( void * );
 extern void vShadowDeviceTask( void * );
-extern void vOTAUpdateTask( void * pvParam );
+extern void otaAgentTask( void * parameters );
 extern void vDefenderAgentTask( void * );
 #if DEMO_QUALIFICATION_TEST
     extern void run_qualification_main( void * );
@@ -144,20 +144,20 @@ void vInitTask( void * pvArgs )
         xResult = xTaskCreate( vMQTTAgentTask, "MQTTAgent", 2048, NULL, tskIDLE_PRIORITY + 3, NULL );
         configASSERT( xResult == pdTRUE );
 
-        xResult = xTaskCreate( vOTAUpdateTask, "OTAUpdate", 2048, NULL, tskIDLE_PRIORITY + 3, NULL );
+        xResult = xTaskCreate( otaAgentTask, "OTAUpdate", 2048, NULL, tskIDLE_PRIORITY + 3, NULL );
         configASSERT( xResult == pdTRUE );
 
-        xResult = xTaskCreate( vEnvironmentSensorPublishTask, "EnvSense", 1024, NULL, tskIDLE_PRIORITY + 2, NULL );
-        configASSERT( xResult == pdTRUE );
-
-        xResult = xTaskCreate( vMotionSensorsPublish, "MotionS", 1024, NULL, tskIDLE_PRIORITY + 2, NULL );
-        configASSERT( xResult == pdTRUE );
-
-        xResult = xTaskCreate( vShadowDeviceTask, "ShadowDevice", 1024, NULL, tskIDLE_PRIORITY + 1, NULL );
-        configASSERT( xResult == pdTRUE );
-
-        xResult = xTaskCreate( vDefenderAgentTask, "AWSDefender", 2048, NULL, tskIDLE_PRIORITY + 1, NULL );
-        configASSERT( xResult == pdTRUE );
+//        xResult = xTaskCreate( vEnvironmentSensorPublishTask, "EnvSense", 1024, NULL, tskIDLE_PRIORITY + 2, NULL );
+//        configASSERT( xResult == pdTRUE );
+//
+//        xResult = xTaskCreate( vMotionSensorsPublish, "MotionS", 1024, NULL, tskIDLE_PRIORITY + 2, NULL );
+//        configASSERT( xResult == pdTRUE );
+//
+//        xResult = xTaskCreate( vShadowDeviceTask, "ShadowDevice", 1024, NULL, tskIDLE_PRIORITY + 1, NULL );
+//        configASSERT( xResult == pdTRUE );
+//
+//        xResult = xTaskCreate( vDefenderAgentTask, "AWSDefender", 2048, NULL, tskIDLE_PRIORITY + 1, NULL );
+//        configASSERT( xResult == pdTRUE );
     #endif /* DEMO_QUALIFICATION_TEST */
 
     while( 1 )

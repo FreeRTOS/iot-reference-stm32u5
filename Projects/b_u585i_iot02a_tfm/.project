@@ -87,6 +87,16 @@
 			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/FreeRTOS-Libraries-Integration-Tests/src</locationURI>
 		</link>
 		<link>
+			<name>Libraries/IoT_Jobs</name>
+			<type>2</type>
+			<location>/Users/kanherea/Desktop/st_gri/iot-reference-stm32u5/Middleware/AWS/IoTJobs/source</location>
+		</link>
+		<link>
+			<name>Libraries/IoT_streams</name>
+			<type>2</type>
+			<location>/Users/kanherea/Desktop/st_gri/iot-reference-stm32u5/Middleware/AWS/IoTMQTTStream/source</location>
+		</link>
+		<link>
 			<name>Libraries/STM32U5_HAL</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
@@ -145,16 +155,6 @@
 			<name>Libraries/mcuboot</name>
 			<type>2</type>
 			<locationURI>WORKSPACE_LOC/Middleware/ARM/mcuboot</locationURI>
-		</link>
-		<link>
-			<name>Libraries/ota</name>
-			<type>2</type>
-			<locationURI>WORKSPACE_LOC/Middleware/AWS/OTA/source</locationURI>
-		</link>
-		<link>
-			<name>Libraries/ota-pal-psa</name>
-			<type>2</type>
-			<locationURI>WORKSPACE_LOC/Middleware/ARM/ota-pal-psa</locationURI>
 		</link>
 		<link>
 			<name>Libraries/tinycbor</name>
@@ -471,33 +471,6 @@
 			</matcher>
 		</filter>
 		<filter>
-			<id>1634614100681</id>
-			<name>Libraries/ota</name>
-			<type>9</type>
-			<matcher>
-				<id>org.eclipse.ui.ide.multiFilter</id>
-				<arguments>1.0-name-matches-false-false-include</arguments>
-			</matcher>
-		</filter>
-		<filter>
-			<id>1634614100683</id>
-			<name>Libraries/ota</name>
-			<type>9</type>
-			<matcher>
-				<id>org.eclipse.ui.ide.multiFilter</id>
-				<arguments>1.0-name-matches-false-false-portable</arguments>
-			</matcher>
-		</filter>
-		<filter>
-			<id>1651120387976</id>
-			<name>Libraries/ota-pal-psa</name>
-			<type>10</type>
-			<matcher>
-				<id>org.eclipse.ui.ide.multiFilter</id>
-				<arguments>1.0-name-matches-false-false-version</arguments>
-			</matcher>
-		</filter>
-		<filter>
 			<id>1634615308374</id>
 			<name>Libraries/tinycbor</name>
 			<type>5</type>
@@ -585,15 +558,6 @@
 			<matcher>
 				<id>org.eclipse.ui.ide.multiFilter</id>
 				<arguments>1.0-name-matches-false-false-psa_its*</arguments>
-			</matcher>
-		</filter>
-		<filter>
-			<id>1634614072723</id>
-			<name>Libraries/ota/portable/os</name>
-			<type>5</type>
-			<matcher>
-				<id>org.eclipse.ui.ide.multiFilter</id>
-				<arguments>1.0-name-matches-false-false-*freertos*</arguments>
 			</matcher>
 		</filter>
 	</filteredResources>
