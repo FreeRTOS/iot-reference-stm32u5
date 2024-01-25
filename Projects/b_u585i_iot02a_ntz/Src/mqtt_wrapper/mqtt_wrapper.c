@@ -218,8 +218,6 @@ void handleIncomingPublish( void * pvIncomingPublishCallbackContext,
 	uint8_t * message = NULL;
 	size_t messageLength = 0U;
 
-	LogError("OTA task got a message!!!");
-
 	topic = ( char * ) pxPublishInfo->pTopicName;
 	topicLength = pxPublishInfo->topicNameLength;
 	message = ( uint8_t * ) pxPublishInfo->pPayload;

@@ -592,7 +592,7 @@
 
         uint32_t ulPubKeyLen = 0;
 
-        size_t uxPubKeyLabelLen = 0;
+        volatile size_t uxPubKeyLabelLen = 0;
         char pcPubKeyLabelBuf[ pkcs11configMAX_LABEL_LENGTH + 1 ];
 
         if( ( ppucPublicKeyDer == NULL ) || ( pcPubKeyLabel == NULL ) )

@@ -217,7 +217,7 @@ void vInitTask( void * pvArgs )
 
         LogInfo( "File System mounted." );
 
-        // otaPal_EarlyInit();
+        otaPal_EarlyInit();
 
         ( void ) xEventGroupSetBits( xSystemEvents, EVT_MASK_FS_READY );
 
@@ -263,6 +263,7 @@ void vInitTask( void * pvArgs )
     #endif /* DEMO_QUALIFICATION_TEST */
 #endif
 
+    LogError(" ***** V0.0.0 ***** ");
     while( 1 )
     {
         vTaskSuspend( NULL );
@@ -335,7 +336,7 @@ int main( void )
 
     vDetermineResetSource();
 
-    LogInfo( "HW Init Complete." );
+    LogInfo( "HW Init Complete!" );
 
     xSystemEvents = xEventGroupCreate();
 

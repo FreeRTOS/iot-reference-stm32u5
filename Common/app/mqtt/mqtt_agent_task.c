@@ -710,11 +710,6 @@ static void prvIncomingPublishCallback( MQTTAgentContext_t * pMqttAgentContext,
                     pcTaskName = "Unknown";
                 }
 
-                LogInfo( "Handling callback for task=%s, topic=\"%.*s\", filter=\"%.*s\".",
-                         pcTaskName,
-                         pxPublishInfo->topicNameLength, pxPublishInfo->pTopicName,
-                         pxSubInfo->topicFilterLength, pxSubInfo->pTopicFilter );
-
                 pxCallback->pxIncomingPublishCallback( pxCallback->pvIncomingPublishCallbackContext,
                                                        pxPublishInfo );
                 xPublishHandled = true;
