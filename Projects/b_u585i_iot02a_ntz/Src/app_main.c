@@ -336,7 +336,7 @@ int main( void )
 
     vDetermineResetSource();
 
-    LogInfo( "HW Init Complete!" );
+    LogInfo( "HW Init Complete! **** OLD VERSION ****" );
 
     xSystemEvents = xEventGroupCreate();
 

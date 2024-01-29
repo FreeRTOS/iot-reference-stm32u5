@@ -792,9 +792,9 @@ static bool prvValidateSignature( const char * pcPubKeyLabel,
     return uxStatus;
 }
 
-bool otaPal_CreateFileForRx( AfrOtaJobDocumentFields_t * const pxFileContext )
+OtaPalJobDocProcessingResult_t otaPal_CreateFileForRx( AfrOtaJobDocumentFields_t * const pxFileContext )
 {
-    bool uxOtaStatus = true;
+	OtaPalJobDocProcessingResult_t uxOtaStatus = OtaPalJobDocFileCreated;
     OtaPalContext_t * pxContext = prvGetImageContext();
 
     LogSys( "One bank size is: %u", FLASH_BANK_SIZE );
@@ -804,58 +804,73 @@ bool otaPal_CreateFileForRx( AfrOtaJobDocumentFields_t * const pxFileContext )
         ( pxFileContext->fileSize < OTA_IMAGE_MIN_SIZE ) )
     {
     	LogError( "Invalid file size." );
-    	uxOtaStatus = false;
+    	uxOtaStatus = OtaPalJobDocFileCreateFailed;
     }
     else if( strncmp( "b_u585i_iot02a_ntz.bin", ( char * ) pxFileContext->filepath, pxFileContext->filepathLen ) != 0 )
     {
     	LogError( "Invalid file path." );
-    	uxOtaStatus = false;
+    	uxOtaStatus = OtaPalJobDocFileCreateFailed;
     }
     else
     {
-        uint32_t ulTargetBank = 0UL;
+    	if( pxContext->xPalState == OTA_PAL_NEW_IMAGE_BOOTED )
+    	{
+    		if( otaPal_SetPlatformImageState( pxFileContext, OtaImageStateAccepted ) == true )
+    		{
+    			uxOtaStatus = OtaPalNewImageBooted;
+    		}
+    		else
+    		{
+    			LogError( "Failed to boot new image." );
+    			uxOtaStatus = OtaPalJobDocFileCreateFailed;
+    		}
+    	}
+    	else
+    	{
+			uint32_t ulTargetBank = 0UL;
 
-        /* Set dual bank mode if not already set. */
-        if( prvFlashSetDualBankMode() != HAL_OK )
-        {
-        	LogError( "Could not set flash in dual bank mode." );
-        	uxOtaStatus = false;
-        }
+			/* Set dual bank mode if not already set. */
+			if( prvFlashSetDualBankMode() != HAL_OK )
+			{
+				LogError( "Could not set flash in dual bank mode." );
+				uxOtaStatus = OtaPalJobDocFileCreateFailed;
+			}
 
-        if( uxOtaStatus != false )
-        {
-            ulTargetBank = prvGetInactiveBank();
+			if( uxOtaStatus == OtaPalJobDocFileCreated )
+			{
+				ulTargetBank = prvGetInactiveBank();
 
-            if( ulTargetBank == 0UL )
-            {
-            	LogError( "Failed to set target bank." );
-            	uxOtaStatus = false;
-            }
-        }
+				if( ulTargetBank == 0UL )
+				{
+					LogError( "Failed to set target bank." );
+					uxOtaStatus = OtaPalJobDocFileCreateFailed;
+				}
+			}
 
-        if( ( uxOtaStatus != false ) &&
-            ( prvEraseBank( ulTargetBank ) != pdTRUE ) )
-        {
-        	LogError( "Failed to erase target bank." );
-        	uxOtaStatus = false;
-        }
+			if( ( uxOtaStatus == OtaPalJobDocFileCreated ) &&
+				( prvEraseBank( ulTargetBank ) != pdTRUE ) )
+			{
+				LogError( "Failed to erase target bank." );
+				uxOtaStatus = OtaPalJobDocFileCreateFailed;
+			}
 
-        if( uxOtaStatus != false )
-        {
-            pxContext->ulTargetBank = ulTargetBank;
-            pxContext->ulPendingBank = prvGetActiveBank();
-            pxContext->ulBaseAddress = FLASH_START_INACTIVE_BANK;
-            pxContext->ulImageSize = pxFileContext->fileSize;
-            pxContext->xPalState = OTA_PAL_FILE_OPEN;
-        }
+			if( uxOtaStatus == OtaPalJobDocFileCreated )
+			{
+				pxContext->ulTargetBank = ulTargetBank;
+				pxContext->ulPendingBank = prvGetActiveBank();
+				pxContext->ulBaseAddress = FLASH_START_INACTIVE_BANK;
+				pxContext->ulImageSize = pxFileContext->fileSize;
+				pxContext->xPalState = OTA_PAL_FILE_OPEN;
+			}
 
-        if( uxOtaStatus != false )
-        {
-            if( prvDeletePalNvContext() == pdFALSE )
-            {
-            	uxOtaStatus = false;
-            }
-        }
+			if( uxOtaStatus == OtaPalJobDocFileCreated )
+			{
+				if( prvDeletePalNvContext() == pdFALSE )
+				{
+					uxOtaStatus = OtaPalJobDocFileCreateFailed;
+				}
+			}
+    	}
     }
 
     return uxOtaStatus;

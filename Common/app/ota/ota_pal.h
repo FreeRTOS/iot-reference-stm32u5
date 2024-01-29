@@ -74,6 +74,21 @@ typedef enum OtaPalImageState
 } OtaPalImageState_t;
 
 /**
+ * @ingroup ota_enum_types
+ * @brief OTA Platform Image State.
+ *
+ * The image state set by platform implementation.
+ */
+typedef enum OtaPalJobDocProcessingResult
+{
+    OtaPalJobDocFileCreated = 0,
+	OtaPalJobDocFileCreateFailed,
+    OtaPalNewImageBooted,
+    OtaPalNewImageBootFailed,
+    OtaPalJobDocProcessingStateInvalid
+} OtaPalJobDocProcessingResult_t;
+
+/**
  * @brief Abort an OTA transfer.
  *
  * Aborts access to an existing open file represented by the OTA file context pFileContext. This is
@@ -126,7 +141,7 @@ bool otaPal_Abort( AfrOtaJobDocumentFields_t * const pFileContext );
  *                             non-volatile memory. If this error is returned, then the sub error
  *                             should be set to the appropriate platform specific value.
  */
-bool otaPal_CreateFileForRx( AfrOtaJobDocumentFields_t * const pFileContext );
+OtaPalJobDocProcessingResult_t otaPal_CreateFileForRx( AfrOtaJobDocumentFields_t * const pFileContext );
 
 /**
  * @brief Authenticate and close the underlying receive file in the specified OTA context.

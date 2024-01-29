@@ -51,11 +51,15 @@ static OtaState_t otaAgentState = OtaAgentStateInit;
 
 static bool closeFile( void );
 
+static bool activateImage( void );
+
+static bool sendSuccessMessage( void );
+
 static void processOTAEvents( void );
 
 static void requestJobDocumentHandler( void );
 
-static bool receivedJobDocumentHandler( OtaJobEventData_t * jobDoc );
+static OtaPalJobDocProcessingResult_t receivedJobDocumentHandler( OtaJobEventData_t * jobDoc );
 
 static bool jobDocumentParser( char * message, size_t messageLength, AfrOtaJobDocumentFields_t *jobFields );
 
@@ -252,13 +256,14 @@ bool convertSignatureToDER(AfrOtaJobDocumentFields_t *jobFields)
     return returnVal;
 }
 
-static bool receivedJobDocumentHandler( OtaJobEventData_t * jobDoc )
+static OtaPalJobDocProcessingResult_t receivedJobDocumentHandler( OtaJobEventData_t * jobDoc )
 {
     bool parseJobDocument = false;
     bool handled = false;
     char * jobId;
     const char ** jobIdptr = &jobId;
     size_t jobIdLength = 0U;
+    OtaPalJobDocProcessingResult_t xResult = OtaPalJobDocFileCreateFailed;
 
     memset( &jobFields,0 , sizeof(jobFields) );
 
@@ -277,7 +282,7 @@ static bool receivedJobDocumentHandler( OtaJobEventData_t * jobDoc )
         }
         else
         {
-            handled = true;
+        	xResult = OtaPalJobDocFileCreated;
         }
     }
 
@@ -295,7 +300,7 @@ static bool receivedJobDocumentHandler( OtaJobEventData_t * jobDoc )
 
             if( handled )
             {
-                handled = otaPal_CreateFileForRx( &jobFields );
+            	xResult = otaPal_CreateFileForRx( &jobFields );
             }
             else
             {
@@ -304,7 +309,7 @@ static bool receivedJobDocumentHandler( OtaJobEventData_t * jobDoc )
         }
     }
 
-    return handled;
+    return xResult;
 }
 
 
@@ -360,17 +365,33 @@ static void processOTAEvents() {
             break;
         }
 
-        if ( receivedJobDocumentHandler(recvEvent.jobEvent) )
+        switch( receivedJobDocumentHandler(recvEvent.jobEvent) )
         {
+        case OtaPalJobDocFileCreated:
             LogInfo( "Received OTA Job. \n" );
             nextEvent.eventId = OtaAgentEventRequestFileBlock;
             OtaSendEvent_FreeRTOS( &nextEvent );
+            otaAgentState = OtaAgentStateCreatingFile;
+            break;
+
+        case OtaPalJobDocFileCreateFailed:
+        case OtaPalNewImageBootFailed:
+        case OtaPalJobDocProcessingStateInvalid:
+        	LogInfo("This is not an OTA job \n");
+        	break;
+
+        case OtaPalNewImageBooted:
+        	( void ) sendSuccessMessage();
+        	/* Short delay before restarting the loop. */
+        	vTaskDelay( pdMS_TO_TICKS( 200 ) );
+
+        	/* Get ready for new OTA job. */
+        	nextEvent.eventId = OtaAgentEventRequestJobDocument;
+        	OtaSendEvent_FreeRTOS( &nextEvent );
+        	break;
         }
-        else
-        {
-            LogInfo("This is not an OTA job \n");
-        }
-        otaAgentState = OtaAgentStateCreatingFile;
+
+
         break;
 
     case OtaAgentEventRequestFileBlock:
@@ -382,6 +403,7 @@ static void processOTAEvents() {
             LogInfo( "Starting The Download. \n" );
         }
         requestDataBlock();
+        LogInfo("ReqSent----------------------------\n");
         break;
 
     case OtaAgentEventReceivedFileBlock:
@@ -429,8 +451,11 @@ static void processOTAEvents() {
         }
         else
         {
-            nextEvent.eventId = OtaAgentEventRequestFileBlock;
-            OtaSendEvent_FreeRTOS( &nextEvent );
+        	if( currentBlockOffset % NUM_OF_BLOCKS_REQUESTED == 0 )
+        	{
+                nextEvent.eventId = OtaAgentEventRequestFileBlock;
+                OtaSendEvent_FreeRTOS( &nextEvent );
+        	}
         }
         break;
 
@@ -447,7 +472,7 @@ static void processOTAEvents() {
     case OtaAgentEventActivateImage:
     	LogInfo("Activate Image event Received \n");
 		LogInfo("-----------------------\n");
-		if( activeImage() == true )
+		if( activateImage() == true )
 		{
 			nextEvent.eventId = OtaAgentEventActivateImage;
 			OtaSendEvent_FreeRTOS( &nextEvent );
@@ -586,11 +611,10 @@ static int16_t handleMqttStreamsBlockArrived(
 
 static bool closeFile( void )
 {
-
     return otaPal_CloseFile( &jobFields );
 }
 
-static bool activeImage( void )
+static bool activateImage( void )
 {
 	return otaPal_ActivateNewImage( &jobFields );
 }
@@ -598,10 +622,7 @@ static bool activeImage( void )
 
 static bool sendSuccessMessage( void )
 {
-
-    /* TODO: Do something with the completed download */
-	/* Start the bootloader */
-	char thingName[ MAX_THING_NAME_SIZE + 1 ] = { 0 };
+    char thingName[ MAX_THING_NAME_SIZE + 1 ] = { 0 };
 	size_t thingNameLength = 0U;
 	char topicBuffer[ TOPIC_BUFFER_SIZE + 1 ] = { 0 };
 	size_t topicBufferLength = 0U;

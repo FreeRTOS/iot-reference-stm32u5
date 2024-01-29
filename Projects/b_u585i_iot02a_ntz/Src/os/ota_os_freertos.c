@@ -93,7 +93,7 @@ OtaOsStatus_t OtaReceiveEvent_FreeRTOS( void * pEventMsg )
     OtaOsStatus_t otaOsStatus = OtaOsSuccess;
     BaseType_t retVal = pdFALSE;
 
-    retVal = xQueueReceive( otaEventQueue, (OtaEventMsg_t *) pEventMsg, pdMS_TO_TICKS( 1000U ) );
+    retVal = xQueueReceive( otaEventQueue, (OtaEventMsg_t *) pEventMsg, pdMS_TO_TICKS( 3000U ) );
 
     if( retVal == pdTRUE )
     {
