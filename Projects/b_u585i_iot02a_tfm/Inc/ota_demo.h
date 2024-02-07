@@ -25,6 +25,7 @@ typedef enum OtaEvent
     OtaAgentEventRequestFileBlock,    /*!< @brief Event to request file blocks. */
     OtaAgentEventReceivedFileBlock,   /*!< @brief Event to trigger when file block is received. */
     OtaAgentEventCloseFile,           /*!< @brief Event to trigger closing file. */
+	OtaAgentEventActivateImage,       /*!< @brief Event to trigger activation of the image. */
     OtaAgentEventSuspend,             /*!< @brief Event to suspend ota task */
     OtaAgentEventResume,              /*!< @brief Event to resume suspended task */
     OtaAgentEventUserAbort,           /*!< @brief Event triggered by user to stop agent. */

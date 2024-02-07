@@ -3273,10 +3273,12 @@ void mbedtls_platform_free( void * ptr );
 
 /*#define MBEDTLS_PSA_CRYPTO_C */
 
+#include "mbedtls/config_adjust_legacy_crypto.h"
+
 #include "mbedtls/check_config.h"
 
 /*#undef MBEDTLS_PSA_CRYPTO_C */
 
-#ifndef MBEDTLS_SVC_KEY_ID_INIT
-    #define MBEDTLS_SVC_KEY_ID_INIT    ( ( psa_key_id_t ) 0 )
-#endif /* MBEDTLS_SVC_KEY_ID_INIT */
+//#ifndef MBEDTLS_SVC_KEY_ID_INIT
+//    #define MBEDTLS_SVC_KEY_ID_INIT    ( ( psa_key_id_t ) 0 )
+//#endif /* MBEDTLS_SVC_KEY_ID_INIT */

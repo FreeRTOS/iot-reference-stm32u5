@@ -124,6 +124,8 @@
         uint8_t * pucObjectBuffer = NULL;
         size_t uxBufferLen = 0;
         size_t uxObjectLen = 0;
+        psa_key_type_t xKeyType = 0;
+        psa_key_bits_t xKeyBits;
 
         configASSERT( xObjectId >= PSA_KEY_ID_USER_MIN );
         configASSERT( xObjectId <= PSA_KEY_ID_VENDOR_MAX );
@@ -137,11 +139,16 @@
         {
             /* Fetch key attributes to validate the key id. */
             xStatus = psa_get_key_attributes( xObjectId, &xObjectAttrs );
+            if( xStatus == PSA_SUCCESS )
+            {
+                xKeyType = psa_get_key_type( &xObjectAttrs );
+                xKeyBits = psa_get_key_bits( &xObjectAttrs );
+            }
         }
 
         /* Check that the key type is "raw" */
         if( ( xStatus == PSA_SUCCESS ) &&
-            ( !PSA_KEY_TYPE_IS_UNSTRUCTURED( xObjectAttrs.type ) ) )
+            ( !PSA_KEY_TYPE_IS_UNSTRUCTURED( xKeyType ) ) )
         {
             xStatus = PSA_ERROR_INVALID_HANDLE;
         }
@@ -149,7 +156,7 @@
         /* Determine length of buffer needed */
         if( xStatus == PSA_SUCCESS )
         {
-            uxBufferLen = PSA_EXPORT_KEY_OUTPUT_SIZE( xObjectAttrs.type, xObjectAttrs.bits );
+            uxBufferLen = PSA_EXPORT_KEY_OUTPUT_SIZE( xKeyType, xKeyBits );
         }
 
         if( xStatus == PSA_SUCCESS )

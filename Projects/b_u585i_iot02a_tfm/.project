@@ -97,6 +97,11 @@
 			<location>/Users/kanherea/Desktop/st_gri/iot-reference-stm32u5/Middleware/AWS/IoTMQTTStream/source</location>
 		</link>
 		<link>
+			<name>Libraries/LittleFS</name>
+			<type>2</type>
+			<location>/Users/kanherea/Desktop/st_gri/iot-reference-stm32u5/Middleware/ARM/littlefs</location>
+		</link>
+		<link>
 			<name>Libraries/STM32U5_HAL</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
@@ -155,6 +160,11 @@
 			<name>Libraries/mcuboot</name>
 			<type>2</type>
 			<locationURI>WORKSPACE_LOC/Middleware/ARM/mcuboot</locationURI>
+		</link>
+		<link>
+			<name>Libraries/ota-pal-psa</name>
+			<type>2</type>
+			<location>/Users/kanherea/Desktop/st_gri/iot-reference-stm32u5/Middleware/ARM/ota-pal-psa</location>
 		</link>
 		<link>
 			<name>Libraries/tinycbor</name>

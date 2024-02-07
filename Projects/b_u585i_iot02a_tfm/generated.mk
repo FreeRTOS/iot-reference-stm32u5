@@ -26,11 +26,11 @@
 ###############################################################################
 # Copy auto generated files and scripts needed by the NSPE build.
 ###############################################################################
-TFM_INTERFACE_FILES = ${shell sh -c 'find ${TFM_BUILD_PATH}/install/interface -type f 2>/dev/null'}
+TFM_INTERFACE_FILES = ${shell sh -c 'find ${TFM_BUILD_PATH}/api_ns/interface -type f 2>/dev/null'}
 TFM_INTERFACE_HEADERS =  $(filter %.h,$(TFM_INTERFACE_FILES))
-TFM_INTERFACE_HEADER_PATHS = ${subst ${TFM_BUILD_PATH}/install/interface/,${PROJECT_PATH}/tfm/interface/,${TFM_INTERFACE_HEADERS}}
+TFM_INTERFACE_HEADER_PATHS = ${subst ${TFM_BUILD_PATH}/api_ns/interface/,${PROJECT_PATH}/tfm/interface/,${TFM_INTERFACE_HEADERS}}
 
-TFM_S_VENEERS = ${TFM_BUILD_PATH}/install/interface/lib/s_veneers.o
+TFM_S_VENEERS = ${TFM_BUILD_PATH}/api_ns/interface/lib/s_veneers.o
 
 TFM_LAYOUT_FILES = ${shell sh -c 'find ${TFM_BUILD_PATH}/install/image_signing/layout_files -type f 2>/dev/null'}
 TFM_LAYOUT_PATHS = ${subst ${TFM_BUILD_PATH}/install/image_signing/layout_files/,${PROJECT_PATH}/tfm/layout_files/,${TFM_LAYOUT_FILES}}
@@ -38,27 +38,42 @@ TFM_LAYOUT_PATHS = ${subst ${TFM_BUILD_PATH}/install/image_signing/layout_files/
 TFM_SCRIPT_FILES = ${shell sh -c "find ${TFM_BUILD_PATH}/install/image_signing/scripts -type f -name '*.py' 2>/dev/null"}
 TFM_SCRIPT_PATHS = ${subst ${TFM_BUILD_PATH}/install/image_signing/scripts/,${PROJECT_PATH}/tfm/scripts/,${TFM_SCRIPT_FILES}}
 
+TFM_INTERFACE_C = $(filter %.c,$(TFM_INTERFACE_FILES))
+TFM_INTERFACE_OBJS = $(addprefix ${BUILD_PATH}/tfm/,$(subst .c,.o,$(notdir $(TFM_INTERFACE_C))))
+
 .DEFAULT_GOAL = all
 .ONESHELL:
 
 .PHONY: clean all
 
-all: ${BUILD_PATH}/tfm/.generated ${PROJECT_PATH}/tfm/interface/libtfm_interface.a
+all: superall
+	@echo "${PWD}  ${PROJECT_PATH}"
+	@echo "********************"
+	@echo ${TFM_INTERFACE_HEADERS}
+	@echo "********************"
+	@echo ${TFM_INTERFACE_HEADER_PATHS}
+	@echo ${TFM_INTERFACE_C}
+	@echo ${TFM_INTERFACE_OBJS}
+
+
+superall: ${BUILD_PATH}/tfm/.generated ${PROJECT_PATH}/tfm/interface/libtfm_interface.a
 
 ${BUILD_PATH}/tfm/.generated : $(TFM_LAYOUT_PATHS) $(TFM_INTERFACE_HEADER_PATHS) $(TFM_SCRIPT_PATHS)
 	mkdir -p "$(dir $@)"
 	sh -c "touch ${BUILD_PATH}/tfm/.generated"
 
-${PROJECT_PATH}/tfm/interface/% : ${TFM_BUILD_PATH}/install/interface/%
+${PROJECT_PATH}/tfm/interface/% : ${TFM_BUILD_PATH}/api_ns/interface/%
 	mkdir -p "$(dir $@)"
 	cp "$<" "$@"
 
-TFM_INTERFACE_C = $(filter %.c,$(TFM_INTERFACE_FILES))
-TFM_INTERFACE_OBJS = $(addprefix ${BUILD_PATH}/tfm/,$(subst .c,.o,$(notdir $(TFM_INTERFACE_C))))
-
-${BUILD_PATH}/tfm/%.o : ${TFM_BUILD_PATH}/install/interface/src/%.c
+# Override the following rule to take care of the os_wrapper folder.
+${BUILD_PATH}/tfm/tfm_ns_interface_%.o : ${TFM_BUILD_PATH}/api_ns/interface/src/os_wrapper/tfm_ns_interface_%.c
 	mkdir -p "$(dir $@)"
-	arm-none-eabi-gcc -c -mcpu=cortex-m33 -std=gnu11 -g3 -O1 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -DTFM_PSA_API -DPS_ENCRYPTION -DTFM_PARTITION_PROTECTED_STORAGE -DTFM_PARTITION_INTERNAL_TRUSTED_STORAGE -DTFM_PARTITION_CRYPTO -DTFM_PARTITION_PLATFORM -DTFM_PARTITION_INITIAL_ATTESTATION -DTFM_LVL=2 -I ${TFM_BUILD_PATH}/install/interface/include ${cross_suffix} -o "$@" "$<"
+	arm-none-eabi-gcc -c -mcpu=cortex-m33 -std=gnu11 -g3 -O1 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -DTFM_PSA_API -DPS_ENCRYPTION -DTFM_PARTITION_PROTECTED_STORAGE -DTFM_PARTITION_INTERNAL_TRUSTED_STORAGE -DTFM_PARTITION_CRYPTO -DTFM_PARTITION_PLATFORM -DTFM_PARTITION_INITIAL_ATTESTATION -DTFM_LVL=2 -I ${TFM_BUILD_PATH}/api_ns/interface/include -I ${TFM_BUILD_PATH}/api_ns/interface/include/crypto_keys ${cross_suffix} -o "$@" "$<"
+
+${BUILD_PATH}/tfm/%.o : ${TFM_BUILD_PATH}/api_ns/interface/src/%.c
+	mkdir -p "$(dir $@)"
+	arm-none-eabi-gcc -c -mcpu=cortex-m33 -std=gnu11 -g3 -O1 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -DTFM_PSA_API -DPS_ENCRYPTION -DTFM_PARTITION_PROTECTED_STORAGE -DTFM_PARTITION_INTERNAL_TRUSTED_STORAGE -DTFM_PARTITION_CRYPTO -DTFM_PARTITION_PLATFORM -DTFM_PARTITION_INITIAL_ATTESTATION -DTFM_LVL=2 -I ${TFM_BUILD_PATH}/api_ns/interface/include -I ${TFM_BUILD_PATH}/api_ns/interface/include/crypto_keys ${cross_suffix} -o "$@" "$<"
 
 ${PROJECT_PATH}/tfm/interface/libtfm_interface.a : $(TFM_INTERFACE_OBJS) $(TFM_S_VENEERS)
 	mkdir -p "$(dir $@)"

@@ -19,7 +19,7 @@
 #include "ota_pal.h"
 #include "ota_demo.h"
 #include "ota_job_processor.h"
-#include "os/ota_os_freertos.h"
+#include "ota_os_freertos.h"
 #include "FreeRTOS.h"
 #include "semphr.h"
 #include "sys_evt.h"
@@ -31,7 +31,9 @@
 #define MAX_JOB_ID_LENGTH       64U
 #define UPDATE_JOB_MSG_LENGTH   48U
 #define MAX_NUM_OF_OTA_DATA_BUFFERS 5U
-#define MAX_SIGNATURE_LENGTH_ECDSA  72U
+
+/* Max bytes supported for a file signature (3072 bit RSA is 384 bytes). */
+#define OTA_MAX_SIGNATURE_SIZE    ( 384U )
 
 MqttFileDownloaderContext_t mqttFileDownloaderContext = { 0 };
 static uint32_t numOfBlocksRemaining = 0;
@@ -44,7 +46,7 @@ extern EventGroupHandle_t xSystemEvents;
 static OtaDataEvent_t dataBuffers[MAX_NUM_OF_OTA_DATA_BUFFERS] = { 0 };
 static OtaJobEventData_t jobDocBuffer = { 0 };
 static AfrOtaJobDocumentFields_t jobFields = { 0 };
-static uint8_t OtaImageSingatureDecoded[MAX_SIGNATURE_LENGTH_ECDSA] = { 0 };
+static uint8_t OtaImageSingatureDecoded[OTA_MAX_SIGNATURE_SIZE] = { 0 };
 static SemaphoreHandle_t bufferSemaphore;
 
 static OtaState_t otaAgentState = OtaAgentStateInit;
@@ -382,15 +384,15 @@ static void processOTAEvents() {
 
         case OtaPalNewImageBooted:
         	( void ) sendSuccessMessage();
+
         	/* Short delay before restarting the loop. */
-        	vTaskDelay( pdMS_TO_TICKS( 200 ) );
+        	vTaskDelay( pdMS_TO_TICKS( 1000 ) );
 
         	/* Get ready for new OTA job. */
         	nextEvent.eventId = OtaAgentEventRequestJobDocument;
         	OtaSendEvent_FreeRTOS( &nextEvent );
         	break;
         }
-
 
         break;
 
@@ -422,7 +424,6 @@ static void processOTAEvents() {
          * MQTT streams Library:
          * Extracting and decoding the received data block from the incoming MQTT message.
          */
-        //LogInfo("%s",recvEvent.dataEvent->data);
         mqttDownloader_processReceivedDataBlock(
             &mqttFileDownloaderContext,
             recvEvent.dataEvent->data,

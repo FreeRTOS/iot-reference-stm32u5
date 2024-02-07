@@ -73,6 +73,8 @@
         mbedtls_pk_type_t xPkType = MBEDTLS_PK_NONE;
         size_t uxBytesWritten = 0;
         size_t uxObjLen = 0;
+        psa_key_type_t xKeyType;
+        psa_key_bits_t xKeyBits;
 
         unsigned char * pucAsn1WritePtr = NULL;
 
@@ -92,12 +94,13 @@
         /* Allocate memory to store the public key in DER format */
         if( xStatus == PSA_SUCCESS )
         {
-            if( PSA_KEY_TYPE_IS_ECC( xKeyAttrs.type ) )
+        	xKeyType = psa_get_key_type( &xKeyAttrs );
+            if( PSA_KEY_TYPE_IS_ECC( xKeyType ) )
             {
                 *puxPubDerKeyLen = ECP_PUB_DER_MAX_BYTES;
                 *ppucPubKeyDer = mbedtls_calloc( 1, *puxPubDerKeyLen );
             }
-            else if( PSA_KEY_TYPE_IS_RSA( xKeyAttrs.type ) )
+            else if( PSA_KEY_TYPE_IS_RSA( xKeyType ) )
             {
                 *puxPubDerKeyLen = RSA_PUB_DER_MAX_BYTES;
                 *ppucPubKeyDer = mbedtls_calloc( 1, *puxPubDerKeyLen );
@@ -124,11 +127,13 @@
 
         if( xStatus == PSA_SUCCESS )
         {
+        	xKeyType = psa_get_key_type( &xKeyAttrs );
+        	xKeyBits = psa_get_key_bits( &xKeyAttrs );
             /*
              * Check that the buffer is of sufficient length.
              * Set pucAsn1WritePtr to the last location in the buffer with sufficient space.
              */
-            if( *puxPubDerKeyLen < PSA_EXPORT_PUBLIC_KEY_OUTPUT_SIZE( xKeyAttrs.type, xKeyAttrs.bits ) + 1 )
+            if( *puxPubDerKeyLen < PSA_EXPORT_PUBLIC_KEY_OUTPUT_SIZE( xKeyType, xKeyBits ) + 1 )
             {
                 pucAsn1WritePtr = NULL;
                 xStatus = PSA_ERROR_BUFFER_TOO_SMALL;
@@ -141,11 +146,11 @@
             /* Export the public key from PSA and write to buffer. */
             if( pucAsn1WritePtr != NULL )
             {
-                if( PSA_KEY_TYPE_IS_PUBLIC_KEY( xKeyAttrs.type ) )
+                if( PSA_KEY_TYPE_IS_PUBLIC_KEY( xKeyType ) )
                 {
                     xStatus = psa_export_key( xKeyId, pucAsn1WritePtr, *puxPubDerKeyLen, &uxObjLen );
                 }
-                else if( PSA_KEY_TYPE_IS_KEY_PAIR( xKeyAttrs.type ) )
+                else if( PSA_KEY_TYPE_IS_KEY_PAIR( xKeyType ) )
                 {
                     xStatus = psa_export_public_key( xKeyId, pucAsn1WritePtr, *puxPubDerKeyLen, &uxObjLen );
                 }
@@ -217,8 +222,9 @@
         {
             int lRslt = 0;
             uxObjLen = 0;
+            xKeyType = psa_get_key_type( &xKeyAttrs );
 
-            if( PSA_KEY_TYPE_IS_ECC( xKeyAttrs.type ) )
+            if( PSA_KEY_TYPE_IS_ECC( xKeyType ) )
             {
                 const char * pcNamedCurveOid = NULL;
                 size_t uxNamedCurveOidLen = 0;
@@ -229,12 +235,13 @@
                  *       namedCurve         OBJECT IDENTIFIER
                  *   }
                  */
-                psa_ecc_family_t xFamily = PSA_KEY_TYPE_ECC_GET_FAMILY( xKeyAttrs.type );
+                psa_ecc_family_t xFamily = PSA_KEY_TYPE_ECC_GET_FAMILY( xKeyType );
 
                 xPkType = MBEDTLS_PK_ECKEY;
+                xKeyBits = psa_get_key_bits( &xKeyAttrs );
 
                 /* Determine the namedCurve OID */
-                lRslt = mbedtls_psa_get_ecc_oid_from_id( xFamily, xKeyAttrs.bits,
+                lRslt = mbedtls_psa_get_ecc_oid_from_id( xFamily, xKeyBits,
                                                          &pcNamedCurveOid, &uxNamedCurveOidLen );
 
                 /* Validate returned pointer and length */
@@ -257,7 +264,7 @@
                 }
             }
             /* No parameters for RSA */
-            else if( PSA_KEY_TYPE_IS_RSA( xKeyAttrs.type ) )
+            else if( PSA_KEY_TYPE_IS_RSA( xKeyType ) )
             {
                 xPkType = MBEDTLS_PK_RSA;
             }
@@ -377,6 +384,7 @@
         mbedtls_pk_type_t xKeyType = MBEDTLS_PK_NONE;
         unsigned char * pucPubKeyBuffer = NULL;
         size_t uxPubKeyBufferLen = 0;
+        psa_key_bits_t xKeyBits = 0;
 
         configASSERT( xPubKeyId );
         configASSERT( pxPublicKeyContext );
@@ -412,7 +420,9 @@
                 psa_set_key_usage_flags( &xKeyAttributes, PSA_KEY_USAGE_VERIFY_MESSAGE |
                                          PSA_KEY_USAGE_VERIFY_HASH | PSA_KEY_USAGE_EXPORT );
 
-                uxPubKeyBufferLen = PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE( xKeyAttributes.bits );
+                xKeyBits = psa_get_key_bits( &xKeyAttributes );
+
+                uxPubKeyBufferLen = PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE( xKeyBits );
 
                 pucPubKeyBuffer = mbedtls_calloc( 1, uxPubKeyBufferLen );
 
@@ -460,10 +470,17 @@
         /* Export key to PSA */
         if( xStatus == PSA_SUCCESS )
         {
+        	psa_key_id_t xKeyId = psa_get_key_id( &xKeyAttributes );
             xStatus = psa_import_key( &xKeyAttributes,
                                       pucPubKeyBuffer,
                                       uxPubKeyBufferLen,
-                                      &( xKeyAttributes.id ) );
+                                      &( xKeyId ) );
+
+
+            if( xStatus == PSA_SUCCESS )
+            {
+            	psa_set_key_id( &xKeyAttributes, xKeyId );
+            }
         }
 
         return mbedtls_psa_err_translate_pk( xStatus );
@@ -786,7 +803,9 @@
 
         if( xStatus == PSA_SUCCESS )
         {
-            size_t uxPubKeyLen = PSA_EXPORT_PUBLIC_KEY_OUTPUT_SIZE( xKeyAttrs.type, xKeyAttrs.bits );
+        	psa_key_type_t xKeyType = psa_get_key_type( &xKeyAttrs );
+        	psa_key_bits_t xKeyBits = psa_get_key_bits( &xKeyAttrs );
+            size_t uxPubKeyLen = PSA_EXPORT_PUBLIC_KEY_OUTPUT_SIZE( xKeyType, xKeyBits );
             const unsigned char * pucPubKey = &( ( *ppucPubKeyDer )[ *puxPubKeyDerLen - uxPubKeyLen ] );
 
             psa_set_key_type( &xKeyAttrs, PSA_KEY_TYPE_ECC_PUBLIC_KEY( PSA_ECC_FAMILY_SECP_R1 ) );

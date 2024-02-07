@@ -191,7 +191,7 @@ bool otaPal_CloseFile( AfrOtaJobDocumentFields_t * const pFileContext );
  */
 int16_t otaPal_WriteBlock( AfrOtaJobDocumentFields_t * const pFileContext,
                            uint32_t ulOffset,
-                           uint8_t * const pData,
+                           uint8_t * const pcData,
                            uint32_t ulBlockSize );
 
 /**

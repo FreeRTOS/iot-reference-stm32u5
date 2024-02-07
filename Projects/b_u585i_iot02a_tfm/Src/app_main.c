@@ -147,17 +147,17 @@ void vInitTask( void * pvArgs )
         xResult = xTaskCreate( otaAgentTask, "OTAUpdate", 2048, NULL, tskIDLE_PRIORITY + 3, NULL );
         configASSERT( xResult == pdTRUE );
 
-//        xResult = xTaskCreate( vEnvironmentSensorPublishTask, "EnvSense", 1024, NULL, tskIDLE_PRIORITY + 2, NULL );
-//        configASSERT( xResult == pdTRUE );
-//
-//        xResult = xTaskCreate( vMotionSensorsPublish, "MotionS", 1024, NULL, tskIDLE_PRIORITY + 2, NULL );
-//        configASSERT( xResult == pdTRUE );
-//
-//        xResult = xTaskCreate( vShadowDeviceTask, "ShadowDevice", 1024, NULL, tskIDLE_PRIORITY + 1, NULL );
-//        configASSERT( xResult == pdTRUE );
-//
-//        xResult = xTaskCreate( vDefenderAgentTask, "AWSDefender", 2048, NULL, tskIDLE_PRIORITY + 1, NULL );
-//        configASSERT( xResult == pdTRUE );
+        xResult = xTaskCreate( vEnvironmentSensorPublishTask, "EnvSense", 1024, NULL, tskIDLE_PRIORITY + 2, NULL );
+        configASSERT( xResult == pdTRUE );
+
+        xResult = xTaskCreate( vMotionSensorsPublish, "MotionS", 1024, NULL, tskIDLE_PRIORITY + 2, NULL );
+        configASSERT( xResult == pdTRUE );
+
+        xResult = xTaskCreate( vShadowDeviceTask, "ShadowDevice", 1024, NULL, tskIDLE_PRIORITY + 1, NULL );
+        configASSERT( xResult == pdTRUE );
+
+        xResult = xTaskCreate( vDefenderAgentTask, "AWSDefender", 2048, NULL, tskIDLE_PRIORITY + 1, NULL );
+        configASSERT( xResult == pdTRUE );
     #endif /* DEMO_QUALIFICATION_TEST */
 
     while( 1 )
@@ -314,3 +314,153 @@ void vApplicationStackOverflowHook( TaskHandle_t xTask,
 #endif /* configUSE_IDLE_HOOK == 1 */
 
 /*-----------------------------------------------------------*/
+
+
+
+
+
+
+#ifdef TFM_PSA_API_TEST
+
+	static bool prvGetImageInfo( uint8_t ucSlot,
+                                 uint32_t ulImageType,
+                                 psa_image_info_t * pImageInfo )
+    {
+        psa_status_t xPSAStatus;
+        bool xStatus = false;
+        psa_image_id_t ulImageID = FWU_CALCULATE_IMAGE_ID( ucSlot, ulImageType, 0 );
+
+        xPSAStatus = psa_fwu_query( ulImageID, pImageInfo );
+
+        if( xPSAStatus == PSA_SUCCESS )
+        {
+            xStatus = true;
+        }
+        else
+        {
+            LogError( "Failed to query image info for slot %u", ucSlot );
+            xStatus = false;
+        }
+
+        return xStatus;
+    }
+
+	/**
+	 * @brief Checks versions if active version has higher version than stage version.
+	 *
+	 * @param[in] pActiveVersion Active version.
+	 * @param[in] pStageVersion Stage version.
+	 *
+	 * @return true if active version is higher than stage version. false otherwise.
+	 *
+	 */
+	static bool prvCheckVersion( psa_image_info_t * pActiveVersion,
+	                             psa_image_info_t * pStageVersion )
+	{
+		bool xStatus = false;
+		AppVersion32_t xActiveFirmwareVersion = { 0 };
+		AppVersion32_t xStageFirmwareVersion = { 0 };
+
+		xActiveFirmwareVersion.u.x.major = pActiveVersion->version.iv_major;
+		xActiveFirmwareVersion.u.x.minor = pActiveVersion->version.iv_minor;
+		xActiveFirmwareVersion.u.x.build = ( uint16_t ) pActiveVersion->version.iv_revision;
+
+		xStageFirmwareVersion.u.x.major = pStageVersion->version.iv_major;
+		xStageFirmwareVersion.u.x.minor = pStageVersion->version.iv_minor;
+		xStageFirmwareVersion.u.x.build = ( uint16_t ) pStageVersion->version.iv_revision;
+
+		if( xActiveFirmwareVersion.u.unsignedVersion32 > xStageFirmwareVersion.u.unsignedVersion32 )
+		{
+			xStatus = true;
+		}
+
+		return xStatus;
+	}
+
+/**
+ * @brief Checks versions of an image type for rollback protection.
+ *
+ * @param[in] ulImageType Image Type for which the version needs to be checked.
+ *
+ * @return true if the version is higher than previous version. false otherwise.
+ *
+ */
+    static bool prvImageVersionCheck( uint32_t ulImageType )
+    {
+        psa_image_info_t xActiveImageInfo = { 0 };
+        psa_image_info_t xStageImageInfo = { 0 };
+
+        bool xStatus = false;
+
+        xStatus = prvGetImageInfo( FWU_IMAGE_ID_SLOT_ACTIVE, ulImageType, &xActiveImageInfo );
+
+        if( ( xStatus == true ) && ( xActiveImageInfo.state == PSA_IMAGE_PENDING_INSTALL ) )
+        {
+            xStatus = prvGetImageInfo( FWU_IMAGE_ID_SLOT_STAGE, ulImageType, &xStageImageInfo );
+
+            if( xStatus == true )
+            {
+                xStatus = prvCheckVersion( &xActiveImageInfo, &xStageImageInfo );
+
+                if( xStatus == false )
+                {
+                    LogError( "PSA Image type %d version validation failed, old version: %u.%u.%u new version: %u.%u.%u",
+                              ulImageType,
+                              xStageImageInfo.version.iv_major,
+                              xStageImageInfo.version.iv_minor,
+                              xStageImageInfo.version.iv_revision,
+                              xActiveImageInfo.version.iv_major,
+                              xActiveImageInfo.version.iv_minor,
+                              xActiveImageInfo.version.iv_revision );
+                }
+                else
+                {
+                    LogError( "PSA Image type %d version validation succeeded, old version: %u.%u.%u new version: %u.%u.%u",
+                              ulImageType,
+                              xStageImageInfo.version.iv_major,
+                              xStageImageInfo.version.iv_minor,
+                              xStageImageInfo.version.iv_revision,
+                              xActiveImageInfo.version.iv_major,
+                              xActiveImageInfo.version.iv_minor,
+                              xActiveImageInfo.version.iv_revision );
+                }
+            }
+        }
+
+        return xStatus;
+    }
+#endif /* ifdef TFM_PSA_API */
+
+
+
+
+#ifdef TFM_PSA_API_TEST
+            {
+                /*
+                 * Do version check validation here, given that OTA Agent library does not handle
+                 * runtime version check of secure or non-secure images.
+                 */
+                if( ( prvImageVersionCheck( FWU_IMAGE_TYPE_SECURE ) == true ) &&
+                    ( prvImageVersionCheck( FWU_IMAGE_TYPE_NONSECURE ) == true ) )
+                {
+                	result = otaPal_SetPlatformImageState( pxFileContext, OtaImageStateAccepted );
+                }
+                else
+                {
+                	result = otaPal_SetPlatformImageState( pxFileContext, OtaImageStateRejected );
+
+                    if( result == true )
+                    {
+                        /* Slight delay to flush the logs. */
+                        vTaskDelay( pdMS_TO_TICKS( 500 ) );
+                        /*  Reset the device, to revert back to the old image. */
+                        psa_fwu_request_reboot();
+                        LogError( ( "Failed to reset the device to revert the image." ) );
+                    }
+                    else
+                    {
+                        LogError( ( "Unable to reject the image which failed self test." ) );
+                    }
+                }
+            }
+#endif /* ifdef TFM_PSA_API */

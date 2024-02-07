@@ -157,14 +157,12 @@ ${TFM_BUILD_PATH}/.ready : ${MBEDTLS_PATCH_FLAGS} ${MCUBOOT_PATCH_FLAGS}
 
 	source ${TOOLS_PATH}/env_setup.sh && \
 	cmake -S ${TFM_SRC_PATH} -B ${TFM_BUILD_PATH} \
-		-DTFM_SPM_LOG_LEVEL_DEBUG=1 \
 		-DTFM_PLATFORM=stm/b_u585i_iot02a \
 		-DTFM_TOOLCHAIN_FILE=${TFM_SRC_PATH}/toolchain_GNUARM.cmake \
-		-DCMAKE_BUILD_TYPE=debug \
 		-DTFM_DEV_MODE=1 \
 		-DMBEDCRYPTO_PATH=${MBEDTLS_SRC_PATH} \
 		-DMCUBOOT_PATH=${MCUBOOT_SRC_PATH} \
-		-DTFM_PROFILE=profile_large \
+		-DTFM_PROFILE=profile_medium \
 		-DTFM_ISOLATION_LEVEL=2 \
 		-DPython_FIND_VIRTUALENV=FIRST \
 		-DCMAKE_MAKE_PROGRAM=${MAKE} \
@@ -255,7 +253,7 @@ $(TFM_INTF_LIB) :
 ###############################################################################
 # Generate the linker script for the NSPE partition based on the template
 ###############################################################################
-${BUILD_PATH}/stm32u5xx_ns.ld : ${TFM_SRC_PATH}/platform/ext/target/stm/common/hal/template/gcc/appli_ns.ld ${TFM_BUILD_PATH}/tfm_config_export.h
+${BUILD_PATH}/stm32u5xx_ns.ld : ${TFM_SRC_PATH}/platform/ext/target/stm/common/hal/template/gcc/appli_ns.ld ${TFM_BUILD_PATH}/api_ns/region_defs.h
 	arm-none-eabi-gcc -E -P -xc \
 		-DBL2 \
 		-DBL2_HEADER_SIZE=0x400 \
@@ -274,13 +272,14 @@ ${BUILD_PATH}/stm32u5xx_ns.ld : ${TFM_SRC_PATH}/platform/ext/target/stm/common/h
 		-DTFM_SP_LOG_RAW_ENABLED \
 		-DUSE_HAL_DRIVER  \
 		-DCONFIG_TFM_FP=hard \
-		-I ${TFM_BUILD_PATH} -include ${TFM_BUILD_PATH}/tfm_config_export.h \
+		-I ${TFM_BUILD_PATH} \
+		-I ${TFM_BUILD_PATH}/api_ns \
 		-o $@ $<
 
 ###############################################################################
 # Preprocess image_macros_to_preprocess_bl2.c
 ###############################################################################
-${BUILD_PATH}/image_macros_preprocessed_bl2.c : ${TFM_BUILD_PATH}/image_macros_to_preprocess_bl2.c
+${BUILD_PATH}/image_macros_preprocessed_bl2.c : ${TFM_BUILD_PATH}/api_ns/image_macros_to_preprocess_bl2.c
 	arm-none-eabi-gcc -E -P -xc -DTFM_PSA_API \
 		-I ${TFM_BUILD_PATH} \
 		-DBL2 \
@@ -300,9 +299,8 @@ ${BUILD_PATH}/image_macros_preprocessed_bl2.c : ${TFM_BUILD_PATH}/image_macros_t
 		-DTFM_SP_LOG_RAW_ENABLED \
 		-DUSE_HAL_DRIVER \
 		-DCONFIG_TFM_FP=hard \
-		-include ${TFM_BUILD_PATH}/tfm_config_export.h \
 		-o $@ \
-		${TFM_BUILD_PATH}/image_macros_to_preprocess_bl2.c
+		${TFM_BUILD_PATH}/api_ns/image_macros_to_preprocess_bl2.c
 
 ###############################################################################
 # Export the macros from image_macros_to_preprocess_bl2.c into a shell script

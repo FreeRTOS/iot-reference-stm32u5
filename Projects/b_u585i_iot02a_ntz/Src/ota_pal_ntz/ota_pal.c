@@ -46,6 +46,11 @@
 
 #include "PkiObject.h"
 
+#ifdef TFM_PSA_API
+    #include "tfm_fwu_defs.h"
+    #include "psa/update.h"
+#endif
+
 #define FLASH_START_INACTIVE_BANK    ( ( uint32_t ) ( FLASH_BASE + FLASH_BANK_SIZE ) )
 
 #define NUM_QUAD_WORDS( length )         ( length >> 4UL )
@@ -187,7 +192,7 @@ const char * otaImageStateToString( OtaImageState_t xState )
     return pcStateString;
 }
 
-const char * otaPalImageStateToString( xPalImageState )
+const char * otaPalImageStateToString( OtaPalImageState_t xPalImageState )
 {
     const char * pcPalImageState;
 
@@ -738,22 +743,22 @@ static BaseType_t xCalculateImageHash( const unsigned char * pucImageAddress,
 }
 
 static bool prvValidateSignature( const char * pcPubKeyLabel,
-                                            const size_t uxPubKeyLabelLength,
-                                            const unsigned char * pucSignature,
-                                            const size_t uxSignatureLength,
-                                            const unsigned char * pucImageHash,
-                                            const size_t uxHashLength )
+								  const size_t uxPubKeyLabelLength,
+								  const unsigned char * pucSignature,
+								  const size_t uxSignatureLength,
+								  const unsigned char * pucImageHash,
+								  const size_t uxHashLength )
 {
     bool uxStatus = true;
 
     PkiObject_t xOtaSigningPubKey;
     mbedtls_pk_context xPubKeyCtx;
-    char cLabel[ pkcs11configMAX_LABEL_LENGTH + 1 ] = {'\0'};
+    char cLabel[ configTLS_MAX_LABEL_LEN + 1 ] = {'\0'};
 
     configASSERT( pcPubKeyLabel != NULL );
     configASSERT( pucImageHash != NULL );
     configASSERT( uxHashLength > 0 );
-    configASSERT( uxPubKeyLabelLength <= pkcs11configMAX_LABEL_LENGTH );
+    configASSERT( uxPubKeyLabelLength < configTLS_MAX_LABEL_LEN );
 
     if( ( pucSignature == NULL ) || ( uxSignatureLength <= 0 ) )
     {
@@ -796,6 +801,7 @@ OtaPalJobDocProcessingResult_t otaPal_CreateFileForRx( AfrOtaJobDocumentFields_t
 {
 	OtaPalJobDocProcessingResult_t uxOtaStatus = OtaPalJobDocFileCreated;
     OtaPalContext_t * pxContext = prvGetImageContext();
+    bool result;
 
     LogSys( "One bank size is: %u", FLASH_BANK_SIZE );
 
@@ -815,15 +821,15 @@ OtaPalJobDocProcessingResult_t otaPal_CreateFileForRx( AfrOtaJobDocumentFields_t
     {
     	if( pxContext->xPalState == OTA_PAL_NEW_IMAGE_BOOTED )
     	{
-    		if( otaPal_SetPlatformImageState( pxFileContext, OtaImageStateAccepted ) == true )
-    		{
-    			uxOtaStatus = OtaPalNewImageBooted;
-    		}
-    		else
-    		{
-    			LogError( "Failed to boot new image." );
-    			uxOtaStatus = OtaPalJobDocFileCreateFailed;
-    		}
+            if( otaPal_SetPlatformImageState( pxFileContext, OtaImageStateAccepted ) == true )
+			{
+				uxOtaStatus = OtaPalNewImageBooted;
+			}
+			else
+			{
+				LogError( "Failed to boot new image." );
+				uxOtaStatus = OtaPalJobDocFileCreateFailed;
+			}
     	}
     	else
     	{
@@ -878,7 +884,7 @@ OtaPalJobDocProcessingResult_t otaPal_CreateFileForRx( AfrOtaJobDocumentFields_t
 
 int16_t otaPal_WriteBlock( AfrOtaJobDocumentFields_t * const pxFileContext,
                            uint32_t offset,
-                           uint8_t * const pData,
+                           uint8_t * const pcData,
                            uint32_t blockSize )
 {
     int16_t sBytesWritten = -1;
@@ -904,11 +910,11 @@ int16_t otaPal_WriteBlock( AfrOtaJobDocumentFields_t * const pxFileContext,
     {
         LogError( "Invalid PAL State. otaPal_WriteBlock may only occur when file is open." );
     }
-    else if( pData == NULL )
+    else if( pcData == NULL )
     {
         LogError( "pData is NULL." );
     }
-    else if( prvWriteToFlash( ( pxContext->ulBaseAddress + offset ), pData, blockSize ) == HAL_OK )
+    else if( prvWriteToFlash( ( pxContext->ulBaseAddress + offset ), pcData, blockSize ) == HAL_OK )
     {
         sBytesWritten = ( int16_t ) blockSize;
     }

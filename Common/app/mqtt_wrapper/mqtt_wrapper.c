@@ -18,6 +18,37 @@ static MQTTContext_t * globalCoreMqttContext = NULL;
 static char globalThingName[ MAX_THING_NAME_SIZE + 1 ];
 static size_t globalThingNameLength = 0U;
 
+/**
+ * @brief Defines the structure to use as the command callback context in this
+ * demo.
+ */
+struct MQTTAgentCommandContext
+{
+    MQTTStatus_t xReturnStatus;
+    TaskHandle_t xTaskToNotify;
+};
+
+static void handleIncomingMQTTMessage( char * topic,
+                                       size_t topicLength,
+                                       uint8_t * message,
+                                       size_t messageLength )
+
+{
+    bool messageHandled = otaDemo_handleIncomingMQTTMessage( topic,
+                                                             topicLength,
+                                                             message,
+                                                             messageLength );
+    if( !messageHandled )
+    {
+        printf( "Unhandled incoming PUBLISH received on topic, message: "
+                "%.*s\n%.*s\n",
+                ( unsigned int ) topicLength,
+                topic,
+                ( unsigned int ) messageLength,
+                ( char * ) message );
+    }
+}
+
 void mqttWrapper_setCoreMqttContext( MQTTContext_t * mqttContext )
 {
     globalCoreMqttContext = mqttContext;
@@ -77,6 +108,12 @@ bool mqttWrapper_isConnected( void )
     return isConnected;
 }
 
+static void prvPublishCommandCallback( MQTTAgentCommandContext_t * pCmdCallbackContext,
+                                       MQTTAgentReturnInfo_t * pReturnInfo )
+{
+	/* TODO: Add handling. Notify tasks. */
+}
+
 bool mqttWrapper_publish( char * topic,
                           size_t topicLength,
                           uint8_t * message,
@@ -90,6 +127,7 @@ bool mqttWrapper_publish( char * topic,
     {
         MQTTStatus_t mqttStatus = MQTTSuccess;
         MQTTPublishInfo_t pubInfo = { 0 };
+        MQTTAgentHandle_t xAgentHandle = xGetMqttAgentHandle();
         pubInfo.qos = 0;
         pubInfo.retain = false;
         pubInfo.dup = false;
@@ -98,12 +136,42 @@ bool mqttWrapper_publish( char * topic,
         pubInfo.pPayload = message;
         pubInfo.payloadLength = messageLength;
 
-        mqttStatus = MQTT_Publish( globalCoreMqttContext,
-                                   &pubInfo,
-                                   MQTT_GetPacketId( globalCoreMqttContext ) );
+		MQTTAgentCommandContext_t xCommandContext =
+		{
+			.xTaskToNotify = xTaskGetCurrentTaskHandle(),
+			.xReturnStatus = MQTTIllegalState,
+		};
+
+		MQTTAgentCommandInfo_t xCommandParams =
+		{
+			.blockTimeMs                 = 1000,
+			.cmdCompleteCallback         = prvPublishCommandCallback,
+			.pCmdCompleteCallbackContext = &xCommandContext,
+		};
+
+
+		mqttStatus = MQTTAgent_Publish( xAgentHandle,
+									 &pubInfo,
+									 &xCommandParams );
+
         success = mqttStatus == MQTTSuccess;
     }
     return success;
+}
+
+void handleIncomingPublish( void * pvIncomingPublishCallbackContext,
+                                         MQTTPublishInfo_t * pxPublishInfo )
+{
+	char * topic = NULL;
+	size_t topicLength = 0U;
+	uint8_t * message = NULL;
+	size_t messageLength = 0U;
+
+	topic = ( char * ) pxPublishInfo->pTopicName;
+	topicLength = pxPublishInfo->topicNameLength;
+	message = ( uint8_t * ) pxPublishInfo->pPayload;
+	messageLength = pxPublishInfo->payloadLength;
+	handleIncomingMQTTMessage( topic, topicLength, message, messageLength );
 }
 
 bool mqttWrapper_subscribe( char * topic, size_t topicLength )
@@ -115,16 +183,16 @@ bool mqttWrapper_subscribe( char * topic, size_t topicLength )
     if( success )
     {
         MQTTStatus_t mqttStatus = MQTTSuccess;
-        MQTTSubscribeInfo_t subscribeInfo = { 0 };
-        subscribeInfo.qos = 0;
-        subscribeInfo.pTopicFilter = topic;
-        subscribeInfo.topicFilterLength = topicLength;
+        MQTTAgentHandle_t xAgentHandle = xGetMqttAgentHandle();
 
-        mqttStatus = MQTT_Subscribe( globalCoreMqttContext,
-                                     &subscribeInfo,
-                                     1,
-                                     MQTT_GetPacketId(
-                                         globalCoreMqttContext ) );
+        mqttStatus = MqttAgent_SubscribeSync( xAgentHandle,
+                                              topic,
+                                              0,
+											  handleIncomingPublish,
+                                              NULL );
+
+        configASSERT( mqttStatus == MQTTSuccess );
+
         success = mqttStatus == MQTTSuccess;
     }
     return success;
