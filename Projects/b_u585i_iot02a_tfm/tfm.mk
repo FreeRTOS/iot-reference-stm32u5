@@ -253,7 +253,8 @@ $(TFM_INTF_LIB) :
 ###############################################################################
 # Generate the linker script for the NSPE partition based on the template
 ###############################################################################
-${BUILD_PATH}/stm32u5xx_ns.ld : ${TFM_SRC_PATH}/platform/ext/target/stm/common/hal/template/gcc/appli_ns.ld ${TFM_BUILD_PATH}/api_ns/region_defs.h
+#${TFM_SRC_PATH}/platform/ext/target/stm/common/hal/template/gcc/appli_ns.ld
+${BUILD_PATH}/stm32u5xx_ns.ld : ${PROJECT_PATH}/Src/MOD_appli_ns.ld
 	arm-none-eabi-gcc -E -P -xc \
 		-DBL2 \
 		-DBL2_HEADER_SIZE=0x400 \
