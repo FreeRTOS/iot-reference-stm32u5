@@ -14,5 +14,6 @@ pre-build : nspe_pre_build
 post-build : nspe_post_build
 
 tfm_clean:
+	cd ../../../Middleware/ARM/trusted-firmware-m && git apply -R ../../../Projects/b_u585i_iot02a_tfm/Src/PatchFiles/tfm.patch
 	-${RM} *.{hex,bin,elf,axf,sh,ld,c}
 	-${MAKE} -f ../tfm.mk clean
