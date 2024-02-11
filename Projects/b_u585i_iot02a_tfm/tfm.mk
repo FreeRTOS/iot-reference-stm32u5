@@ -174,6 +174,10 @@ ${TFM_BUILD_PATH}/.ready : ${MBEDTLS_PATCH_FLAGS} ${MCUBOOT_PATCH_FLAGS}
 		-DCMAKE_OBJECT_PATH_MAX=1024 \
 		-DCMAKE_OBJECT_NAME_MAX=1019 \
 		-DNS=0 && touch $@
+	#cd ${TFM_BUILD_PATH}/api_ns/platform/partition && git apply ../../../../${PROJECT_PATH}/Src/PatchFiles/region_defs.patch
+	#cd ${TFM_BUILD_PATH}/api_ns && git apply ../../${PROJECT_PATH}/Src/PatchFiles/region_defs.patch
+	#patch ${TFM_BUILD_PATH}/api_ns/platform/partition/region_defs.h ${PROJECT_PATH}/Src/PatchFiles/region_defs.patch
+	#patch ${TFM_BUILD_PATH}/api_ns/region_defs.h ${PROJECT_PATH}/Src/PatchFiles/region_defs.patch
 	sleep 1
 
 ###############################################################################

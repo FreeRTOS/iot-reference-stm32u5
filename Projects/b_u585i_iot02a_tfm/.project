@@ -174,7 +174,7 @@
 		<link>
 			<name>Libraries/trusted-firmware-m</name>
 			<type>2</type>
-			<locationURI>WORKSPACE_LOC/Middleware/ARM/trusted-firmware-m</locationURI>
+			<location>/Users/kanherea/Desktop/st_gri/iot-reference-stm32u5/Middleware/ARM/trusted-firmware-m</location>
 		</link>
 		<link>
 			<name>Libraries/CMSIS/core</name>

@@ -32,11 +32,11 @@ TFM_INTERFACE_HEADER_PATHS = ${subst ${TFM_BUILD_PATH}/api_ns/interface/,${PROJE
 
 TFM_S_VENEERS = ${TFM_BUILD_PATH}/api_ns/interface/lib/s_veneers.o
 
-TFM_LAYOUT_FILES = ${shell sh -c 'find ${TFM_BUILD_PATH}/install/image_signing/layout_files -type f 2>/dev/null'}
-TFM_LAYOUT_PATHS = ${subst ${TFM_BUILD_PATH}/install/image_signing/layout_files/,${PROJECT_PATH}/tfm/layout_files/,${TFM_LAYOUT_FILES}}
+TFM_LAYOUT_FILES = ${shell sh -c 'find ${TFM_BUILD_PATH}/api_ns/image_signing/layout_files -type f 2>/dev/null'}
+TFM_LAYOUT_PATHS = ${subst ${TFM_BUILD_PATH}/api_ns/image_signing/layout_files/,${PROJECT_PATH}/tfm/layout_files/,${TFM_LAYOUT_FILES}}
 
-TFM_SCRIPT_FILES = ${shell sh -c "find ${TFM_BUILD_PATH}/install/image_signing/scripts -type f -name '*.py' 2>/dev/null"}
-TFM_SCRIPT_PATHS = ${subst ${TFM_BUILD_PATH}/install/image_signing/scripts/,${PROJECT_PATH}/tfm/scripts/,${TFM_SCRIPT_FILES}}
+TFM_SCRIPT_FILES = ${shell sh -c "find ${TFM_BUILD_PATH}/api_ns/image_signing/scripts -type f -name '*.py' 2>/dev/null"}
+TFM_SCRIPT_PATHS = ${subst ${TFM_BUILD_PATH}/api_ns/image_signing/scripts/,${PROJECT_PATH}/tfm/scripts/,${TFM_SCRIPT_FILES}}
 
 TFM_INTERFACE_C = $(filter %.c,$(TFM_INTERFACE_FILES))
 TFM_INTERFACE_OBJS = $(addprefix ${BUILD_PATH}/tfm/,$(subst .c,.o,$(notdir $(TFM_INTERFACE_C))))
@@ -79,11 +79,12 @@ ${PROJECT_PATH}/tfm/interface/libtfm_interface.a : $(TFM_INTERFACE_OBJS) $(TFM_S
 	mkdir -p "$(dir $@)"
 	arm-none-eabi-ar cr $@ $^
 
-${PROJECT_PATH}/tfm/scripts/%.py : ${TFM_BUILD_PATH}/install/image_signing/scripts/%.py
+${PROJECT_PATH}/tfm/scripts/%.py : ${TFM_BUILD_PATH}/api_ns/image_signing/scripts/%.py
 	mkdir -p "$(dir $@)"
+	@echo "$<"
 	cp "$<" "$@"
 
-${PROJECT_PATH}/tfm/layout_files/%.o : ${TFM_BUILD_PATH}/install/image_signing/layout_files/%.o
+${PROJECT_PATH}/tfm/layout_files/%.o : ${TFM_BUILD_PATH}/api_ns/image_signing/layout_files/%.o
 	mkdir -p $(dir $@)
 	cp "$<" "$@"
 
