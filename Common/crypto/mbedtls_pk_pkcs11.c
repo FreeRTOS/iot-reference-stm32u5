@@ -1319,7 +1319,7 @@
 
         if( pvCtx != NULL )
         {
-            pxEcDsaCtx = ( P11EcDsaCtx_t * ) pvCtx;
+            pxEcDsaCtx = ( P11EcDsaCtx_t * ) ( ( ( mbedtls_pk_context * ) pvCtx )->pk_ctx );
             pxP11Ctx = &( pxEcDsaCtx->xP11PkCtx );
         }
         else
@@ -1401,10 +1401,9 @@
                                      int ( * lFRng )( void *, unsigned char *, size_t ),
                                      void * pvPRng )
     {
-        mbedtls_ecp_keypair * pxPubKey = ( mbedtls_ecp_keypair * ) pvPub;
-        mbedtls_ecp_keypair * pxPrvKey = ( mbedtls_ecp_keypair * ) pvPrv;
+        mbedtls_ecp_keypair * pxPubKey = ( mbedtls_ecp_keypair * ) &( ( ( P11EcDsaCtx_t * ) ( ( mbedtls_pk_context * ) pvPub )->pk_ctx )->xMbedEcDsaCtx );
+        mbedtls_ecp_keypair * pxPrvKey = ( mbedtls_ecp_keypair * ) &( ( ( P11EcDsaCtx_t * ) ( ( mbedtls_pk_context * ) pvPrv )->pk_ctx )->xMbedEcDsaCtx );
 
-        P11EcDsaCtx_t * pxP11PrvKey = ( P11EcDsaCtx_t * ) pvPrv;
         int lResult = 0;
 
         ( void ) lFRng;
@@ -1452,7 +1451,7 @@
             };
             unsigned char pucTestSignature[ MBEDTLS_ECDSA_MAX_SIG_LEN( 256 ) ] = { 0 };
             size_t uxSigLen = 0;
-            lResult = p11_ecdsa_sign( ( void * ) ( void * ) pvPrv, MBEDTLS_MD_SHA256,
+            lResult = p11_ecdsa_sign( ( void * ) pvPrv, MBEDTLS_MD_SHA256,
                                       pucTestHash, sizeof( pucTestHash ),
                                       pucTestSignature, sizeof( pucTestSignature ), &uxSigLen,
                                       NULL, NULL );

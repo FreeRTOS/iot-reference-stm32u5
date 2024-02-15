@@ -3273,8 +3273,8 @@ void mbedtls_platform_free( void * ptr );
 
 #include "mbedtls/config_adjust_legacy_crypto.h"
 
-#include "mbedtls/config_adjust_x509.h"
-
-#include "mbedtls/config_adjust_ssl.h"
+//#include "mbedtls/config_adjust_x509.h"
+//
+//#include "mbedtls/config_adjust_ssl.h"
 
 #include "mbedtls/check_config.h"

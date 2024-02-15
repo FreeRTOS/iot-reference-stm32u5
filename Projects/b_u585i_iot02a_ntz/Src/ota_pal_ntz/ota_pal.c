@@ -46,11 +46,6 @@
 
 #include "PkiObject.h"
 
-#ifdef TFM_PSA_API
-    #include "tfm_fwu_defs.h"
-    #include "psa/update.h"
-#endif
-
 #define FLASH_START_INACTIVE_BANK    ( ( uint32_t ) ( FLASH_BASE + FLASH_BANK_SIZE ) )
 
 #define NUM_QUAD_WORDS( length )         ( length >> 4UL )
