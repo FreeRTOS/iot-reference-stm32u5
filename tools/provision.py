@@ -337,7 +337,7 @@ class AwsHelper:
         # Convert Namespace to dict
         args = vars(args)
 
-        aws_profile = args.get("aws_profile", "default")
+        aws_profile = args.get("aws_profile", None)
         aws_region_name = args.get("aws_region", None)
         aws_access_key_id = args.get("aws_access_key_id", None)
         aws_secret_access_key = args.get("aws_secret_access_key", None)
@@ -352,11 +352,10 @@ class AwsHelper:
             )
 
         # If profile is specified, allow boto3 to determine other arguments from ~/.aws/config
-        elif aws_profile:
+        elif not aws_profile:
             self.session = boto3.session.Session(
                 profile_name=aws_profile,
             )
-
         self.check_credentials()
 
     def check_credentials(self):
@@ -782,6 +781,8 @@ def provision_pki(target, aws, cert_issuer):
     # Generate a key
     print("Generating a new public/private key pair")
     pub_key = target.generate_key()
+    # Fix up the key which is returned with the second to last character incorrect.
+    pub_key = pub_key.replace(b"A=", b"==")
 
     if not validate_pubkey(pub_key):
         print("Error: Could not parse public key.")
@@ -919,7 +920,7 @@ def main():
     # Initialize a connection to AWS IoT
     aws = AwsHelper(args=args)
     if not aws.check_credentials():
-        print("The provided AWS account credentials are inalid.")
+        print("The provided AWS account credentials are invalid.")
         raise SystemExit
 
     target.conf_set("mqtt_endpoint", aws.get_endpoint())
