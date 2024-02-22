@@ -781,8 +781,6 @@ def provision_pki(target, aws, cert_issuer):
     # Generate a key
     print("Generating a new public/private key pair")
     pub_key = target.generate_key()
-    # Fix up the key which is returned with the second to last character incorrect.
-    pub_key = pub_key.replace(b"A=", b"==")
 
     if not validate_pubkey(pub_key):
         print("Error: Could not parse public key.")

@@ -113,7 +113,7 @@
         if( CKR_OK == xResult )
         {
             /* Add space for DER Header */
-            *pulPubKeyDerLen = xTemplate.ulValueLen + sizeof( pucEcP256AsnAndOid ) - sizeof( pucUnusedKeyTag ) + 1;
+            *pulPubKeyDerLen = xTemplate.ulValueLen + sizeof( pucEcP256AsnAndOid ) - sizeof( pucUnusedKeyTag );
 
             /* Allocate a buffer for the DER form  of the key */
             *ppucPubKeyDer = pvPortMalloc( *pulPubKeyDerLen );
