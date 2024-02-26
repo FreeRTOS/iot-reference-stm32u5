@@ -58,7 +58,7 @@
 #define MQTT_PUBLISH_MAX_LEN                 ( 512 )
 #define MQTT_PUBLISH_TIME_BETWEEN_MS         ( 1000 )
 #define MQTT_PUBLISH_TOPIC                   "env_sensor_data"
-#define MQTT_PUBLICH_TOPIC_STR_LEN           ( 256 )
+#define MQTT_PUBLISH_TOPIC_STR_LEN           ( 256 )
 #define MQTT_PUBLISH_BLOCK_TIME_MS           ( 1000 )
 #define MQTT_PUBLISH_NOTIFICATION_WAIT_MS    ( 1000 )
 
@@ -246,7 +246,7 @@ void vEnvironmentSensorPublishTask( void * pvParameters )
     BaseType_t xExitFlag = pdFALSE;
     char payloadBuf[ MQTT_PUBLISH_MAX_LEN ];
     MQTTAgentHandle_t xAgentHandle = NULL;
-    char pcTopicString[ MQTT_PUBLICH_TOPIC_STR_LEN ] = { 0 };
+    char pcTopicString[ MQTT_PUBLISH_TOPIC_STR_LEN ] = { 0 };
     size_t uxTopicLen = 0;
 
     ( void ) pvParameters;
@@ -259,14 +259,14 @@ void vEnvironmentSensorPublishTask( void * pvParameters )
         vTaskDelete( NULL );
     }
 
-    uxTopicLen = KVStore_getString( CS_CORE_THING_NAME, pcTopicString, MQTT_PUBLICH_TOPIC_STR_LEN );
+    uxTopicLen = KVStore_getString( CS_CORE_THING_NAME, pcTopicString, MQTT_PUBLISH_TOPIC_STR_LEN );
 
     if( uxTopicLen > 0 )
     {
-        uxTopicLen = strlcat( pcTopicString, "/" MQTT_PUBLISH_TOPIC, MQTT_PUBLICH_TOPIC_STR_LEN );
+        uxTopicLen = strlcat( pcTopicString, "/" MQTT_PUBLISH_TOPIC, MQTT_PUBLISH_TOPIC_STR_LEN );
     }
 
-    if( ( uxTopicLen == 0 ) || ( uxTopicLen >= MQTT_PUBLICH_TOPIC_STR_LEN ) )
+    if( ( uxTopicLen == 0 ) || ( uxTopicLen >= MQTT_PUBLISH_TOPIC_STR_LEN ) )
     {
         LogError( "Failed to construct topic string." );
         xExitFlag = pdTRUE;
