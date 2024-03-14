@@ -46,8 +46,8 @@ index 0974e0616..b2f9a64db 100644
  
 -#define FLASH_S_PARTITION_SIZE          (0x60000) /* 384 KB for S partition */
 -#define FLASH_NS_PARTITION_SIZE         (0x80000) /* 512 KB for NS partition */
-+#define FLASH_S_PARTITION_SIZE          (0x40000) /* 384 KB for S partition */
-+#define FLASH_NS_PARTITION_SIZE         (0xA0000) /* 512 KB for NS partition */
++#define FLASH_S_PARTITION_SIZE          (0x40000) /* 256 KB for S partition */
++#define FLASH_NS_PARTITION_SIZE         (0xA0000) /* 640 KB for NS partition */
  
  #define FLASH_PARTITION_SIZE            (FLASH_S_PARTITION_SIZE+FLASH_NS_PARTITION_SIZE)
  

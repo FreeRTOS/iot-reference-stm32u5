@@ -44,7 +44,7 @@ from cryptography.hazmat.primitives.serialization import load_pem_public_key
 from cryptography.x509.oid import NameOID
 
 logger = logging.getLogger()
-
+# logging.basicConfig(level=logging.DEBUG)
 
 class TargetDevice:
     _running_config = None
@@ -361,6 +361,7 @@ class AwsHelper:
 
     def check_credentials(self):
         if not self.session_valid and self.session:
+            print("session not valid but session present.")
             sts = self.session.client("sts")
             caller_id = sts.get_caller_identity()
             if caller_id:
@@ -572,7 +573,9 @@ def validate_pubkey(pub_key):
     key = None
     try:
         key = load_pem_public_key(pub_key)
-    except ValueError:
+    except ValueError as err:
+        print("Value error when parsing public key.")
+        print(err)
         result = False
 
     if result and isinstance(key, rsa.RSAPublicKey):
@@ -782,6 +785,11 @@ def provision_pki(target, aws, cert_issuer):
     # Generate a key
     print("Generating a new public/private key pair")
     pub_key = target.generate_key()
+
+    print("public key is: ")
+    pub_key = pub_key.replace(b"A=", b"==")
+    print(pub_key)
+    print(type(pub_key))
 
     if not validate_pubkey(pub_key):
         print("Error: Could not parse public key.")
