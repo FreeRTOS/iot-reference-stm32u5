@@ -48,7 +48,7 @@
 	fetchRecurseSubmodules = false
 [submodule "Middleware/ARM/trusted-firmware-m"]
 	path = Middleware/ARM/trusted-firmware-m
-	url = https://github.com/paulbartell/tfm-staging.git
+	url = https://github.com/AniruddhaKanhere/trusted-firmware-m
 	fetchRecurseSubmodules = false
 [submodule "Drivers/CMSIS/Device/ST/STM32U5xx"]
 	path = Drivers/CMSIS/Device/ST/STM32U5xx
