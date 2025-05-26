@@ -59,11 +59,13 @@ jobs:
         if: ${{ steps.cache.outputs.cache-hit != 'true' }}
         run: |
           mkdir -p ~/cache
+          pushd $HOME
           wget "${{ matrix.ide_pkg_url }}" -U "${{ matrix.user_agent }}"
           unzip en.${IDE_PKG_NAME}.sh.zip
           chmod +x ${IDE_PKG_NAME}.sh
           ./${IDE_PKG_NAME}.sh --tar -xf ./${IDE_PKG_NAME}.tar.gz
           mv ${IDE_PKG_NAME}.tar.gz ~/cache/
+          popd
       - name: Extract IDE
         run: |
           mkdir -p STM32CubeIDE
@@ -152,9 +154,11 @@ jobs:
         run: |
           export PATH="$(realpath ~/scoop)/shims:${PATH}"
           mkdir -p ~/cache
+          pushd $HOME
           wget "${{ matrix.ide_pkg_url }}" -U "${{ matrix.user_agent }}"
           7z x en.${{ matrix.ide_pkg_name }}.exe.zip
           mv ${{ matrix.ide_pkg_name }}.exe ~/cache/${{ matrix.ide_pkg_name }}.exe
+          popd
       - name: Extract IDE
         shell: bash
         run: |
