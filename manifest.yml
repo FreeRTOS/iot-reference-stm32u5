@@ -178,7 +178,7 @@ dependencies:
       url: "https://github.com/STMicroelectronics/stm32-iis2mdc.git"
       path: "Drivers/BSP/Components/iis2mdc"
   - name : "stm32-lsm6dso"
-    version: "v1.5.3"
+    version: "v1.5.0"
     repository:
       type: "git"
       url: "https://github.com/STMicroelectronics/stm32-lsm6dso.git"
