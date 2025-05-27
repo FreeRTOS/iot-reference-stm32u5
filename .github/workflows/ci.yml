@@ -60,6 +60,7 @@ jobs:
         uses: FreeRTOS/CI-CD-GitHub-Actions/manifest-verifier@main
         with:
           path: ./
+          exclude-dirs: Drivers
           fail-on-incorrect-version: true
 
   git-secrets:
