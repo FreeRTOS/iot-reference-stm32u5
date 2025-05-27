@@ -52,7 +52,6 @@ jobs:
       - name: Run manifest verifier
         uses: FreeRTOS/CI-CD-GitHub-Actions/manifest-verifier@main
         with:
-          path: ./
           fail-on-incorrect-version: true
 
   git-secrets:
