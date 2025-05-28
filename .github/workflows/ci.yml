@@ -60,8 +60,6 @@ jobs:
         uses: FreeRTOS/CI-CD-GitHub-Actions/manifest-verifier@main
         with:
           path: ./
-          exclude-submodules: |
-            Drivers/BSP/Components/lsm6dso
           fail-on-incorrect-version: true
 
   git-secrets:
