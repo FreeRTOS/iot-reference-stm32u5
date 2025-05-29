@@ -35,7 +35,7 @@ jobs:
       PROJECT_PATH: ${{ github.workspace }}/Projects/${{ matrix.project }}
     steps:
       - name: Checkout Target Project
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           path: ${{ github.workspace }}
       - name: Checkout submodules
@@ -87,7 +87,7 @@ jobs:
           mkdir -p artifacts
           rsync -avzh --ignore-missing-args Projects/${{ matrix.project }}/Debug/*.{hex,bin,elf,map,list,sh,ld} artifacts/
       - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: linux_${{ matrix.project }}
           path: |
@@ -114,7 +114,7 @@ jobs:
         shell: bash
         run: git config --system core.longpaths true
       - name: Checkout Target Project
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           path: ${{ github.workspace }}
       - name: Checkout submodules
@@ -184,7 +184,7 @@ jobs:
           done
 
       - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: windows_${{ matrix.project }}
           path: |
