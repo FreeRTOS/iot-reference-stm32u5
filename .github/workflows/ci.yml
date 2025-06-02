@@ -41,8 +41,8 @@ jobs:
       - name: Link Verification
         uses: FreeRTOS/CI-CD-Github-Actions/link-verifier@main
         with:
-          exclude-urls : 'https://www.st.com/en/development-tools/x-wifi-emw3080b.html'
-          exclude-dirs : Middleware/ARM/mcuboot/boot/espressif/hal/esp-idf/.gitlab/merge_request_templates
+          exclude-urls: https://www.st.com/en/development-tools/x-wifi-emw3080b.html, https://www.gnu.org/software/complexity/manual/complexity.html
+          exclude-dirs: Middleware,Drivers
 
   verify-manifest:
     runs-on: ubuntu-latest
