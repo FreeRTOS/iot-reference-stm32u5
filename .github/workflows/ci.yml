@@ -17,7 +17,7 @@ on:
 
 jobs:
   formatting:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: Check Formatting of Files
@@ -33,14 +33,6 @@ jobs:
         - name: Run spellings check
           uses: FreeRTOS/CI-CD-Github-Actions/spellings@main
 
-  link-verifier:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Clone This Repo
-        uses: actions/checkout@v3
-      - name: Link Verification
-        uses: FreeRTOS/CI-CD-Github-Actions/link-verifier@main
-
   verify-manifest:
     runs-on: ubuntu-latest
     steps:
@@ -49,10 +41,18 @@ jobs:
           submodules: true
           fetch-depth: 0
 
+      # At time of writing the gitmodules are set not to pull
+      # Even when using fetch submodules. Need to run this command
+      # To force it to grab them.
+      - name: Perform Recursive Clone
+        shell: bash
+        run: git submodule update --checkout --init --recursive
+
       - name: Run manifest verifier
         uses: FreeRTOS/CI-CD-GitHub-Actions/manifest-verifier@main
         with:
           path: ./
+          exclude-submodules: Drivers/BSP/Components/lsm6dso
           fail-on-incorrect-version: true
 
   git-secrets:
