@@ -60,7 +60,7 @@ jobs:
         run: |
           mkdir -p ~/cache
           pushd $HOME
-          wget "${{ matrix.ide_pkg_url }}" -U "${{ matrix.user_agent }}"
+          wget -O "en.${IDE_PKG_NAME}.sh.zip" "${{ matrix.ide_pkg_url }}" -U "${{ matrix.user_agent }}"
           unzip en.${IDE_PKG_NAME}.sh.zip
           chmod +x ${IDE_PKG_NAME}.sh
           ./${IDE_PKG_NAME}.sh --tar -xf ./${IDE_PKG_NAME}.tar.gz
@@ -155,7 +155,7 @@ jobs:
           export PATH="$(realpath ~/scoop)/shims:${PATH}"
           mkdir -p ~/cache
           pushd $HOME
-          wget "${{ matrix.ide_pkg_url }}" -U "${{ matrix.user_agent }}"
+          wget -O "en.${{ matrix.ide_pkg_name }}.exe.zip" "${{ matrix.ide_pkg_url }}" -U "${{ matrix.user_agent }}"
           7z x en.${{ matrix.ide_pkg_name }}.exe.zip
           mv ${{ matrix.ide_pkg_name }}.exe ~/cache/${{ matrix.ide_pkg_name }}.exe
           popd
