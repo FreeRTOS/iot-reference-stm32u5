@@ -67,7 +67,7 @@
  */
 #define MQTT_PUBLISH_MAX_LEN                 ( 200 )
 #define MQTT_PUBLISH_PERIOD_MS               ( 500 )
-#define MQTT_PUBLICH_TOPIC_STR_LEN           ( 256 )
+#define MQTT_PUBLISH_TOPIC_STR_LEN           ( 256 )
 #define MQTT_PUBLISH_BLOCK_TIME_MS           ( 200 )
 #define MQTT_PUBLISH_NOTIFICATION_WAIT_MS    ( 1000 )
 #define MQTT_NOTIFY_IDX                      ( 1 )
@@ -222,7 +222,7 @@ void vMotionSensorsPublish( void * pvParameters )
 
     MQTTAgentHandle_t xAgentHandle = NULL;
     char pcPayloadBuf[ MQTT_PUBLISH_MAX_LEN ];
-    char pcTopicString[ MQTT_PUBLICH_TOPIC_STR_LEN ] = { 0 };
+    char pcTopicString[ MQTT_PUBLISH_TOPIC_STR_LEN ] = { 0 };
     char * pcDeviceId = NULL;
     int lTopicLen = 0;
 
@@ -242,10 +242,10 @@ void vMotionSensorsPublish( void * pvParameters )
     }
     else
     {
-        lTopicLen = snprintf( pcTopicString, ( size_t ) MQTT_PUBLICH_TOPIC_STR_LEN, "%s/motion_sensor_data", pcDeviceId );
+        lTopicLen = snprintf( pcTopicString, ( size_t ) MQTT_PUBLISH_TOPIC_STR_LEN, "%s/motion_sensor_data", pcDeviceId );
     }
 
-    if( ( lTopicLen <= 0 ) || ( lTopicLen > MQTT_PUBLICH_TOPIC_STR_LEN ) )
+    if( ( lTopicLen <= 0 ) || ( lTopicLen > MQTT_PUBLISH_TOPIC_STR_LEN ) )
     {
         LogError( "Error while constructing topic string." );
         xExitFlag = pdTRUE;
