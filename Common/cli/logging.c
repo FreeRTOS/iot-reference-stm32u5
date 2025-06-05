@@ -74,7 +74,7 @@ void vDyingGasp( void )
     }
     while( xNumBytes != 0 );
 
-    HAL_GPIO_WritePin( LED_RED_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_SET );
+    HAL_GPIO_WritePin( LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_SET );
     HAL_GPIO_WritePin( LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET );
 }
 
