@@ -35,7 +35,7 @@ jobs:
       PROJECT_PATH: ${{ github.workspace }}/Projects/${{ matrix.project }}
     steps:
       - name: Checkout Target Project
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
         with:
           path: ${{ github.workspace }}
       - name: Checkout submodules
@@ -59,13 +59,11 @@ jobs:
         if: ${{ steps.cache.outputs.cache-hit != 'true' }}
         run: |
           mkdir -p ~/cache
-          pushd $HOME
           wget "${{ matrix.ide_pkg_url }}" -U "${{ matrix.user_agent }}"
           unzip en.${IDE_PKG_NAME}.sh.zip
           chmod +x ${IDE_PKG_NAME}.sh
           ./${IDE_PKG_NAME}.sh --tar -xf ./${IDE_PKG_NAME}.tar.gz
           mv ${IDE_PKG_NAME}.tar.gz ~/cache/
-          popd
       - name: Extract IDE
         run: |
           mkdir -p STM32CubeIDE
@@ -87,7 +85,7 @@ jobs:
           mkdir -p artifacts
           rsync -avzh --ignore-missing-args Projects/${{ matrix.project }}/Debug/*.{hex,bin,elf,map,list,sh,ld} artifacts/
       - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: linux_${{ matrix.project }}
           path: |
@@ -114,7 +112,7 @@ jobs:
         shell: bash
         run: git config --system core.longpaths true
       - name: Checkout Target Project
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
         with:
           path: ${{ github.workspace }}
       - name: Checkout submodules
@@ -154,11 +152,9 @@ jobs:
         run: |
           export PATH="$(realpath ~/scoop)/shims:${PATH}"
           mkdir -p ~/cache
-          pushd $HOME
           wget "${{ matrix.ide_pkg_url }}" -U "${{ matrix.user_agent }}"
           7z x en.${{ matrix.ide_pkg_name }}.exe.zip
           mv ${{ matrix.ide_pkg_name }}.exe ~/cache/${{ matrix.ide_pkg_name }}.exe
-          popd
       - name: Extract IDE
         shell: bash
         run: |
@@ -184,7 +180,7 @@ jobs:
           done
 
       - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: windows_${{ matrix.project }}
           path: |
