@@ -35,6 +35,8 @@
 #define EVT_MASK_NET_CONNECTED     0x04
 #define EVT_MASK_MQTT_INIT         0x08
 #define EVT_MASK_MQTT_CONNECTED    0x10
+#define EVT_MASK_GG_DISCOVERY_PERFORMED      0X100
+#define EVT_MASK_MQTT_AGENT_FINISHED         0X200
 
 extern EventGroupHandle_t xSystemEvents;
 

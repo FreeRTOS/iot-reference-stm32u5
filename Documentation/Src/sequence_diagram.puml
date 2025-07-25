@@ -1,0 +1,20 @@
+@startuml
+participant STM32H5 as H5_Board
+participant "IoT Core" as Cloud
+
+== Establishing network connection ==
+
+Cloud <-> H5_Board : TLS Connection
+
+== MQTT Session ==
+
+H5_Board -> Cloud : MQTT Connect
+
+H5_Board -> Cloud : Subscribe to Topics
+
+H5_Board -> Cloud : Publish Data
+== Disconnect ==
+
+H5_Board <-> Cloud : Close connection
+
+@enduml

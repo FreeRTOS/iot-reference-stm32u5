@@ -35,7 +35,9 @@ typedef enum KvStoreEnum
 {
     CS_CORE_THING_NAME,
     CS_CORE_MQTT_ENDPOINT,
+    CS_CORE_GG_ENDPOINT,
     CS_CORE_MQTT_PORT,
+    CS_CORE_GG_PORT,
     CS_WIFI_SSID,
     CS_WIFI_CREDENTIAL,
     CS_TIME_HWM_S_1970,
@@ -81,9 +83,17 @@ typedef enum KvStoreEnum
     #define MQTT_ENDPOINT_DFLT    ""
 #endif /* !defined ( MQTT_ENDPOINT_DFLT ) */
 
+#if !defined( GG_ENDPOINT_DFLT )
+#define GG_ENDPOINT_DFLT    ""
+#endif /* !defined ( GG_ENDPOINT_DFLT ) */
+
 #if !defined( MQTT_PORT_DFLT )
     #define MQTT_PORT_DFLT    8883
 #endif /* !defined ( MQTT_PORT_DFLT ) */
+
+#if !defined( GG_PORT_DFLT )
+#define GG_PORT_DFLT    8883
+#endif /* !defined ( GG_PORT_DFLT ) */
 
 #if !defined( WIFI_SSID_DFLT )
     #define WIFI_SSID_DFLT    ""
@@ -103,7 +113,9 @@ typedef enum KvStoreEnum
     {                      \
         "thing_name",      \
         "mqtt_endpoint",   \
+        "gg_endpoint",     \
         "mqtt_port",       \
+        "gg_port",         \
         "wifi_ssid",       \
         "wifi_credential", \
         "time_hwm"         \
@@ -113,7 +125,9 @@ typedef enum KvStoreEnum
     {                                                                              \
         KV_DFLT( KV_TYPE_STRING, THING_NAME_DFLT ),    /* CS_CORE_THING_NAME */    \
         KV_DFLT( KV_TYPE_STRING, MQTT_ENDPOINT_DFLT ), /* CS_CORE_MQTT_ENDPOINT */ \
+        KV_DFLT( KV_TYPE_STRING, GG_ENDPOINT_DFLT ),   /* CS_CORE_GG_ENDPOINT */   \
         KV_DFLT( KV_TYPE_UINT32, MQTT_PORT_DFLT ),     /* CS_CORE_MQTT_PORT */     \
+        KV_DFLT( KV_TYPE_UINT32, GG_PORT_DFLT ),       /* CS_CORE_GG_PORT */       \
         KV_DFLT( KV_TYPE_STRING, WIFI_SSID_DFLT ),     /* CS_WIFI_SSID */          \
         KV_DFLT( KV_TYPE_STRING, WIFI_PASSWORD_DFLT ), /* CS_WIFI_CREDENTIAL */    \
         KV_DFLT( KV_TYPE_UINT32, 0 ),                  /* CS_TIME_HWM_S_1970 */    \

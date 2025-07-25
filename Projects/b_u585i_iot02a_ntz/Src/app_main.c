@@ -183,7 +183,7 @@ static void vHeartbeatTask( void * pvParameters )
 }
 
 extern void net_main( void * pvParameters );
-extern void vMQTTAgentTask( void * );
+extern void vMQTTConnectionTask( void * );
 extern void vMotionSensorsPublish( void * );
 extern void vEnvironmentSensorPublishTask( void * );
 extern void vShadowDeviceTask( void * );
@@ -240,7 +240,7 @@ void vInitTask( void * pvArgs )
         xResult = xTaskCreate( run_qualification_main, "QualTest", 4096, NULL, 10, NULL );
         configASSERT( xResult == pdTRUE );
     #else
-        xResult = xTaskCreate( vMQTTAgentTask, "MQTTAgent", 2048, NULL, 10, NULL );
+        xResult = xTaskCreate( vMQTTConnectionTask, "MQTTConnection", 1024, NULL, 12, NULL );
         configASSERT( xResult == pdTRUE );
 
         xResult = xTaskCreate( vOTAUpdateTask, "OTAUpdate", 4096, NULL, tskIDLE_PRIORITY + 1, NULL );
@@ -267,7 +267,9 @@ void vInitTask( void * pvArgs )
 
 static uint32_t ulCsrFlags = 0;
 
-static void vDetermineResetSource()
+void vDetermineResetSource();
+
+void vDetermineResetSource()
 {
     const char * pcResetSource = NULL;
 
