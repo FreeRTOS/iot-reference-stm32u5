@@ -154,7 +154,7 @@ static void vPopulateConfig( struct lfs_config * pxCfg,
 
     #ifdef LFS_THREADSAFE
         pxCfg->lock = &lfs_port_lock;
-        pxCfg->lock = &lfs_port_unlock;
+        pxCfg->unlock = &lfs_port_unlock;
     #endif
 
     pxCfg->read_size = 1;
