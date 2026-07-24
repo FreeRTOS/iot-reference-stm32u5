@@ -1,0 +1,44 @@
+@startuml
+title Sequence diagram of the current implementation
+
+participant NVM
+participant mqtt_connection_task
+participant discovery_task
+participant mqtt_agent_task
+participant mqtt_broker
+
+activate mqtt_connection_task
+
+alt
+    mqtt_connection_task -> discovery_task++ : start task
+    discovery_task -> NVM : write connectivity info
+    deactivate discovery_task
+end
+
+loop while not connected to broker
+alt Connect to greengrass
+    mqtt_connection_task -> mqtt_agent_task++ : Start task (NVM ID = GG )
+else Connect to IoT Core
+    mqtt_connection_task -> mqtt_agent_task : Start task (NVM ID = IoT Core )
+end
+    mqtt_agent_task -> NVM :  get connectivity info (NVM ID)
+    mqtt_agent_task <- NVM :  connectivity info
+    mqtt_agent_task -> mqtt_broker : connect(connectivity info)
+    
+    alt connection successful
+    
+mqtt_broker -> mqtt_agent_task : connection successful
+
+    mqtt_agent_task -> mqtt_connection_task : notify success
+    else connection failed
+    mqtt_broker -> mqtt_agent_task : connection failed
+    mqtt_agent_task -> mqtt_connection_task : notify failure
+    mqtt_agent_task -> mqtt_agent_task : task end
+    deactivate mqtt_agent_task
+    end
+
+end
+
+deactivate mqtt_connection_task
+
+@enduml

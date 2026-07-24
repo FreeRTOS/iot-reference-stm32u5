@@ -112,6 +112,11 @@
 			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/coreJSON/source</locationURI>
 		</link>
 		<link>
+			<name>Libraries/coreHTTP</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/coreHTTP/source</locationURI>
+		</link>
+		<link>
 			<name>Libraries/coreMQTT</name>
 			<type>2</type>
 			<locationURI>WORKSPACE_LOC/Middleware/FreeRTOS/coreMQTT/source</locationURI>

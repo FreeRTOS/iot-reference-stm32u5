@@ -52,6 +52,7 @@ enum eObjectHandles
     eAwsClaimPrivateKey,      /**< Provisioning Claim Private Key. */
     eAwsClaimCertificate,     /**< Provisioning Claim Certificate. */
     eAwsCaCertificate,
+    eAwsGGCaCertificate,      /**< GreenGrass CA certificate. */
 };
 
 

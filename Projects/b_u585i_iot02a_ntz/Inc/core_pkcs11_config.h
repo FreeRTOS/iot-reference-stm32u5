@@ -187,4 +187,7 @@
 #define pkcs11_ROOT_CA_CERT_LABEL                          "root_ca_cert"
 #define pkcs11configLABEL_ROOT_CERTIFICATE                 ( pkcs11_ROOT_CA_CERT_LABEL )
 
+#define pkcs11_ROOT_GG_CA_CERT_LABEL                          "root_gg_ca_cert"
+#define pkcs11configLABEL_ROOT_GG_CERTIFICATE                 ( pkcs11_ROOT_GG_CA_CERT_LABEL )
+
 #endif /* _CORE_PKCS11_CONFIG_H_ */

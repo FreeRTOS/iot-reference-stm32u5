@@ -1,0 +1,70 @@
+@startuml
+hide empty description
+
+state "Connect to Greengrass Core Device" as Connect_to_GG #LightGreen
+state "Read Greengrass configuration from Non-Volatile Memory" as Read_gg_config_nvm #LightGreen
+state "Perform Greengrass discovery request" as GG_discovery #LightGreen
+state "Write Greengrass config in Non-Volatile Memory" as Write_gg_config_nvm #LightGreen
+state "Connect to IoT Cloud" as Connect_to_Cloud #LightBlue
+state "Connected to Greengrass Core Device" as Connected_to_GG #LightGreen
+state "Read Cloud configuration from Non-Volatile Memory" as Read_cloud_config_nvm #LightBlue
+state "Connected to Cloud" as Connected_to_Cloud #LightBlue
+state "Delay (back off mechanism)" as Back_Off  #LightBlue
+state "Delay (back off mechanism)" as Back_Off_GG #LightGreen
+
+state Start <<start>>
+state End_success  <<end>> #Green
+state End_failure  <<end>> #Red
+
+Back_Off_GG : Max GG connection attempts
+Back_Off    : Unlimited connection attempts
+
+Start  -down-> Read_gg_config_nvm
+Read_gg_config_nvm: Greengrass URL
+Read_gg_config_nvm: Greengrass port
+Read_gg_config_nvm: Greengrass Certificate
+
+Read_gg_config_nvm -down-> GG_discovery : Failure
+Read_gg_config_nvm -down-> Connect_to_GG : Success
+
+
+Read_cloud_config_nvm : MQTT endpoint
+Read_cloud_config_nvm : MQTT port
+Read_cloud_config_nvm : Root CA cert
+state GG_state <<choice>>
+state Cloud_state <<choice>>
+
+Connect_to_GG -down-> GG_state
+
+GG_state --> Connected_to_GG : Success
+GG_state --> Back_Off_GG : Failure
+Back_Off_GG --> Connect_to_GG : First attempt < Attempts < Max GG Connection Attempts
+Back_Off_GG --> GG_discovery : Attempts = First attempt
+Back_Off_GG --> Read_cloud_config_nvm : Attempts >= Max_GG_Connection_Attempts
+
+Connected_to_GG --> End_success
+
+GG_discovery --> Write_gg_config_nvm : Success
+
+Write_gg_config_nvm -up-> Read_gg_config_nvm
+
+Write_gg_config_nvm: Greengrass URL
+Write_gg_config_nvm: Greengrass port
+Write_gg_config_nvm: Greengrass Certificate
+
+GG_discovery --> Read_cloud_config_nvm : Failure
+Read_cloud_config_nvm --> Connect_to_Cloud : Success
+Read_cloud_config_nvm --> End_failure : Failure
+
+Connect_to_Cloud --> Cloud_state
+Cloud_state --> Connected_to_Cloud : Success
+Cloud_state --> Back_Off  : Failure
+Back_Off --> Connect_to_Cloud
+Connected_to_Cloud --> End_success
+
+legend
+Color Legend:
+- **LightGreen**: Added Greengrass connection features
+- **LightBlue**: Original Cloud connection feature
+end legend
+@enduml

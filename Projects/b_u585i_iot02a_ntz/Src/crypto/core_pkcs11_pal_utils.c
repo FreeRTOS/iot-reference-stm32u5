@@ -51,6 +51,7 @@
 #define pkcs11palFILE_NAME_CLAIM_CERTIFICATE     "corePKCS11_Claim_Certificate.dat" /**< The file name of the Provisioning Claim Certificate object. */
 #define pkcs11palFILE_NAME_CLAIM_KEY             "corePKCS11_Claim_Key.dat"         /**< The file name of the Provisioning Claim Key object. */
 #define pkcs11palFILE_NAME_CA_CERTIFICATE        "corePKCS11_CA_Certificate.dat"    /**< The file name of the CA Certificate object. */
+#define pkcs11palFILE_NAME_GG_CA_CERTIFICATE     "corePKCS11_GG_CA_Certificate.dat" /**< The file name of the GG CA Certificate object. */
 
 
 void PAL_UTILS_LabelToFilenameHandle( const char * pcLabel,
@@ -121,6 +122,13 @@ void PAL_UTILS_LabelToFilenameHandle( const char * pcLabel,
         {
             *pcFileName = pkcs11palFILE_NAME_CA_CERTIFICATE;
             *pHandle = ( CK_OBJECT_HANDLE ) eAwsCaCertificate;
+        }
+        else if( 0 == strncmp( pkcs11_ROOT_GG_CA_CERT_LABEL,
+                                pcLabel,
+                                sizeof( pkcs11_ROOT_GG_CA_CERT_LABEL ) ) )
+        {
+            *pcFileName = pkcs11palFILE_NAME_GG_CA_CERTIFICATE;
+            *pHandle = ( CK_OBJECT_HANDLE ) eAwsGGCaCertificate;
         }
         else
         {
@@ -198,6 +206,11 @@ CK_RV PAL_UTILS_HandleToFilename( CK_OBJECT_HANDLE xHandle,
                 *pcFileName = pkcs11palFILE_NAME_CA_CERTIFICATE;
                 *pIsPrivate = CK_FALSE;
                 break;
+            
+            case eAwsGGCaCertificate:
+            *pcFileName = pkcs11palFILE_NAME_GG_CA_CERTIFICATE;
+            *pIsPrivate = CK_FALSE;
+            break;
 
             default:
                 xReturn = CKR_KEY_HANDLE_INVALID;

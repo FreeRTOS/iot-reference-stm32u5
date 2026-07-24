@@ -119,6 +119,8 @@ static_assert( ( ( uint64_t ) RETRY_BACKOFF_MULTIPLIER * ( uint64_t ) RETRY_MAX_
 
 #define MUTEX_IS_OWNED( xHandle )    ( xTaskGetCurrentTaskHandle() == xSemaphoreGetMutexHolder( xHandle ) )
 
+#define GG_DISCOVERY_TIMEOUT_MS                 20000
+
 struct MQTTAgentMessageContext
 {
     QueueHandle_t xQueue;
@@ -822,7 +824,9 @@ static void prvFreeAgentTaskCtx( MQTTAgentTaskCtx_t * pxCtx )
 static MQTTStatus_t prvConfigureAgentTaskCtx( MQTTAgentTaskCtx_t * pxCtx,
                                               NetworkContext_t * pxNetworkContext,
                                               uint8_t * pucNetworkBuffer,
-                                              size_t uxNetworkBufferLen )
+                                              size_t uxNetworkBufferLen,
+                                              KVStoreKey_t endpointLabel,
+                                              KVStoreKey_t portLabel)
 {
     BaseType_t xSuccess = pdTRUE;
     MQTTStatus_t xStatus = MQTTSuccess;
@@ -910,7 +914,7 @@ static MQTTStatus_t prvConfigureAgentTaskCtx( MQTTAgentTaskCtx_t * pxCtx,
 
     if( xStatus == MQTTSuccess )
     {
-        pxCtx->pcMqttEndpoint = KVStore_getStringHeap( CS_CORE_MQTT_ENDPOINT,
+        pxCtx->pcMqttEndpoint = KVStore_getStringHeap( endpointLabel,
                                                        &( pxCtx->uxMqttEndpointLen ) );
 
         if( ( pxCtx->uxMqttEndpointLen == 0 ) ||
@@ -923,7 +927,7 @@ static MQTTStatus_t prvConfigureAgentTaskCtx( MQTTAgentTaskCtx_t * pxCtx,
 
     if( xStatus == MQTTSuccess )
     {
-        pxCtx->ulMqttPort = KVStore_getUInt32( CS_CORE_MQTT_PORT, &( xSuccess ) );
+        pxCtx->ulMqttPort = KVStore_getUInt32( portLabel, &( xSuccess ) );
 
         if( ( pxCtx->ulMqttPort == 0 ) ||
             ( xSuccess == pdFALSE ) )
@@ -965,10 +969,13 @@ void vMQTTAgentTask( void * pvParameters )
     uint8_t * pucNetworkBuffer = NULL;
     NetworkContext_t * pxNetworkContext = NULL;
     uint16_t usNextRetryBackOff = 0U;
+    MQTTConnectionContext_t *connectionParams = (MQTTConnectionContext_t *)pvParameters;
 
     PkiObject_t xPrivateKey = xPkiObjectFromLabel( TLS_KEY_PRV_LABEL );
     PkiObject_t xClientCertificate = xPkiObjectFromLabel( TLS_CERT_LABEL );
-    PkiObject_t pxRootCaChain[ 1 ] = { xPkiObjectFromLabel( TLS_ROOT_CA_CERT_LABEL ) };
+    PkiObject_t pxRootCaChain[ 1 ] = { xPkiObjectFromLabel( connectionParams->caLabel ) };
+    KVStoreKey_t portLabel = connectionParams->portLabel;
+    KVStoreKey_t endpointLabel = connectionParams->endpointLabel;
 
     ( void ) pvParameters;
 
@@ -1019,7 +1026,9 @@ void vMQTTAgentTask( void * pvParameters )
         {
             xMQTTStatus = prvConfigureAgentTaskCtx( pxCtx, pxNetworkContext,
                                                     pucNetworkBuffer,
-                                                    MQTT_AGENT_NETWORK_BUFFER_SIZE );
+                                                    MQTT_AGENT_NETWORK_BUFFER_SIZE,
+                                                    endpointLabel,
+                                                    portLabel);
         }
         else
         {
@@ -1051,7 +1060,6 @@ void vMQTTAgentTask( void * pvParameters )
         else
         {
             ( void ) xEventGroupSetBits( xSystemEvents, EVT_MASK_MQTT_INIT );
-            xDefaultInstanceHandle = &( pxCtx->xAgentContext );
         }
     }
 
@@ -1083,7 +1091,7 @@ void vMQTTAgentTask( void * pvParameters )
         BackoffAlgorithm_InitializeParams( &xReconnectParams,
                                            RETRY_BACKOFF_BASE,
                                            RETRY_MAX_BACKOFF_DELAY,
-                                           BACKOFF_ALGORITHM_RETRY_FOREVER );
+                                           connectionParams->maxBackoffAttempts);
 
         xTlsStatus = TLS_TRANSPORT_UNKNOWN_ERROR;
 
@@ -1148,6 +1156,7 @@ void vMQTTAgentTask( void * pvParameters )
             if( ( xMQTTStatus == MQTTSuccess ) &&
                 ( pxCtx->xConnectInfo.cleanSession == false ) )
             {
+                connectionParams->mqttAgentConnected = true;
                 configASSERT_CONTINUE( MUTEX_IS_OWNED( pxCtx->xSubMgrCtx.xMutex ) );
                 LogInfo( "Resuming persistent MQTT Session." );
 
@@ -1177,6 +1186,7 @@ void vMQTTAgentTask( void * pvParameters )
             }
             else if( xMQTTStatus == MQTTSuccess )
             {
+                connectionParams->mqttAgentConnected = true;
                 configASSERT_CONTINUE( MUTEX_IS_OWNED( pxCtx->xSubMgrCtx.xMutex ) );
 
                 LogInfo( "Starting a clean MQTT Session." );
@@ -1187,6 +1197,7 @@ void vMQTTAgentTask( void * pvParameters )
             }
             else
             {
+                connectionParams->mqttAgentConnected = false;
                 LogError( "Failed to connect to mqtt broker." );
             }
 
@@ -1203,6 +1214,7 @@ void vMQTTAgentTask( void * pvParameters )
 
         if( xMQTTStatus == MQTTSuccess )
         {
+            xDefaultInstanceHandle = &( pxCtx->xAgentContext );
             ( void ) xEventGroupSetBits( xSystemEvents, EVT_MASK_MQTT_CONNECTED );
 
             /* Reset backoff timer */
@@ -1275,7 +1287,7 @@ void vMQTTAgentTask( void * pvParameters )
     }
 
     ( void ) xEventGroupClearBits( xSystemEvents, EVT_MASK_MQTT_INIT | EVT_MASK_MQTT_CONNECTED );
-
+    xEventGroupSetBits(xSystemEvents, EVT_MASK_MQTT_AGENT_FINISHED);
     LogError( "Terminating MqttAgentTask." );
 
     vTaskDelete( NULL );

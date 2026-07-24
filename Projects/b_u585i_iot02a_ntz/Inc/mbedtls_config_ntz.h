@@ -3269,6 +3269,20 @@ void mbedtls_platform_free( void * ptr );
  */
 /*#define MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED */
 
+/**
+ * @brief Enables custom Subject Alternative Name (SAN) verification for IP addresses.
+ *
+ * This macro activates a custom implementation of the x509 certificate SAN verification
+ * function, which includes support for IP address and URI verification in addition to
+ * DNS names. When defined, the verification function prioritizes DNS names but also
+ * checks for IP addresses and URIs in the SAN field of the certificate.
+ *
+ * @note This macro should be defined when IP address and URI verification are required
+ * in addition to DNS name verification in the SAN field of x509 certificates.
+ * Enable the greengrass connection
+ */
+#define MBEDTLS_CUSTOM_SAN_IP_VERIF
+
 /* \} name SECTION: Customization configuration options */
 
 #include "mbedtls/check_config.h"

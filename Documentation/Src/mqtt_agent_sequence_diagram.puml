@@ -1,0 +1,31 @@
+@startuml
+title Sequence diagram of the current implementation
+
+participant mqtt_connection_task
+participant mqtt_agent_task
+participant mqtt_broker
+
+activate mqtt_connection_task
+
+loop while not connected to broker
+    mqtt_connection_task -> mqtt_connection_task : set params X
+    mqtt_connection_task -> mqtt_agent_task++ : Start task with params X
+    mqtt_agent_task -> mqtt_broker : connect with params X
+    
+    alt connection successful
+    
+mqtt_broker -> mqtt_agent_task : connection successful
+
+    mqtt_agent_task -> mqtt_connection_task : notify success
+    else connection failed
+    mqtt_broker -> mqtt_agent_task : connection failed
+    mqtt_agent_task -> mqtt_connection_task : notify failure
+    mqtt_agent_task -> mqtt_agent_task : task end
+    deactivate mqtt_agent_task
+    end
+
+end
+
+deactivate mqtt_connection_task
+
+@enduml

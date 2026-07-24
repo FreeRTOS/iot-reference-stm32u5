@@ -1,0 +1,31 @@
+@startuml
+
+!pragma teoz true
+participant STM32H5 as H5_Board
+participant "GreenGrass STM32MPU" as GG
+participant "IoT Core" as Cloud
+
+== GreenGrass Discovery==
+
+H5_Board -> Cloud : HTTP Discovery request
+H5_Board <- Cloud : JSON response
+
+== MQTT Session ==
+
+H5_Board <-> GG : MQTT Connect
+
+H5_Board -> GG : Subscribe to Topics
+
+H5_Board -> GG : Publish Data
+
+group MQTT bridge
+    GG -> Cloud : Publish Data
+
+end
+
+
+== Disconnect ==
+
+H5_Board <-> GG : Close connection
+
+@enduml
